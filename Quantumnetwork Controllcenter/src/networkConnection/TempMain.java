@@ -13,7 +13,7 @@ public class TempMain {
 		//System.out.println("Creating new Connection in CM1");
 		
 		
-		
+		//Test
 		
 		//Testing, not part of the actual Program!
 		ConnectionEndpoint ce = cm.createNewConnectionEndpoint("UserA", 2303);
