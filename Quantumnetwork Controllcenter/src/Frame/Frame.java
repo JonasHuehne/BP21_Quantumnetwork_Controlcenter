@@ -16,6 +16,8 @@ public class Frame {
 		
 		QnCc.initialize();
 		
+		// switched workspace in Eclipse
+		
 	}
 	
 }
