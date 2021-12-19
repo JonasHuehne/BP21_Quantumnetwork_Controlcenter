@@ -1,6 +1,11 @@
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.sql.*;
+
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 
 public class KeyStoreDbManager {
     String dataBaseName;
@@ -15,6 +20,7 @@ public class KeyStoreDbManager {
         Connection con = null;
         try {
             Class.forName("org.sqlite.JDBC");
+
             // find project directory to store new Database correctly
             String currentPath = System.getProperty("user.dir");
 
