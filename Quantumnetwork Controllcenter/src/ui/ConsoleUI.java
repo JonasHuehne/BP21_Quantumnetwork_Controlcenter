@@ -12,12 +12,17 @@ import java.awt.Color;
 import java.awt.Font;
 
 /**
- * A simple console-based UI that allows text commands to be entered and processed, and text to be displayed to the user.
+ * The ConsoleUI class provides a GUI which appears and acts similar to a console / terminal application.
+ * The UI displayed to the user consists of two text boxes: a large box and a small box. 
+ * The larger text box is for output only, displaying information to the user, 
+ * such as notifiyng them that an operation was executed successfully, or displaying error messages.
+ * The smaller text box allows the user to input text as they would input commands in a terminal, confirming an input with the ENTER key.
+ * Entered text is interpreted as a command and processed via the {@link CommandHandler}. The returned String is then presented in the larger text box.
  * @author Sasha Petri
  *
  */
 public class ConsoleUI {
-
+	
 	private JFrame frmQuantumNetworkControl;
 	
 	private final String ENTER_COMMAND_TEXT = "Enter Command: ";
@@ -77,7 +82,7 @@ public class ConsoleUI {
 			public void keyPressed(KeyEvent e) {
 				if(e.getKeyCode() == KeyEvent.VK_ENTER) { // Attempt to parse entered command if ENTER key is pressed
 					String enteredCommand = consoleInArea.getText().substring(ENTER_COMMAND_TEXT.length()); 
-					consoleOutArea.setText(parseCommand(enteredCommand));			
+					consoleOutArea.setText(CommandHandler.processCommand(enteredCommand));			
 					consoleInArea.setText(ENTER_COMMAND_TEXT);
 				}
 			}
@@ -87,21 +92,6 @@ public class ConsoleUI {
 		frmQuantumNetworkControl.setVisible(true);
 		consoleInArea.requestFocusInWindow(); // This makes it so that the user automatically types in the input field on startup of the console
 
-	}
-	
-	// TODO: Should probably rename this method, not sure whether "parse" is the correct terminology to use here
-	// TODO: JavaDoc
-	/* TODO: Actually implement any commands. For reasons of modularity & cohesion, do only as much as "neccessary" in this class, 
-	 * 		 i.e. when a command is entered, this class should at most handle the parameters of the command and then call the appropriate method
-	 * 		 e.g. KeyManager.deleteKeys(...) or whatever other method is appropriate to call for the entered command
-	*/
-	private String parseCommand(String command) {
-		
-		switch (command) {
-			case "help": return "Sorry, at the moment there is no help available.";
-			default:
-				return "Unrecognized Command.";
-		}
 	}
 	
 }
