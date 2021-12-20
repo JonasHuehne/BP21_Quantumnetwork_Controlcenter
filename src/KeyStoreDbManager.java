@@ -6,17 +6,18 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 
 public class KeyStoreDbManager {
     String dataBaseName;
     String tableName;
 
 
-    /**
+    /**Ist wohl schlauer das so wie du zu machen Sarah und nicht jedes mal nach dem DB Namen zu fragen... im finalen Projekt wird es ja eh nur eine geben
      * @param dataBaseName
      * @return
      */
-    public static Connection connect(String dataBaseName) {
+    private static Connection connect(String dataBaseName) {
         Connection con = null;
         try {
             Class.forName("org.sqlite.JDBC");
@@ -44,8 +45,8 @@ public class KeyStoreDbManager {
      *
      * @param dataBaseName
      */
-    public static void createNewDb(String dataBaseName) {
-
+     static boolean createNewDb(String dataBaseName) {
+        boolean bool = false;
 
         try {
             Connection conn = KeyStoreDbManager.connect(dataBaseName);//DriverManager.getConnection(path);
@@ -55,20 +56,26 @@ public class KeyStoreDbManager {
 
                 //System.out.println("Driver Name is -> " + meta.getDriverName());
                 System.out.println("Database was created successfully!");
+
+
             }
+            bool = true;
+
         } catch (SQLException e) {
             System.out.println("Database creation failed!" + "\n");
             e.printStackTrace();
-        }
 
+        }
+        return bool;
     }
 
     /**
-     *
-     * @param dataBaseName
+     *  @param dataBaseName
      * @param tableName
+     * @return
      */
-    public static void createNewTable(String dataBaseName, String tableName){
+    static boolean createNewTable(String dataBaseName, String tableName){
+        boolean bool = false;
 
         try {
             Connection conn = connect(dataBaseName);//DriverManager.getConnection(url);
@@ -88,12 +95,14 @@ public class KeyStoreDbManager {
             stmnt.close();
             conn.close();
 
+            bool = true;
+
 
         } catch (SQLException e) {
             System.out.println("Table creation failed!" + "\n" );
             e.printStackTrace();
         }
-
+        return bool;
     }
 
     /**
@@ -104,8 +113,8 @@ public class KeyStoreDbManager {
      * @param source
      * @param destination
      */
-    public static void insertToDb( String dataBasename, String keyStreamID, int keyBuffer, int index, String source, String destination ){
-
+     static boolean insertToDb( String dataBasename, String keyStreamID, int keyBuffer, int index, String source, String destination ){
+        boolean bool = false;
         try{
 
 
@@ -132,13 +141,17 @@ public class KeyStoreDbManager {
 
             //stmnt.close();
             //conn.commit();
+            prepStmnt.close();
             conn.close();
+
+            bool = true;
         }
 
         catch (SQLException e ){
             System.out.println("Inserion to DB failed!" + "\n" );
             e.printStackTrace();
         }
+        return bool;
     }
 
     /**
@@ -146,7 +159,7 @@ public class KeyStoreDbManager {
      * @param dataBasename
      * @param tableName
      */
-    public static void selectAll(String dataBasename, String tableName){
+     static void selectAll(String dataBasename, String tableName){
 
         try {
             String sql = "SELECT * FROM " + tableName;
@@ -162,13 +175,16 @@ public class KeyStoreDbManager {
                         result.getString("Destination"));
             }
 
+            stmnt.close();
+            conn.close();
         } catch (SQLException e) {
             System.out.println( "Selecting Everything from DB= " + dataBasename + "and Table=" + tableName + "\n" );
             e.printStackTrace();
         }
     }
 
-    public static void deleteEntryByID(String databaseName, String tableName, String keyStreamID){
+     static boolean deleteEntryByID(String databaseName, String tableName, String keyStreamID){
+         boolean bool = false;
         try {
             String sql = "DELETE FROM " + tableName + " WHERE KeyStreamId= ?";
 
@@ -179,32 +195,19 @@ public class KeyStoreDbManager {
             //stmnt.executeQuery(sql);
             pstmnt.executeUpdate();
             System.out.println("Entry was deleted successfully!");
+            pstmnt.close();
+            conn.close();
 
+            bool = true;
         }
 
         catch (SQLException e) {
             System.out.println("Entry deletion failed!" + "\n");
             e.printStackTrace();
         }
+        return bool;
     }
 
-    public static int getNumberOfEntrys(String dataBaseName, String tableName){
-        int numberOfRows = -1;
-        try {
-            Connection conn = connect(dataBaseName);
-            Statement stmnt = conn.createStatement();
-            String sql = "SELECT COUNT(*) FROM " + tableName + ";";
-
-
-            stmnt.executeUpdate(sql);
-
-
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return numberOfRows;
-    }
 
     /** Nur für Testzwecke
      *
@@ -221,6 +224,30 @@ public class KeyStoreDbManager {
 
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+    }
+
+
+    public static ArrayList<KeyStoreObject> getEntrysAsList (String dataBaseName, String tableName) {
+        try {
+            //if (connection == null || connection.isClosed()) {
+                Connection conn = connect(dataBaseName);
+            //}
+            String sql = "SELECT * FROM " + tableName;
+            PreparedStatement stmnt = conn.prepareStatement(sql);
+            ResultSet rs = stmnt.executeQuery();
+            ArrayList<KeyStoreObject> result = new ArrayList<>();
+            while(rs.next()) {
+                KeyStoreObject res = new KeyStoreObject(rs.getString("KeyStreamID"),
+                        rs.getInt("KeyBuffer"), rs.getInt("Index_"), rs.getString("Source_"), rs.getString("Destination"));
+                result.add(res);
+            }
+            stmnt.close();
+            conn.close();
+            return result;
+        } catch (Exception e) {
+            System.err.println("Problem with query for data in CommunicationList Database (" + e.getMessage() + ")");
+            return null;
         }
     }
 
