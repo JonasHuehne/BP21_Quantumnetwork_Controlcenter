@@ -26,7 +26,7 @@ public class ConnectionManager {
 		return Connections;
 	}
 	
-	
+	//Sends a Message via a ConnectionEndpoint
 	public void sendMessage(String connectionID,String message) {
 		ConnectionEndpoint activeConnectionEndpoint = Connections.get(connectionID);
 		activeConnectionEndpoint.pushMessage(message);

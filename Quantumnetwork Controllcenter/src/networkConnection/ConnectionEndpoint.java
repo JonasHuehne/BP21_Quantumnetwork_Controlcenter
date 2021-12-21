@@ -36,8 +36,6 @@ public class ConnectionEndpoint {
 	private boolean waitingForConnection = false;
 	private boolean waitingForMessage = false;
 	
-	String lastMessage = null;
-	
 	private ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
 	
 	public ConnectionEndpoint(ConnectionManager cm, String connectionName, String localAddress, int serverPort) {
@@ -177,17 +175,7 @@ public class ConnectionEndpoint {
 					//Wait for greeting
 					System.out.println("Wating for Greeting from connecting Party");
 					listenForMessage();
-					while(lastMessage == null) {
-						try {
-							System.out.println("!!!!!!!!!!!!!HAD TO WAIT!!!!!!!!!!!!");
-							TimeUnit.SECONDS.sleep(1);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-					String greetingMessage = lastMessage;
-					lastMessage = null;
+					String greetingMessage = listenForMessage();
 					remoteID = greetingMessage.split(":")[0];
 					remotePort = Integer.parseInt(greetingMessage.split(":")[1]);
 					System.out.println("Recieved initial Message: " + greetingMessage);
@@ -209,7 +197,9 @@ public class ConnectionEndpoint {
 		connectionExecutor.shutdown();
 	}
 	
-	public void listenForMessage() {
+	
+	//Waits until a message was received and then returns the message. Blocking.
+	public String listenForMessage() {
 		System.out.println("Waiting for Message has startet!");
 		waitingForMessage = true;
 		String recievedMessage;
@@ -219,15 +209,14 @@ public class ConnectionEndpoint {
 					System.out.println(connectionID + " recieved Message!:");
 					System.out.println(recievedMessage);
 					waitingForMessage = false;
-					lastMessage = recievedMessage;
-					return ;//preProcessMessage(recievedMessage);
+					return preProcessMessage(recievedMessage);
 				}
 			} catch (IOException e) {
 				System.out.println("Error while waiting for Message at " + connectionID + "!");
 				e.printStackTrace();
 			}
 		}
-		return ;//"No message recived!";			
+		return "No message recived!";			
 	}
 	
 	//PreProcessing-step to filter out ConnectionCommands
