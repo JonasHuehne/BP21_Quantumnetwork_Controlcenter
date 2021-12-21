@@ -9,36 +9,26 @@ public class QuantumnetworkControllcenter {
 	/*
 	 * Method to initialize a Quantumnetwork Controllcenter
 	 */
-	public void initialize() {
-		
-		System.out.println(buildNetwork());
-		
-		System.out.println(runKeymanager());
+	public static void initialize() {
 		
 		//TODO add initialization of further Classes
 		
 		System.out.println("QuantumnetworkControllcenter initialized");
 	}
-	
-	
-	
-	/*
-	 * Dummy Method to simulate initialization of Network
-	 */
-	public String buildNetwork() {
-		
-		return "Network build";
-		
-	}
-	
-	
+	 
 	
 	/*
-	 * Dummy Method to simulate initialization of Keymanager
+	 * Main-method to run QuantumnetworkControllcenter
 	 */
-	public String runKeymanager() {
+	public static void main(String[] args) {
 		
-		return "Keymanager started";
+
+		
+		System.out.println("Run QuantumnetworkControllCenter initialisation");
+		
+		initialize();
+		
+		// switched workspace in Eclipse
 		
 	}
 	
