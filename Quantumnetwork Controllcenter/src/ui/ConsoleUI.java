@@ -25,7 +25,17 @@ public class ConsoleUI {
 	
 	private JFrame frmQuantumNetworkControl;
 	
+	/** Title displayed in the applications border */
+	private final String APPLICATION_TITLE = "Quantum Network Control Center Console UI";
+	/** Text prompting the user to enter a command, always displayed in the {@link #consoleInArea} */
 	private final String ENTER_COMMAND_TEXT = "Enter Command: ";
+	/** Text displayed on startup in the {@link #consoleOutArea} */
+	private final String INITIAL_TEXT = "Welcome to the Quantum Network Control Center. What would you like to do?" + System.lineSeparator() + "Enter \"help\" for a list of commands.";
+	
+	/** The text area for the user input (commands) */
+	private JTextField consoleInArea;
+	/** The text area for the application output (command feedback, error codes, ...)*/
+	private JTextArea consoleOutArea;
 
 	/**
 	 * Launch the application.
@@ -34,7 +44,7 @@ public class ConsoleUI {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					ConsoleUI window = new ConsoleUI();
+					new ConsoleUI();
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -54,12 +64,12 @@ public class ConsoleUI {
 	 */
 	private void initialize() {
 		frmQuantumNetworkControl = new JFrame();
-		frmQuantumNetworkControl.setTitle("Quantum Network Control Center Console UI");
+		frmQuantumNetworkControl.setTitle(APPLICATION_TITLE);
 		frmQuantumNetworkControl.setBounds(100, 100, 677, 403);
 		frmQuantumNetworkControl.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		// The area in which the user enters the commands
-		JTextField consoleInArea = new JTextField();
+		consoleInArea = new JTextField();
 		consoleInArea.setFont(new Font("Arial", Font.PLAIN, 14));
 		consoleInArea.setText(ENTER_COMMAND_TEXT);
 		consoleInArea.setForeground(Color.GREEN);
@@ -68,12 +78,13 @@ public class ConsoleUI {
 		frmQuantumNetworkControl.getContentPane().add(consoleInArea, BorderLayout.SOUTH);
 		
 		// Output area containing result of computing the command
-		JTextArea consoleOutArea = new JTextArea();
+		consoleOutArea = new JTextArea();
 		consoleOutArea.setFont(new Font("Arial", Font.PLAIN, 14));
 		consoleOutArea.setEditable(false);
-		consoleOutArea.setText("Welcome to the Quantum Network Control Center. What would you like to do?" + System.lineSeparator() + "Enter \"help\" for a list of commands.");
+		consoleOutArea.setText(INITIAL_TEXT);
 		consoleOutArea.setForeground(Color.GREEN);
 		consoleOutArea.setBackground(Color.BLACK);
+		
 		frmQuantumNetworkControl.getContentPane().add(consoleOutArea, BorderLayout.CENTER);
 
 		

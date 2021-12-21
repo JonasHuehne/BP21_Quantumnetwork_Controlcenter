@@ -10,13 +10,22 @@ public class CommandHandler {
 		
 	}
 	
+	/** String returned by {@link #processCommand(String)} if the given command is not recognized (e.g. because of a typo, or because the input was empty) */
+	public static final String INVALID_COMMAND = "Unrecognized Command.";
+	/** Message given with the IllegalArgumentException that is thrown if {@link #processCommand(String)} is called with String = null*/
+	public static final String NULL_COMMAND = "ERROR, could not process the given command! null is not a recognized command.";
 	
-	// TODO: Make this JavaDoc good (for example, once we have actual functionality we can give real examples)
-	// TODO: In the documentation, write down the available commands, their syntax, ...
-	/* TODO: Actually implement any commands. For reasons of modularity & cohesion, do only as much as "neccessary" in this class, 
-	 * 		 i.e. when a command is entered, this class should at most handle the parameters of the command and then call the appropriate method
-	 * 		 e.g. KeyManager.deleteKeys(...) or whatever other method is appropriate to call for the entered command
-	*/
+	/*
+	 * TODO: 
+	 * This class will need to be continually expanded as the project becomes more complete, 
+	 * with more commands being implemented to allow users to control the application via text.
+	 */
+	
+	/*
+	 * TODO:
+	 * Document each command externally (Syntax & Purpose) and also implement "help [command]" so the user can access additional info about the command.
+	 * Could potentially use an Enum for this.
+	 */
 	
 	// Generally intended to be used in {@link ConsoleUI}, but is independend of that class and could for example just as well be used with sysin / sysout
 	/**
@@ -29,13 +38,23 @@ public class CommandHandler {
 	 */
 	public static String processCommand(String command) {
 		
+		/*
+		 *  We could just return INVALID_COMMAND here, however, if the input is null, 
+		 *  something likely went wrong enough to warrant an exception, whereas INVALID_COMMAND
+		 *  is intended to simply inform the user that their input is not recognized as a command.
+		 */
+		if(command == null) throw new IllegalArgumentException(NULL_COMMAND);
+		
+		command = command.toLowerCase();
+		
 		switch (command) {
 		case "help": 
-			return "Sorry, at the moment there is no help available.";
-		default:
-			return "Unrecognized Command.";
+			return "There are no commands available at this moment in developement.";
+		default: // TODO: Potentially add a "did you mean ... " function, or something similar
+			return INVALID_COMMAND;
 		}
 		
 	}
+	
 	
 }
