@@ -93,8 +93,8 @@ public class ConnectionEndpoint {
 			//Connecting own Client Socket to foreign Server Socket
 			localClientSocket = new Socket(remoteID,remotePort);
 			clientOut = new PrintWriter(localClientSocket.getOutputStream(),true);
-			//clientIn = new BufferedReader(new InputStreamReader(localClientSocket.getInputStream()));
 			isConnected = true;
+			
 			//Send Message to allow foreign Endpoint to connect with us.
 			System.out.println(connectionID + " is sending a greeting.");
 			pushMessage(localAddress + ":" + localServerPort);
@@ -182,11 +182,7 @@ public class ConnectionEndpoint {
 					System.out.println("Connecting back to " + greetingMessage.split(":")[0] + " at Port: " + greetingMessage.split(":")[1]);
 					localClientSocket = new Socket(greetingMessage.split(":")[0], Integer.parseInt(greetingMessage.split(":")[1]));
 					clientOut = new PrintWriter(localClientSocket.getOutputStream(), true);
-					//clientIn = new BufferedReader(new InputStreamReader(localClientSocket.getInputStream()));
 				
-					
-					
-					pushMessage("Confirm Connection");
 				
 				
 				} catch (IOException e) {
