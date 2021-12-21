@@ -118,7 +118,6 @@ public class ConnectionEndpoint {
 		
 	}
 	
-	
 	//Closes the connection to another Endpoint
 	public void closeConnection() throws IOException {
 		System.out.println("Local Shutdown of ConnectionEndpoint " + connectionID);
@@ -196,8 +195,7 @@ public class ConnectionEndpoint {
 		});
 		connectionExecutor.shutdown();
 	}
-	
-	
+		
 	//Waits until a message was received and then returns the message. Blocking.
 	public String listenForMessage() {
 		System.out.println("Waiting for Message has startet!");
