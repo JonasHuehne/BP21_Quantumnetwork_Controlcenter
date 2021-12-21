@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 public class ConnectionEndpoint {
 	
@@ -34,6 +35,8 @@ public class ConnectionEndpoint {
 	private boolean isBuildingConnection = false;
 	private boolean waitingForConnection = false;
 	private boolean waitingForMessage = false;
+	
+	String lastMessage = null;
 	
 	private ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
 	
@@ -173,7 +176,18 @@ public class ConnectionEndpoint {
 					
 					//Wait for greeting
 					System.out.println("Wating for Greeting from connecting Party");
-					String greetingMessage = waitForMessage();
+					listenForMessage();
+					while(lastMessage == null) {
+						try {
+							System.out.println("!!!!!!!!!!!!!HAD TO WAIT!!!!!!!!!!!!");
+							TimeUnit.SECONDS.sleep(1);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+					String greetingMessage = lastMessage;
+					lastMessage = null;
 					remoteID = greetingMessage.split(":")[0];
 					remotePort = Integer.parseInt(greetingMessage.split(":")[1]);
 					System.out.println("Recieved initial Message: " + greetingMessage);
@@ -195,7 +209,7 @@ public class ConnectionEndpoint {
 		connectionExecutor.shutdown();
 	}
 	
-	public String waitForMessage() {
+	public void listenForMessage() {
 		System.out.println("Waiting for Message has startet!");
 		waitingForMessage = true;
 		String recievedMessage;
@@ -205,14 +219,15 @@ public class ConnectionEndpoint {
 					System.out.println(connectionID + " recieved Message!:");
 					System.out.println(recievedMessage);
 					waitingForMessage = false;
-					return preProcessMessage(recievedMessage);
+					lastMessage = recievedMessage;
+					return ;//preProcessMessage(recievedMessage);
 				}
 			} catch (IOException e) {
 				System.out.println("Error while waiting for Message at " + connectionID + "!");
 				e.printStackTrace();
 			}
 		}
-		return "No message recived!";			
+		return ;//"No message recived!";			
 	}
 	
 	//PreProcessing-step to filter out ConnectionCommands

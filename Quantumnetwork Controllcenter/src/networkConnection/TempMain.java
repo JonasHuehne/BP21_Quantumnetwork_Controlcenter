@@ -17,12 +17,14 @@ public class TempMain {
 		
 		//Testing, not part of the actual Program!
 		ConnectionEndpoint ce = cm.createNewConnectionEndpoint("UserA", 2303);
-
 		
-		//ce.EstablishConnection("192.168.0.52", 3303);
-		//ce.waitForMessage();
-		//ce.pushMessage("Hallo Laptop, ich bin der Desktop.");
 		
+		ce.EstablishConnection("192.168.0.52", 3303);
+		
+		ce.pushMessage("Hallo Laptop, ich bin der Desktop.");
+		
+		ce.listenForMessage();
+		ce.listenForMessage();
 		
 
 		
