@@ -83,22 +83,18 @@ public class ConnectionEndpoint {
 			System.out.println("Warning: " + connectionID + " is already connected to " + remoteID + " at Port " + String.valueOf(remotePort) + "! Connection creation aborted!");
 		}
 		System.out.println("Attempting to connect " + connectionID + " to: " + targetServerIP + " on port " + String.valueOf(targetServerPort) + "!");
-		if(!connectionExecutor.isShutdown()) {
-			System.out.print("MessageWait is running!");
-		}
+
 		isBuildingConnection = true;
 		remoteID = targetServerIP;
 		remotePort = targetServerPort;
 		
 		//Try to connect to other Server
 		try {
-			
 			//Connecting own Client Socket to foreign Server Socket
 			localClientSocket = new Socket(remoteID,remotePort);
 			clientOut = new PrintWriter(localClientSocket.getOutputStream(),true);
 			//clientIn = new BufferedReader(new InputStreamReader(localClientSocket.getInputStream()));
 			isConnected = true;
-			
 			//Send Message to allow foreign Endpoint to connect with us.
 			System.out.println(connectionID + " is sending a greeting.");
 			pushMessage(localAddress + ":" + localServerPort);
@@ -139,7 +135,7 @@ public class ConnectionEndpoint {
 	
 	//Pushes a Message to the connected Endpoints ServerSocket.
 	public void pushMessage(String message) {
-		
+		System.out.println("Attempting to push message: " + message);
 		//Check for existence of connection before attempting so send.
 		if(!isConnected) {
 			System.out.println("ERROR: Attempted to push a message to another Endpoint while not beeing connected to anything!");
@@ -168,25 +164,28 @@ public class ConnectionEndpoint {
 					//Listen for connection attempt
 					remoteClientSocket = localServerSocket.accept();
 					System.out.println("A ConnectionRequest has been recieved at " + connectionID + "s ServerSocket on Port " + localServerPort + "!");
-					waitingForConnection = false;
 					
 					//Set ServerCommmChannels
 					//serverOut = new PrintWriter(remoteClientSocket.getOutputStream(),true);
 					serverIn = new BufferedReader(new InputStreamReader(remoteClientSocket.getInputStream()));
-				
+					waitingForConnection = false;
+					isConnected = true;
+					
 					//Wait for greeting
+					System.out.println("Wating for Greeting from connecting Party");
 					String greetingMessage = waitForMessage();
 					remoteID = greetingMessage.split(":")[0];
 					remotePort = Integer.parseInt(greetingMessage.split(":")[1]);
 					System.out.println("Recieved initial Message: " + greetingMessage);
 				
 					//Use greeting(ip:port) to establish back-connection to the ConnectionAttempt-Sources ServerSocket
+					System.out.println("Connecting back to " + greetingMessage.split(":")[0] + " at Port: " + greetingMessage.split(":")[1]);
 					localClientSocket = new Socket(greetingMessage.split(":")[0], Integer.parseInt(greetingMessage.split(":")[1]));
 					clientOut = new PrintWriter(localClientSocket.getOutputStream(), true);
 					//clientIn = new BufferedReader(new InputStreamReader(localClientSocket.getInputStream()));
 				
-				
-					isConnected = true;
+					
+					
 					pushMessage("Confirm Connection");
 				
 				
@@ -201,12 +200,12 @@ public class ConnectionEndpoint {
 	}
 	
 	public String waitForMessage() {
-
+		System.out.println("Waiting for Message has startet!");
 		waitingForMessage = true;
 		String recievedMessage;
 		while(waitingForMessage) {
 			try {
-				if((recievedMessage = serverIn.readLine()) != null) {
+				if(isConnected && !waitingForConnection && (recievedMessage = serverIn.readLine()) != null) {
 					System.out.println(connectionID + " recieved Message!:");
 					System.out.println(recievedMessage);
 					waitingForMessage = false;
