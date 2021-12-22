@@ -53,7 +53,10 @@ public class ConnectionEndpoint {
 		}
 	}
 	
-	//Reports the current State of this Endpoints Connection.
+	/**Reports the current State of this Endpoints Connection.
+	 * 
+	 * @return returns the Connection State as a ConnectionStateEnum.
+	 */
 	public ConnectionState reportState() {
 		if(isConnected && !isBuildingConnection) {
 			return ConnectionState.Connected;
@@ -78,10 +81,15 @@ public class ConnectionEndpoint {
 	//Client Side
 	//------------//
 	
-	//Tries to connect to another Endpoints ServerSocket
+	/**Tries to connect to another Endpoints ServerSocket
+	 * 
+	 * @param targetServerIP	the IP or Name of the other Party.
+	 * @param targetServerPort	the Port on which the other Partys ServerSocket is listening for connections.
+	 */
 	public void EstablishConnection(String targetServerIP, int targetServerPort) {
 		if(isConnected) {
 			System.out.println("Warning: " + connectionID + " is already connected to " + remoteID + " at Port " + String.valueOf(remotePort) + "! Connection creation aborted!");
+			return;
 		}
 		System.out.println("Attempting to connect " + connectionID + " to: " + targetServerIP + " on port " + String.valueOf(targetServerPort) + "!");
 
@@ -118,7 +126,10 @@ public class ConnectionEndpoint {
 		
 	}
 	
-	//Closes the connection to another Endpoint
+	/**Closes the connection to another Endpoint
+	 * 
+	 * @throws IOException	may complain if something goes wrong, handle above.
+	 */
 	public void closeConnection() throws IOException {
 		System.out.println("Local Shutdown of ConnectionEndpoint " + connectionID);
 			localServerSocket.close();
@@ -133,7 +144,10 @@ public class ConnectionEndpoint {
 			}
 	}
 	
-	//Pushes a Message to the connected Endpoints ServerSocket.
+	/**Pushes a Message to the connected Endpoints ServerSocket.
+	 * 
+	 * @param message the String Message that should be send to the connected Partys Server.
+	 */
 	public void pushMessage(String message) {
 		System.out.println("Attempting to push message: " + message);
 		//Check for existence of connection before attempting so send.
@@ -152,7 +166,9 @@ public class ConnectionEndpoint {
 	//------------//
 	
 	
-	//Loops non-blocking until a connection has been attempted from the outside.
+	/**Loops non-blocking until a connection has been attempted from the outside.
+	 * 
+	 */
 	public void waitForConnection() {
 		connectionExecutor.submit(() -> {
 			System.out.println(connectionID + " is beginning to wait for a ConnectionAttempt from the outside on Port " + localServerPort + "!");
@@ -166,7 +182,6 @@ public class ConnectionEndpoint {
 					System.out.println("A ConnectionRequest has been recieved at " + connectionID + "s ServerSocket on Port " + localServerPort + "!");
 					
 					//Set ServerCommmChannels
-					//serverOut = new PrintWriter(remoteClientSocket.getOutputStream(),true);
 					serverIn = new BufferedReader(new InputStreamReader(remoteClientSocket.getInputStream()));
 					waitingForConnection = false;
 					isConnected = true;
@@ -180,8 +195,8 @@ public class ConnectionEndpoint {
 					System.out.println("Recieved initial Message: " + greetingMessage);
 				
 					//Use greeting(ip:port) to establish back-connection to the ConnectionAttempt-Sources ServerSocket
-					System.out.println("Connecting back to " + greetingMessage.split(":")[0] + " at Port: " + greetingMessage.split(":")[1]);
-					localClientSocket = new Socket(greetingMessage.split(":")[0], Integer.parseInt(greetingMessage.split(":")[1]));
+					System.out.println("Connecting back to " + remoteID + " at Port: " + remotePort);
+					localClientSocket = new Socket(remoteID, remotePort);
 					clientOut = new PrintWriter(localClientSocket.getOutputStream(), true);
 				
 				
@@ -196,7 +211,10 @@ public class ConnectionEndpoint {
 		connectionExecutor.shutdown();
 	}
 		
-	//Waits until a message was received and then returns the message. Blocking.
+	/**Waits until a message was received and then returns the message. Blocking.
+	 * 
+	 * @return	returns the String of the next recieved message.
+	 */
 	public String listenForMessage() {
 		System.out.println("Waiting for Message has startet!");
 		waitingForMessage = true;
@@ -217,7 +235,11 @@ public class ConnectionEndpoint {
 		return "No message recived!";			
 	}
 	
-	//PreProcessing-step to filter out ConnectionCommands
+	/**PreProcessing-step to filter out ConnectionCommands
+	 * 
+	 * @param message	the message that was just received and should be checked for keywords.
+	 * @return	the String message after it was processed.
+	 */
 	private String preProcessMessage(String message) {
 		//Closing Message
 		if(message.split(":")[0].equals("TerminateConnection")) {
