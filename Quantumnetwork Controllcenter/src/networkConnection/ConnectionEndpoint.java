@@ -167,7 +167,7 @@ public class ConnectionEndpoint {
 	
 	
 	/**Loops non-blocking until a connection has been attempted from the outside.
-	 * 
+	 * Then it helps establish a two-way connection to the outside party.
 	 */
 	public void waitForConnection() {
 		connectionExecutor.submit(() -> {
