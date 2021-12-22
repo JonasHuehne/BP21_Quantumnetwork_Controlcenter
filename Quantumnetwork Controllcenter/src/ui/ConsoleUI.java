@@ -1,6 +1,5 @@
 package ui;
 
-import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
@@ -36,21 +35,6 @@ public class ConsoleUI {
 	private JTextField consoleInArea;
 	/** The text area for the application output (command feedback, error codes, ...)*/
 	private JTextArea consoleOutArea;
-
-	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					new ConsoleUI();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
-	}
 
 	/**
 	 * Create the application.
