@@ -9,15 +9,15 @@ import java.sql.Statement;
 import java.util.ArrayList;
 
 public class KeyStoreDbManager {
-    String dataBaseName;
-    String tableName;
+    private static final String dataBaseName = "KeyStore.db";
+    private static final String tableName = "KeyInformations";
 
 
-    /**Ist wohl schlauer das so wie du zu machen Sarah und nicht jedes mal nach dem DB Namen zu fragen... im finalen Projekt wird es ja eh nur eine geben
-     * @param dataBaseName
-     * @return
+    /**
+     *
+     * @return a new Connection to KeyStore.db
      */
-    private static Connection connect(String dataBaseName) {
+    private static Connection connect() {
         Connection con = null;
         try {
             Class.forName("org.sqlite.JDBC");
@@ -37,73 +37,48 @@ public class KeyStoreDbManager {
         return con;
     }
 
-
-    // Creates a new Database in the current project directory folder
-    // param: (String) fileName  -> fileName for the new Database
-
     /**
+     * Creates a new Database in the current project directory folder
      *
-     * @param dataBaseName
+     * @returns True if Database and table were created successfully, False otherwise
      */
-     static boolean createNewDb(String dataBaseName) {
-        boolean bool = false;
+    public static boolean createNewKeyStoreAndTable() {
 
         try {
-            Connection conn = KeyStoreDbManager.connect(dataBaseName);//DriverManager.getConnection(path);
+            Connection conn = KeyStoreDbManager.connect();
+            Statement stmnt = conn.createStatement();
 
             if (conn != null) {
                 DatabaseMetaData meta = conn.getMetaData();
-
-                //System.out.println("Driver Name is -> " + meta.getDriverName());
                 System.out.println("Database was created successfully!");
+
+                // create Table
+                String sql = "CREATE TABLE IF NOT EXISTS " + tableName +
+                        " (KeyStreamId CHAR(128) NOT NULL," +
+                        " KeyBuffer INTEGER NOT NULL, " +
+                        " Index_ INTEGER NOT NULL , " +
+                        " Source_ TEXT NOT NULL, " +
+                        " Destination TEXT NOT NULL, " +
+                        "PRIMARY KEY (KeyStreamId, Index_))";
+
+                stmnt.executeUpdate(sql);
+                System.out.println("Table creation successful!");
+                stmnt.close();
+                conn.close();
 
 
             }
-            bool = true;
+            return true;
 
         } catch (SQLException e) {
             System.out.println("Database creation failed!" + "\n");
             e.printStackTrace();
 
+            return false;
         }
-        return bool;
+
     }
 
-    /**
-     *  @param dataBaseName
-     * @param tableName
-     * @return
-     */
-    static boolean createNewTable(String dataBaseName, String tableName){
-        boolean bool = false;
-
-        try {
-            Connection conn = connect(dataBaseName);//DriverManager.getConnection(url);
-            Statement stmnt = conn.createStatement();
-
-            //SQL Statement to create new Table
-            String newTableSql  = "CREATE TABLE IF NOT EXISTS " + tableName +
-                    " (KeyStreamId CHAR(128) NOT NULL," +
-                    " KeyBuffer INTEGER NOT NULL, " +
-                    " Index_ INTEGER NOT NULL, " +
-                    " Source_ TEXT NOT NULL, " +
-                    " Destination TEXT NOT NULL, " +
-                    "PRIMARY KEY (KeyStreamId, Index_))";
-
-            stmnt.executeUpdate(newTableSql);
-            System.out.println("Table creation successful!");
-            stmnt.close();
-            conn.close();
-
-            bool = true;
-
-
-        } catch (SQLException e) {
-            System.out.println("Table creation failed!" + "\n" );
-            e.printStackTrace();
-        }
-        return bool;
-    }
 
     /**
      *
@@ -113,20 +88,13 @@ public class KeyStoreDbManager {
      * @param source
      * @param destination
      */
-     static boolean insertToDb( String dataBasename, String keyStreamID, int keyBuffer, int index, String source, String destination ){
-        boolean bool = false;
+    public static boolean insertToDb(  String keyStreamID, int keyBuffer, int index, String source, String destination ){
+
         try{
-
-
-            Connection conn = connect(dataBasename);
-            //stmnt = conn.createStatement();
+            Connection conn = connect();
 
             //wollte den sql String eig private machen
-            String sql = "INSERT INTO KeyInformations(keyStreamID, keyBuffer, index_, source_, destination)  VALUES(?,?,?,?,?)";
-
-            //"VALUES(" + "\"" + keyStreamID + "\"" +", \""+ keyBuffer + "\" , \"" +index + "\" , \"" + source + "\", \"" + destination +"\" )";
-
-            //stmnt.executeUpdate(sql);
+            String sql = "INSERT INTO KeyInformations(KeyStreamID, KeyBuffer, Index_, Source_, Destination)  VALUES(?,?,?,?,?)";
 
             PreparedStatement prepStmnt = conn.prepareStatement(sql);
 
@@ -139,31 +107,55 @@ public class KeyStoreDbManager {
             prepStmnt.executeUpdate();
             System.out.println("Insertion to DB was successful");
 
-            //stmnt.close();
-            //conn.commit();
             prepStmnt.close();
             conn.close();
 
-            bool = true;
+            return true;
         }
 
         catch (SQLException e ){
             System.out.println("Inserion to DB failed!" + "\n" );
             e.printStackTrace();
         }
-        return bool;
+        return false;
     }
+
+    /** (Api needs a function which reserves an empty KeyStreaamID, therefore we should be able to rename one by the index (i guess))
+     *
+     * @param index the index of the keyStreamID to be renamed
+     * @param newID
+     * @return
+     */
+    public static boolean updateKeyStreamID (int index, String newID) {
+        try {
+            Connection conn = connect();
+            String sql = "UPDATE " + tableName + " SET KeyStreamId = ? WHERE Index_ = ?";
+            PreparedStatement pstmnt = conn.prepareStatement(sql);
+            pstmnt.setString(1, newID);
+            pstmnt.setInt(2, index);
+            pstmnt.executeUpdate();
+
+            pstmnt.close();
+            conn.close();
+            return true;
+
+        } catch (Exception e) {
+            System.err.println("Renaming entry failed!" + "\n");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
 
     /**
      *
-     * @param dataBasename
-     * @param tableName
+     * @return True if output was displayed correctly, False otherwise
      */
-     static void selectAll(String dataBasename, String tableName){
+    static boolean selectAll(){
 
         try {
             String sql = "SELECT * FROM " + tableName;
-            Connection conn = connect(dataBasename);
+            Connection conn = connect();
             Statement stmnt = conn.createStatement();
             ResultSet result = stmnt.executeQuery(sql);
 
@@ -177,18 +169,20 @@ public class KeyStoreDbManager {
 
             stmnt.close();
             conn.close();
+            return true;
         } catch (SQLException e) {
-            System.out.println( "Selecting Everything from DB= " + dataBasename + "and Table=" + tableName + "\n" );
+            System.out.println( "Selecting Everything from KeyStore.db" + "and Table=" + tableName + "\n" );
             e.printStackTrace();
+            return false;
         }
     }
 
-     static boolean deleteEntryByID(String databaseName, String tableName, String keyStreamID){
-         boolean bool = false;
+    static boolean deleteEntryByID(String keyStreamID){
+
         try {
             String sql = "DELETE FROM " + tableName + " WHERE KeyStreamId= ?";
 
-            Connection conn = connect(databaseName);
+            Connection conn = connect();
             PreparedStatement pstmnt = conn.prepareStatement(sql);
 
             pstmnt.setString(1, keyStreamID);
@@ -198,40 +192,55 @@ public class KeyStoreDbManager {
             pstmnt.close();
             conn.close();
 
-            bool = true;
+            return true;
         }
 
         catch (SQLException e) {
             System.out.println("Entry deletion failed!" + "\n");
             e.printStackTrace();
+            return false;
         }
-        return bool;
+
     }
 
-
-    /** Nur für Testzwecke
+    /**
      *
-     * @param sqlQuery
-     * @param dataBaseName
+     * @param keyStreamID
+     * @return a new KeyStoreObject containing all the KeyInformations from the Entry with corresponding KeyStreamId
      */
-    public static void executeQuery(String sqlQuery, String dataBaseName){
+    public static KeyStoreObject getEntry(String keyStreamID) {
         try {
-            Connection conn = connect(dataBaseName);
-            Statement stmnt = conn.createStatement();
-            stmnt.executeUpdate(sqlQuery);
+            Connection conn = connect();
 
-            System.out.println("Query was Successful!");
+            String sql = "SELECT * FROM " + tableName + " WHERE KeyStreamId = " + "\"" + keyStreamID + "\"";
+
+            Statement stmnt = conn.createStatement();
+
+            ResultSet rs = stmnt.executeQuery(sql);
+
+            KeyStoreObject object = new KeyStoreObject(rs.getString("KeyStreamId"),
+                    rs.getInt("KeyBuffer"), rs.getInt("Index_"),
+                    rs.getString("Source_"), rs.getString("Destination"));
+
+            stmnt.close();
+            conn.close();
+            return object;
+
 
         } catch (SQLException e) {
             e.printStackTrace();
+            return null;
         }
     }
 
-
-    public static ArrayList<KeyStoreObject> getEntrysAsList (String dataBaseName, String tableName) {
+    /**
+     *
+     * @return a ArrayList of KeyStoreObjects which contain information about the keys currently in storage
+     */
+    public static ArrayList<KeyStoreObject> getEntrysAsList () {
         try {
             //if (connection == null || connection.isClosed()) {
-                Connection conn = connect(dataBaseName);
+            Connection conn = connect();
             //}
             String sql = "SELECT * FROM " + tableName;
             PreparedStatement stmnt = conn.prepareStatement(sql);
@@ -248,6 +257,26 @@ public class KeyStoreDbManager {
         } catch (Exception e) {
             System.err.println("Problem with query for data in CommunicationList Database (" + e.getMessage() + ")");
             return null;
+        }
+    }
+
+    /** NUR Für Testzwecke
+     *
+     * @param sqlQuery String input of a regular SQL Query (without a semicolon at the end)
+     * @return
+     */
+    public static boolean executeQuery(String sqlQuery){
+        try {
+            Connection conn = connect();
+            Statement stmnt = conn.createStatement();
+            stmnt.executeUpdate(sqlQuery);
+
+            System.out.println("Query was Successful!");
+            return true;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
     }
 

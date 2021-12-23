@@ -1,37 +1,63 @@
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class KeyStoreDbManagerTest {
 
+    //Junit 5.7
 
     @Test
-    void createNewDbAndTable_connect_insert_Test() {
+    void createNewKeyStoreAndTable() {
+        boolean bool1 = KeyStoreDbManager.createNewKeyStoreAndTable();
+        assertEquals(true, bool1);
+    }
 
-        //KeyStoreDbManager.executeQuery("DROP TABLE KeyInformations;", "test.db");
+    @Test
+    void insertToDb() {
+        boolean insertBool1 = KeyStoreDbManager.insertToDb("nurEineTestID_01", 1122334455, 1, "vonHier", "nachHier");
+        boolean insertBool2 = KeyStoreDbManager.insertToDb("nurEineTestID_02", 66778899, 2, "vonHier", "nachHier");
+        assertEquals(true, insertBool1);
+        assertEquals(true, insertBool2);
+    }
 
-        //connection() is used in every method so its indirectly tested anyways
-        KeyStoreDbManager.createNewTable("test.db", "KeyInformations");
+    @Test
+    void deleteEntryByID() {
+        boolean deleteBool = KeyStoreDbManager.deleteEntryByID("nurEineTestID_01");
 
-        KeyStoreDbManager.insertToDb("test.db", "testID_01", 666, 1, "nowhere", "here");
-        KeyStoreDbManager.insertToDb("test.db", "testID_02", 777, 2, "nowhere", "here");
-        KeyStoreDbManager.insertToDb("test.db", "testID_03", 888, 3, "nowhere", "here");
+        assertEquals(true, deleteBool);
+        boolean selectBool = KeyStoreDbManager.selectAll();
+        assertEquals(true, selectBool);
+    }
 
+    @Test
+    void updateKeyStramIDTest() {
+        boolean updateBool = KeyStoreDbManager.updateKeyStreamID(2, "komplettNeueID");
+        assertEquals(true, updateBool);
+        KeyStoreDbManager.selectAll();
+    }
 
-        KeyStoreDbManager.selectAll("test.db", "KeyInformations");
-        assertEquals(1, 1);
+    @Test
+    void getEntryTest() {
+        KeyStoreObject testObject = KeyStoreDbManager.getEntry("komplettNeueID");
+        assert testObject != null;
+        int testBuffer = testObject.getBuffer();
+        int testIndex = testObject.getIndex();
 
+        assertEquals(66778899, testBuffer);
+        assertEquals(2, testIndex);
 
     }
 
-
     @Test
-    void deleteEntrysTest() {
-        KeyStoreDbManager.deleteEntryByID("test.db", "KeyInformations", "testID_01");
-        KeyStoreDbManager.deleteEntryByID("test.db", "KeyInformations", "testID_03");
+    void getEntrysAsListTest(){
+        //kann sein, dass die untere zeile bem ersten testdurchlauf auf neuem gerät auskommentiert werden muss
+        //KeyStoreDbManager.insertToDb("NewEntryID", 1111111, 1, "nirgendwo", "TuDarmstadt");
+        ArrayList<KeyStoreObject> testList = KeyStoreDbManager.getEntrysAsList();
 
-        // Deletion of 2 out of 3 Entrys --> Only 1 Entry in Table
-        KeyStoreDbManager.selectAll("test.db", "KeyInformations");
+        int newEntryBuffer = testList.get(1).getBuffer(); // only 2 Entrys in DB
+        assertEquals(1111111, newEntryBuffer);
     }
 
 
