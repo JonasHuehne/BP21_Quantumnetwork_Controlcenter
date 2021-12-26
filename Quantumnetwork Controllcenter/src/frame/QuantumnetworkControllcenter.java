@@ -1,6 +1,8 @@
 package frame;
 
 import networkConnection.ConnectionManager;
+import ui.ConsoleUI;
+import java.awt.EventQueue;
 
 /*
  * Main Class of QuantumnetworkControllcenter
@@ -33,6 +35,18 @@ public class QuantumnetworkControllcenter {
 		System.out.println("Run QuantumnetworkControllCenter initialisation");
 		
 		initialize();
+		
+		// Launch Console UI
+		
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					ConsoleUI window = new ConsoleUI();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
 		
 		// switched workspace in Eclipse
 		
