@@ -48,12 +48,11 @@ public class KeyStoreDbManager {
             Connection conn = KeyStoreDbManager.connect();
             Statement stmnt = conn.createStatement();
 
-            if (conn != null) {
-                DatabaseMetaData meta = conn.getMetaData();
-                System.out.println("Database was created successfully!");
+            DatabaseMetaData meta = conn.getMetaData();
+            System.out.println("Database was created successfully!");
 
                 // create Table
-                String sql = "CREATE TABLE IF NOT EXISTS " + tableName +
+            String sql = "CREATE TABLE IF NOT EXISTS " + tableName +
                         " (KeyStreamId CHAR(128) NOT NULL," +
                         " KeyBuffer INTEGER NOT NULL, " +
                         " Index_ INTEGER NOT NULL , " +
@@ -61,13 +60,11 @@ public class KeyStoreDbManager {
                         " Destination TEXT NOT NULL, " +
                         "PRIMARY KEY (KeyStreamId, Index_))";
 
-                stmnt.executeUpdate(sql);
-                System.out.println("Table creation successful!");
-                stmnt.close();
-                conn.close();
+            stmnt.executeUpdate(sql);
+            System.out.println("Table creation successful!");
+            stmnt.close();
+            conn.close();
 
-
-            }
             return true;
 
         } catch (SQLException e) {
@@ -244,9 +241,8 @@ public class KeyStoreDbManager {
      */
     public static ArrayList<KeyStoreObject> getEntrysAsList () {
         try {
-            //if (connection == null || connection.isClosed()) {
             Connection conn = connect();
-            //}
+
             String sql = "SELECT * FROM " + tableName;
             PreparedStatement stmnt = conn.prepareStatement(sql);
             ResultSet rs = stmnt.executeQuery();
