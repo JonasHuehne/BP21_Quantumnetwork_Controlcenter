@@ -63,17 +63,46 @@ public class ConnectionManager {
 	 */
 	public ConnectionState getConnectionState(String ConnectionName) {
 		ConnectionEndpoint ce = getConnectionEndpoint(ConnectionName);
-		return ce.reportState();
+		if(ce != null) {
+			return ce.reportState();
+		}
+		return ConnectionState.ERROR;
 	}
 	
-	/**Closes a named connection if existing and open.
+	/**Changes the current LocalAddress to a new Value. This resets all active connectionEndpoints and closes their connections.
+	 *
+	 * @param newLocalAddress the new LocalAddress
+	 */
+	public void setLocalAddress(String newLocalAddress) {
+		System.out.println("[ConnectionManager]: Updating LocalAddress from " + localAddress + " to " + newLocalAddress + "!");
+		localAddress = newLocalAddress;
+		Connections.forEach((k,v) -> {
+			try {
+				Connections.get(k).closeConnection();
+			} catch (IOException e) {
+				System.out.println("ERROR: while updating the localAddress, the ConnectionEndpoint " + k + " did not close its connection properly!");
+				e.printStackTrace();
+			}
+		});
+		Connections.forEach((k,v) -> Connections.get(k).updateLocalAddress(localAddress));
+	}
+	
+	/**Returns the localAddress Value currently in use by all connectionEndpoints.
+	 * 
+	 * @return the current localAddress
+	 */
+	public String getLocalAddress() {
+		return localAddress;
+	}
+
+	/**Closes a named connection if existing and open. Does not destroy the connectionEndpoint, use destroyConnectionEndpoint for that.
 	 * 
 	 * @param ConnectionName	the Identifier of the intended connectionEndpoint.
 	 */
 	public void closeConnection(String ConnectionName) {
 		if(getConnectionEndpoint(ConnectionName) != null && getConnectionState(ConnectionName) == ConnectionState.Connected) {
 			try {
-				getConnectionEndpoint(ConnectionName).pushMessage("TerminateConnection:");
+				getConnectionEndpoint(ConnectionName).pushMessage("termconn:::");
 				getConnectionEndpoint(ConnectionName).closeConnection();
 			} catch (IOException e) {
 				System.out.println("A problem occured while closing down the connection of " + ConnectionName + "!");
@@ -83,5 +112,33 @@ public class ConnectionManager {
 			System.out.println("Warning: No active Connection found for Connection Endpoint " + ConnectionName + ". Aborting closing process!");
 		}
 	}
+	
+	/**Closes all connections if existing and open. Does not destroy the connectionEndpoints, use destroyAllConnectionEndpoints for that.
+	 * 
+	 */
+	public void closeAllConnections() {
+		Connections.forEach((k,v) -> closeConnection(k));
+	}
 
+	/**Completely destroys a given connectionEndpoint after shutting down its potentially active connection.
+	 * 
+	 * @param connectionID the ID of the connectionEndpoint that is no longer needed.
+	 */
+	public void destroyConnectionEndpoint(String connectionID) {
+		try {
+			System.out.println("[ConnectionManager]: Destroying ConnectionEndpoint " + connectionID);
+			Connections.get(connectionID).closeConnection();
+			Connections.remove(connectionID);
+		} catch (IOException e) {
+			System.out.println("Error while closing down Connection " + connectionID + " as part of the ConnectionEndpoints destruction.");
+			e.printStackTrace();
+		}
+	}
+	
+	/**Completely destroys all connectionEndpoints after shutting down their potentially active connections.
+	 * 
+	 */
+	public void destroyAllConnectionEndpoints() {
+		Connections.forEach((k,v) -> destroyConnectionEndpoint(k));
+	}
 }
