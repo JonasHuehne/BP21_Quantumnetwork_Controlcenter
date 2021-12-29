@@ -80,13 +80,13 @@ public class KeyStoreDbManager {
     }
 
 
-    /**
+    /** Inserts a new Entry to the DB
      *
      * @param keyStreamID reference ID to locate a key
      * @param keyBuffer array of char bytes ()
-     * @param index
-     * @param source
-     * @param destination
+     * @param index index for the new Key
+     * @param source identifier for the source application
+     * @param destination identifier for the destination application
      */
     public static boolean insertToDb(  String keyStreamID, int keyBuffer, int index, String source, String destination ){
 
@@ -120,11 +120,11 @@ public class KeyStoreDbManager {
         return false;
     }
 
-    /** (Api needs a function which reserves an empty KeyStreaamID, therefore we should be able to rename one by the index (i guess))
+    /** (Api needs a function which reserves an empty KeyStreamID, therefore we should be able to rename one by the index (i guess))
      *
      * @param index the index of the keyStreamID to be renamed
-     * @param newID
-     * @return
+     * @param newID new KeyStreamID
+     * @return True if operation was successful, False otherwise
      */
     public static boolean updateKeyStreamID (int index, String newID) {
         try {
@@ -147,7 +147,7 @@ public class KeyStoreDbManager {
     }
 
 
-    /**
+    /** Displays all entrys on the console
      *
      * @return True if output was displayed correctly, False otherwise
      */
@@ -177,6 +177,11 @@ public class KeyStoreDbManager {
         }
     }
 
+    /**
+     *
+     * @param keyStreamID the ID of the key that needs to be deleted from the DB
+     * @return True if operation was successful, False otherwise
+     */
     static boolean deleteEntryByID(String keyStreamID){
 
         try {
@@ -203,9 +208,9 @@ public class KeyStoreDbManager {
 
     }
 
-    /**
+    /** Get a new KeystoreObject by the corresponding keyStreamID
      *
-     * @param keyStreamID
+     * @param keyStreamID identifier of the key that needs to be wrapped in a KeyStoreObject
      * @return a new KeyStoreObject containing all the KeyInformations from the Entry with corresponding KeyStreamId
      */
     public static KeyStoreObject getEntry(String keyStreamID) {
@@ -233,7 +238,7 @@ public class KeyStoreDbManager {
         }
     }
 
-    /**
+    /** Stores all the Entrys of the DB in an ArrayList and returns the List
      *
      * @return a ArrayList of KeyStoreObjects which contain information about the keys currently in storage
      */
