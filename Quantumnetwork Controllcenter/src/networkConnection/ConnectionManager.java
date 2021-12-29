@@ -3,6 +3,8 @@ package networkConnection;
 import java.io.IOException;
 import java.util.*;
 
+import MessengerSystem.MessageSystem;
+
 //A class that holds any number of Connections from a local ConnectionEndpoint to another.
 public class ConnectionManager {
 	
@@ -21,6 +23,9 @@ public class ConnectionManager {
 	*/
 	public ConnectionEndpoint createNewConnectionEndpoint(String EndpointName, int serverPort) {
 		Connections.put(EndpointName, new ConnectionEndpoint(this, EndpointName, localAddress, serverPort));
+		if(Connections.size()==1) {
+			MessageSystem.setActiveConnection(EndpointName);
+		}
 		return Connections.get(EndpointName);
 	}
 	
