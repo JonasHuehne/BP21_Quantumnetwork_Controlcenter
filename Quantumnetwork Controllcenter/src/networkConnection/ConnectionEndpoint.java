@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -39,6 +40,9 @@ public class ConnectionEndpoint implements Runnable{
 	
 	private ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
 	Thread messageThread = new Thread(this, connectionID + "_messageThread");
+	
+	private static LinkedList<String> MessageStack = new LinkedList<String>();
+	private static LinkedList<String> ConfirmedMessageStack = new LinkedList<String>();
 	
 	public ConnectionEndpoint(ConnectionManager cm, String connectionName, String localAddress, int serverPort) {
 		owningConnectionManager = cm;
@@ -175,7 +179,50 @@ public class ConnectionEndpoint implements Runnable{
 		return;
 	}
 	
+	public static void addMessageToStack(String message) {
+		MessageStack.add(message);
+	}
+
+	public String readMessageFromStack() {
+		if (MessageStack.size()>0) {
+			return MessageStack.pop();
+		}
+		return "";
+	}
 	
+	public String peekMessageFromStack() {
+		if (MessageStack.size()>0) {
+			return MessageStack.peekFirst();
+		}
+		return "";
+	}
+	
+	public String peekLatestMessageFromStack() {
+		if (MessageStack.size()>0) {
+		return MessageStack.peekLast();
+		}
+		return "";
+	}
+	
+	public int sizeOfMessageStack() {
+		return MessageStack.size();
+	}
+	
+	private void registerConfirmation(String message) {
+		ConfirmedMessageStack.add(message);
+	}
+	
+	public LinkedList<String> getConfirmations(){
+		return ConfirmedMessageStack;
+	}
+	
+	public void clearConfirmation(String conf){
+		ConfirmedMessageStack.remove(conf);
+	}
+	
+	public LinkedList<String> getMessageStack(){
+		return MessageStack;
+	}
 	//------------//
 	//Server Side
 	//------------//
@@ -238,11 +285,12 @@ public class ConnectionEndpoint implements Runnable{
 	 * @param message	the message that was just received and should be checked for keywords.
 	 * @return	the String message after it was processed.
 	 */
-	private String ProcessMessage(String message) {
+	private void ProcessMessage(String message) {
 		//Closing Message
 		System.out.println("[" + connectionID + "]: Processing Message: " + message);
 		try {
 			switch(message.split(":::")[0]){
+			
 			case "connreq":
 				//Parse Greeting
 				String greetingMessage = message.split(":::")[1];
@@ -254,18 +302,28 @@ public class ConnectionEndpoint implements Runnable{
 				System.out.println("[" + connectionID + "]: Connecting back to " + remoteID + " at Port: " + remotePort);
 				localClientSocket = new Socket(remoteID, remotePort);
 				clientOut = new PrintWriter(localClientSocket.getOutputStream(), true);
-				return "";
+				return;
+				
 			case "termconn":
 				System.out.println("[" + connectionID + "]: TerminationOrder Recieved at " + connectionID + "!");
 				closeConnection();
-				return message;
+				return;
+				
+			case "msg":
+				System.out.println("[" + connectionID + "]: Recieved Message: " + message + "!");
+				addMessageToStack( message.split(":::")[1]);
+				return;
+				
 			case "confirm":
 				System.out.println("[" + connectionID + "]: Recieved Confirm-Message: " + message + "!");
+				addMessageToStack( message.split(":::")[1]);
 				pushMessage("confirmback:::" + message.split(":::")[1]);
-				return message.split(":::")[1];
+				return;
+				
 			case "confirmback":
 				System.out.println("[" + connectionID + "]: Recieved Confirm_Back-Message: " + message + "!");
-				return "";
+				registerConfirmation(message.split(":::")[1]);
+				return;
 			
 			
 		}
@@ -275,7 +333,7 @@ public class ConnectionEndpoint implements Runnable{
 			e.printStackTrace();
 		}
 				
-		return message;
+		return;
 	}
 
 	@Override
