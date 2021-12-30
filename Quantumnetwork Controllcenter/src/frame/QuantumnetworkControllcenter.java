@@ -56,7 +56,7 @@ public class QuantumnetworkControllcenter {
 		
 		conMan.createNewConnectionEndpoint("Alice", 2303);
 		conMan.createNewConnectionEndpoint("Bob", 3303);
-
+		
 		System.out.println("State of Alice: " + conMan.getConnectionEndpoint("Alice").reportState());
 		System.out.println("State of Bob: " + conMan.getConnectionEndpoint("Bob").reportState());
 		

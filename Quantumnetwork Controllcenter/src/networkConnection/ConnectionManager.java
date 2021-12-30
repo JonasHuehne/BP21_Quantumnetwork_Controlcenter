@@ -35,6 +35,8 @@ public class ConnectionManager {
 	 * @return Map<String,ConnectionEndpoint>	The Mapping containing all existing connectionEndpoints. Can be used to retrieve a CE via its Identifier.
 	 */
 	public Map<String,ConnectionEndpoint> returnAllConnections(){
+		Map<String,ConnectionEndpoint> returnConnections = new HashMap<String,ConnectionEndpoint>();
+		//TODO: return new copy, not original!
 		return Connections;
 	}
 	
@@ -144,6 +146,14 @@ public class ConnectionManager {
 	 * 
 	 */
 	public void destroyAllConnectionEndpoints() {
-		Connections.forEach((k,v) -> destroyConnectionEndpoint(k));
+		Connections.forEach((k,v) -> {
+			try {
+				Connections.get(k).closeConnection();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			});
+		Connections.clear();
 	}
 }

@@ -60,10 +60,11 @@ public static boolean sendConfirmedMessage(String message) {
 		QuantumnetworkControllcenter.conMan.sendMessage(activeConnection, "confirm:::" + message);
 		boolean waitForConfirmation = true;
 		Instant startWait = Instant.now();
+		Instant current;
 		//Wait for confirmation
 		System.out.println("[" + activeConnection + "]: Starting to wait for Message Confirmation!");
 		while(waitForConfirmation) {
-			Instant current = Instant.now();
+			current = Instant.now();
 			if(Duration.between(startWait, current).toSeconds() <= 10 && QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).getConfirmations().contains(message)) {
 				waitForConfirmation = false;
 				System.out.println("[" + activeConnection + "]: Message Confirmation recieved!");
