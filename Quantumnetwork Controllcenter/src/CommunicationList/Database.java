@@ -56,7 +56,7 @@ public class Database {
             String sql = "INSERT INTO " + tableName + "(Name, IPAddress, Port) VALUES(?, ?, ?)";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
-            stmt.setString(2, ipAddr);
+            stmt.setString(2, ipAddress);
             stmt.setInt(3, port);
             stmt.executeUpdate();
             return true;
@@ -110,20 +110,20 @@ public class Database {
         }
     }
 
-    public static boolean updateIP (String name, String ipAddr) {
     /**
      * update the IP address in an entry from the db
      * @param name the designated name of the entry to be updated as string
      * @param ipAddress the new IP address as a string
      * @return true if the update worked, false if error
      */
+    public static boolean updateIP (String name, String ipAddress) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
             String sql = "UPDATE " + tableName + " SET IPAddress = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
-            stmt.setString(1, ipAddr);
+            stmt.setString(1, ipAddress);
             stmt.setString(2, name);
             stmt.executeUpdate();
             return true;

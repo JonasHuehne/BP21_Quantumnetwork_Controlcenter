@@ -2,7 +2,7 @@ package CommunicationList;
 
 public final class DbObject {
     private final String name;
-    private final String ipAddr;
+    private final String ipAddress;
     private final int port;
 
     public DbObject (final String n, final String i, final int p) {
@@ -13,7 +13,7 @@ public final class DbObject {
      * @param p the port of the entry as int
      */
         name = n;
-        ipAddr = i;
+        ipAddress = i;
         port = p;
     }
 
@@ -29,8 +29,8 @@ public final class DbObject {
      * getter method for the ip address
      * @return the ip address of the db entry as string
      */
-    public String getIpAddr() {
-        return ipAddr;
+    public String getIpAddress() {
+        return ipAddress;
     }
 
     /**
