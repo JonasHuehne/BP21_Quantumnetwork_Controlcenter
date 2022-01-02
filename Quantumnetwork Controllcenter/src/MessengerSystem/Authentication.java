@@ -1,5 +1,6 @@
 package MessengerSystem;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Signature;
 import java.security.PublicKey;
 import java.security.PrivateKey;
@@ -54,7 +55,7 @@ public class Authentication {
      * @param message the message to be signed with the private key
      * @return the signed message as a String; null if Error
      */
-    public static byte[] sign (String message) {
+    public static String sign (String message) {
         try {
             // check if key already as key object, otherwise, use method to create from String
             if (publicKey == null) {
@@ -67,7 +68,8 @@ public class Authentication {
             byte[] msg = message.getBytes();
             signature.update(msg);
             byte[] sig = signature.sign();
-            return sig;
+            // convert signature into 'readable' string
+            return new String(Base64.getEncoder().encode(sig));
         } catch (Exception e) {
             System.err.println("Error while signing: " + e.getMessage());
             return null;
@@ -77,11 +79,11 @@ public class Authentication {
     /**
      *
      * @param message the received signed message (only text without the signature)
-     * @param receivedSignature the received signature
+     * @param receivedSignature the received signature as String
      * @param sender the sender of the message, needed to look up the public key in the communication list
      * @return true if the signature matches the message, false otherwise or if Error
      */
-    public static boolean verify (String message, byte[] receivedSignature, String sender) {
+    public static boolean verify (String message, String receivedSignature, String sender) {
         try {
             // check if key already as key object, otherwise, use method to create from String
             if (privateKey == null) {
@@ -93,8 +95,10 @@ public class Authentication {
             // convert message from String to byte array
             byte[] msg = message.getBytes();
             signature.update(msg);
+            // convert receivedSignature to byte array
+            byte[] recSig = Base64.getDecoder().decode(receivedSignature.getBytes());
             // return result of verification
-            return signature.verify(receivedSignature);
+            return signature.verify(recSig);
         } catch (Exception e) {
             System.err.println("Error while verifying: " + e.getMessage());
             return false;
