@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class AuthenticationTests {
+    // IMPORTANT: only run tests one by one. There might be problems if they interleave,
+    // as they use the same database and always add and delete the test data
 
     @Test
     public void testSign () {

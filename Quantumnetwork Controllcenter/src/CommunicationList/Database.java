@@ -1,5 +1,6 @@
 package CommunicationList;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.Statement;
@@ -13,13 +14,16 @@ public class Database {
 
     private static final String tableName = "CommunicationList";
 
-    // open connection to db
+    /**
+     * open a connection to the db
+     * @return true if it worked, false if error
+     */
     private static boolean connectToDb() {
         try{
             Class.forName("org.sqlite.JDBC");
 
             String dirPath = System.getProperty("user.dir");
-            String dbPath = "jdbc:sqlite:" + dirPath + "/CommunicationList.db";
+            String dbPath = "jdbc:sqlite:" + dirPath + File.separator + "CommunicationList.db";
             connection = DriverManager.getConnection(dbPath);
 
             Statement stmt = connection.createStatement();
@@ -30,15 +34,19 @@ public class Database {
             stmt.executeUpdate(sql);
             return true;
         } catch (Exception e) {
-            System.err.println("Problem connecting to CommunicationList Database(" + e.getMessage() + ")");
+            System.err.println("Problem connecting to the CommunicationList Database(" + e.getMessage() + ")");
             return false;
         }
     }
 
-    // insert a new entry in the db
-    // input: Name (String), IP Address (String), Port (int)
-    // output: true, if the insert worked
     public static boolean insert (String name, String ipAddr, int port) {
+    /**
+     * insert a new entry into the db
+     * @param name the designated name of the communication partner as a string
+     * @param ipAddress the ip address of the communication partner as a string
+     * @param port the port as an int
+     * @return true if the insert worked, false if error
+     */
         try {
             if (connection == null || connection.isClosed()) {
                 if(!connectToDb()) {
@@ -53,14 +61,16 @@ public class Database {
             stmt.executeUpdate();
             return true;
         } catch (Exception e) {
-            System.err.println("Problem with inserting data in CommunicationList Database (" + e.getMessage() + ")");
+            System.err.println("Problem with inserting data in the CommunicationList Database (" + e.getMessage() + ")");
             return false;
         }
     }
 
-    // delete an entry from the db
-    // input: Name (String) of the entry to delete
-    // output: true, if the delete worked
+    /**
+     * delete an entry from the db
+     * @param name the designated name of the entry to be deleted as a String
+     * @return true if the deleting worked, false if error
+     */
     public static boolean delete (String name) {
         try {
             if (connection == null || connection.isClosed()) {
@@ -72,14 +82,17 @@ public class Database {
             stmt.executeUpdate();
             return true;
         } catch (Exception e) {
-            System.err.println("Problem with deleting data from CommunicationList Database (" + e.getMessage() + ")");
+            System.err.println("Problem with deleting data from the CommunicationList Database (" + e.getMessage() + ")");
             return false;
         }
     }
 
-    // update the name in an entry from the db
-    // input: oldName (String) of the entry to update, newName (String)
-    // output: true, if the update worked
+    /**
+     * update the designated name of an entry in the db
+     * @param oldName the former name as a string
+     * @param newName the new name as a string
+     * @return true if the update worked, false if error
+     */
     public static boolean updateName (String oldName, String newName) {
         try {
             if (connection == null || connection.isClosed()) {
@@ -92,15 +105,18 @@ public class Database {
             stmt.executeUpdate();
             return true;
         } catch (Exception e) {
-            System.err.println("Problem with updating data in CommunicationList Database (" + e.getMessage() + ")");
+            System.err.println("Problem with updating data in the CommunicationList Database (" + e.getMessage() + ")");
             return false;
         }
     }
 
-    // update the IP address in an entry from the db
-    // input: Name (String) of the entry to update, the new IP address (String)
-    // output: true, if the update worked
     public static boolean updateIP (String name, String ipAddr) {
+    /**
+     * update the IP address in an entry from the db
+     * @param name the designated name of the entry to be updated as string
+     * @param ipAddress the new IP address as a string
+     * @return true if the update worked, false if error
+     */
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -112,14 +128,17 @@ public class Database {
             stmt.executeUpdate();
             return true;
         } catch (Exception e) {
-            System.err.println("Problem with updating data in CommunicationList Database (" + e.getMessage() + ")");
+            System.err.println("Problem with updating data in the CommunicationList Database (" + e.getMessage() + ")");
             return false;
         }
     }
 
-    // update the name in an entry from the db
-    // input: Name (String) of the entry to update, the new port (int)
-    // output: true, if the update worked
+    /**
+     * update the port of an entry from the db
+     * @param name the designated name of the entry to be updated as string
+     * @param port the new port as an int
+     * @return true if the update worked, false if error
+     */
     public static boolean updatePort (String name, int port) {
         try {
             if (connection == null || connection.isClosed()) {
@@ -132,14 +151,16 @@ public class Database {
             stmt.executeUpdate();
             return true;
         } catch (Exception e) {
-            System.err.println("Problem with updating data in CommunicationList Database (" + e.getMessage() + ")");
+            System.err.println("Problem with updating data in the CommunicationList Database (" + e.getMessage() + ")");
             return false;
         }
     }
 
-    // query one entry by name
-    // input: Name (String) of the entry to return
-    // output: a DbObject with the data; if error or not there: null
+    /**
+     * query one entry from the db by name
+     * @param name the designated name of the entry to return as string
+     * @return a DbObject with the date of the entry, null if error
+     */
     public static DbObject query (String name) {
         try {
             if (connection == null || connection.isClosed()) {
@@ -152,14 +173,15 @@ public class Database {
             return new DbObject(rs.getString("Name"),
                     rs.getString("IPAddress"), rs.getInt("Port"));
         } catch (Exception e) {
-            System.err.println("Problem with query for data in CommunicationList Database (" + e.getMessage() + ")");
+            System.err.println("Problem with query for data in the CommunicationList Database (" + e.getMessage() + ")");
             return null;
         }
     }
 
-    // query all entries in the database
-    // input: none
-    // output: ArrayList of DbObjects of all entries in the database; if error or none: null
+    /**
+     * query all entries in the db
+     * @return ArrayList of DbObjects for all entries in the database, null if error
+     */
     public static ArrayList<DbObject> queryAll () {
         try {
             if (connection == null || connection.isClosed()) {
@@ -176,7 +198,7 @@ public class Database {
             }
             return result;
         } catch (Exception e) {
-            System.err.println("Problem with query for data in CommunicationList Database (" + e.getMessage() + ")");
+            System.err.println("Problem with query for data in the CommunicationList Database (" + e.getMessage() + ")");
             return null;
         }
     }

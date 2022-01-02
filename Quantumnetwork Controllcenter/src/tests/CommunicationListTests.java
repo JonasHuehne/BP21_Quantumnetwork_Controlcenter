@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CommunicationListTests {
+    // IMPORTANT: only run tests one by one. There will be problems if they interleave,
+    // as they use the same database and always add and delete the test data
 
     @Test
     public void testInsertDelete() {
