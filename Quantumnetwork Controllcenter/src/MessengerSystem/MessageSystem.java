@@ -125,16 +125,28 @@ public static LinkedList<String> getAllReceivedMessages(){
 	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).getMessageStack();
 }
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+	public static boolean sendAuthenticatedMessage(String message) {
+		String signature = Authentication.sign(message);
+		boolean res1 = sendConfirmedMessage(message);
+		boolean res2 = sendConfirmedMessage(signature);
+		return (res1 && res2);
+	}
+
+	public static String readAuthenticatedMessage() {
+		Instant startWait = Instant.now();
+		while(getNumberOfPendingMessages() < 2) {
+			Instant current = Instant.now();
+			if(Duration.between(startWait, current).toSeconds() > 10) {
+				return null;
+			}
+		}
+		String message = readRecievedMessage();
+		String signature = readRecievedMessage();
+		if(Authentication.verify(message, signature, getActiveConnection())) {
+			return message;
+		}
+		return null;
+	}
 
 }
