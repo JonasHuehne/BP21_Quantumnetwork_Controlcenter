@@ -4,17 +4,20 @@ public final class DbObject {
     private final String name;
     private final String ipAddress;
     private final int port;
+    private final String signatureKey;
 
-    public DbObject (final String n, final String i, final int p) {
     /**
      * constructor for DbObject, sets all the final variables
      * @param n the name of the entry as string
      * @param i the ip address of the entry as string
      * @param p the port of the entry as int
+     * @param s the signature key of the entry as string
      */
+    public DbObject (final String n, final String i, final int p, final String s) {
         name = n;
         ipAddress = i;
         port = p;
+        signatureKey = s;
     }
 
     /**
@@ -39,5 +42,13 @@ public final class DbObject {
      */
     public int getPort() {
         return port;
+    }
+
+    /**
+     * getter method for the signature key
+     * @return the signature key of the db entry as string
+     */
+    public String getSignatureKey () {
+        return signatureKey;
     }
 }

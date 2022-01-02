@@ -30,7 +30,8 @@ public class Database {
             String sql = "CREATE TABLE IF NOT EXISTS " + tableName
                     + "(ID INTEGER PRIMARY KEY AUTOINCREMENT, "
                     + "Name VARCHAR(255) UNIQUE, IPAddress VARCHAR(255),  "
-                    + "Port INTEGER);";
+                    + "Port INTEGER, "
+                    + "SignatureKey VARCHAR(2047));";
             stmt.executeUpdate(sql);
             return true;
         } catch (Exception e) {
@@ -39,25 +40,27 @@ public class Database {
         }
     }
 
-    public static boolean insert (String name, String ipAddr, int port) {
     /**
      * insert a new entry into the db
      * @param name the designated name of the communication partner as a string
      * @param ipAddress the ip address of the communication partner as a string
      * @param port the port as an int
+     * @param signatureKey the public signature key as a string
      * @return true if the insert worked, false if error
      */
+    public static boolean insert (String name, String ipAddress, int port, String signatureKey) {
         try {
             if (connection == null || connection.isClosed()) {
                 if(!connectToDb()) {
                     return false;
                 }
             }
-            String sql = "INSERT INTO " + tableName + "(Name, IPAddress, Port) VALUES(?, ?, ?)";
+            String sql = "INSERT INTO " + tableName + "(Name, IPAddress, Port, SignatureKey) VALUES(?, ?, ?, ?)";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             stmt.setString(2, ipAddress);
             stmt.setInt(3, port);
+            stmt.setString(4, signatureKey);
             stmt.executeUpdate();
             return true;
         } catch (Exception e) {
@@ -157,6 +160,29 @@ public class Database {
     }
 
     /**
+     * update the signature key of an entry from the db
+     * @param name the designated name of the entry to be updated as string
+     * @param signatureKey the new signatureKey as a string
+     * @return true if the update worked, false if error
+     */
+    public static boolean updateSignatureKey (String name, String signatureKey) {
+        try {
+            if (connection == null || connection.isClosed()) {
+                connectToDb();
+            }
+            String sql = "UPDATE " + tableName + " SET SignatureKey = ? WHERE Name = ?";
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setString(1, signatureKey);
+            stmt.setString(2, name);
+            stmt.executeUpdate();
+            return true;
+        } catch (Exception e) {
+            System.err.println("Problem with updating data in the CommunicationList Database (" + e.getMessage() + ")");
+            return false;
+        }
+    }
+
+    /**
      * query one entry from the db by name
      * @param name the designated name of the entry to return as string
      * @return a DbObject with the date of the entry, null if error
@@ -166,12 +192,12 @@ public class Database {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "SELECT Name, IPAddress, Port FROM " + tableName + " WHERE Name = ?";
+            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + tableName + " WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
-            return new DbObject(rs.getString("Name"),
-                    rs.getString("IPAddress"), rs.getInt("Port"));
+            return new DbObject(rs.getString("Name"), rs.getString("IPAddress"),
+                    rs.getInt("Port"), rs.getString("SignatureKey"));
         } catch (Exception e) {
             System.err.println("Problem with query for data in the CommunicationList Database (" + e.getMessage() + ")");
             return null;
@@ -187,13 +213,13 @@ public class Database {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "SELECT Name, IPAddress, Port FROM " + tableName;
+            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + tableName;
             PreparedStatement stmt = connection.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
             ArrayList<DbObject> result = new ArrayList<>();
             while(rs.next()) {
-                DbObject res = new DbObject(rs.getString("Name"),
-                        rs.getString("IPAddress"), rs.getInt("Port"));
+                DbObject res = new DbObject(rs.getString("Name"), rs.getString("IPAddress"),
+                        rs.getInt("Port"), rs.getString("SignatureKey"));
                 result.add(res);
             }
             return result;

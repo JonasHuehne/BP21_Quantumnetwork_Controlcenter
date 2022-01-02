@@ -1,6 +1,7 @@
 package MessengerSystem;
 
-import java.nio.charset.StandardCharsets;
+import CommunicationList.Database;
+
 import java.security.Signature;
 import java.security.PublicKey;
 import java.security.PrivateKey;
@@ -39,7 +40,8 @@ public class Authentication {
             "HgtinT2wvAMGuyzkAXSZa8Z40KjmX2xyj6PdU9fjwVWkBaGkotMDGZTKbMGVMn3v" +
             "7GsDvWQxXiWgc7Q7Z3UT0fSLAS8rUqVBt3S2jhy8Fk/v3LrG2ACyHkysZ/Qu89Wq" +
             "6XSXtbgS25DXTFOCCU6UJPk=";
-    private static final String publicKeyString =
+    // TODO: temp public for dev and tests
+    public static final String publicKeyString =
             "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt9pZR4JMWTwXY6fVrDc9" +
             "RbGLmNMtf7I2nBQ05TlIsOAcVcHO5qfGWZePjMp8md9fIqGl7Iam0T3SlU6W5K8H" +
             "jO2z4IRexMbqkDKmV7sUjdqaj5ldYGofNgYgCg010vTBxqOe9YZJSOgYEg3tx6f6" +
@@ -47,8 +49,8 @@ public class Authentication {
             "M5E1owFHwqiB6mq8XJ/rB8pf4YBjYz9H3hYXqunnRmA0g/IYIMuFOYwwt2I1umzd" +
             "hbnFxN5BYFNTARaaV8dajLixgWkatdFPy3TkVoe5dpaIYunKqHyqjRAyScxUxj8e" +
             "AwIDAQAB";
-    private static PrivateKey privateKey;
-    private static PublicKey publicKey;
+    //private static PrivateKey privateKey;
+    //private static PublicKey publicKey;
 
     /**
      *
@@ -57,12 +59,10 @@ public class Authentication {
      */
     public static String sign (String message) {
         try {
-            // check if key already as key object, otherwise, use method to create from String
-            if (publicKey == null) {
-                getKeysFromString();
-            }
             Signature signature = Signature.getInstance("SHA256withRSA");
             // for now: static private key for dev and tests
+            // get PrivateKey object from String
+            PrivateKey privateKey = getPrivateKeyFromString(privateKeyString);
             signature.initSign(privateKey);
             // convert message from String to byte array
             byte[] msg = message.getBytes();
@@ -85,12 +85,13 @@ public class Authentication {
      */
     public static boolean verify (String message, String receivedSignature, String sender) {
         try {
-            // check if key already as key object, otherwise, use method to create from String
-            if (privateKey == null) {
-                getKeysFromString();
-            }
+            // get a PrivateKey object from the key string
+            getPrivateKeyFromString(privateKeyString);
             Signature signature = Signature.getInstance("SHA256withRSA");
-            // for now: static public key for dev and tests
+            // get public key of sender from the db
+            String pubKey = Database.query(sender).getSignatureKey();
+            // get PublicKey object from String
+            PublicKey publicKey = getPublicKeyFromString(pubKey);
             signature.initVerify(publicKey);
             // convert message from String to byte array
             byte[] msg = message.getBytes();
@@ -105,13 +106,32 @@ public class Authentication {
         }
     }
 
-    // used to generate a PrivateKey Object and a PublicKey from a String Object
-    // not sure if needed later, depends on how it is saved in the db
-    private static void getKeysFromString () throws Exception {
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-        PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(privateKeyString));
-        X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(publicKeyString));
-        privateKey = kf.generatePrivate(privateKeySpec);
-        publicKey = kf.generatePublic(publicKeySpec);
+    /**
+     * method to generate a PublicKey object from a matching String
+     * @param key the key as a string
+     * @return the key as a PublicKey object, null if error
+     */
+    private static PublicKey getPublicKeyFromString (String key) {
+        try {
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(key));
+            return kf.generatePublic(publicKeySpec);
+        } catch (Exception e) {
+            System.err.println("Error while creating a public key from the input string: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // used to generate a PrivateKey Object from a String
+    // not sure if needed later, depends on how and where  it is saved
+    private static PrivateKey getPrivateKeyFromString (String key) {
+        try {
+            KeyFactory kf = KeyFactory.getInstance("RSA");
+            PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(key));
+            return kf.generatePrivate(privateKeySpec);
+        } catch (Exception e) {
+            System.err.println("Error while creating a private key from the input string: " + e.getMessage());
+            return null;
+        }
     }
 }

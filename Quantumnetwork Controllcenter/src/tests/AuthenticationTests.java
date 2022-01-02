@@ -1,5 +1,6 @@
 package tests;
 
+import CommunicationList.Database;
 import MessengerSystem.Authentication;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -17,17 +18,21 @@ public class AuthenticationTests {
     @Test
     // only testable, if testSign worked
     public void testVerifyTrue () {
+        Database.insert("self", "127.0.0.0", 2303, Authentication.publicKeyString);
         String signature = Authentication.sign("Hello");
         boolean result = Authentication.verify("Hello", signature, "self");
         Assertions.assertTrue(result);
+        Database.delete("self");
     }
 
     @Test
     // only testable, if testSign worked
     public void testVerifyFalse () {
+        Database.insert("self", "127.0.0.0", 2303, Authentication.publicKeyString);
         String signature = Authentication.sign("Hello");
         boolean result = Authentication.verify("Hallo", signature, "self");
         Assertions.assertFalse(result);
+        Database.delete("self");
     }
 
 }
