@@ -14,18 +14,39 @@ public class CommandParser {
 	 * individual commands the arguments may be case sensitive.
 	 * @param input
 	 * 		The input String to find a matching command for. <p>
-	 * 		Any amount of whitespaces will be treated as one whitespace, leading and trailing whitespaces will be ignored
+	 * 		Any amount of whitespaces will be treated as one whitespace, leading and trailing whitespaces will be ignored.
 	 * @return 
 	 * 		Returns the Command matching the input String, or null if no such Command exists. <p>
 	 * 		e.g. for "help" this method returns {@link #HELP}, and for "kdjnvusdn" it returns null. <p>
 	 * 		If the input is null, null is returned.
 	 */
-	public static Command match(String input) {
+	public static Command match(String input) { // TODO: This needs a better name and javadoc
 		String normedInput = normInput(input);	
 		if (normedInput == null) return null;
 		for (Command command : Command.values()) {
 			if(Pattern.matches(command.getCommandPattern(), normedInput)) {	
 				return command;
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * For a given text command (String) this method finds the {@link Command} whose name matches the text command. <p>
+	 * @param commandName
+	 * 		The string to check
+	 * 		Not case sensitive. <p>
+	 * 		Any amount of whitespaces will be treated as one whitespace, leading and trailing whitespaces will be ignored. 
+	 * @return
+	 * 		The Command with the name given by <b>commandName</b>.
+	 * 		null if there is no such command, or if commandName is null
+	 */
+	public static Command getCommandOfName(String commandName) {
+		if (commandName == null) return null;
+		String normedLowerCaseCommandName = normInput(commandName).toLowerCase();
+		for(Command c : Command.values()) {
+			if(normedLowerCaseCommandName.equals(c.getCommandName())) {
+				return c;
 			}
 		}
 		return null;
