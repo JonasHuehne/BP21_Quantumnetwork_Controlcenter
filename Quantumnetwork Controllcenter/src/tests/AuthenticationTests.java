@@ -25,7 +25,7 @@ class AuthenticationTests {
     @Test
     // only testable, if signing works
     void testVerifyTrue () {
-        Database.insert("self", "127.0.0.0", 2303, Authentication.publicKeyString);
+        Database.insert("self", "127.0.0.0", 2303, Authentication.readPublicKeyStringFromFile("public_key.pem"));
         String signature = Authentication.sign("Hello");
         boolean result = Authentication.verify("Hello", signature, "self");
         Assertions.assertTrue(result);
@@ -35,7 +35,7 @@ class AuthenticationTests {
     @Test
     // only testable, if signing works
     void testVerifyFalse () {
-        Database.insert("self", "127.0.0.0", 2303, Authentication.publicKeyString);
+        Database.insert("self", "127.0.0.0", 2303, Authentication.readPublicKeyStringFromFile("public_key.pem"));
         String signature = Authentication.sign("Hello");
         boolean result = Authentication.verify("Hallo", signature, "self");
         Assertions.assertFalse(result);
@@ -53,7 +53,7 @@ class AuthenticationTests {
                 "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                 "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                 "1QIDAQAB";
-        Database.insert("self", "127.0.0.0", 2303, Authentication.publicKeyString);
+        Database.insert("self", "127.0.0.0", 2303, Authentication.readPublicKeyStringFromFile("public_key.pem"));
         Database.insert("other", "128.0.0.0", 2505, otherPublicKeyString);
         String signature = Authentication.sign("Hello");
         boolean result = Authentication.verify("Hello", signature, "other");
@@ -73,7 +73,7 @@ class AuthenticationTests {
                 "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                 "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                 "1QIDAQAB";
-        Database.insert("Alice", "127.0.0.0", 2303, Authentication.publicKeyString);
+        Database.insert("Alice", "127.0.0.0", 2303, Authentication.readPublicKeyStringFromFile("public_key.pem"));
         Database.insert("Bob", "127.0.0.0", 3303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
@@ -86,6 +86,7 @@ class AuthenticationTests {
         MessageSystem.setActiveConnection("Bob");
         boolean result = MessageSystem.sendAuthenticatedMessage("Hello");
         Assertions.assertTrue(result);
+
         Database.delete("Alice");
         Database.delete("Bob");
     }
@@ -101,7 +102,7 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        Database.insert("Alice", "127.0.0.0", 2303, Authentication.publicKeyString);
+        Database.insert("Alice", "127.0.0.0", 2303, Authentication.readPublicKeyStringFromFile("public_key.pem"));
         Database.insert("Bob", "127.0.0.0", 3303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
@@ -133,7 +134,7 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        Database.insert("Alice", "127.0.0.0", 2303, Authentication.publicKeyString);
+        Database.insert("Alice", "127.0.0.0", 2303, Authentication.readPublicKeyStringFromFile("public_key.pem"));
         Database.insert("Bob", "127.0.0.0", 3303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
