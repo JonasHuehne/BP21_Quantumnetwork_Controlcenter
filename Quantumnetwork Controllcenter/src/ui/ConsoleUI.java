@@ -63,6 +63,8 @@ public class ConsoleUI {
 		
 		// Output area containing result of computing the command
 		consoleOutArea = new JTextArea();
+		consoleOutArea.setLineWrap(true);
+		consoleOutArea.setWrapStyleWord(true);
 		consoleOutArea.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
