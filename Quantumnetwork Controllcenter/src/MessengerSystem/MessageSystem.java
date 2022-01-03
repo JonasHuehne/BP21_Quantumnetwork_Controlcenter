@@ -152,8 +152,8 @@ public static LinkedList<String> getAllReceivedMessages(){
 				return null;
 			}
 		}
-		String message = readRecievedMessage();
-		String signature = readRecievedMessage();
+		String message = readReceivedMessage();
+		String signature = readReceivedMessage();
 		if(Authentication.verify(message, signature, getActiveConnection())) {
 			return message;
 		}

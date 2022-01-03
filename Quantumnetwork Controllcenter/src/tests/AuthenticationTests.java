@@ -7,6 +7,8 @@ import frame.QuantumnetworkControllcenter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+
 /**
  * class for automated tests for the authentication
  */
@@ -64,7 +66,7 @@ class AuthenticationTests {
 
     @Test
     // only realistically testable if signing and sending of messages work
-    void testLocalSendAuthenticatedMessage () {
+    void testLocalSendAuthenticatedMessage () throws IOException {
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                 "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -81,7 +83,7 @@ class AuthenticationTests {
         QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Bob", 3303);
 
         QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Bob").waitForConnection();
-        QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").EstablishConnection("127.0.0.0", 3303);
+        QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.0", 3303);
 
         MessageSystem.setActiveConnection("Bob");
         boolean result = MessageSystem.sendAuthenticatedMessage("Hello");
@@ -93,7 +95,7 @@ class AuthenticationTests {
 
     @Test
     // only realistically testable if signing, verifying, sending and receiving of messages work
-    void testLocalReceiveAuthenticatedMessage () {
+    void testLocalReceiveAuthenticatedMessage () throws IOException {
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                         "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -110,7 +112,7 @@ class AuthenticationTests {
         QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Bob", 3303);
 
         QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Bob").waitForConnection();
-        QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").EstablishConnection("127.0.0.0", 3303);
+        QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.0", 3303);
 
         MessageSystem.setActiveConnection("Bob");
         MessageSystem.sendAuthenticatedMessage("Hello, how are you?");
@@ -125,7 +127,7 @@ class AuthenticationTests {
 
     @Test
     // only realistically testable if signing, verifying, sending and receiving of messages work
-    void testFalseLocalAuthenticatedMessage () {
+    void testFalseLocalAuthenticatedMessage () throws IOException {
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                         "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -142,7 +144,7 @@ class AuthenticationTests {
         QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Bob", 3303);
 
         QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Bob").waitForConnection();
-        QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").EstablishConnection("127.0.0.0", 3303);
+        QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.0", 3303);
 
         MessageSystem.setActiveConnection("Alice");
         MessageSystem.sendAuthenticatedMessage("Hello");
