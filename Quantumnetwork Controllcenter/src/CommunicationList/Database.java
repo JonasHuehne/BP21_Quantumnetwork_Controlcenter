@@ -8,6 +8,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 
+/**
+ * Class to handle interaction with the communication list db
+ */
 public class Database {
 
     private static Connection connection;
@@ -33,6 +36,7 @@ public class Database {
                     + "Port INTEGER, "
                     + "SignatureKey VARCHAR(2047));";
             stmt.executeUpdate(sql);
+            stmt.close();
             return true;
         } catch (Exception e) {
             System.err.println("Problem connecting to the CommunicationList Database(" + e.getMessage() + ")");
@@ -48,12 +52,10 @@ public class Database {
      * @param signatureKey the public signature key as a string
      * @return true if the insert worked, false if error
      */
-    public static boolean insert (String name, String ipAddress, int port, String signatureKey) {
+    public static boolean insert (final String name, final String ipAddress, final int port, final String signatureKey) {
         try {
-            if (connection == null || connection.isClosed()) {
-                if(!connectToDb()) {
-                    return false;
-                }
+            if ((connection == null || connection.isClosed()) && !connectToDb()) {
+                return false;
             }
             String sql = "INSERT INTO " + tableName + "(Name, IPAddress, Port, SignatureKey) VALUES(?, ?, ?, ?)";
             PreparedStatement stmt = connection.prepareStatement(sql);
@@ -62,6 +64,7 @@ public class Database {
             stmt.setInt(3, port);
             stmt.setString(4, signatureKey);
             stmt.executeUpdate();
+            stmt.close();
             return true;
         } catch (Exception e) {
             System.err.println("Problem with inserting data in the CommunicationList Database (" + e.getMessage() + ")");
@@ -74,7 +77,7 @@ public class Database {
      * @param name the designated name of the entry to be deleted as a String
      * @return true if the deleting worked, false if error
      */
-    public static boolean delete (String name) {
+    public static boolean delete (final String name) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -83,6 +86,7 @@ public class Database {
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             stmt.executeUpdate();
+            stmt.close();
             return true;
         } catch (Exception e) {
             System.err.println("Problem with deleting data from the CommunicationList Database (" + e.getMessage() + ")");
@@ -96,7 +100,7 @@ public class Database {
      * @param newName the new name as a string
      * @return true if the update worked, false if error
      */
-    public static boolean updateName (String oldName, String newName) {
+    public static boolean updateName (final String oldName, final String newName) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -106,6 +110,7 @@ public class Database {
             stmt.setString(1, newName);
             stmt.setString(2, oldName);
             stmt.executeUpdate();
+            stmt.close();
             return true;
         } catch (Exception e) {
             System.err.println("Problem with updating data in the CommunicationList Database (" + e.getMessage() + ")");
@@ -119,7 +124,7 @@ public class Database {
      * @param ipAddress the new IP address as a string
      * @return true if the update worked, false if error
      */
-    public static boolean updateIP (String name, String ipAddress) {
+    public static boolean updateIP (final String name, final String ipAddress) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -129,6 +134,7 @@ public class Database {
             stmt.setString(1, ipAddress);
             stmt.setString(2, name);
             stmt.executeUpdate();
+            stmt.close();
             return true;
         } catch (Exception e) {
             System.err.println("Problem with updating data in the CommunicationList Database (" + e.getMessage() + ")");
@@ -142,7 +148,7 @@ public class Database {
      * @param port the new port as an int
      * @return true if the update worked, false if error
      */
-    public static boolean updatePort (String name, int port) {
+    public static boolean updatePort (final String name, final int port) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -152,6 +158,7 @@ public class Database {
             stmt.setInt(1, port);
             stmt.setString(2, name);
             stmt.executeUpdate();
+            stmt.close();
             return true;
         } catch (Exception e) {
             System.err.println("Problem with updating data in the CommunicationList Database (" + e.getMessage() + ")");
@@ -165,7 +172,7 @@ public class Database {
      * @param signatureKey the new signatureKey as a string
      * @return true if the update worked, false if error
      */
-    public static boolean updateSignatureKey (String name, String signatureKey) {
+    public static boolean updateSignatureKey (final String name, final String signatureKey) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -175,6 +182,7 @@ public class Database {
             stmt.setString(1, signatureKey);
             stmt.setString(2, name);
             stmt.executeUpdate();
+            stmt.close();
             return true;
         } catch (Exception e) {
             System.err.println("Problem with updating data in the CommunicationList Database (" + e.getMessage() + ")");
@@ -187,7 +195,7 @@ public class Database {
      * @param name the designated name of the entry to return as string
      * @return a DbObject with the date of the entry, null if error
      */
-    public static DbObject query (String name) {
+    public static DbObject query (final String name) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -196,8 +204,11 @@ public class Database {
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
-            return new DbObject(rs.getString("Name"), rs.getString("IPAddress"),
+            DbObject result = new DbObject(rs.getString("Name"), rs.getString("IPAddress"),
                     rs.getInt("Port"), rs.getString("SignatureKey"));
+            rs.close();
+            stmt.close();
+            return result;
         } catch (Exception e) {
             System.err.println("Problem with query for data in the CommunicationList Database (" + e.getMessage() + ")");
             return null;
@@ -222,6 +233,8 @@ public class Database {
                         rs.getInt("Port"), rs.getString("SignatureKey"));
                 result.add(res);
             }
+            rs.close();
+            stmt.close();
             return result;
         } catch (Exception e) {
             System.err.println("Problem with query for data in the CommunicationList Database (" + e.getMessage() + ")");

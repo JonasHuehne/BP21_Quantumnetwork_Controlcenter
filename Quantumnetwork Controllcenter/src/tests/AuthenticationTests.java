@@ -7,19 +7,24 @@ import frame.QuantumnetworkControllcenter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class AuthenticationTests {
+/**
+ * class for automated tests for the authentication
+ */
+class AuthenticationTests {
     // IMPORTANT: only run tests one by one. There might be problems if they interleave,
-    // as they use the same database and always add and delete the test data
+    // as they use the same database and always add and delete the test data.
+    // Additionally, if they fail, you might need to make everything in the test above the first delete line a comment,
+    // run the test again, delete do uncomment the rest, and then run the test again.
 
     @Test
-    public void testSign () {
+    void testSign () {
         String result = Authentication.sign("Hello");
         Assertions.assertNotNull(result);
     }
 
     @Test
     // only testable, if signing works
-    public void testVerifyTrue () {
+    void testVerifyTrue () {
         Database.insert("self", "127.0.0.0", 2303, Authentication.publicKeyString);
         String signature = Authentication.sign("Hello");
         boolean result = Authentication.verify("Hello", signature, "self");
@@ -29,7 +34,7 @@ public class AuthenticationTests {
 
     @Test
     // only testable, if signing works
-    public void testVerifyFalse () {
+    void testVerifyFalse () {
         Database.insert("self", "127.0.0.0", 2303, Authentication.publicKeyString);
         String signature = Authentication.sign("Hello");
         boolean result = Authentication.verify("Hallo", signature, "self");
@@ -39,7 +44,7 @@ public class AuthenticationTests {
 
     @Test
     // only testable, if signing works
-    public void testVerifyFalse2 () {
+    void testVerifyFalse2 () {
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                 "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -59,7 +64,7 @@ public class AuthenticationTests {
 
     @Test
     // only realistically testable if signing and sending of messages work
-    public void testLocalSendAuthenticatedMessage () {
+    void testLocalSendAuthenticatedMessage () {
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                 "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -81,11 +86,13 @@ public class AuthenticationTests {
         MessageSystem.setActiveConnection("Bob");
         boolean result = MessageSystem.sendAuthenticatedMessage("Hello");
         Assertions.assertTrue(result);
+        Database.delete("Alice");
+        Database.delete("Bob");
     }
 
     @Test
     // only realistically testable if signing, verifying, sending and receiving of messages work
-    public void testLocalReceiveAuthenticatedMessage () {
+    void testLocalReceiveAuthenticatedMessage () {
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                         "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -117,7 +124,7 @@ public class AuthenticationTests {
 
     @Test
     // only realistically testable if signing, verifying, sending and receiving of messages work
-    public void testFalseLocalAuthenticatedMessage () {
+    void testFalseLocalAuthenticatedMessage () {
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                         "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +

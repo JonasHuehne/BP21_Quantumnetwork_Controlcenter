@@ -10,6 +10,9 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
+/**
+ * class providing the methods necessary for authentication
+ */
 public class Authentication {
 
     // temporary plain text keys for development and tests
@@ -57,7 +60,7 @@ public class Authentication {
      * @param message the message to be signed with the private key
      * @return the signed message as a String; null if Error
      */
-    public static String sign (String message) {
+    public static String sign (final String message) {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
             // for now: static private key for dev and tests
@@ -83,10 +86,8 @@ public class Authentication {
      * @param sender the sender of the message, needed to look up the public key in the communication list
      * @return true if the signature matches the message, false otherwise or if Error
      */
-    public static boolean verify (String message, String receivedSignature, String sender) {
+    public static boolean verify (final String message, final String receivedSignature, final String sender) {
         try {
-            // get a PrivateKey object from the key string
-            getPrivateKeyFromString(privateKeyString);
             Signature signature = Signature.getInstance("SHA256withRSA");
             // get public key of sender from the db
             String pubKey = Database.query(sender).getSignatureKey();
@@ -111,7 +112,7 @@ public class Authentication {
      * @param key the key as a string
      * @return the key as a PublicKey object, null if error
      */
-    private static PublicKey getPublicKeyFromString (String key) {
+    private static PublicKey getPublicKeyFromString (final String key) {
         try {
             KeyFactory kf = KeyFactory.getInstance("RSA");
             X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(key));

@@ -1,5 +1,8 @@
 package CommunicationList;
 
+/**
+ * class for bundling information of a sb entry in the communication list
+ */
 public final class DbObject {
     private final String name;
     private final String ipAddress;

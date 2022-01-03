@@ -7,12 +7,17 @@ import java.util.ArrayList;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-public class CommunicationListTests {
+/**
+ * automated tests for interacting with the communication list db
+ */
+class CommunicationListTests {
     // IMPORTANT: only run tests one by one. There will be problems if they interleave,
-    // as they use the same database and always add and delete the test data
+    // as they use the same database and always add and delete the test data.
+    // Additionally, if they fail, you might need to make everything in the test above the first delete line a comment,
+    // run the test again, delete do uncomment the rest, and then run the test again.
 
     @Test
-    public void testInsertDelete() {
+    void testInsertDelete() {
         boolean result1 = Database.insert("Name1", "155.155.155.155", 5, "ABC");
         Assertions.assertTrue(result1);
         boolean result2 = Database.delete("Name1");
@@ -20,7 +25,7 @@ public class CommunicationListTests {
     }
 
     @Test
-    public void testUpdate() {
+    void testUpdate() {
         Database.insert("Name1", "155.155.155.155", 5, "ABC");
         boolean result1 = Database.updateName("Name1", "Name2");
         Assertions.assertTrue(result1);
@@ -34,7 +39,7 @@ public class CommunicationListTests {
     }
 
     @Test
-    public void testQuery() {
+    void testQuery() {
         Database.insert("Name1", "155.155.155.155", 5, "ABC");
         Database.insert("Name2", "154.154.154.154", 7, "DEF");
         Database.insert("Name3", "133.133.133.133", 2, "GHI");
@@ -54,7 +59,7 @@ public class CommunicationListTests {
     }
 
     @Test
-    public void testQueryAll() {
+    void testQueryAll() {
         Database.insert("Name1", "155.155.155.155", 5, "ABC");
         Database.insert("Name2", "154.154.154.154", 7, "DEF");
         Database.insert("Name3", "133.133.133.133", 2, "GHI");
