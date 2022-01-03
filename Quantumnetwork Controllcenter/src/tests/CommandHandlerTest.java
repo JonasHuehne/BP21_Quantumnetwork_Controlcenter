@@ -1,9 +1,11 @@
-package ui;
+package tests;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import ui.CommandHandler;
 
 /**
  * This class is used to perform unit tests for the {@link CommandHandler} class,
