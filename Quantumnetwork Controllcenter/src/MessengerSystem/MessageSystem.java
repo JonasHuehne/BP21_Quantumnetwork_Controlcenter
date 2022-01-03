@@ -38,7 +38,7 @@ public static String getActiveConnection() {
 public static void sendMessage(String message) {
 	System.out.println("[" + activeConnection + "]: Sending Message: " + message);
 	ConnectionState state = QuantumnetworkControllcenter.conMan.getConnectionState(activeConnection);
-	if(state == ConnectionState.Connected) {
+	if(state == ConnectionState.CONNECTED) {
 		QuantumnetworkControllcenter.conMan.sendMessage(activeConnection, "msg:::" + message);
 	}
 	else {
@@ -55,7 +55,7 @@ public static void sendMessage(String message) {
 public static boolean sendConfirmedMessage(String message) {
 	System.out.println("[" + activeConnection + "]: Sending Confirm-Message: " + message);
 	ConnectionState state = QuantumnetworkControllcenter.conMan.getConnectionState(activeConnection);
-	if(state == ConnectionState.Connected) {
+	if(state == ConnectionState.CONNECTED) {
 		//Send message
 		QuantumnetworkControllcenter.conMan.sendMessage(activeConnection, "confirm:::" + message);
 		boolean waitForConfirmation = true;
@@ -85,23 +85,42 @@ public static boolean sendConfirmedMessage(String message) {
 
 }
 	
-
+/**reads the oldest Message available and removes it from the stack(actually a queue)
+ * 
+ * @return the oldest message
+ */
 public static String readRecievedMessage() {
 	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).readMessageFromStack();
 }
 
+/**returns the oldest message, but does not remove it from the queue
+ * 
+ * @return the oldest message that was received and not yet read(removed)
+ */
 public static String previewRecievedMessage() {
 	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).peekMessageFromStack();
 }
 
+/**returns the last message that was received but does not remove it from the queue
+ * 
+ * @return the latest message
+ */
 public static String previewLastRecievedMessage() {
 	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).peekLatestMessageFromStack();
 }
 
+/**Returns the number of messages that are on the stack and waiting to be read(removed).
+ * 
+ * @return the number of messages.
+ */
 public static int getNumberOfPendingMessages() {
 	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).sizeOfMessageStack();
 }
 
+/**Returns a linkedList of all un-read messages
+ * 
+ * @return the list of unread messages.
+ */
 public static LinkedList<String> getAllRecievedMessages(){
 	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).getMessageStack();
 }

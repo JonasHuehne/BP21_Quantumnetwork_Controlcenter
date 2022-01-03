@@ -10,7 +10,6 @@ import java.net.UnknownHostException;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 public class ConnectionEndpoint implements Runnable{
 	
@@ -39,10 +38,10 @@ public class ConnectionEndpoint implements Runnable{
 	private boolean waitingForMessage = false;
 	
 	private ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
-	Thread messageThread = new Thread(this, connectionID + "_messageThread");
+	private Thread messageThread = new Thread(this, connectionID + "_messageThread");
 	
-	private static LinkedList<String> MessageStack = new LinkedList<String>();
-	private static LinkedList<String> ConfirmedMessageStack = new LinkedList<String>();
+	private LinkedList<String> messageStack = new LinkedList<String>();
+	private static LinkedList<String> confirmedMessageStack = new LinkedList<String>();
 	
 	public ConnectionEndpoint(ConnectionManager cm, String connectionName, String localAddress, int serverPort) {
 		owningConnectionManager = cm;
@@ -64,25 +63,65 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public ConnectionState reportState() {
 		if(isConnected && !isBuildingConnection) {
-			return ConnectionState.Connected;
+			return ConnectionState.CONNECTED;
 		}
 		if(!isConnected && !isBuildingConnection && !waitingForConnection && !waitingForMessage) {
-			return ConnectionState.Closed;
+			return ConnectionState.CLOSED;
 		}
 		if(waitingForConnection && !isConnected && !isBuildingConnection) {
-			return ConnectionState.WaitingForConnection;
+			return ConnectionState.WAITINGFORCONNECTION;
 		}
 		if(!waitingForConnection && !isConnected && !isBuildingConnection && waitingForMessage) {
-			return ConnectionState.WaitingForMessage;
+			return ConnectionState.WAITINGFORMESSAGE;
 		}
 		if(!waitingForConnection && !isConnected && isBuildingConnection) {
-			return ConnectionState.Connecting;
+			return ConnectionState.CONNECTING;
 		}
 		return ConnectionState.ERROR;
 	}
 	
+	/**updated the local IP
+	 * 
+	 * @param newLocalAddress
+	 */
 	public void updateLocalAddress(String newLocalAddress) {
+		try {
+			closeConnection(true);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		localAddress = newLocalAddress;
+	}
+	
+	/**returns the local IP
+	 * 
+	 * @return the local IP
+	 */
+	public String getLocalAddress() {
+		return localAddress;
+	}
+	
+	/**Updates the local Port
+	 * 
+	 * @param newPort the new Port
+	 */
+	public void updatePort(int newPort) {
+		try {
+			closeConnection(true);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		localServerPort = newPort;
+	}
+	
+	/**Returns the int-Portnumber that this ConnectionEndpoint uses to listen to incoming messages.
+	 * 
+	 * @return the Port Number used by this ConnectionEndpoint as an int.
+	 */
+	public int getServerPort() {
+		return localServerPort;
 	}
 	//------------//
 	//Client Side
@@ -92,8 +131,9 @@ public class ConnectionEndpoint implements Runnable{
 	 * 
 	 * @param targetServerIP	the IP or Name of the other Party.
 	 * @param targetServerPort	the Port on which the other Partys ServerSocket is listening for connections.
+	 * @throws IOException 
 	 */
-	public void EstablishConnection(String targetServerIP, int targetServerPort) {
+	public void establishConnection(String targetServerIP, int targetServerPort) throws IOException {
 		if(isConnected) {
 			System.out.println("Warning: " + connectionID + " is already connected to " + remoteID + " at Port " + String.valueOf(remotePort) + "! Connection creation aborted!");
 			return;
@@ -129,16 +169,22 @@ public class ConnectionEndpoint implements Runnable{
 		} catch (IOException e) {
 			isConnected = false;
 			System.out.println("[" + connectionID + "]: Connection could not be established! An Error occured while connecting to the other Client!");
-			e.printStackTrace();
+			throw e;
 		}
 		
 	}
 	
+	
 	/**Closes the connection to another Endpoint
 	 * 
+	 * @param initial true if the request to close the connection has a local origin, false if the request came as a message from the other Endpoint.
 	 * @throws IOException	may complain if something goes wrong, handle above.
 	 */
-	public void closeConnection() throws IOException {
+	public void closeConnection(boolean localRequest) throws IOException {
+		if(isConnected && localRequest) {
+			//If close-request has local origin, message other connectionEndpoint about closing the connection.
+			pushMessage("termconn:::");
+		}
 		System.out.println("[" + connectionID + "]: Local Shutdown of ConnectionEndpoint " + connectionID);
 		isConnected = false;
 		isBuildingConnection = false;
@@ -179,49 +225,50 @@ public class ConnectionEndpoint implements Runnable{
 		return;
 	}
 	
-	public static void addMessageToStack(String message) {
-		MessageStack.add(message);
+	public void addMessageToStack(String message) {
+		messageStack.add(message);
 	}
 
 	public String readMessageFromStack() {
-		if (MessageStack.size()>0) {
-			return MessageStack.pop();
+		if (messageStack.size()>0) {
+			return messageStack.pop();
 		}
 		return "";
 	}
 	
 	public String peekMessageFromStack() {
-		if (MessageStack.size()>0) {
-			return MessageStack.peekFirst();
+		if (messageStack.size()>0) {
+			return messageStack.peekFirst();
 		}
 		return "";
 	}
 	
 	public String peekLatestMessageFromStack() {
-		if (MessageStack.size()>0) {
-		return MessageStack.peekLast();
+		if (messageStack.size()>0) {
+		return messageStack.peekLast();
 		}
 		return "";
 	}
 	
 	public int sizeOfMessageStack() {
-		return MessageStack.size();
+		return messageStack.size();
 	}
 	
 	private void registerConfirmation(String message) {
-		ConfirmedMessageStack.add(message);
+		confirmedMessageStack.add(message);
 	}
 	
 	public LinkedList<String> getConfirmations(){
-		return ConfirmedMessageStack;
+		return confirmedMessageStack;
 	}
 	
 	public void clearConfirmation(String conf){
-		ConfirmedMessageStack.remove(conf);
+		confirmedMessageStack.remove(conf);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public LinkedList<String> getMessageStack(){
-		return MessageStack;
+		return (LinkedList<String>) messageStack.clone();
 	}
 	//------------//
 	//Server Side
@@ -285,7 +332,7 @@ public class ConnectionEndpoint implements Runnable{
 	 * @param message	the message that was just received and should be checked for keywords.
 	 * @return	the String message after it was processed.
 	 */
-	private void ProcessMessage(String message) {
+	private void processMessage(String message) {
 		//Closing Message
 		System.out.println("[" + connectionID + "]: Processing Message: " + message);
 		try {
@@ -306,7 +353,7 @@ public class ConnectionEndpoint implements Runnable{
 				
 			case "termconn":
 				System.out.println("[" + connectionID + "]: TerminationOrder Recieved at " + connectionID + "!");
-				closeConnection();
+				closeConnection(false);
 				return;
 				
 			case "msg":
@@ -345,7 +392,7 @@ public class ConnectionEndpoint implements Runnable{
 				if(waitingForMessage && serverIn != null && isConnected && !waitingForConnection && (recievedMessage = serverIn.readLine()) != null) {
 					System.out.println("[" + connectionID + "]: " + connectionID + " recieved Message!:");
 					System.out.println(recievedMessage);
-					ProcessMessage(recievedMessage);
+					processMessage(recievedMessage);
 
 				}
 			} catch (IOException e) {

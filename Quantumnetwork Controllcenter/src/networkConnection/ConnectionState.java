@@ -1,10 +1,14 @@
 package networkConnection;
-
+/**
+ * Represents the State of a single ConnectionEndpoint.
+ * @author J-man
+ *
+ */
 public enum ConnectionState {
-	Closed,
-	Connected,
-	Connecting,
-	WaitingForConnection,
-	WaitingForMessage,
+	CLOSED,
+	CONNECTED,
+	CONNECTING,
+	WAITINGFORCONNECTION,
+	WAITINGFORMESSAGE,
 	ERROR
 }
