@@ -9,6 +9,8 @@ import java.awt.event.KeyEvent;
 import javax.swing.JTextField;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /**
  * The ConsoleUI class provides a GUI which appears and acts similar to a console / terminal application.
@@ -61,6 +63,12 @@ public class ConsoleUI {
 		
 		// Output area containing result of computing the command
 		consoleOutArea = new JTextArea();
+		consoleOutArea.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				consoleInArea.requestFocusInWindow();
+			}
+		});
 		consoleOutArea.setFont(new Font("Arial", Font.PLAIN, 14));
 		consoleOutArea.setEditable(false);
 		consoleOutArea.setText(INITIAL_TEXT);
