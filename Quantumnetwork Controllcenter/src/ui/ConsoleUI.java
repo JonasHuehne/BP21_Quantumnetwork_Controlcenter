@@ -26,8 +26,6 @@ public class ConsoleUI {
 	
 	/** Title displayed in the applications border */
 	private final String APPLICATION_TITLE = "Quantum Network Control Center Console UI";
-	/** Text prompting the user to enter a command, always displayed in the {@link #consoleInArea} */
-	private final String ENTER_COMMAND_TEXT = "Enter Command: ";
 	/** Text displayed on startup in the {@link #consoleOutArea} */
 	private final String INITIAL_TEXT = "Welcome to the Quantum Network Control Center. What would you like to do?" + System.lineSeparator() + "Enter \"help\" for a list of commands.";
 	
@@ -54,8 +52,8 @@ public class ConsoleUI {
 		
 		// The area in which the user enters the commands
 		consoleInArea = new JTextField();
+		consoleInArea.setCaretColor(Color.GREEN);
 		consoleInArea.setFont(new Font("Arial", Font.PLAIN, 14));
-		consoleInArea.setText(ENTER_COMMAND_TEXT);
 		consoleInArea.setForeground(Color.GREEN);
 		consoleInArea.setBackground(Color.BLACK);
 		consoleInArea.setBorder(javax.swing.BorderFactory.createEmptyBorder());
@@ -76,9 +74,9 @@ public class ConsoleUI {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				if(e.getKeyCode() == KeyEvent.VK_ENTER) { // Attempt to parse entered command if ENTER key is pressed
-					String enteredCommand = consoleInArea.getText().substring(ENTER_COMMAND_TEXT.length()); 
+					String enteredCommand = consoleInArea.getText(); 
 					consoleOutArea.setText(CommandHandler.processCommand(enteredCommand));			
-					consoleInArea.setText(ENTER_COMMAND_TEXT);
+					consoleInArea.setText("");
 				}
 			}
 		});
