@@ -288,7 +288,7 @@ public class ConnectionEndpoint implements Runnable{
 				try {
 					//Listen for connection attempt
 					remoteClientSocket = localServerSocket.accept();
-					System.out.println("[" + connectionID + "]: A ConnectionRequest has been recieved at " + connectionID + "s ServerSocket on Port " + localServerPort + "!");
+					System.out.println("[" + connectionID + "]: A ConnectionRequest has been received at " + connectionID + "s ServerSocket on Port " + localServerPort + "!");
 					
 					//Set ServerCommmChannels
 					serverIn = new BufferedReader(new InputStreamReader(remoteClientSocket.getInputStream()));
@@ -314,7 +314,7 @@ public class ConnectionEndpoint implements Runnable{
 		
 	/**Waits until a message was received and then returns the message. Blocking.
 	 * 
-	 * @return	returns the String of the next recieved message.
+	 * @return	returns the String of the next received message.
 	 */
 	public void listenForMessage() {
 		if(listenForMessages) {
@@ -343,7 +343,7 @@ public class ConnectionEndpoint implements Runnable{
 				String greetingMessage = message.split(":::")[1];
 				remoteID = greetingMessage.split(":")[0];
 				remotePort = Integer.parseInt(greetingMessage.split(":")[1]);
-				System.out.println("[" + connectionID + "]: Recieved initial Message: " + greetingMessage);
+				System.out.println("[" + connectionID + "]: Received initial Message: " + greetingMessage);
 			
 				//Use greeting(ip:port) to establish back-connection to the ConnectionAttempt-Sources ServerSocket
 				System.out.println("[" + connectionID + "]: Connecting back to " + remoteID + " at Port: " + remotePort);
@@ -352,23 +352,23 @@ public class ConnectionEndpoint implements Runnable{
 				return;
 				
 			case "termconn":
-				System.out.println("[" + connectionID + "]: TerminationOrder Recieved at " + connectionID + "!");
+				System.out.println("[" + connectionID + "]: TerminationOrder Received at " + connectionID + "!");
 				closeConnection(false);
 				return;
 				
 			case "msg":
-				System.out.println("[" + connectionID + "]: Recieved Message: " + message + "!");
+				System.out.println("[" + connectionID + "]: Received Message: " + message + "!");
 				addMessageToStack( message.split(":::")[1]);
 				return;
 				
 			case "confirm":
-				System.out.println("[" + connectionID + "]: Recieved Confirm-Message: " + message + "!");
+				System.out.println("[" + connectionID + "]: Received Confirm-Message: " + message + "!");
 				addMessageToStack( message.split(":::")[1]);
 				pushMessage("confirmback:::" + message.split(":::")[1]);
 				return;
 				
 			case "confirmback":
-				System.out.println("[" + connectionID + "]: Recieved Confirm_Back-Message: " + message + "!");
+				System.out.println("[" + connectionID + "]: Received Confirm_Back-Message: " + message + "!");
 				registerConfirmation(message.split(":::")[1]);
 				return;
 			
@@ -386,13 +386,13 @@ public class ConnectionEndpoint implements Runnable{
 	@Override
 	public void run() {
 		waitingForMessage = true;
-		String recievedMessage;
+		String receivedMessage;
 		while(waitingForMessage) {
 			try {
-				if(waitingForMessage && serverIn != null && isConnected && !waitingForConnection && (recievedMessage = serverIn.readLine()) != null) {
-					System.out.println("[" + connectionID + "]: " + connectionID + " recieved Message!:");
-					System.out.println(recievedMessage);
-					processMessage(recievedMessage);
+				if(waitingForMessage && serverIn != null && isConnected && !waitingForConnection && (receivedMessage = serverIn.readLine()) != null) {
+					System.out.println("[" + connectionID + "]: " + connectionID + " received Message!:");
+					System.out.println(receivedMessage);
+					processMessage(receivedMessage);
 
 				}
 			} catch (IOException e) {

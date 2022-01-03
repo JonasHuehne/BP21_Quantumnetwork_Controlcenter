@@ -160,15 +160,15 @@ public class NetworkTests {
 		MessageSystem.setActiveConnection("ceTest9");
 		assert(MessageSystem.getNumberOfPendingMessages() == 3);
 		//Test Message Content
-		assert(MessageSystem.previewRecievedMessage().equals("Test Message 3"));
+		assert(MessageSystem.previewReceivedMessage().equals("Test Message 3"));
 		//Test non-removing preview
-		assert(MessageSystem.previewRecievedMessage().equals("Test Message 3"));
+		assert(MessageSystem.previewReceivedMessage().equals("Test Message 3"));
 		//Test non-removing preview of latest message
-		assert(MessageSystem.previewLastRecievedMessage().equals("Test Message 5"));
+		assert(MessageSystem.previewLastReceivedMessage().equals("Test Message 5"));
 		//Test Message Read
-		assert(MessageSystem.readRecievedMessage().equals("Test Message 3"));
+		assert(MessageSystem.readReceivedMessage().equals("Test Message 3"));
 		//Test removing-reading
-		assert(MessageSystem.readRecievedMessage().equals("Test Message 4"));
+		assert(MessageSystem.readReceivedMessage().equals("Test Message 4"));
 		//Try sending confirmed Messages
 		MessageSystem.setActiveConnection("ceTest8");
 		MessageSystem.sendConfirmedMessage("Confirmed Test Message 1");
@@ -179,8 +179,8 @@ public class NetworkTests {
 		//Check Message Order after confirmed Message
 		MessageSystem.setActiveConnection("ceTest9");
 		assert(MessageSystem.getNumberOfPendingMessages() == 2);
-		assert(MessageSystem.readRecievedMessage().equals("Test Message 5"));
-		assert(MessageSystem.readRecievedMessage().equals("Confirmed Test Message 1"));
+		assert(MessageSystem.readReceivedMessage().equals("Test Message 5"));
+		assert(MessageSystem.readReceivedMessage().equals("Confirmed Test Message 1"));
 		
 		QuantumnetworkControllcenter.conMan.destroyAllConnectionEndpoints();
 		assert(QuantumnetworkControllcenter.conMan.returnAllConnections().size() == 0);

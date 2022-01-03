@@ -67,7 +67,7 @@ public static boolean sendConfirmedMessage(String message) {
 			current = Instant.now();
 			if(Duration.between(startWait, current).toSeconds() <= 10 && QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).getConfirmations().contains(message)) {
 				waitForConfirmation = false;
-				System.out.println("[" + activeConnection + "]: Message Confirmation recieved!");
+				System.out.println("[" + activeConnection + "]: Message Confirmation received!");
 				QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).clearConfirmation(message);
 				return true;
 			}
@@ -89,7 +89,7 @@ public static boolean sendConfirmedMessage(String message) {
  * 
  * @return the oldest message
  */
-public static String readRecievedMessage() {
+public static String readReceivedMessage() {
 	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).readMessageFromStack();
 }
 
@@ -97,7 +97,7 @@ public static String readRecievedMessage() {
  * 
  * @return the oldest message that was received and not yet read(removed)
  */
-public static String previewRecievedMessage() {
+public static String previewReceivedMessage() {
 	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).peekMessageFromStack();
 }
 
@@ -105,7 +105,7 @@ public static String previewRecievedMessage() {
  * 
  * @return the latest message
  */
-public static String previewLastRecievedMessage() {
+public static String previewLastReceivedMessage() {
 	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).peekLatestMessageFromStack();
 }
 
@@ -121,7 +121,7 @@ public static int getNumberOfPendingMessages() {
  * 
  * @return the list of unread messages.
  */
-public static LinkedList<String> getAllRecievedMessages(){
+public static LinkedList<String> getAllReceivedMessages(){
 	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).getMessageStack();
 }
 	
