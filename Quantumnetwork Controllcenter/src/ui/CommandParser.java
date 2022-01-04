@@ -35,18 +35,24 @@ public class CommandParser {
 	 * For a given text command (String) this method finds the {@link Command} whose name matches the text command. <p>
 	 * @param commandName
 	 * 		The string to check
-	 * 		Not case sensitive. <p>
-	 * 		Any amount of whitespaces will be treated as one whitespace, leading and trailing whitespaces will be ignored. 
+	 * 		Regardless of <b>strict</b> this String is not case sensitive, any leading and trailing whitespace is ignored, and multiple whitespaces are treated as one
+	 * @param strict
+	 * 		If strict is true, commandName will have to be <i>only</i> the name of a valid Command, 
+	 * 		i.e. "contacts add" would return {@link Command#CONTACTS_ADD}, but "contacts add Jimmy" would return null <p>
+	 * 		If strict is false this method will check all Commands, and return the first Command whose name is the start of the input String commandName, 
+	 * 		i.e. "contacts add Jimmy" would return "contacts add", "help ewemfw" would return "help", but "hlep" would still return null
 	 * @return
-	 * 		The Command with the name given by <b>commandName</b>.
+	 * 		The Command with the name given by <b>commandName</b>, with strictness decided as above.
 	 * 		null if there is no such command, or if commandName is null
 	 */
-	public static Command getCommandOfName(String commandName) {
+	public static Command getCommandOfName(String commandName, boolean strict) {
 		if (commandName == null) return null;
-		String normedLowerCaseCommandName = normInput(commandName).toLowerCase();
+		String normedInput = normInput(commandName).toLowerCase();
 		for(Command c : Command.values()) {
-			if(normedLowerCaseCommandName.equals(c.getCommandName())) {
-				return c;
+			if(strict) {
+				if(Pattern.matches(c.getCommandName(), normedInput)) return c;
+			} else {
+				if(Pattern.matches(c.getCommandName() + "( .*)?", normedInput)) return c;
 			}
 		}
 		return null;

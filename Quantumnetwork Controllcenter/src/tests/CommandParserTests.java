@@ -25,29 +25,64 @@ class CommandParserTests {
 	class Test_GetCommandOfName {
 		@Test
 		void test_GetCommandOfName_normal() {
-			assertEquals(Command.HELP, CommandParser.getCommandOfName(Command.HELP.getCommandName()));
-			assertEquals(Command.CONTACTS_ADD, CommandParser.getCommandOfName(Command.CONTACTS_ADD.getCommandName()));
-			assertEquals(Command.CONTACTS_SHOW, CommandParser.getCommandOfName(Command.CONTACTS_SHOW.getCommandName()));
+			assertEquals(Command.HELP, CommandParser.getCommandOfName(Command.HELP.getCommandName(), true));
+			assertEquals(Command.CONTACTS_ADD, CommandParser.getCommandOfName(Command.CONTACTS_ADD.getCommandName(), true));
+			assertEquals(Command.CONTACTS_SHOW, CommandParser.getCommandOfName(Command.CONTACTS_SHOW.getCommandName(), true));
+		}
+		
+		@Test
+		void test_GetCommandOfName_normal_nonstrict() {
+			assertEquals(Command.HELP, CommandParser.getCommandOfName(Command.HELP.getCommandName(), false));
+			assertEquals(Command.CONTACTS_ADD, CommandParser.getCommandOfName(Command.CONTACTS_ADD.getCommandName(), false));
+			assertEquals(Command.CONTACTS_SHOW, CommandParser.getCommandOfName(Command.CONTACTS_SHOW.getCommandName(), false));
 		}
 		
 		@Test
 		void test_GetCommandOfName_varying_whitespaces() {
-			assertEquals(Command.HELP, CommandParser.getCommandOfName("    help   "));
-			assertEquals(Command.CONTACTS_ADD, CommandParser.getCommandOfName("       contacts      add 		"));
-			assertEquals(Command.CONTACTS_SHOW, CommandParser.getCommandOfName("   contacts  show 		"));
+			assertEquals(Command.HELP, CommandParser.getCommandOfName("    help   ", true));
+			assertEquals(Command.CONTACTS_ADD, CommandParser.getCommandOfName("       contacts      add 		", true));
+			assertEquals(Command.CONTACTS_SHOW, CommandParser.getCommandOfName("   contacts  show 		", true));
+		}
+		
+		@Test
+		void test_GetCommandOfName_varying_whitespaces_nonstrict() {
+			assertEquals(Command.HELP, CommandParser.getCommandOfName("    help   ", false));
+			assertEquals(Command.CONTACTS_ADD, CommandParser.getCommandOfName("       contacts      add 		", false));
+			assertEquals(Command.CONTACTS_SHOW, CommandParser.getCommandOfName("   contacts  show 		", false));
 		}
 		
 		@Test
 		void test_GetCommandOfName_case_sensitivity() {
-			assertEquals(Command.HELP, CommandParser.getCommandOfName("HELP"));
-			assertEquals(Command.CONTACTS_ADD, CommandParser.getCommandOfName("CONtaCTs ADd"));
-			assertEquals(Command.CONTACTS_SHOW, CommandParser.getCommandOfName("cONTACTS sHOW"));
+			assertEquals(Command.HELP, CommandParser.getCommandOfName("HELP", true));
+			assertEquals(Command.CONTACTS_ADD, CommandParser.getCommandOfName("CONtaCTs ADd", true));
+			assertEquals(Command.CONTACTS_SHOW, CommandParser.getCommandOfName("cONTACTS sHOW", true));
+		}
+		
+		@Test
+		void test_GetCommandOfName_case_sensitivity_nonstrict() {
+			assertEquals(Command.HELP, CommandParser.getCommandOfName("HELP", false));
+			assertEquals(Command.CONTACTS_ADD, CommandParser.getCommandOfName("CONtaCTs ADd", false));
+			assertEquals(Command.CONTACTS_SHOW, CommandParser.getCommandOfName("cONTACTS sHOW", false));
 		}
 		
 		@Test
 		void test_GetCommandOfName_null() {
-			assertNull(CommandParser.getCommandOfName(null));
-			assertNull(CommandParser.getCommandOfName("dfvndfn34534vnnvn11fnnfnnaaaa"));
+			assertNull(CommandParser.getCommandOfName(null, true));
+			assertNull(CommandParser.getCommandOfName("dfvndfn34534vnnvn11fnnfnnaaaa", true));
+		}
+		
+		@Test
+		void test_GetCommandOfName_null_nonstrict() {
+			assertNull(CommandParser.getCommandOfName(null, false));
+			assertNull(CommandParser.getCommandOfName("dfvndfn34534vnnvn11fnnfnnaaaa", false));
+		}
+		
+		@Test
+		void test_GetCommandOfName_nonstrict_wrong_syntax()  {
+			assertEquals(Command.CONTACTS_ADD, CommandParser.getCommandOfName("contacts add Jimmy", false));
+			assertEquals(Command.CONTACTS_SHOW, CommandParser.getCommandOfName("contacts show Annie", false));
+			assertEquals(Command.CONTACTS_UPDATE, CommandParser.getCommandOfName("contacts update Annie ip", false));
+			assertEquals(Command.CONTACTS_UPDATE, CommandParser.getCommandOfName("contacts update Cassie height 172cm", false));
 		}
 	}
 	
