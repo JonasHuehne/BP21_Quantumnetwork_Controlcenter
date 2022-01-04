@@ -24,11 +24,6 @@ public class CommandHandler {
 	 * with more commands being implemented to allow users to control the application via text.
 	 */
 	
-	/*
-	 * TODO:
-	 * Document each command externally (Syntax & Purpose) and also implement "help [command]" so the user can access additional info about the command.
-	 * Could potentially use an Enum for this.
-	 */
 	
 	// Generally intended to be used in {@link ConsoleUI}, but is independend of that class and could for example just as well be used with sysin / sysout
 	/**
@@ -73,6 +68,16 @@ public class CommandHandler {
 		}
 	}
 	
+	/**
+	 * This method is used to handle the case of an user entering an invalid command. <p>
+	 * A command can be invalid either because it is not recognized (textCommand does not correspond to a commandName of any {@link Command})
+	 * or because the syntax of the command was wrong (e.g. "contacts update Bob port Potato").
+	 * @param textCommand
+	 * 		a command entered by an user, which can not be executed 
+	 * @return
+	 * 		a String informing the user that the command is unrecognized, if it does not correspond to any command in {@link Commands} <p>
+	 * 		or a String informing the user that the command could not be executed with the given arguments if the syntax was wrong
+	 */
 	private static String handleInvalidCommand(String textCommand) {
 		// See if the user has entered a valid command (but with an unrecognized syntax)
 		Command potentiallyValidCommand = CommandParser.getCommandOfName(textCommand, false);
@@ -87,6 +92,17 @@ public class CommandHandler {
 		}
 	}
 	
+	/**
+	 * Handles the execution of the help command.
+	 * @param commandArgs
+	 * 		the arguments with which the help command was called, may be empty
+	 * @return
+	 * 		if commandArgs is empty, returns a String containing a List of all available {@link Command}s <br>
+	 * 		if commandArgs is not empty and instead contains a command name, 
+	 * 		with or without arguments (e.g. ["contacts", "add"] or ["contacts", "add", "Bob"]),
+	 * 		this method returns help for that command <br>
+	 * 		if neither of these two cases applies, an error message is returned that no help can be provided, because commandArgs does not contain a valid command name
+	 */
 	private static String handleHelp(String[] commandArgs) {
 		if(commandArgs.length == 0) { // User typed just "help"
 			String availableCommands = "Available Commands: " + System.lineSeparator();
