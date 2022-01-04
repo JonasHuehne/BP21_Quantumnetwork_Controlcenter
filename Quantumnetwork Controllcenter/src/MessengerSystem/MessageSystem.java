@@ -136,17 +136,41 @@ public static int getNumberOfPendingMessages() {
 public static LinkedList<String> getAllReceivedMessages(){
 	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).getMessageStack();
 }
+
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+/**
+ * sends a signed message
+ * (currently implemented as sending the message and the signature separately)
+ * @param message the message to be sent	
+ * @return true if the sending of both messages worked, false otherwise
+*/
+public static boolean sendAuthenticatedMessage(final String message) {
+	String signature = Authentication.sign(message);
+	boolean res1 = sendConfirmedMessage(message);
+	boolean res2 = sendConfirmedMessage(signature);
+	return res1 && res2;
+}
+
+/**
+* receives a signed message
+* (currently implemented as receiving two messages, first the message, then the signature)
+* @return the received message as string, null if error none or if result of verify was false
+*/
+public static String readAuthenticatedMessage() {
+	Instant startWait = Instant.now();
+	while(getNumberOfPendingMessages() < 2) {
+		Instant current = Instant.now();
+		if(Duration.between(startWait, current).toSeconds() > 10) {
+			return null;
+		}
+	}
+	String message = readReceivedMessage();
+	String signature = readReceivedMessage();
+	if(Authentication.verify(message, signature, getActiveConnection())) {
+		return message;
+	}
+	return null;
+}
 
 }
