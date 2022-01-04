@@ -42,7 +42,7 @@ public class KeyStoreDbManager {
      *
      * @returns True if Database and table were created successfully, False otherwise
      */
-    public static boolean createNewKeyStoreAndTable() {
+     static boolean createNewKeyStoreAndTable() {
 
         try {
             Connection conn = KeyStoreDbManager.connect();
@@ -239,7 +239,7 @@ public class KeyStoreDbManager {
      *
      * @return a ArrayList of KeyStoreObjects which contain information about the keys currently in storage
      */
-    public static ArrayList<KeyStoreObject> getEntrysAsList () {
+    public static ArrayList<KeyStoreObject> getEntriesAsList () {
         try {
             Connection conn = connect();
 
@@ -261,25 +261,6 @@ public class KeyStoreDbManager {
         }
     }
 
-    /** NUR Für Testzwecke
-     *
-     * @param sqlQuery String input of a regular SQL Query (without a semicolon at the end)
-     * @return
-     */
-    public static boolean executeQuery(String sqlQuery){
-        try {
-            Connection conn = connect();
-            Statement stmnt = conn.createStatement();
-            stmnt.executeUpdate(sqlQuery);
-
-            System.out.println("Query was Successful!");
-            return true;
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
-        }
-    }
 
 
 }

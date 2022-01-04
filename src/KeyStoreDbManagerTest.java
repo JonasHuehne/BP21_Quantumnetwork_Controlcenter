@@ -52,9 +52,10 @@ class KeyStoreDbManagerTest {
 
     @Test
     void getEntrysAsListTest(){
-        //kann sein, dass die untere zeile bem ersten testdurchlauf auf neuem gerät auskommentiert werden muss
-        //KeyStoreDbManager.insertToDb("NewEntryID", 1111111, 1, "nirgendwo", "TuDarmstadt");
-        ArrayList<KeyStoreObject> testList = KeyStoreDbManager.getEntrysAsList();
+
+        // Bei jedem weiteren Durchlauf (nach dem 1.) muss die Zeile kommentiert werden da es nicht zweimal den selben eintrag in der Datenbank geben darf!
+        KeyStoreDbManager.insertToDb("NewEntryID", 1111111, 1, "nirgendwo", "TuDarmstadt");
+        ArrayList<KeyStoreObject> testList = KeyStoreDbManager.getEntriesAsList();
 
         int newEntryBuffer = testList.get(1).getBuffer(); // only 2 Entrys in DB
         assertEquals(1111111, newEntryBuffer);

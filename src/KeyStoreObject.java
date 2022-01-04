@@ -1,7 +1,12 @@
 public final class KeyStoreObject {
 
+    /**
+     *   Class represents a KeyStore Object.
+     *   Containing all the necessary Information about a certain key
+     */
 
-        private final String keyStreamID;
+
+    private final String keyStreamID;
         private final int keyBuffer;
         private final int index;
         private final String source;
