@@ -11,6 +11,9 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 
 /**
  * The ConsoleUI class provides a GUI which appears and acts similar to a console / terminal application.
@@ -35,7 +38,12 @@ public class ConsoleUI {
 	private JTextField consoleInArea;
 	/** The text area for the application output (command feedback, error codes, ...)*/
 	private JTextArea consoleOutArea;
-
+	
+	/** For convenience purposes we save the last entered commands in a list, which the user can cycle through by pressing UP and DOWN */
+	private LinkedList<String> enteredCommands = new LinkedList<>();
+	/** This index is used to cycle through the list of entered commands {@link #enteredCommands} */
+	private int commandIndex = 0;
+	
 	/**
 	 * Create the application.
 	 */
@@ -85,8 +93,20 @@ public class ConsoleUI {
 			public void keyPressed(KeyEvent e) {
 				if(e.getKeyCode() == KeyEvent.VK_ENTER) { // Attempt to parse entered command if ENTER key is pressed
 					String enteredCommand = consoleInArea.getText(); 
+					enteredCommands.addFirst(enteredCommand);
 					consoleOutArea.setText(CommandHandler.processCommand(enteredCommand));			
 					consoleInArea.setText("");
+					commandIndex = 0;
+				} else if(e.getKeyCode() == KeyEvent.VK_UP) { // If the user presses UP, replace the input area text with the previously entered command
+					if(enteredCommands.size() > commandIndex) {
+						consoleInArea.setText(enteredCommands.get(commandIndex));
+						if(commandIndex + 1 != enteredCommands.size()) commandIndex++; // If list has n elements, index may at most be (n-1)
+					} 
+				} else if(e.getKeyCode() == KeyEvent.VK_DOWN) {
+					if (commandIndex > 0) {
+						commandIndex--;
+						consoleInArea.setText(enteredCommands.get(commandIndex));
+					}
 				}
 			}
 		});
