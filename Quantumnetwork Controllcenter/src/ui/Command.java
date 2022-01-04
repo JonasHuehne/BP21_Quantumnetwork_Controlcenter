@@ -43,7 +43,7 @@ public enum Command {
 		+ "Syntax: \"contacts add <name> <ip> <port>\". "
 		+ "Name and IP can be any String up to 255 characters in length. For a normal IPv4 Adress the regular format is used, e.g. \"127.0.0.1\". "
 		+ "Port can be any Integer."),
-	CONTACTS_UPDATE (" (.{1,255} name .{1,255})|(.{1,255} ip .{1,255})|(.{1,255} port \\d+)", 
+	CONTACTS_UPDATE (" (.{1,255} (?i)name(?-i) .{1,255})|(.{1,255} (?i)ip(?-i) .{1,255})|(.{1,255} (?i)port(?-i) \\d+)", 
 		"Updates one entry in the communication list, given the name of the entry to update, the attribute to change and the new value."
 		+ "If no update can be performed (e.g. no entry with the given name exists) an error message is displayed. "
 		+ "Syntax \"contacts update <name> <attr> <value>\". "
