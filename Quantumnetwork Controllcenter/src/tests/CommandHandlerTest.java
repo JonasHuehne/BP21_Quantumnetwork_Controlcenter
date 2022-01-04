@@ -116,9 +116,9 @@ class CommandHandlerTest {
 			assertEquals(Billie.getIpAddr(), "138.0.0.5");
 			assertEquals(Charlie.getIpAddr(), "168.0.1.7");
 			
-			assertEquals(Alexa.getPort(), "4444");
-			assertEquals(Billie.getPort(), "9999");
-			assertEquals(Charlie.getPort(), "26665");
+			assertEquals(Alexa.getPort(), 4444);
+			assertEquals(Billie.getPort(), 9999);
+			assertEquals(Charlie.getPort(), 26665);
 		
 		}
 		
@@ -140,9 +140,9 @@ class CommandHandlerTest {
 		@Test
 		void contacts_show_works() {
 			
-			Database.insert("Alexa", "127.0.0.1", 1);
-			Database.insert("Billie", "127.0.0.2", 2);
-			Database.insert("Charlie", "127.0.0.3", 3);
+			Database.insert("Alexa", "127.0.0.1", 1111);
+			Database.insert("Billie", "127.0.0.2", 2222);
+			Database.insert("Charlie", "127.0.0.3", 3333);
 			
 			String shownContacts = CommandHandler.processCommand("contacts show");
 			
@@ -153,31 +153,35 @@ class CommandHandlerTest {
 			assertTrue(shownContacts.contains("127.0.0.1"));
 			assertTrue(shownContacts.contains("127.0.0.2"));
 			assertTrue(shownContacts.contains("127.0.0.3"));
+			
+			assertTrue(shownContacts.contains("1111"));
+			assertTrue(shownContacts.contains("2222"));
+			assertTrue(shownContacts.contains("3333"));
 		}
 		
 		@Test
 		void contacts_update_works() {
 		
-			Database.insert("Alexa", "127.0.0.1", 1);
+			Database.insert("Alexa", "127.0.0.1", 1111);
 			
 			CommandHandler.processCommand("contacts update Alexa name Bob");
 			
 			assertTrue(Database.queryAll().size() == 1);
 			assertNull(Database.query("Alexa"));
 			assertEquals(Database.query("Bob").getIpAddr(), "127.0.0.1");
-			assertEquals(Database.query("Bob").getPort(), "1");
+			assertEquals(Database.query("Bob").getPort(), 1111);
 			
 			CommandHandler.processCommand("contacts update Bob IP 168.0.0.1");
 			
 			assertTrue(Database.queryAll().size() == 1);
 			assertEquals(Database.query("Bob").getIpAddr(), "168.0.0.1");
-			assertEquals(Database.query("Bob").getPort(), "1");
+			assertEquals(Database.query("Bob").getPort(), 1111);
 			
 			CommandHandler.processCommand("contacts update Bob Port 5555");
 			
 			assertTrue(Database.queryAll().size() == 1);
 			assertEquals(Database.query("Bob").getIpAddr(), "168.0.0.1");
-			assertEquals(Database.query("Bob").getPort(), "5555");
+			assertEquals(Database.query("Bob").getPort(), 5555);
 			
 		}
 		
