@@ -18,11 +18,11 @@ import java.util.Base64;
  */
 public class Authentication {
 
-    private static final String keyPath = System.getProperty("user.dir")
+    private static final String KEY_PATH = System.getProperty("user.dir")
             + File.separator + "SignatureKeys" + File.separator;
 
     /**
-     *
+     * method to create a signature for a message using the designated private key
      * @param message the message to be signed with the private key
      * @return the signed message as a String; null if Error
      */
@@ -46,7 +46,8 @@ public class Authentication {
     }
 
     /**
-     *
+     * method to verify a message with a signature, given a message, the signature and the sender name
+     * (takes the public key from the corresponding entry in the communication list)
      * @param message the received signed message (only text without the signature)
      * @param receivedSignature the received signature as String
      * @param sender the sender of the message, needed to look up the public key in the communication list
@@ -97,7 +98,7 @@ public class Authentication {
     private static PrivateKey getPrivateKeyFromFile (String fileName) {
         try {
             String key = new String (Files.readAllBytes
-                    (Path.of(keyPath + fileName)));
+                    (Path.of(KEY_PATH + fileName)));
             String keyString = key
                     .replace("-----BEGIN PRIVATE KEY-----", "")
                     .replace(System.lineSeparator(), "")
@@ -111,11 +112,16 @@ public class Authentication {
         }
     }
 
-    // TODO: temp public or permanent public?
+    /**
+     * method to read a public key from the specified file in the SignatureKeys folder
+     * and return it as a string
+     * @param fileName the name of the key file
+     * @return the public key from the file as a string (without the begin and end)
+     */
     public static String readPublicKeyStringFromFile (String fileName) {
         try {
             String key = new String (Files.readAllBytes
-                    (Path.of(keyPath + fileName)));
+                    (Path.of(KEY_PATH + fileName)));
             return key
                     .replace("-----BEGIN PUBLIC KEY-----", "")
                     .replace(System.lineSeparator(), "")

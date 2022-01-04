@@ -129,7 +129,7 @@ public static LinkedList<String> getAllReceivedMessages(){
 	/**
 	 * sends a signed message
 	 * (currently implemented as sending the message and the signature separately)
-	 * @param message the message to bes sent
+	 * @param message the message to be sent
 	 * @return true if the sending of both messages worked, false otherwise
 	 */
 	public static boolean sendAuthenticatedMessage(final String message) {
