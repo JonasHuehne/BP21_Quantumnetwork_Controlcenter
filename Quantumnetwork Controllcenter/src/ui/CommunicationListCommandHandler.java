@@ -5,10 +5,24 @@ import java.util.ArrayList;
 import CommunicationList.Database;
 import CommunicationList.DbObject;
 
+/**
+ * The purpose of this class is to be used by {@link CommandHandler}, specifically for executing commands pertaining to the Communication List.
+ * @author Sasha Petri
+ */
 class CommunicationListCommandHandler {
 	
 	private final static String SEE_CONSOLE = "Please see the system console for an error log.";
 
+	/**
+	 * Handles the execution of the command {@link Command#CONTACTS_ADD}. 
+	 * Adds the contact described in commandArgs to the {@link Database}
+	 * @param commandArgs
+	 * 		commandArgs[0] is the name of the contact to add <br>
+	 * 		commandArgs[1] is the IP of the contact to add <br>
+	 * 		commandArgs[2] is the port of the contact to add
+	 * @return
+	 * 		a String describing whether or not the contact was successfully added to the {@link Database}
+	 */
 	static String handleContactsAdd(String[] commandArgs) {
 		String name = commandArgs[0], ip = commandArgs[1];
 		int port = Integer.parseInt(commandArgs[2]);
@@ -20,6 +34,14 @@ class CommunicationListCommandHandler {
 		}
 	}
 	
+	/**
+	 * Handles the execution of the command {@link Command#CONTACTS_REMOVE}.
+	 * Removes the contact with the name given in commandArgs from the {@link Database}.
+	 * @param commandArgs
+	 * 		commandArgs[0] is the name of the contact to remove
+	 * @return
+	 * 		a String describing whether or not the contact was successfully remove from the {@link Database}
+	 */
 	static String handleContactsRemove(String[] commandArgs) {
 		String name = commandArgs[0];
 		boolean success = Database.delete(name);
@@ -30,16 +52,29 @@ class CommunicationListCommandHandler {
 		}
 	}
 	
+	/**
+	 * Handles the execution of the command {@link Command#CONTACTS_SEARCH}.
+	 * Searches for the contact with the name given in commandArgs in the {@link Database}.
+	 * @param commandArgs
+	 * 		commandArgs[0] is the name of the contact to search
+	 * @return
+	 * 		a String containing the contact's information if found <br>
+	 * 		otherwise returns a String saying that the contact could not be found
+	 */
 	static String handleContactsSearch(String[] commandArgs) {
 		String name = commandArgs[0];
 		DbObject query = Database.query(name);
 		if (query == null) {
 			return "Could not find a contact with the name \"" + name + "\" in the contact list. "+ SEE_CONSOLE;
 		} else {
-			return "Found the contact: " + dbObjectToString(query);
+			return dbObjectToString(query);
 		}
 	}
 	
+	/**
+	 * Handles the execution of the command {@link Command#CONTACTS_SHOW}.
+	 * @return a String containing a list of all contacts in the {@link Database}
+	 */
 	static String handleContactsShow() {
 		ArrayList<DbObject> entries = Database.queryAll();
 		if (entries == null) {
@@ -53,6 +88,17 @@ class CommunicationListCommandHandler {
 		}
 	}
 	
+	/**
+	 * Handles the execution of the command {@link Command#CONTACTS_UPDATE}.
+	 * Updates an entry in the {@link Database}, as specified in commandArgs.
+	 * @param commandArgs
+	 * 		commandArgs[0] is the name of the contact to update <br>
+	 * 		commandArgs[1] is one of the following Strings: "name","ip","port" (not case sensitive)
+	 * 		and decides which value is modified
+	 * 		commandArgs[2] is the value that the specified attribute will be set to
+	 * @return
+	 * 		a String stating whether or not the update was successful
+	 */
 	static String handleContactsUpdate(String[] commandArgs) {
 		// Check if entry actually exists, since we can't update a non-existant entry
 		String oldName = commandArgs[0];
@@ -61,7 +107,7 @@ class CommunicationListCommandHandler {
 			return "Could not find a contact with the name \"" + commandArgs[0] + "\" in the contact list. " + SEE_CONSOLE;
 		}
 		
-		String attributeToUpdate = commandArgs[1];
+		String attributeToUpdate = commandArgs[1].toLowerCase();
 		switch (attributeToUpdate) {
 		case "name":
 			String newName = commandArgs[2];
