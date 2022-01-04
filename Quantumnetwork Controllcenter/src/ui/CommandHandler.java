@@ -2,6 +2,9 @@ package ui;
 
 import java.util.Arrays;
 
+import CommunicationList.Database;
+import CommunicationList.DbObject;
+
 /**
  * The purpose of this class is to process text commands (given as Strings) and execute corresponding program method.
  * @author Sasha Petri
@@ -52,21 +55,37 @@ public class CommandHandler {
 		Command command = CommandParser.match(textCommand);
 		String[] commandArgs = CommandParser.extractArguments(textCommand);
 			
+		if(command == null) return handleInvalidCommand(textCommand);
+		
 		switch (command) {
 			case HELP: 
 				return handleHelp(commandArgs);
 			case CONTACTS_ADD:
-				return "Not implemented yet.";
+				return CommunicationListCommandHandler.handleContactsAdd(commandArgs);
 			case CONTACTS_REMOVE:
-				return "Not implemented yet.";
+				return CommunicationListCommandHandler.handleContactsRemove(commandArgs);
 			case CONTACTS_SEARCH:
-				return "Not implemented yet.";
+				return CommunicationListCommandHandler.handleContactsSearch(commandArgs);
 			case CONTACTS_SHOW:
-				return "Not implemented yet.";
+				return CommunicationListCommandHandler.handleContactsShow();
 			case CONTACTS_UPDATE:
-				return "Not implemented yet.";
+				return CommunicationListCommandHandler.handleContactsUpdate(commandArgs);
 			default:
-				return INVALID_COMMAND;
+				return "Not implemented yet.";
+		}
+	}
+	
+	private static String handleInvalidCommand(String textCommand) {
+		// See if the user has entered a valid command (but with an unrecognized syntax)
+		Command potentiallyValidCommand = CommandParser.getCommandOfName(textCommand, false);
+		System.out.println("Tried matching " + textCommand + " to a command, got " + potentiallyValidCommand);
+		if (potentiallyValidCommand == null) {
+			return "ERROR - UNRECOGNIZED COMMAND: " + textCommand + System.lineSeparator()
+					+ "Please use \"help\" to see a list of recognized commands.";
+		} else {
+			return "ERROR - INVALID SYNTAX ON COMMAND: " + textCommand + System.lineSeparator()
+					+ "Could not execute command \"" + potentiallyValidCommand.getCommandName() + "\" with the given arguments. " + System.lineSeparator()
+					+ "Please use \"help " + potentiallyValidCommand.getCommandName() + "\" for information on the correct syntax.";
 		}
 	}
 	
@@ -83,7 +102,7 @@ public class CommandHandler {
 			for (String s : commandArgs) {
 					commandUserWantsHelpFor += s + " ";
 			}
-			Command matchedCommand = CommandParser.getCommandOfName(commandUserWantsHelpFor);
+			Command matchedCommand = CommandParser.getCommandOfName(commandUserWantsHelpFor, false);
 			if(matchedCommand == null) {
 				return commandUserWantsHelpFor + " is not a valid command, so no help can be provided for it.";
 			} else {
@@ -92,4 +111,9 @@ public class CommandHandler {
 		} 
 	}
 	
+	
+	
 }
+
+
+
