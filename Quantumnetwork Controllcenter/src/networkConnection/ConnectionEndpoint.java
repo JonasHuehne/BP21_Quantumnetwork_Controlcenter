@@ -14,7 +14,6 @@ import java.util.concurrent.Executors;
 public class ConnectionEndpoint implements Runnable{
 	
 	//Local information
-	private ConnectionManager owningConnectionManager;
 	private String connectionID;
 	
 	//Addresses, Sockets and Ports
@@ -41,10 +40,9 @@ public class ConnectionEndpoint implements Runnable{
 	private Thread messageThread = new Thread(this, connectionID + "_messageThread");
 	
 	private LinkedList<String> messageStack = new LinkedList<String>();
-	private static LinkedList<String> confirmedMessageStack = new LinkedList<String>();
+	private LinkedList<String> confirmedMessageStack = new LinkedList<String>();
 	
-	public ConnectionEndpoint(ConnectionManager cm, String connectionName, String localAddress, int serverPort) {
-		owningConnectionManager = cm;
+	public ConnectionEndpoint(String connectionName, String localAddress, int serverPort) {
 		connectionID = connectionName;
 		this.localAddress = localAddress;
 		localServerPort = serverPort;
@@ -85,12 +83,7 @@ public class ConnectionEndpoint implements Runnable{
 	 * @param newLocalAddress
 	 */
 	public void updateLocalAddress(String newLocalAddress) {
-		try {
-			closeConnection(true);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		closeConnection(true);
 		localAddress = newLocalAddress;
 	}
 	
@@ -107,12 +100,7 @@ public class ConnectionEndpoint implements Runnable{
 	 * @param newPort the new Port
 	 */
 	public void updatePort(int newPort) {
-		try {
-			closeConnection(true);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		closeConnection(true);
 		localServerPort = newPort;
 	}
 	
@@ -177,10 +165,10 @@ public class ConnectionEndpoint implements Runnable{
 	
 	/**Closes the connection to another Endpoint
 	 * 
-	 * @param initial true if the request to close the connection has a local origin, false if the request came as a message from the other Endpoint.
+	 * @param localRequest true if the request to close the connection has a local origin, false if the request came as a message from the other Endpoint.
 	 * @throws IOException	may complain if something goes wrong, handle above.
 	 */
-	public void closeConnection(boolean localRequest) throws IOException {
+	public void closeConnection(boolean localRequest) {
 		if(isConnected && localRequest) {
 			//If close-request has local origin, message other connectionEndpoint about closing the connection.
 			pushMessage("termconn:::");
@@ -192,17 +180,32 @@ public class ConnectionEndpoint implements Runnable{
 		waitingForMessage = false;
 		listenForMessages = false;
 		if(localServerSocket != null) {
-			localServerSocket.close();
+			try {
+				localServerSocket.close();
+			} catch (IOException e) {
+				System.out.println("[" + connectionID + "]: Shutdown of localServerSocket failed!");
+				e.printStackTrace();
+			}
 			serverIn = null;
 			localServerSocket = null;
 		}
 		if(localClientSocket != null) {
-			localClientSocket.close();
+			try {
+				localClientSocket.close();
+			} catch (IOException e) {
+				System.out.println("[" + connectionID + "]: Shutdown of localClientSocket failed!");
+				e.printStackTrace();
+			}
 			clientOut = null;
 			localClientSocket = null;
 		}
 		if(remoteClientSocket != null) {
-			remoteClientSocket.close();
+			try {
+				remoteClientSocket.close();
+			} catch (IOException e) {
+				System.out.println("[" + connectionID + "]: Shutdown of remoteClientSocket failed!");
+				e.printStackTrace();
+			}
 			remoteClientSocket = null;
 		}		
 		if(!connectionExecutor.isShutdown()) {
@@ -370,6 +373,10 @@ public class ConnectionEndpoint implements Runnable{
 			case "confirmback":
 				System.out.println("[" + connectionID + "]: Received Confirm_Back-Message: " + message + "!");
 				registerConfirmation(message.split(":::")[1]);
+				return;
+				
+			default:
+				System.out.println("ERROR: [" + connectionID + "]: Invalid message prefix in message: " + message);
 				return;
 			
 			

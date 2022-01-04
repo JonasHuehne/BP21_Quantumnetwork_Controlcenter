@@ -5,11 +5,19 @@ import java.time.Instant;
 import java.util.LinkedList;
 
 import frame.QuantumnetworkControllcenter;
+import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
 
+/**High Level Message System. Contains methods for sending and receiving messages without dealing with low-level things.
+ * Select active connectionEndpoint and start sending and receiving messages!
+ * The first connectionEndpoint beeing created is automatically selected as active.
+ * 
+ * @author Jonas Hühne
+ *
+ */
 public class MessageSystem {
 	
-	
+public static ConnectionManager conMan;
 private static String activeConnection = null;
 
 
@@ -36,10 +44,14 @@ public static String getActiveConnection() {
  * @param message the message to be sent on the active connection
  */
 public static void sendMessage(String message) {
+	if(conMan == null) {
+		System.out.println("WARNING: Tried to send a message via the MessageSystem before initializing the QuantumnetworkControllcenter, thereby setting the connectionManager Reference.");
+		return;
+	}
 	System.out.println("[" + activeConnection + "]: Sending Message: " + message);
-	ConnectionState state = QuantumnetworkControllcenter.conMan.getConnectionState(activeConnection);
+	ConnectionState state = conMan.getConnectionState(activeConnection);
 	if(state == ConnectionState.CONNECTED) {
-		QuantumnetworkControllcenter.conMan.sendMessage(activeConnection, "msg:::" + message);
+		conMan.sendMessage(activeConnection, "msg:::" + message);
 	}
 	else {
 		System.out.println("[" + activeConnection + "]: Sending of Confirm-Message: " + message + " aborted, because the ConnectionEndpoint was not connected to anything!");

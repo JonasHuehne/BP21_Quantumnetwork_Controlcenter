@@ -1,6 +1,5 @@
 package networkConnection;
 
-import java.io.IOException;
 import java.util.*;
 
 import MessengerSystem.MessageSystem;
@@ -28,7 +27,7 @@ public class ConnectionManager {
 	*/
 	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, int serverPort) {
 		if(!connections.containsKey(endpointName) && !isPortInUse(serverPort)) {
-			connections.put(endpointName, new ConnectionEndpoint(this, endpointName, localAddress, serverPort));
+			connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, serverPort));
 			if(connections.size()==1) {
 				MessageSystem.setActiveConnection(endpointName);
 			}
@@ -103,12 +102,7 @@ public class ConnectionManager {
 		System.out.println("[ConnectionManager]: Updating LocalAddress from " + localAddress + " to " + newLocalAddress + "!");
 		localAddress = newLocalAddress;
 		connections.forEach((k,v) -> {
-			try {
-				connections.get(k).closeConnection(true);
-			} catch (IOException e) {
-				System.out.println("ERROR: while updating the localAddress, the ConnectionEndpoint " + k + " did not close its connection properly!");
-				e.printStackTrace();
-			}
+		connections.get(k).closeConnection(true);
 		});
 		connections.forEach((k,v) -> connections.get(k).updateLocalAddress(localAddress));
 	}
@@ -127,12 +121,7 @@ public class ConnectionManager {
 	 */
 	public void closeConnection(String connectionName) {
 		if(getConnectionEndpoint(connectionName) != null && getConnectionState(connectionName) == ConnectionState.CONNECTED) {
-			try {
-				getConnectionEndpoint(connectionName).closeConnection(true);
-			} catch (IOException e) {
-				System.out.println("A problem occured while closing down the connection of " + connectionName + "!");
-				e.printStackTrace();
-			}
+			getConnectionEndpoint(connectionName).closeConnection(true);
 		}else {
 			System.out.println("Warning: No active Connection found for Connection Endpoint " + connectionName + ". Aborting closing process!");
 		}
@@ -150,14 +139,9 @@ public class ConnectionManager {
 	 * @param connectionID the ID of the connectionEndpoint that is no longer needed.
 	 */
 	public void destroyConnectionEndpoint(String connectionID) {
-		try {
-			System.out.println("[ConnectionManager]: Destroying ConnectionEndpoint " + connectionID);
-			connections.get(connectionID).closeConnection(true);
-			connections.remove(connectionID);
-		} catch (IOException e) {
-			System.out.println("Error while closing down Connection " + connectionID + " as part of the ConnectionEndpoints destruction.");
-			e.printStackTrace();
-		}
+		System.out.println("[ConnectionManager]: Destroying ConnectionEndpoint " + connectionID);
+		connections.get(connectionID).closeConnection(true);
+		connections.remove(connectionID);
 	}
 	
 	/**Completely destroys all connectionEndpoints after shutting down their potentially active connections.
@@ -165,12 +149,7 @@ public class ConnectionManager {
 	 */
 	public void destroyAllConnectionEndpoints() {
 		connections.forEach((k,v) -> {
-			try {
-				connections.get(k).closeConnection(true);
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			connections.get(k).closeConnection(true);
 			});
 		connections.clear();
 	}
