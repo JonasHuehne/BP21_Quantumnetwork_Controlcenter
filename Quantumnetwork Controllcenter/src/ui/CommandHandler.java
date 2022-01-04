@@ -81,7 +81,6 @@ public class CommandHandler {
 	private static String handleInvalidCommand(String textCommand) {
 		// See if the user has entered a valid command (but with an unrecognized syntax)
 		Command potentiallyValidCommand = CommandParser.getCommandOfName(textCommand, false);
-		System.out.println("Tried matching " + textCommand + " to a command, got " + potentiallyValidCommand);
 		if (potentiallyValidCommand == null) {
 			return "ERROR - UNRECOGNIZED COMMAND: " + textCommand + System.lineSeparator()
 					+ "Please use \"help\" to see a list of recognized commands.";
