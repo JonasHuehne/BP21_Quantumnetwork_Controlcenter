@@ -15,8 +15,6 @@ public class CommandHandler {
 		
 	}
 	
-	/** String returned by {@link #processCommand(String)} if the given command is not recognized (e.g. because of a typo, or because the input was empty) */
-	public static final String INVALID_COMMAND = "Unrecognized Command.";
 	/** Message given with the IllegalArgumentException that is thrown if {@link #processCommand(String)} is called with String = null*/
 	public static final String NULL_COMMAND = "ERROR, could not process the given command (null). null is not a recognized command.";
 	
