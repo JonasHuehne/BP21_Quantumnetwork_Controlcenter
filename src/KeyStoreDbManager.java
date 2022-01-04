@@ -53,7 +53,7 @@ public class KeyStoreDbManager {
 
                 // create Table
             String sql = "CREATE TABLE IF NOT EXISTS " + tableName +
-                        " (KeyStreamId CHAR(128) NOT NULL," +
+                        " (KeyStreamId CHAR(128) ," +
                         " KeyBuffer INTEGER NOT NULL, " +
                         " Index_ INTEGER NOT NULL , " +
                         " Source_ TEXT NOT NULL, " +
