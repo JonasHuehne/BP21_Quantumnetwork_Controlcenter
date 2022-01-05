@@ -12,7 +12,7 @@ import networkConnection.ConnectionState;
  * Select active connectionEndpoint and start sending and receiving messages!
  * The first connectionEndpoint beeing created is automatically selected as active.
  * 
- * @author Jonas Hühne
+ * @author Jonas HÃ¼hne
  *
  */
 public class MessageSystem {
@@ -140,10 +140,10 @@ public static LinkedList<String> getAllReceivedMessages(){
 	
 	
 /**
- * sends a signed message
- * (currently implemented as sending the message and the signature separately)
- * @param message the message to be sent	
- * @return true if the sending of both messages worked, false otherwise
+* sends a signed message
+* (currently implemented as sending the message and the signature separately)
+* @param message the message to be sent
+* @return true if the sending of both messages worked, false otherwise
 */
 public static boolean sendAuthenticatedMessage(final String message) {
 	String signature = Authentication.sign(message);
@@ -153,10 +153,10 @@ public static boolean sendAuthenticatedMessage(final String message) {
 }
 
 /**
-* receives a signed message
-* (currently implemented as receiving two messages, first the message, then the signature)
-* @return the received message as string, null if error none or if result of verify was false
-*/
+ * receives a signed message
+	* (currently implemented as receiving two messages, first the message, then the signature)
+	* @return the received message as string, null if error none or if result of verify was false
+	*/
 public static String readAuthenticatedMessage() {
 	Instant startWait = Instant.now();
 	while(getNumberOfPendingMessages() < 2) {
