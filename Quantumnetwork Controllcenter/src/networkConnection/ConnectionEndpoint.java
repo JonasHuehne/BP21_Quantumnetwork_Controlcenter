@@ -261,8 +261,9 @@ public class ConnectionEndpoint implements Runnable{
 		confirmedMessageStack.add(message);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public LinkedList<String> getConfirmations(){
-		return confirmedMessageStack;
+		return (LinkedList<String>) confirmedMessageStack.clone();
 	}
 	
 	public void clearConfirmation(String conf){
