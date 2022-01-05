@@ -90,7 +90,6 @@ public class KeyStoreDbManager {
         try{
             Connection conn = connect();
 
-            //wollte den sql String eig private machen
             String sql = "INSERT INTO KeyInformations(KeyStreamID, KeyBuffer, Index_, Source_, Destination)  VALUES(?,?,?,?,?)";
 
             PreparedStatement prepStmnt = conn.prepareStatement(sql);
@@ -111,7 +110,7 @@ public class KeyStoreDbManager {
         }
 
         catch (SQLException e ){
-            System.out.println("Inserion to DB failed!" + "\n" );
+            System.out.println("Insertion to DB failed!" + "\n" );
             e.printStackTrace();
         }
         return false;
@@ -144,7 +143,7 @@ public class KeyStoreDbManager {
     }
 
 
-    /** Displays all entrys on the console
+    /** Displays all entries on the console
      *
      * @return True if output was displayed correctly, False otherwise
      */
@@ -168,7 +167,7 @@ public class KeyStoreDbManager {
             conn.close();
             return true;
         } catch (SQLException e) {
-            System.out.println( "Selecting Everything from KeyStore.db" + "and Table=" + tableName + "\n" );
+            System.out.println( "Selecting every entry from KeyStore.db failed!" );
             e.printStackTrace();
             return false;
         }
@@ -188,7 +187,6 @@ public class KeyStoreDbManager {
             PreparedStatement pstmnt = conn.prepareStatement(sql);
 
             pstmnt.setString(1, keyStreamID);
-            //stmnt.executeQuery(sql);
             pstmnt.executeUpdate();
             System.out.println("Entry was deleted successfully!");
             pstmnt.close();
@@ -230,6 +228,7 @@ public class KeyStoreDbManager {
 
 
         } catch (SQLException e) {
+            System.out.println("Selecting the entry failed!" + "\n");
             e.printStackTrace();
             return null;
         }
@@ -256,7 +255,8 @@ public class KeyStoreDbManager {
             conn.close();
             return result;
         } catch (Exception e) {
-            System.err.println("Problem with query for data in CommunicationList Database (" + e.getMessage() + ")");
+            System.out.println("Generating a list of all entries failed!" + "\n");
+            e.printStackTrace();
             return null;
         }
     }
