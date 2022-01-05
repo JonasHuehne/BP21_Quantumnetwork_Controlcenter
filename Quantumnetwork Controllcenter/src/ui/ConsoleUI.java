@@ -9,6 +9,11 @@ import java.awt.event.KeyEvent;
 import javax.swing.JTextField;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
 
 /**
  * The ConsoleUI class provides a GUI which appears and acts similar to a console / terminal application.
@@ -26,8 +31,6 @@ public class ConsoleUI {
 	
 	/** Title displayed in the applications border */
 	private final String APPLICATION_TITLE = "Quantum Network Control Center Console UI";
-	/** Text prompting the user to enter a command, always displayed in the {@link #consoleInArea} */
-	private final String ENTER_COMMAND_TEXT = "Enter Command: ";
 	/** Text displayed on startup in the {@link #consoleOutArea} */
 	private final String INITIAL_TEXT = "Welcome to the Quantum Network Control Center. What would you like to do?" + System.lineSeparator() + "Enter \"help\" for a list of commands.";
 	
@@ -35,7 +38,12 @@ public class ConsoleUI {
 	private JTextField consoleInArea;
 	/** The text area for the application output (command feedback, error codes, ...)*/
 	private JTextArea consoleOutArea;
-
+	
+	/** For convenience purposes we save the last entered commands in a list, which the user can cycle through by pressing UP and DOWN */
+	private LinkedList<String> enteredCommands = new LinkedList<>();
+	/** This index is used to cycle through the list of entered commands {@link #enteredCommands} */
+	private int commandIndex = 0;
+	
 	/**
 	 * Create the application.
 	 */
@@ -54,8 +62,8 @@ public class ConsoleUI {
 		
 		// The area in which the user enters the commands
 		consoleInArea = new JTextField();
+		consoleInArea.setCaretColor(Color.GREEN);
 		consoleInArea.setFont(new Font("Arial", Font.PLAIN, 14));
-		consoleInArea.setText(ENTER_COMMAND_TEXT);
 		consoleInArea.setForeground(Color.GREEN);
 		consoleInArea.setBackground(Color.BLACK);
 		consoleInArea.setBorder(javax.swing.BorderFactory.createEmptyBorder());
@@ -63,6 +71,14 @@ public class ConsoleUI {
 		
 		// Output area containing result of computing the command
 		consoleOutArea = new JTextArea();
+		consoleOutArea.setLineWrap(true);
+		consoleOutArea.setWrapStyleWord(true);
+		consoleOutArea.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				consoleInArea.requestFocusInWindow();
+			}
+		});
 		consoleOutArea.setFont(new Font("Arial", Font.PLAIN, 14));
 		consoleOutArea.setEditable(false);
 		consoleOutArea.setText(INITIAL_TEXT);
@@ -76,9 +92,21 @@ public class ConsoleUI {
 			@Override
 			public void keyPressed(KeyEvent e) {
 				if(e.getKeyCode() == KeyEvent.VK_ENTER) { // Attempt to parse entered command if ENTER key is pressed
-					String enteredCommand = consoleInArea.getText().substring(ENTER_COMMAND_TEXT.length()); 
+					String enteredCommand = consoleInArea.getText(); 
+					enteredCommands.addFirst(enteredCommand);
 					consoleOutArea.setText(CommandHandler.processCommand(enteredCommand));			
-					consoleInArea.setText(ENTER_COMMAND_TEXT);
+					consoleInArea.setText("");
+					commandIndex = 0;
+				} else if(e.getKeyCode() == KeyEvent.VK_UP) { // If the user presses UP, replace the input area text with the previously entered command
+					if(enteredCommands.size() > commandIndex) {
+						consoleInArea.setText(enteredCommands.get(commandIndex));
+						if(commandIndex + 1 != enteredCommands.size()) commandIndex++; // If list has n elements, index may at most be (n-1)
+					} 
+				} else if(e.getKeyCode() == KeyEvent.VK_DOWN) {
+					if (commandIndex > 0) {
+						commandIndex--;
+						consoleInArea.setText(enteredCommands.get(commandIndex));
+					}
 				}
 			}
 		});
