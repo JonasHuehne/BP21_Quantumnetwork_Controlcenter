@@ -21,22 +21,42 @@ public final class KeyStoreObject {
 
         }
 
-        public String getID() {
+    /**
+     *
+     * @return KeyStreamID of the entry
+     */
+    public String getID() {
             return keyStreamID;
         }
 
+    /**
+     *
+     * @return Buffer of the entry
+     */
         public int getBuffer() {
             return keyBuffer;
         }
 
+    /**
+     *
+     * @return Index of entry
+     */
         public int getIndex(){
             return index;
         }
 
+    /**
+     *
+     * @return Source of the entry
+     */
         public String getSource(){
             return source;
         }
 
+    /**
+     *
+     * @return Destination of the entry
+     */
         public String getDestination(){
             return destination;
         }
