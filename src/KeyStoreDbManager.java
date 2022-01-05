@@ -48,13 +48,12 @@ public class KeyStoreDbManager {
             Connection conn = KeyStoreDbManager.connect();
             Statement stmnt = conn.createStatement();
 
-            DatabaseMetaData meta = conn.getMetaData();
             System.out.println("Database was created successfully!");
 
                 // create Table
             String sql = "CREATE TABLE IF NOT EXISTS " + tableName +
                         " (KeyStreamId CHAR(128) ," +
-                        " KeyBuffer INTEGER NOT NULL, " +
+                        " KeyBuffer INTEGER NOT NULL, " + // Index muss definitiv noch angepasst werden, Frage im Treffen heute nach
                         " Index_ INTEGER NOT NULL , " +
                         " Source_ TEXT NOT NULL, " +
                         " Destination TEXT NOT NULL, " +

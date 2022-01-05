@@ -26,6 +26,7 @@ class KeyStoreDbManagerTest {
     void deleteEntryByID() {
         boolean deleteBool = KeyStoreDbManager.deleteEntryByID("nurEineTestID_01");
 
+
         assertEquals(true, deleteBool);
         boolean selectBool = KeyStoreDbManager.selectAll();
         assertEquals(true, selectBool);
