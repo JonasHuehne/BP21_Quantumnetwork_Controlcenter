@@ -26,7 +26,7 @@ class CommunicationListCommandHandler {
 	static String handleContactsAdd(String[] commandArgs) {
 		String name = commandArgs[0], ip = commandArgs[1];
 		int port = Integer.parseInt(commandArgs[2]);
-		boolean success = Database.insert(name, ip, port);
+		boolean success = Database.insert(name, ip, port, "NO KEY SET");
 		if(success) {
 			return "Successfully inserted new contact (" + name + ", " + ip + ", " + port + ") into the contact list."; 
 		} else {
@@ -139,6 +139,6 @@ class CommunicationListCommandHandler {
 	}
 	
 	private static String dbObjectToString(DbObject dbo) {
-		return "[Name: " + dbo.getName() + " IP: " + dbo.getIpAddr() + " Port: " + dbo.getPort() + "]";
+		return "[Name: " + dbo.getName() + " IP: " + dbo.getIpAddress() + " Port: " + dbo.getPort() + "]";
 	}
 }

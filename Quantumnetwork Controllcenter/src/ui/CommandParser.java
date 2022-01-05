@@ -8,20 +8,22 @@ import java.util.stream.Stream;
 public class CommandParser {
 
 	/**
-	 * For a given text command (String), this method finds the {@link Command} matching it. <p>
+	 * For a given text command (String), this method finds the {@link Command} whose syntax is exactly matched by the text command. <br>
 	 * Regarding case sensitivity: If the input String represents a valid command (e.g. "contacts add [...]") the case
 	 * of the <i>command name</i> does not matter ("cOnTactS aDD" is treated the same as "contacts add"), however, for
 	 * individual commands the arguments may be case sensitive.
-	 * @param input
-	 * 		The input String to find a matching command for. <p>
+	 * @param textCommand
+	 * 		The input String to find a matching command for. <br>
 	 * 		Any amount of whitespaces will be treated as one whitespace, leading and trailing whitespaces will be ignored.
 	 * @return 
-	 * 		Returns the Command matching the input String, or null if no such Command exists. <p>
-	 * 		e.g. for "help" this method returns {@link #HELP}, and for "kdjnvusdn" it returns null. <p>
+	 * 		If the input string fits the syntax ({@link Command#getCommandPattern()}) of a Command exactly, that Command is returned,
+	 * 		e.g. for "help" this method returns {@link #HELP} and for "contacts add Annie 127.0.0.1 1234" it returns {@link Command#CONTACTS_ADD} <br>
+	 * 		If the input string does not fit the syntax of a Command exactly, then null is returned,
+	 * 		e.g. the input string is "xjcvnxvjn" or it is "contacts add Annie" (incomplete syntax for {@link Command#CONTACTS_ADD}) <br>
 	 * 		If the input is null, null is returned.
 	 */
-	public static Command match(String input) { // TODO: This needs a better name and javadoc
-		String normedInput = normInput(input);	
+	public static Command match(String textCommand) { 
+		String normedInput = normInput(textCommand);	
 		if (normedInput == null) return null;
 		for (Command command : Command.values()) {
 			if(Pattern.matches(command.getCommandPattern(), normedInput)) {	
@@ -32,13 +34,13 @@ public class CommandParser {
 	}
 	
 	/**
-	 * For a given text command (String) this method finds the {@link Command} whose name matches the text command. <p>
+	 * For a given text command (String) this method finds the {@link Command} whose name matches the text command. <br>
 	 * @param commandName
 	 * 		The string to check
 	 * 		Regardless of <b>strict</b> this String is not case sensitive, any leading and trailing whitespace is ignored, and multiple whitespaces are treated as one
 	 * @param strict
 	 * 		If strict is true, commandName will have to be <i>only</i> the name of a valid Command, 
-	 * 		i.e. "contacts add" would return {@link Command#CONTACTS_ADD}, but "contacts add Jimmy" would return null <p>
+	 * 		i.e. "contacts add" would return {@link Command#CONTACTS_ADD}, but "contacts add Jimmy" would return null <br>
 	 * 		If strict is false this method will check all Commands, and return the first Command whose name is the start of the input String commandName, 
 	 * 		i.e. "contacts add Jimmy" would return "contacts add", "help ewemfw" would return "help", but "hlep" would still return null
 	 * @return
@@ -61,12 +63,12 @@ public class CommandParser {
 	/**
 	 * Extracts the arguments from a given text command.
 	 * @param input
-	 * 		A String corresponding to a {@link Command} <p>
+	 * 		A String corresponding to a {@link Command} <br>
 	 * 		Any amount of whitespaces will be treated as one whitespace, leading and trailing whitespaces will be ignored
 	 * @return
-	 * 		The arguments of the given text command, e.g. for "contacts search Bob" this method would return ["Bob"] <p>
-	 * 		Returns an empty array iff the given command has no arguments following it (e.g. "contacts show") <p>
-	 * 		Returns null iff {@link #match(String)} would return null for <b>input</b> <p>
+	 * 		The arguments of the given text command, e.g. for "contacts search Bob" this method would return ["Bob"] <br>
+	 * 		Returns an empty array iff the given command has no arguments following it (e.g. "contacts show") <br>
+	 * 		Returns null iff {@link #match(String)} would return null for <b>input</b>
 	 */
 	public static String[] extractArguments(String input) {
 		
@@ -80,9 +82,9 @@ public class CommandParser {
 		} else { 
 			// Extracts all arguments from the argument string, e.g. "Alice name Bob" becomes ["Alice", "name", "Bob"]
 			// This code is probably very inefficient, but it appears to work at least
-			String[] argumentsUncleaned = argumentString.split(" ");
+			String[] argumentsUncleaned = argumentString.split(" "); // this array contains a few entries of form "", which we don't want
 			Stream<String> stream = Arrays.stream(argumentsUncleaned);
-			ArrayList<String> arrList = new ArrayList<String>();
+			ArrayList<String> arrList = new ArrayList<String>(); // this list will contain only the non-empty strings, and then be converted to an array
 			stream.forEach(str -> {if(str != "") arrList.add(str);});
 			return arrList.toArray(new String[0]);
 		}

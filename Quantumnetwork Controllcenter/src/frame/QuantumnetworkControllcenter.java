@@ -3,6 +3,10 @@ package frame;
 import networkConnection.ConnectionManager;
 import ui.ConsoleUI;
 import java.awt.EventQueue;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+
+import MessengerSystem.MessageSystem;
 
 /*
  * Main Class of QuantumnetworkControllcenter
@@ -20,6 +24,7 @@ public class QuantumnetworkControllcenter {
 		//Network Connection Init
 		String localIP = "127.0.0.1"; //Must be changed manually as of right now. Use IP depending on intended communication Range (local Machine, local Network or Internet)
 		conMan = new ConnectionManager(localIP);
+		MessageSystem.conMan = conMan;
 		
 		System.out.println("QuantumnetworkControllcenter initialized");
 	}
@@ -47,9 +52,6 @@ public class QuantumnetworkControllcenter {
 				}
 			}
 		});
-		
-		// switched workspace in Eclipse
-		
 	}
 	
 }

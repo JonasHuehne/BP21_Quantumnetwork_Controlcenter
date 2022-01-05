@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -94,8 +96,21 @@ class CommandHandlerTest {
 		void before_each () {
 			// Ensure that the Database is clear of all entries
 			ArrayList<DbObject> entries = Database.queryAll();
-			for (DbObject entry : entries) {
-				Database.delete(entry.getName());
+			if(entries != null) {
+				for (DbObject entry : entries) {
+					Database.delete(entry.getName());
+				}
+			}
+		}
+		
+		@AfterEach 
+		void after_each() {
+			// Do not leave any entries in the Database
+			ArrayList<DbObject> entries = Database.queryAll();
+			if(entries != null) {
+				for (DbObject entry : entries) {
+					Database.delete(entry.getName());
+				}
 			}
 		}
 		
@@ -112,9 +127,9 @@ class CommandHandlerTest {
 			
 			assertTrue(Database.queryAll().size() == 3);
 			
-			assertEquals(Alexa.getIpAddr(), "127.0.0.1");
-			assertEquals(Billie.getIpAddr(), "138.0.0.5");
-			assertEquals(Charlie.getIpAddr(), "168.0.1.7");
+			assertEquals(Alexa.getIpAddress(), "127.0.0.1");
+			assertEquals(Billie.getIpAddress(), "138.0.0.5");
+			assertEquals(Charlie.getIpAddress(), "168.0.1.7");
 			
 			assertEquals(Alexa.getPort(), 4444);
 			assertEquals(Billie.getPort(), 9999);
@@ -125,9 +140,9 @@ class CommandHandlerTest {
 		@Test
 		void contacts_remove_works() {
 			
-			Database.insert("Alexa", "127.0.0.1", 1);
-			Database.insert("Billie", "127.0.0.2", 2);
-			Database.insert("Charlie", "127.0.0.3", 3);
+			Database.insert("Alexa", "127.0.0.1", 1, "NO KEY SET");
+			Database.insert("Billie", "127.0.0.2", 2, "NO KEY SET");
+			Database.insert("Charlie", "127.0.0.3", 3, "NO KEY SET");
 			
 			CommandHandler.processCommand("contacts remove Alexa");
 			CommandHandler.processCommand("contacts remove Billie");
@@ -140,9 +155,9 @@ class CommandHandlerTest {
 		@Test
 		void contacts_show_works() {
 			
-			Database.insert("Alexa", "127.0.0.1", 1111);
-			Database.insert("Billie", "127.0.0.2", 2222);
-			Database.insert("Charlie", "127.0.0.3", 3333);
+			Database.insert("Alexa", "127.0.0.1", 1111, "NO KEY SET");
+			Database.insert("Billie", "127.0.0.2", 2222, "NO KEY SET");
+			Database.insert("Charlie", "127.0.0.3", 3333, "NO KEY SET");
 			
 			String shownContacts = CommandHandler.processCommand("contacts show");
 			
@@ -162,25 +177,25 @@ class CommandHandlerTest {
 		@Test
 		void contacts_update_works() {
 		
-			Database.insert("Alexa", "127.0.0.1", 1111);
+			Database.insert("Alexa", "127.0.0.1", 1111, "NO KEY SET");
 			
 			CommandHandler.processCommand("contacts update Alexa name Bob");
 			
 			assertTrue(Database.queryAll().size() == 1);
 			assertNull(Database.query("Alexa"));
-			assertEquals(Database.query("Bob").getIpAddr(), "127.0.0.1");
+			assertEquals(Database.query("Bob").getIpAddress(), "127.0.0.1");
 			assertEquals(Database.query("Bob").getPort(), 1111);
 			
 			CommandHandler.processCommand("contacts update Bob IP 168.0.0.1");
 			
 			assertTrue(Database.queryAll().size() == 1);
-			assertEquals(Database.query("Bob").getIpAddr(), "168.0.0.1");
+			assertEquals(Database.query("Bob").getIpAddress(), "168.0.0.1");
 			assertEquals(Database.query("Bob").getPort(), 1111);
 			
 			CommandHandler.processCommand("contacts update Bob Port 5555");
 			
 			assertTrue(Database.queryAll().size() == 1);
-			assertEquals(Database.query("Bob").getIpAddr(), "168.0.0.1");
+			assertEquals(Database.query("Bob").getIpAddress(), "168.0.0.1");
 			assertEquals(Database.query("Bob").getPort(), 5555);
 			
 		}
@@ -188,7 +203,7 @@ class CommandHandlerTest {
 		@Test
 		void contacts_search_works() {
 			
-			Database.insert("Alexa", "127.0.0.1", 45345);
+			Database.insert("Alexa", "127.0.0.1", 45345, "NO KEY SET");
 			
 			String searched = CommandHandler.processCommand("contacts search Alexa");
 			

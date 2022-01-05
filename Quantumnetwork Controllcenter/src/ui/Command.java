@@ -13,6 +13,7 @@ package ui;
  */
 public enum Command {
 
+	// TODO: Potentially remove this later
 	// Helpful resources on regular expressions:
 	// https://docs.oracle.com/javase/tutorial/essential/regex/
 	// https://www.vogella.com/tutorials/JavaRegularExpressions/article.html

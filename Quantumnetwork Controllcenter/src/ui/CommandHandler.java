@@ -108,6 +108,7 @@ public class CommandHandler {
 			for (Command c : Arrays.asList(Command.values())) { // TODO Potentially add a "short help text" for each Command, either in Command or a seperate enum
 				availableCommands += " " + c.getCommandName() + System.lineSeparator();
 			}
+			availableCommands += "Enter help <commandName> for additional information on a command";
 			return availableCommands;
 		} else { // User typed "help [command]" - we don't yet know what command is, and if it is for example "contacts add" then commandArgs will be multiple args
 			// from commandArgs, construct just one String (the String representing the command the user wants help with)

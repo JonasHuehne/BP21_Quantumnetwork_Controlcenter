@@ -7,14 +7,13 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
-public class ConnectionEndpoint {
+public class ConnectionEndpoint implements Runnable{
 	
 	//Local information
-	private ConnectionManager owningConnectionManager;
 	private String connectionID;
 	
 	//Addresses, Sockets and Ports
@@ -31,20 +30,23 @@ public class ConnectionEndpoint {
 	private PrintWriter clientOut;
 	
 	//State
+	private boolean listenForMessages = false;
 	private boolean isConnected = false;
 	private boolean isBuildingConnection = false;
 	private boolean waitingForConnection = false;
 	private boolean waitingForMessage = false;
 	
 	private ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
+	private Thread messageThread = new Thread(this, connectionID + "_messageThread");
 	
-	public ConnectionEndpoint(ConnectionManager cm, String connectionName, String localAddress, int serverPort) {
-		owningConnectionManager = cm;
+	private LinkedList<String> messageStack = new LinkedList<String>();
+	private LinkedList<String> confirmedMessageStack = new LinkedList<String>();
+	
+	public ConnectionEndpoint(String connectionName, String localAddress, int serverPort) {
 		connectionID = connectionName;
 		this.localAddress = localAddress;
 		localServerPort = serverPort;
 		try {
-			//localClientSocket = new Socket("127.0.0.1",localClientPort);
 			localServerSocket = new ServerSocket(localServerPort);
 			System.out.println("Initialised local ServerSocket in Endpoint of " + connectionID + " at Port " + String.valueOf(localServerPort));
 		} catch (IOException e) {
@@ -59,24 +61,56 @@ public class ConnectionEndpoint {
 	 */
 	public ConnectionState reportState() {
 		if(isConnected && !isBuildingConnection) {
-			return ConnectionState.Connected;
+			return ConnectionState.CONNECTED;
 		}
 		if(!isConnected && !isBuildingConnection && !waitingForConnection && !waitingForMessage) {
-			return ConnectionState.Closed;
+			return ConnectionState.CLOSED;
 		}
 		if(waitingForConnection && !isConnected && !isBuildingConnection) {
-			return ConnectionState.WaitingForConnection;
+			return ConnectionState.WAITINGFORCONNECTION;
 		}
 		if(!waitingForConnection && !isConnected && !isBuildingConnection && waitingForMessage) {
-			return ConnectionState.WaitingForMessage;
+			return ConnectionState.WAITINGFORMESSAGE;
 		}
 		if(!waitingForConnection && !isConnected && isBuildingConnection) {
-			return ConnectionState.Connecting;
+			return ConnectionState.CONNECTING;
 		}
 		return ConnectionState.ERROR;
 	}
 	
+	/**updated the local IP
+	 * 
+	 * @param newLocalAddress
+	 */
+	public void updateLocalAddress(String newLocalAddress) {
+		closeConnection(true);
+		localAddress = newLocalAddress;
+	}
 	
+	/**returns the local IP
+	 * 
+	 * @return the local IP
+	 */
+	public String getLocalAddress() {
+		return localAddress;
+	}
+	
+	/**Updates the local Port
+	 * 
+	 * @param newPort the new Port
+	 */
+	public void updatePort(int newPort) {
+		closeConnection(true);
+		localServerPort = newPort;
+	}
+	
+	/**Returns the int-Portnumber that this ConnectionEndpoint uses to listen to incoming messages.
+	 * 
+	 * @return the Port Number used by this ConnectionEndpoint as an int.
+	 */
+	public int getServerPort() {
+		return localServerPort;
+	}
 	//------------//
 	//Client Side
 	//------------//
@@ -85,13 +119,14 @@ public class ConnectionEndpoint {
 	 * 
 	 * @param targetServerIP	the IP or Name of the other Party.
 	 * @param targetServerPort	the Port on which the other Partys ServerSocket is listening for connections.
+	 * @throws IOException 
 	 */
-	public void EstablishConnection(String targetServerIP, int targetServerPort) {
+	public void establishConnection(String targetServerIP, int targetServerPort) throws IOException {
 		if(isConnected) {
 			System.out.println("Warning: " + connectionID + " is already connected to " + remoteID + " at Port " + String.valueOf(remotePort) + "! Connection creation aborted!");
 			return;
 		}
-		System.out.println("Attempting to connect " + connectionID + " to: " + targetServerIP + " on port " + String.valueOf(targetServerPort) + "!");
+		System.out.println("[" + connectionID + "]: Attempting to connect " + connectionID + " to: " + targetServerIP + " on port " + String.valueOf(targetServerPort) + "!");
 
 		isBuildingConnection = true;
 		remoteID = targetServerIP;
@@ -105,43 +140,77 @@ public class ConnectionEndpoint {
 			isConnected = true;
 			
 			//Send Message to allow foreign Endpoint to connect with us.
-			System.out.println(connectionID + " is sending a greeting.");
-			pushMessage(localAddress + ":" + localServerPort);
-			System.out.println("waiting for response");
+			System.out.println("[" + connectionID + "]: " + connectionID + " is sending a greeting.");
+			pushMessage("connreq:::" + localAddress + ":" + localServerPort);
+			System.out.println("[" + connectionID + "]: waiting for response");
 			remoteClientSocket = localServerSocket.accept();
 			serverIn = new BufferedReader(new InputStreamReader(remoteClientSocket.getInputStream()));
-			System.out.println("Connected " + connectionID + " to external ID and Port: " + remoteID + ", " + String.valueOf(remotePort) + "!");
+			System.out.println("[" + connectionID + "]: Connected " + connectionID + " to external ID and Port: " + remoteID + ", " + String.valueOf(remotePort) + "!");
 			isBuildingConnection = false;
+			listenForMessage();
 			
 		//Error Messages
 		} catch (UnknownHostException e) {
 			isConnected = false;
-			System.out.println("Connection could not be established! An Error occured while trying to reach the other party via " + remoteID + ":" + String.valueOf(remotePort));
+			System.out.println("[" + connectionID + "]: Connection could not be established! An Error occured while trying to reach the other party via " + remoteID + ":" + String.valueOf(remotePort));
 			e.printStackTrace();
 		} catch (IOException e) {
 			isConnected = false;
-			System.out.println("Connection could not be established! An Error occured while connecting to the other Client!");
-			e.printStackTrace();
+			System.out.println("[" + connectionID + "]: Connection could not be established! An Error occured while connecting to the other Client!");
+			throw e;
 		}
 		
 	}
 	
+	
 	/**Closes the connection to another Endpoint
 	 * 
+	 * @param localRequest true if the request to close the connection has a local origin, false if the request came as a message from the other Endpoint.
 	 * @throws IOException	may complain if something goes wrong, handle above.
 	 */
-	public void closeConnection() throws IOException {
-		System.out.println("Local Shutdown of ConnectionEndpoint " + connectionID);
-			localServerSocket.close();
-			localClientSocket.close();
-			remoteClientSocket.close();
-			isConnected = false;
-			isBuildingConnection = false;
-			waitingForConnection = false;
-			waitingForMessage = false;
-			if(!connectionExecutor.isShutdown()) {
-				connectionExecutor.shutdownNow();
+	public void closeConnection(boolean localRequest) {
+		if(isConnected && localRequest) {
+			//If close-request has local origin, message other connectionEndpoint about closing the connection.
+			pushMessage("termconn:::");
+		}
+		System.out.println("[" + connectionID + "]: Local Shutdown of ConnectionEndpoint " + connectionID);
+		isConnected = false;
+		isBuildingConnection = false;
+		waitingForConnection = false;
+		waitingForMessage = false;
+		listenForMessages = false;
+		if(localServerSocket != null) {
+			try {
+				localServerSocket.close();
+			} catch (IOException e) {
+				System.out.println("[" + connectionID + "]: Shutdown of localServerSocket failed!");
+				e.printStackTrace();
 			}
+			serverIn = null;
+			localServerSocket = null;
+		}
+		if(localClientSocket != null) {
+			try {
+				localClientSocket.close();
+			} catch (IOException e) {
+				System.out.println("[" + connectionID + "]: Shutdown of localClientSocket failed!");
+				e.printStackTrace();
+			}
+			clientOut = null;
+			localClientSocket = null;
+		}
+		if(remoteClientSocket != null) {
+			try {
+				remoteClientSocket.close();
+			} catch (IOException e) {
+				System.out.println("[" + connectionID + "]: Shutdown of remoteClientSocket failed!");
+				e.printStackTrace();
+			}
+			remoteClientSocket = null;
+		}		
+		if(!connectionExecutor.isShutdown()) {
+			connectionExecutor.shutdownNow();
+		}
 	}
 	
 	/**Pushes a Message to the connected Endpoints ServerSocket.
@@ -149,18 +218,62 @@ public class ConnectionEndpoint {
 	 * @param message the String Message that should be send to the connected Partys Server.
 	 */
 	public void pushMessage(String message) {
-		System.out.println("Attempting to push message: " + message);
 		//Check for existence of connection before attempting so send.
 		if(!isConnected) {
-			System.out.println("ERROR: Attempted to push a message to another Endpoint while not beeing connected to anything!");
+			System.out.println("Warning: Attempted to push a message to another Endpoint while not beeing connected to anything!");
 			return;
 		}
-		System.out.println("ConnectionEndpoint of " + connectionID + " is pushing Message: " + message + " to ServerSocket of " + remoteID + ":" + String.valueOf(remotePort) + "!");
+		System.out.println("[" + connectionID + "]: ConnectionEndpoint of " + connectionID + " is pushing Message: " + message + " to ServerSocket of " + remoteID + ":" + String.valueOf(remotePort) + "!");
 		clientOut.println(message);
 		return;
 	}
 	
+	public void addMessageToStack(String message) {
+		messageStack.add(message);
+	}
+
+	public String readMessageFromStack() {
+		if (messageStack.size()>0) {
+			return messageStack.pop();
+		}
+		return "";
+	}
 	
+	public String peekMessageFromStack() {
+		if (messageStack.size()>0) {
+			return messageStack.peekFirst();
+		}
+		return "";
+	}
+	
+	public String peekLatestMessageFromStack() {
+		if (messageStack.size()>0) {
+		return messageStack.peekLast();
+		}
+		return "";
+	}
+	
+	public int sizeOfMessageStack() {
+		return messageStack.size();
+	}
+	
+	private void registerConfirmation(String message) {
+		confirmedMessageStack.add(message);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public LinkedList<String> getConfirmations(){
+		return (LinkedList<String>) confirmedMessageStack.clone();
+	}
+	
+	public void clearConfirmation(String conf){
+		confirmedMessageStack.remove(conf);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public LinkedList<String> getMessageStack(){
+		return (LinkedList<String>) messageStack.clone();
+	}
 	//------------//
 	//Server Side
 	//------------//
@@ -171,7 +284,7 @@ public class ConnectionEndpoint {
 	 */
 	public void waitForConnection() {
 		connectionExecutor.submit(() -> {
-			System.out.println(connectionID + " is beginning to wait for a ConnectionAttempt from the outside on Port " + localServerPort + "!");
+			System.out.println("[" + connectionID + "]: " + connectionID + " is beginning to wait for a ConnectionAttempt from the outside on Port " + localServerPort + "!");
 			waitingForConnection = true;
 			while(waitingForConnection && !isConnected && !isBuildingConnection) {	
 			
@@ -179,7 +292,7 @@ public class ConnectionEndpoint {
 				try {
 					//Listen for connection attempt
 					remoteClientSocket = localServerSocket.accept();
-					System.out.println("A ConnectionRequest has been recieved at " + connectionID + "s ServerSocket on Port " + localServerPort + "!");
+					System.out.println("[" + connectionID + "]: A ConnectionRequest has been received at " + connectionID + "s ServerSocket on Port " + localServerPort + "!");
 					
 					//Set ServerCommmChannels
 					serverIn = new BufferedReader(new InputStreamReader(remoteClientSocket.getInputStream()));
@@ -187,17 +300,9 @@ public class ConnectionEndpoint {
 					isConnected = true;
 					
 					//Wait for greeting
-					System.out.println("Wating for Greeting from connecting Party");
+					System.out.println("[" + connectionID + "]: Wating for Greeting from connecting Party");
 					listenForMessage();
-					String greetingMessage = listenForMessage();
-					remoteID = greetingMessage.split(":")[0];
-					remotePort = Integer.parseInt(greetingMessage.split(":")[1]);
-					System.out.println("Recieved initial Message: " + greetingMessage);
-				
-					//Use greeting(ip:port) to establish back-connection to the ConnectionAttempt-Sources ServerSocket
-					System.out.println("Connecting back to " + remoteID + " at Port: " + remotePort);
-					localClientSocket = new Socket(remoteID, remotePort);
-					clientOut = new PrintWriter(localClientSocket.getOutputStream(), true);
+					
 				
 				
 				
@@ -213,26 +318,17 @@ public class ConnectionEndpoint {
 		
 	/**Waits until a message was received and then returns the message. Blocking.
 	 * 
-	 * @return	returns the String of the next recieved message.
+	 * @return	returns the String of the next received message.
 	 */
-	public String listenForMessage() {
-		System.out.println("Waiting for Message has startet!");
-		waitingForMessage = true;
-		String recievedMessage;
-		while(waitingForMessage) {
-			try {
-				if(isConnected && !waitingForConnection && (recievedMessage = serverIn.readLine()) != null) {
-					System.out.println(connectionID + " recieved Message!:");
-					System.out.println(recievedMessage);
-					waitingForMessage = false;
-					return preProcessMessage(recievedMessage);
-				}
-			} catch (IOException e) {
-				System.out.println("Error while waiting for Message at " + connectionID + "!");
-				e.printStackTrace();
-			}
+	public void listenForMessage() {
+		if(listenForMessages) {
+			System.out.println("[" + connectionID + "]: Already listening for Message, not starting a 2. Thread.");
+			return;
 		}
-		return "No message recived!";			
+		listenForMessages = true;
+		System.out.println("[" + connectionID + "]: Waiting for Message has startet!");
+		messageThread.start();
+		return;			
 	}
 	
 	/**PreProcessing-step to filter out ConnectionCommands
@@ -240,18 +336,81 @@ public class ConnectionEndpoint {
 	 * @param message	the message that was just received and should be checked for keywords.
 	 * @return	the String message after it was processed.
 	 */
-	private String preProcessMessage(String message) {
+	private void processMessage(String message) {
 		//Closing Message
-		if(message.split(":")[0].equals("TerminateConnection")) {
+		System.out.println("[" + connectionID + "]: Processing Message: " + message);
+		try {
+			switch(message.split(":::")[0]){
+			
+			case "connreq":
+				//Parse Greeting
+				String greetingMessage = message.split(":::")[1];
+				remoteID = greetingMessage.split(":")[0];
+				remotePort = Integer.parseInt(greetingMessage.split(":")[1]);
+				System.out.println("[" + connectionID + "]: Received initial Message: " + greetingMessage);
+			
+				//Use greeting(ip:port) to establish back-connection to the ConnectionAttempt-Sources ServerSocket
+				System.out.println("[" + connectionID + "]: Connecting back to " + remoteID + " at Port: " + remotePort);
+				localClientSocket = new Socket(remoteID, remotePort);
+				clientOut = new PrintWriter(localClientSocket.getOutputStream(), true);
+				return;
+				
+			case "termconn":
+				System.out.println("[" + connectionID + "]: TerminationOrder Received at " + connectionID + "!");
+				closeConnection(false);
+				return;
+				
+			case "msg":
+				System.out.println("[" + connectionID + "]: Received Message: " + message + "!");
+				addMessageToStack( message.split(":::")[1]);
+				return;
+				
+			case "confirm":
+				System.out.println("[" + connectionID + "]: Received Confirm-Message: " + message + "!");
+				addMessageToStack( message.split(":::")[1]);
+				pushMessage("confirmback:::" + message.split(":::")[1]);
+				return;
+				
+			case "confirmback":
+				System.out.println("[" + connectionID + "]: Received Confirm_Back-Message: " + message + "!");
+				registerConfirmation(message.split(":::")[1]);
+				return;
+				
+			default:
+				System.out.println("ERROR: [" + connectionID + "]: Invalid message prefix in message: " + message);
+				return;
+			
+			
+		}
+		
+		} catch (IOException e) {
+			System.out.println("There was an issue at " + connectionID + " while tring to parse special commands from the latest Message: " + message + ".");
+			e.printStackTrace();
+		}
+				
+		return;
+	}
+
+	@Override
+	public void run() {
+		waitingForMessage = true;
+		String receivedMessage;
+		while(waitingForMessage) {
 			try {
-				System.out.println("TerminationOrder Recieved at " + connectionID + "!");
-				closeConnection();
+				if(waitingForMessage && serverIn != null && isConnected && !waitingForConnection && (receivedMessage = serverIn.readLine()) != null) {
+					System.out.println("[" + connectionID + "]: " + connectionID + " received Message!:");
+					System.out.println(receivedMessage);
+					processMessage(receivedMessage);
+
+				}
 			} catch (IOException e) {
-				System.out.println("There was an issue at " + connectionID + " while tring to close down the current Connection after recieving the TerminateConnection-Message.");
-				e.printStackTrace();
+				if(isConnected) {
+					System.out.println("Error while waiting for Message at " + connectionID + "!");
+					e.printStackTrace();
+				}
 			}
-		}		
-		return message;
+		}
+		listenForMessages = false;
 	}
 
 }
