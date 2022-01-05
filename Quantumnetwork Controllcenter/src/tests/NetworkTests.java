@@ -111,12 +111,8 @@ public class NetworkTests {
 		assert(i.size() == 2);
 		
 		//Close the connection again
-		try {
-			ce1.closeConnection(true);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		ce1.closeConnection(true);
+
 		
 		//Check that both connectionEndpoints are closed down.
 		assert(ce1.reportState() == ConnectionState.CLOSED);

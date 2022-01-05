@@ -1,7 +1,7 @@
 package networkConnection;
 /**
  * Represents the State of a single ConnectionEndpoint.
- * @author J-man
+ * @author Jonas Hühne
  *
  */
 public enum ConnectionState {
