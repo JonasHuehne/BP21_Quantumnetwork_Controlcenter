@@ -24,7 +24,8 @@ class CommunicationListCommandHandler {
 	 * 		a String describing whether or not the contact was successfully added to the {@link Database}
 	 */
 	static String handleContactsAdd(String[] commandArgs) {
-		String name = commandArgs[0], ip = commandArgs[1];
+		String name = commandArgs[0];
+		String ip = commandArgs[1];
 		int port = Integer.parseInt(commandArgs[2]);
 		boolean success = Database.insert(name, ip, port, "NO KEY SET");
 		if(success) {
