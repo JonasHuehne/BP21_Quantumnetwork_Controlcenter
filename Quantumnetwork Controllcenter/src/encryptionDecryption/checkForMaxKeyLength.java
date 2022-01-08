@@ -2,7 +2,8 @@ package encryptionDecryption;
 import javax.crypto.Cipher;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
-public class checkForMaxkeylength {
+
+public class checkForMaxKeyLength {
 
 
 
