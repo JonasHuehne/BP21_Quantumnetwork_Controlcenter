@@ -7,6 +7,7 @@ import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 /**
  * Class to handle interaction with the communication list db
@@ -17,6 +18,14 @@ public class Database {
     private static Connection connection;
 
     private static final String tableName = "CommunicationList";
+
+    private static final String checkName = "\\w*";
+    private static final String checkIP = "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
+                                          "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
+                                          "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
+                                          "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))";
+    private static final int checkPortMin = 0;
+    private static final int checkPortMax = 65535;
 
     /**
      * open a connection to the db
@@ -33,7 +42,8 @@ public class Database {
             Statement stmt = connection.createStatement();
             String sql = "CREATE TABLE IF NOT EXISTS " + tableName
                     + "(ID INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    + "Name VARCHAR(255) UNIQUE, IPAddress VARCHAR(255),  "
+                    + "Name VARCHAR(255) UNIQUE, "
+                    + "IPAddress VARCHAR(255),  "
                     + "Port INTEGER, "
                     + "SignatureKey VARCHAR(2047));";
             stmt.executeUpdate(sql);
@@ -55,7 +65,13 @@ public class Database {
      */
     public static boolean insert (final String name, final String ipAddress, final int port, final String signatureKey) {
         try {
-            if ((connection == null || connection.isClosed()) && !connectToDb()) {
+            if ((connection == null || connection.isClosed())) {
+                connectToDb();
+            }
+            // check for illegal input
+            if (!Pattern.matches(checkName, name)
+                    || !Pattern.matches(checkIP, ipAddress)
+                    || port < checkPortMin || port > checkPortMax) {
                 return false;
             }
             String sql = "INSERT INTO " + tableName + "(Name, IPAddress, Port, SignatureKey) VALUES(?, ?, ?, ?)";
@@ -106,6 +122,10 @@ public class Database {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
+            // check for illegal input
+            if (!Pattern.matches(checkName, newName)) {
+                return false;
+            }
             String sql = "UPDATE " + tableName + " SET Name = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, newName);
@@ -130,6 +150,10 @@ public class Database {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
+            // check for illegal input
+            if (!Pattern.matches(checkIP, ipAddress)) {
+                return false;
+            }
             String sql = "UPDATE " + tableName + " SET IPAddress = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, ipAddress);
@@ -153,6 +177,10 @@ public class Database {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
+            }
+            // check for illegal input
+            if(port < checkPortMin || port > checkPortMax) {
+                return false;
             }
             String sql = "UPDATE " + tableName + " SET Port = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
@@ -205,6 +233,9 @@ public class Database {
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
+            if(rs == null) {
+                return null;
+            }
             DbObject result = new DbObject(rs.getString("Name"), rs.getString("IPAddress"),
                     rs.getInt("Port"), rs.getString("SignatureKey"));
             rs.close();
