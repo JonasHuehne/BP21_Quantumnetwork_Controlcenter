@@ -10,6 +10,7 @@ import java.util.ArrayList;
 
 /**
  * Class to handle interaction with the communication list db
+ * @author Sarah Schumann
  */
 public class Database {
 

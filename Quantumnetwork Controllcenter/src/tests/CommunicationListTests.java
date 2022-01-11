@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * automated tests for interacting with the communication list db
+ * @author Sarah Schumann
  */
 class CommunicationListTests {
     // IMPORTANT: only run tests one by one. There will be problems if they interleave,
