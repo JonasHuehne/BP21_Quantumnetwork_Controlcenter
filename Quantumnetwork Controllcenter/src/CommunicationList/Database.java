@@ -19,7 +19,7 @@ public class Database {
 
     private static final String tableName = "CommunicationList";
 
-    private static final String checkName = "\\w*";
+    private static final String checkName = "(\\w|_|-)*";
     private static final String checkIP = "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
                                           "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
                                           "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +

@@ -2,6 +2,7 @@ package tests;
 
 import CommunicationList.Database;
 import CommunicationList.DbObject;
+
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.Assertions;
@@ -151,9 +152,38 @@ class CommunicationListTests {
         Assertions.assertNull(result2);
         Assertions.assertNotNull(result3);
 
+        Database.insert("Nameß", "5.5.5.5", 5, "");
+        DbObject result4 = Database.query("Nameß");
+        Assertions.assertNull(result4);
+
+        Database.insert("Name\\", "5.5.5.5", 5, "");
+        DbObject result5 = Database.query("Name\\");
+        Assertions.assertNull(result5);
+
+        Database.insert("Name 2", "5.5.5.5", 5, "");
+        DbObject result6 = Database.query("Name 2");
+        Assertions.assertNull(result6);
+
         Database.delete("Näme");
         Database.delete("Name1");
         Database.delete("Nöme");
+        Database.delete("Nameß");
+        Database.delete("Name\\");
+        Database.delete("Name 2");
+    }
+
+    @Test
+    void testCorrectName() {
+        Database.insert("Name_1", "5.5.5.5", 5, "");
+        DbObject result1 = Database.query("Name_1");
+        Assertions.assertNotNull(result1);
+
+        Database.insert("Name-2", "5.5.5.5", 5, "");
+        DbObject result2 = Database.query("Name-2");
+        Assertions.assertNotNull(result2);
+
+        Database.delete("Name_1");
+        Database.delete("Name-2");
     }
 
     @Test
