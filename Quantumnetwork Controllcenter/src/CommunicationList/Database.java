@@ -17,15 +17,15 @@ public class Database {
 
     private static Connection connection;
 
-    private static final String tableName = "CommunicationList";
+    private static final String TABLE_NAME = "CommunicationList";
 
-    private static final String checkName = "(\\w|_|-)*";
-    private static final String checkIP = "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
+    private static final String CHECK_NAME = "(\\w|_|-)*";
+    private static final String CHECK_IP = "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
                                           "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
                                           "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
                                           "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))";
-    private static final int checkPortMin = 0;
-    private static final int checkPortMax = 65535;
+    private static final int CHECK_PORT_MIN = 0;
+    private static final int CHECK_PORT_MAX = 65535;
 
     /**
      * open a connection to the db
@@ -40,7 +40,7 @@ public class Database {
             connection = DriverManager.getConnection(dbPath);
 
             Statement stmt = connection.createStatement();
-            String sql = "CREATE TABLE IF NOT EXISTS " + tableName
+            String sql = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME
                     + "(ID INTEGER PRIMARY KEY AUTOINCREMENT, "
                     + "Name VARCHAR(255) UNIQUE, "
                     + "IPAddress VARCHAR(255),  "
@@ -65,16 +65,16 @@ public class Database {
      */
     public static boolean insert (final String name, final String ipAddress, final int port, final String signatureKey) {
         try {
-            if ((connection == null || connection.isClosed())) {
+            if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
             // check for illegal input
-            if (!Pattern.matches(checkName, name)
-                    || !Pattern.matches(checkIP, ipAddress)
-                    || port < checkPortMin || port > checkPortMax) {
+            if (!Pattern.matches(CHECK_NAME, name)
+                    || !Pattern.matches(CHECK_IP, ipAddress)
+                    || port < CHECK_PORT_MIN || port > CHECK_PORT_MAX) {
                 return false;
             }
-            String sql = "INSERT INTO " + tableName + "(Name, IPAddress, Port, SignatureKey) VALUES(?, ?, ?, ?)";
+            String sql = "INSERT INTO " + TABLE_NAME + "(Name, IPAddress, Port, SignatureKey) VALUES(?, ?, ?, ?)";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             stmt.setString(2, ipAddress);
@@ -99,7 +99,7 @@ public class Database {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "DELETE FROM " + tableName + " WHERE Name = ?";
+            String sql = "DELETE FROM " + TABLE_NAME + " WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             stmt.executeUpdate();
@@ -123,10 +123,10 @@ public class Database {
                 connectToDb();
             }
             // check for illegal input
-            if (!Pattern.matches(checkName, newName)) {
+            if (!Pattern.matches(CHECK_NAME, newName)) {
                 return false;
             }
-            String sql = "UPDATE " + tableName + " SET Name = ? WHERE Name = ?";
+            String sql = "UPDATE " + TABLE_NAME + " SET Name = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, newName);
             stmt.setString(2, oldName);
@@ -151,10 +151,10 @@ public class Database {
                 connectToDb();
             }
             // check for illegal input
-            if (!Pattern.matches(checkIP, ipAddress)) {
+            if (!Pattern.matches(CHECK_IP, ipAddress)) {
                 return false;
             }
-            String sql = "UPDATE " + tableName + " SET IPAddress = ? WHERE Name = ?";
+            String sql = "UPDATE " + TABLE_NAME + " SET IPAddress = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, ipAddress);
             stmt.setString(2, name);
@@ -179,10 +179,10 @@ public class Database {
                 connectToDb();
             }
             // check for illegal input
-            if(port < checkPortMin || port > checkPortMax) {
+            if(port < CHECK_PORT_MIN || port > CHECK_PORT_MAX) {
                 return false;
             }
-            String sql = "UPDATE " + tableName + " SET Port = ? WHERE Name = ?";
+            String sql = "UPDATE " + TABLE_NAME + " SET Port = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, port);
             stmt.setString(2, name);
@@ -206,7 +206,7 @@ public class Database {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "UPDATE " + tableName + " SET SignatureKey = ? WHERE Name = ?";
+            String sql = "UPDATE " + TABLE_NAME + " SET SignatureKey = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, signatureKey);
             stmt.setString(2, name);
@@ -229,7 +229,7 @@ public class Database {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + tableName + " WHERE Name = ?";
+            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + TABLE_NAME + " WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
@@ -256,7 +256,7 @@ public class Database {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + tableName;
+            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + TABLE_NAME;
             PreparedStatement stmt = connection.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
             ArrayList<DbObject> result = new ArrayList<>();
