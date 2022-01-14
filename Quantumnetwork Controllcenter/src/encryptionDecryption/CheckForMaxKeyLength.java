@@ -3,7 +3,7 @@ import javax.crypto.Cipher;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
 
-public class checkForMaxKeyLength {
+public class CheckForMaxKeyLength {
 
 
 
