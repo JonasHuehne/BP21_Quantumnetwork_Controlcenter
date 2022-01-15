@@ -30,13 +30,26 @@ public class AES256 {
 	 * 		  or a bit string with 256 bits
 	 * @return A String containing the encrypted plain text, In case of an Error returns null
 	 */
-	public static String encrypt(String strPlaintext, String strKey) {
-		
-		//converting plain text to byteArray
-		byte[] bytePlaintext = strPlaintext.getBytes(StandardCharsets.UTF_8);
+	public static String encrypt(String strPlaintext, String strKey) throws NullPointerException, NumberFormatException {
 		
 		//generating SecretKey from String
 		SecretKey key = CryptoUtility.stringToSecretKeyAES256(strKey);
+		
+		return encrypt(strPlaintext, key);
+		
+	}
+	
+	/**
+	 * Encrypts the given plain text String using the AES-256 CBC algorithm and a suitable key
+	 * 
+	 * @param strPlaintext the plain text that should be encrypted
+	 * @param key SecretKey object for AES256
+	 * @return A String containing the encrypted plain text, In case of an Error returns null
+	 */
+	public static String encrypt(String strPlaintext, SecretKey key) {
+		
+		//converting plain text to byteArray
+		byte[] bytePlaintext = strPlaintext.getBytes(StandardCharsets.UTF_8);
 		
 		try {
 			//get Cipher Instance
@@ -65,8 +78,8 @@ public class AES256 {
 			System.err.println("An ERROR occured during encryption:\n" + e.toString());
 		}
 		return null ;
+		
 	}
-	
 	
 	/**
 	 * Decrypts the given cipher text String using the AES-256 CBC algorithm and the corresponding key used to encrypt the cipher text
@@ -75,13 +88,18 @@ public class AES256 {
 	 * @param strKey the key used to encrypt the cipher text
 	 * @return A String containing the decrypted cipher text 
 	 */
-	public static String decrypt(String strCiphertext, String strKey) {
+	public static String decrypt(String strCiphertext, String strKey) throws NullPointerException, NumberFormatException {
+	
+		//generating SecretKey from String
+		SecretKey key = CryptoUtility.stringToSecretKeyAES256(strKey);
+		
+		return decrypt(strCiphertext, key);
+	}
+	
+	public static String decrypt(String strCiphertext, SecretKey key) {
 		
 		//converting cipher text to byteArray
 		byte[] byteCiphertext = Base64.getDecoder().decode(strCiphertext);
-		
-		//generating SecretKey from String
-		SecretKey key = CryptoUtility.stringToSecretKeyAES256(strKey);
 		
 		try {
 			//get Cipher Instance
@@ -115,6 +133,5 @@ public class AES256 {
 		}
 		return null;
 	}
-	
 	
 }

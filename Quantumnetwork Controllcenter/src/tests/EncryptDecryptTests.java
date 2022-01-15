@@ -45,9 +45,9 @@ public class EncryptDecryptTests {
 		String encrypted = AES256.encrypt(original, bitStringKey);
 		String decrypted = AES256.decrypt(encrypted, bitStringKey);
 			
-		assertFalse(original.equals(encrypted));
-		assertFalse(encrypted.equals(decrypted));
-		assertTrue(decrypted.equals(original));
+		assertNotEquals(original,encrypted);
+		assertNotEquals(encrypted,decrypted);
+		assertEquals(decrypted,original);
 	}
 	
 	@Test
@@ -71,7 +71,7 @@ public class EncryptDecryptTests {
 		
 		assertNotEquals(original,encrypted);
 		assertNotEquals(encrypted,decrypted);
-		assertNotEquals(decrypted,original);
+		assertEquals(decrypted,original);
 	}	
 	
 	@Test
@@ -151,7 +151,7 @@ public class EncryptDecryptTests {
 	 */
 	public void testEncryptionNullKey() {
 		assertThrows(NullPointerException.class,() -> {
-			assertNull(AES256.encrypt(original, null));
+			assertNull(AES256.encrypt(original,(String) null));
 			});
 	}
 	
@@ -249,9 +249,9 @@ public class EncryptDecryptTests {
 	 */
 	public void testDecryptionNullKey() {
 		String encrypted = AES256.encrypt(original, bitStringKey);
-		
+
 		assertThrows(NullPointerException.class,() -> {
-			assertNull(AES256.decrypt(encrypted, null));
+			assertNull(AES256.decrypt(encrypted,(String) null));
 			});
 	}
 	
