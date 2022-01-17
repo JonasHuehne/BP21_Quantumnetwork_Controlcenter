@@ -17,14 +17,14 @@ import java.util.Base64;
 
 /**
  * class providing the methods necessary for authentication
+ * @author Sarah Schumann
  */
 public class Authentication {
 
     private static final String KEY_PATH = System.getProperty("user.dir")
             + File.separator + "SignatureKeys" + File.separator;
 
-    // TODO: remembers it? If not, where to remember?
-    private static String keyFile = "";
+    private static final String KEY_FILE_NAME = "signature";
 
     /**
      * method to create a signature for a message using the designated private key
@@ -35,7 +35,7 @@ public class Authentication {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
             // get PrivateKey object from File
-            PrivateKey privateKey = getPrivateKeyFromFile(keyFile);
+            PrivateKey privateKey = getPrivateKeyFromFile();
             signature.initSign(privateKey);
             // convert message from String to byte array
             byte[] msg = message.getBytes();
@@ -95,14 +95,18 @@ public class Authentication {
     }
 
     /**
-     * method to get the private key from the specified file in the SignatureKeys folder
-     * @param fileName the name of the key file (needs to be in pkcs8 format and not encrypted (for now))
+     * method to get the private key from the default private key file in the SignatureKeys folder
      * @return a PrivateKey object created from the key in the file, null if error
      */
-    private static PrivateKey getPrivateKeyFromFile (String fileName) {
+    private static PrivateKey getPrivateKeyFromFile () {
         try {
+            if(!Files.exists(Path.of(KEY_PATH + KEY_FILE_NAME + ".key"))) {
+                System.err.println("Error while creating a private key from the signature key file: "
+                                 + "no signature key file found");
+                return null;
+            }
             String key = new String (Files.readAllBytes
-                    (Path.of(KEY_PATH + fileName + ".key")));
+                    (Path.of(KEY_PATH + KEY_FILE_NAME + ".key")));
             String keyString = key
                     .replace("-----BEGIN PRIVATE KEY-----", "")
                     .replace(System.lineSeparator(), "")
@@ -111,7 +115,7 @@ public class Authentication {
             PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(keyString));
             return kf.generatePrivate(privateKeySpec);
         } catch (Exception e) {
-            System.err.println("Error while creating a private key from the input file: " + e.getMessage());
+            System.err.println("Error while creating a private key from the signature key file: " + e.getMessage());
             return null;
         }
     }
@@ -136,63 +140,50 @@ public class Authentication {
         }
     }
 
-    /**
+    /*/**
      * Method to set a default key file for signing
      * @param fileName the name of a private key file without its ending (should be a .key)
      */
-    public static void setKeyFile(String fileName) {
+    /*public static void setKeyFile (String fileName) {
         keyFile = fileName;
-    }
+    }*/
 
     /**
      * Method to delete the key pair currently set as default key file
      * (private key should be a .key, public key a .pub)
      * @return true if the deleting worked, false if no default or error
      */
-    public static boolean deleteCurrentSignatureKeys () {
+    public static boolean deleteSignatureKeys() {
         try {
-            if (keyFile.equals("")) {
-                return false;
-            }
-            Files.delete(Path.of(KEY_PATH + keyFile + ".key"));
-            Files.delete(Path.of(KEY_PATH + keyFile + ".pub"));
-            keyFile = "";
+            Files.delete(Path.of(KEY_PATH + KEY_FILE_NAME + ".key"));
+            Files.delete(Path.of(KEY_PATH + KEY_FILE_NAME + ".pub"));
             return true;
         } catch (Exception e) {
-            System.err.println("Problem deleting the current signature key: " + e.getMessage());
+            System.err.println("Problem deleting the signature keys: " + e.getMessage());
             return false;
         }
     }
 
     /**
      * generates a key pair for signing messages
-     * (both the same name, private key as .key, public key as .pub)
-     * if no default key file, the created one gets set
-     * if deleteCurrent is true, deletes the currently set keyFile key pair
-     * @param fileName the name for the key pair to be created
-     * @param deleteCurrent a flag, if the currently set keyFile key pair should be deleted beforehand
+     * (both name "signature", private key as .key, public key as .pub)
+     * deletes the current key files if there are any with the default name
      * @return true if it worked, false is name already used or error
      */
-    public static boolean generateSignatureKeyPair (final String fileName, final boolean deleteCurrent) {
+    public static boolean generateSignatureKeyPair () {
         try {
-            if (deleteCurrent) {
-                deleteCurrentSignatureKeys();
-            }
-            if (Files.exists(Path.of(KEY_PATH + fileName + ".key"))) {
-                return false;
+            if (Files.exists(Path.of(KEY_PATH + KEY_FILE_NAME + ".key"))) {
+                deleteSignatureKeys();
             }
             KeyPairGenerator kpGenerator = KeyPairGenerator.getInstance("RSA");
             kpGenerator.initialize(2048);
             KeyPair keyPair = kpGenerator.generateKeyPair();
             PublicKey pub = keyPair.getPublic();
             PrivateKey pvt = keyPair.getPrivate();
-            Files.write(Path.of(KEY_PATH + fileName + ".key"),
+            Files.write(Path.of(KEY_PATH + KEY_FILE_NAME + ".key"),
                     Base64.getEncoder().encode(pvt.getEncoded()));
-            Files.write(Path.of(KEY_PATH + fileName + ".pub"),
+            Files.write(Path.of(KEY_PATH + KEY_FILE_NAME + ".pub"),
                     Base64.getEncoder().encode(pub.getEncoded()));
-            if (keyFile.equals("")) {
-                setKeyFile("fileName");
-            }
             return true;
         } catch (Exception e) {
             System.err.println("Error while creating a key pair: " + e.getMessage());
