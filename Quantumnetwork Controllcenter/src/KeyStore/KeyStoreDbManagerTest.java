@@ -78,6 +78,32 @@ class KeyStoreDbManagerTest {
         assertEquals(true, bool2);
     }
 
+    @Test
+    void getEntryFromKeyStoretest(){
+        KeyStoreObject testObject = KeyStoreDbManager.getEntryFromKeyStore("ersteID");
+        assertEquals("super sicherer Schlüssel", testObject.getKey());
+        assertEquals(0, testObject.getUsed());
+    }
+
+    @Test
+    void getAllEntriesfromKeyStoreTest(){
+        ArrayList<KeyStoreObject> testList = KeyStoreDbManager.getKeyStoreEntriesAsList();
+
+        assertEquals("2iuhfd92f7gsaao3gc<au", testList.get(1).getKey());
+        assertEquals("zweiteID", testList.get(1).getKeyStreamID());
+    }
+
+    @Test
+    void deleteKeyStoreEntryTest(){
+        boolean bool1 = KeyStoreDbManager.deleteKeyByID("zweiteID");
+        boolean bool2 = KeyStoreDbManager.deleteKeyByID("ersteID");
+
+        ArrayList<KeyStoreObject> testList = KeyStoreDbManager.getKeyStoreEntriesAsList();
+        assertEquals(true, bool1);
+        assertEquals(true, bool2);
+        assertEquals(0, testList.size());
+    }
+
 
 
 }

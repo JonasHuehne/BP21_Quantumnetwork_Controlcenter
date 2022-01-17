@@ -392,7 +392,7 @@ public class KeyStoreDbManager {
      *
      * @return a ArrayList of KeyStoreObjects which contain information about the keys currently in storage
      */
-    public static ArrayList<KeyStoreObject> getKeyStoreEntries () {
+    public static ArrayList<KeyStoreObject> getKeyStoreEntriesAsList() {
         try {
             Connection conn = connect();
 
