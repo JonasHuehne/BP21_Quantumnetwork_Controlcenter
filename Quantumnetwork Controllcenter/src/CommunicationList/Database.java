@@ -19,13 +19,24 @@ public class Database {
 
     private static final String TABLE_NAME = "CommunicationList";
 
-    private static final String CHECK_NAME = "(\\w|_|-)*";
-    private static final String CHECK_IP = "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
-                                          "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
-                                          "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
-                                          "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))";
-    private static final int CHECK_PORT_MIN = 0;
-    private static final int CHECK_PORT_MAX = 65535;
+    /**
+     * Regex for checking the validity of the contact name
+     * only allows a-z, 0-9. _ and -
+     */
+    private static final String CONTACT_NAME_SYNTAX = "(\\w|_|-)*";
+
+    /**
+     * Regex for checking the validity of the ip
+     * only accepts the pattern x.x.x.x with x between 0 and 255
+     */
+    private static final String CONTACT_IP_SYNTAX =
+            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
+            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
+            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
+            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))";
+
+    private static final int MIN_PORT_NUMBER = 0;
+    private static final int MAX_PORT_NUMBER = 65535;
 
     /**
      * open a connection to the db
@@ -45,7 +56,8 @@ public class Database {
                     + "Name VARCHAR(255) UNIQUE, "
                     + "IPAddress VARCHAR(255),  "
                     + "Port INTEGER, "
-                    + "SignatureKey VARCHAR(2047));";
+                    + "SignatureKey VARCHAR(2047), "
+                    + "CONSTRAINT uniqueIpPortPair UNIQUE (IPAddress, Port));";
             stmt.executeUpdate(sql);
             stmt.close();
             return true;
@@ -69,9 +81,11 @@ public class Database {
                 connectToDb();
             }
             // check for illegal input
-            if (!Pattern.matches(CHECK_NAME, name)
-                    || !Pattern.matches(CHECK_IP, ipAddress)
-                    || port < CHECK_PORT_MIN || port > CHECK_PORT_MAX) {
+            if (!Pattern.matches(CONTACT_NAME_SYNTAX, name)
+                    || !Pattern.matches(CONTACT_IP_SYNTAX, ipAddress)
+                    || port < MIN_PORT_NUMBER || port > MAX_PORT_NUMBER) {
+                System.err.println("Problem with inserting data in the CommunicationList Database: " +
+                        "Name, IP Address or port violates the constraints");
                 return false;
             }
             String sql = "INSERT INTO " + TABLE_NAME + "(Name, IPAddress, Port, SignatureKey) VALUES(?, ?, ?, ?)";
@@ -123,7 +137,9 @@ public class Database {
                 connectToDb();
             }
             // check for illegal input
-            if (!Pattern.matches(CHECK_NAME, newName)) {
+            if (!Pattern.matches(CONTACT_NAME_SYNTAX, newName)) {
+                System.err.println("Problem with updating data in the CommunicationList Database: " +
+                        "Name violates the constraints");
                 return false;
             }
             String sql = "UPDATE " + TABLE_NAME + " SET Name = ? WHERE Name = ?";
@@ -151,7 +167,9 @@ public class Database {
                 connectToDb();
             }
             // check for illegal input
-            if (!Pattern.matches(CHECK_IP, ipAddress)) {
+            if (!Pattern.matches(CONTACT_IP_SYNTAX, ipAddress)) {
+                System.err.println("Problem with updating data in the CommunicationList Database: " +
+                        "IP Address violates the constraints");
                 return false;
             }
             String sql = "UPDATE " + TABLE_NAME + " SET IPAddress = ? WHERE Name = ?";
@@ -179,7 +197,9 @@ public class Database {
                 connectToDb();
             }
             // check for illegal input
-            if(port < CHECK_PORT_MIN || port > CHECK_PORT_MAX) {
+            if(port < MIN_PORT_NUMBER || port > MAX_PORT_NUMBER) {
+                System.err.println("Problem with updating data in the CommunicationList Database: " +
+                        "Port violates the constraints");
                 return false;
             }
             String sql = "UPDATE " + TABLE_NAME + " SET Port = ? WHERE Name = ?";
