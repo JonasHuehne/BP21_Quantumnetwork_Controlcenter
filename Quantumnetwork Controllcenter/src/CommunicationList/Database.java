@@ -53,10 +53,10 @@ public class Database {
             Statement stmt = connection.createStatement();
             String sql = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME
                     + "(ID INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    + "Name VARCHAR(255) UNIQUE, "
-                    + "IPAddress VARCHAR(255),  "
+                    + "Name VARCHAR UNIQUE, "
+                    + "IPAddress VARCHAR, "
                     + "Port INTEGER, "
-                    + "SignatureKey VARCHAR(2047), "
+                    + "SignatureKey VARCHAR, "
                     + "CONSTRAINT uniqueIpPortPair UNIQUE (IPAddress, Port));";
             stmt.executeUpdate(sql);
             stmt.close();
