@@ -136,6 +136,17 @@ public class EncryptDecryptTests {
 	
 	@Test
 	/*
+	 * Testing that correct Exception is thrown when null is used as plaintext and key
+	 */
+	public void testEncryptionNullPlaintextKey() {
+		assertThrows(NullPointerException.class, () -> {
+			assertNull(AES256.encrypt(null, bitStringKey));
+		});
+		
+	}
+	
+	@Test
+	/*
 	 * Testing that correct Exception is thrown, when bit string for key contains Chars during decryption
 	 */
 	public void testDecryptionBitStringContainsChars() {
@@ -221,6 +232,17 @@ public class EncryptDecryptTests {
 		assertThrows(NullPointerException.class,() -> {
 			assertNull(AES256.decrypt(encrypted,(String) null));
 			});
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown when null is used as cipher text and key
+	 */
+	public void testDecryptionNullPlaintextKey() {
+		assertThrows(NullPointerException.class, () -> {
+			assertNull(AES256.decrypt(null, bitStringKey));
+		});
+		
 	}
 	
 	@Test

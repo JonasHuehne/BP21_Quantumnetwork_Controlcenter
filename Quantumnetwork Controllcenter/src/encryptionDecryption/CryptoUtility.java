@@ -19,6 +19,7 @@ public class CryptoUtility {
 	 * @param str A string consisting of 256 characters, each one being either 0 or 1
 	 * @return A byteArray containing 32 bytes corresponding to the 256 bits of str
 	 * 		   returns null if str is not fulfilling the contracted specification.
+	 * @throws NumberFormatException if str contains any other char besides 0 or 1
 	 */
 	public static byte[] bitString256ToByteArray32(String str) throws NullPointerException, NumberFormatException {
 		
@@ -47,6 +48,8 @@ public class CryptoUtility {
 	 * @param str a bitString with 256 bits
 	 * @return An instance of SecretKey used to encrypt or decrypt with javax.crypto.Cipher
 	 * 		   returns null if str is not fulfilling the contracted specification.
+	 * @throws NumberFormatException if str contains any other char besides 0 or 1
+
 	 */
 	public static SecretKey stringToSecretKeyAES256(String str) throws NullPointerException, NumberFormatException {
 

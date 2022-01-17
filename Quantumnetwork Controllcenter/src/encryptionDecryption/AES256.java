@@ -31,9 +31,10 @@ public class AES256 {
 	/**
 	 * Encrypts the given plain text String using the AES-256 CBC algorithm and a suitable key
 	 * 
-	 * @param strPlaintext the plain text that should be encrypted
+	 * @param strPlaintext the plain text that should be encrypted (only UTF-8 chars are guaranteed to work)
 	 * @param strKey a bit string with 256 bits
 	 * @return A String containing the encrypted plain text, In case of an Error returns null
+	 * @throws NumberFormatException if strKey contains any other char besides 0 or 1
 	 */
 	public static String encrypt(String strPlaintext, String strKey) throws NullPointerException, NumberFormatException {
 		
@@ -54,7 +55,7 @@ public class AES256 {
 	/**
 	 * Encrypts the given plain text String using the AES-256 CBC algorithm and a suitable key
 	 * 
-	 * @param strPlaintext the plain text that should be encrypted
+	 * @param strPlaintext the plain text that should be encrypted (only UTF-8 chars are guaranteed to work)
 	 * @param key SecretKey object for AES256
 	 * @return A String containing the encrypted plain text, In case of an Error returns null
 	 */
@@ -102,9 +103,10 @@ public class AES256 {
 	/**
 	 * Decrypts the given cipher text String using the AES-256 CBC algorithm and the corresponding key used to encrypt the cipher text
 	 * 
-	 * @param strCiphertext the cipher text that should be decrypted
+	 * @param strCiphertext the cipher text that should be decrypted as a Base64 encoded String
 	 * @param strKey the key used to encrypt the cipher text as bit string
 	 * @return A String containing the decrypted cipher text, In case of an Error returns null
+	 * @throws NumberFormatException if strKey contains any other char besides 0 or 1
 	 */
 	public static String decrypt(String strCiphertext, String strKey) throws NullPointerException, NumberFormatException {
 	
@@ -123,7 +125,7 @@ public class AES256 {
 	
 	/**
 	 * 
-	 * @param strCiphertext the cipher text that should be decrypted
+	 * @param strCiphertext the cipher text that should be decrypted as a Base64 encoded String
 	 * @param key SecretKey object for AES256 that was used to encrypt the cipher text
 	 * @return A String containing the decrypted cipher text, In case of an Error returns null
 	 */
