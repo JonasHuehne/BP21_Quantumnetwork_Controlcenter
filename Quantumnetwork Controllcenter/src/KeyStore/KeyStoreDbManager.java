@@ -10,7 +10,8 @@ import java.util.ArrayList;
 
 public class KeyStoreDbManager {
     private static final String dataBaseName = "KeyStore.db";
-    private static final String tableName = "KeyInformations";
+    private static final String infoTableName = "KeyInformations";
+    private static final String keyTableName = "KeyStore";
 
 
     /**
@@ -42,7 +43,7 @@ public class KeyStoreDbManager {
      *
      * @returns True if Database and table were created successfully, False otherwise
      */
-     static boolean createNewKeyStoreAndTable() {
+    static boolean createNewKeyStoreAndTable() {
 
         try {
             Connection conn = KeyStoreDbManager.connect();
@@ -50,19 +51,35 @@ public class KeyStoreDbManager {
 
             System.out.println("Database was created successfully!");
 
-                // create Table
-            String sql = "CREATE TABLE IF NOT EXISTS " + tableName +
-                        " (KeyStreamId CHAR(128) ," +
-                        " KeyBuffer INTEGER NOT NULL, " + // Index muss definitiv noch angepasst werden, Frage im Treffen heute nach
-                        " Index_ INTEGER NOT NULL , " +
-                        " Source_ TEXT NOT NULL, " +
-                        " Destination TEXT NOT NULL, " +
-                        "PRIMARY KEY (KeyStreamId, Index_))";
+            // create Table
+            String keyInformationSQL = "CREATE TABLE IF NOT EXISTS " + infoTableName +
+                    " (KeyStreamId CHAR(128) ," +
+                    " KeyBuffer INTEGER NOT NULL, " + // Index muss definitiv noch angepasst werden, Frage im Treffen heute nach
+                    " Index_ INTEGER NOT NULL , " +
+                    " Source_ TEXT NOT NULL, " +
+                    " Destination TEXT NOT NULL, " +
+                    "PRIMARY KEY (KeyStreamId, Index_))";
 
-            stmnt.executeUpdate(sql);
+            stmnt.executeUpdate(keyInformationSQL);
             System.out.println("Table creation successful!");
+
             stmnt.close();
             conn.close();
+            //create new table that holds the real keys
+            try {
+                Connection conn2 = connect();
+                Statement stmnt2 = conn2.createStatement();
+                String keyStoreSQL = "CREATE TABLE IF NOT EXISTS " + keyTableName +
+                        " (Key CHAR(256) NOT NULL," +
+                        " Used INTEGER NOT NULL, " + // 0 = False , 1 = True
+                        " KeyStreamID CHAR(128) NOT NULL, " +
+                        "PRIMARY KEY (Key))";
+
+                stmnt2.executeUpdate(keyStoreSQL);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
 
             return true;
 
@@ -72,11 +89,17 @@ public class KeyStoreDbManager {
 
             return false;
         }
-
     }
 
+    /**
+     *  --------- Methods for the KeyInformation table ----------
+     */
 
-    /** Inserts a new Entry to the DB
+
+    /**Following the Etsi paper there should be 2 Tables. #1 which holds all the information about a key
+     * and #2 which stores the real keys.
+     *
+     * ---> Method inserts a new Entry in table #1 (KeyInformation)
      *
      * @param keyStreamID reference ID to locate a key
      * @param keyBuffer array of char bytes ()
@@ -84,7 +107,7 @@ public class KeyStoreDbManager {
      * @param source identifier for the source application
      * @param destination identifier for the destination application
      */
-    public static boolean insertToDb(  String keyStreamID, int keyBuffer, int index, String source, String destination ){
+    public static boolean insertKeyInformation(String keyStreamID, int keyBuffer, int index, String source, String destination ){
 
         try{
             Connection conn = connect();
@@ -100,7 +123,7 @@ public class KeyStoreDbManager {
             prepStmnt.setString(5, destination);
 
             prepStmnt.executeUpdate();
-            System.out.println("Insertion to DB was successful");
+            System.out.println("Insertion to KeyInformation table was successful");
 
             prepStmnt.close();
             conn.close();
@@ -109,7 +132,7 @@ public class KeyStoreDbManager {
         }
 
         catch (SQLException e ){
-            System.out.println("Insertion to DB failed!" + "\n" );
+            System.out.println("Insertion to KeyInformation table failed!" + "\n" );
             e.printStackTrace();
         }
         return false;
@@ -124,7 +147,7 @@ public class KeyStoreDbManager {
     public static boolean updateKeyStreamID (int index, String newID) {
         try {
             Connection conn = connect();
-            String sql = "UPDATE " + tableName + " SET KeyStreamId = ? WHERE Index_ = ?";
+            String sql = "UPDATE " + infoTableName + " SET KeyStreamId = ? WHERE Index_ = ?";
             PreparedStatement pstmnt = conn.prepareStatement(sql);
             pstmnt.setString(1, newID);
             pstmnt.setInt(2, index);
@@ -132,10 +155,11 @@ public class KeyStoreDbManager {
 
             pstmnt.close();
             conn.close();
+            System.out.println("Renaming entry in KeyInformation table succeeded!\" + \"\\n\"");
             return true;
 
         } catch (Exception e) {
-            System.err.println("Renaming entry failed!" + "\n");
+            System.err.println("Renaming entry in KeyInformation table failed!" + "\n");
             e.printStackTrace();
             return false;
         }
@@ -149,7 +173,7 @@ public class KeyStoreDbManager {
     static boolean selectAll(){
 
         try {
-            String sql = "SELECT * FROM " + tableName;
+            String sql = "SELECT * FROM " + infoTableName;
             Connection conn = connect();
             Statement stmnt = conn.createStatement();
             ResultSet result = stmnt.executeQuery(sql);
@@ -177,17 +201,17 @@ public class KeyStoreDbManager {
      * @param keyStreamID the ID of the key that needs to be deleted from the DB
      * @return True if operation was successful, False otherwise
      */
-    static boolean deleteEntryByID(String keyStreamID){
+    static boolean deleteKeyInformationByID(String keyStreamID){
 
         try {
-            String sql = "DELETE FROM " + tableName + " WHERE KeyStreamId= ?";
+            String sql = "DELETE FROM " + infoTableName + " WHERE KeyStreamId= ?";
 
             Connection conn = connect();
             PreparedStatement pstmnt = conn.prepareStatement(sql);
 
             pstmnt.setString(1, keyStreamID);
             pstmnt.executeUpdate();
-            System.out.println("Entry was deleted successfully!");
+            System.out.println("Entry from KeyInformation table was deleted successfully!");
             pstmnt.close();
             conn.close();
 
@@ -195,34 +219,164 @@ public class KeyStoreDbManager {
         }
 
         catch (SQLException e) {
-            System.out.println("Entry deletion failed!" + "\n");
+            System.out.println("Deleting entry from KeyInformation table failed!" + "\n");
             e.printStackTrace();
             return false;
         }
 
     }
 
-    /** Get a new KeystoreObject by the corresponding keyStreamID
+    /** Get a new KeyInformationObject by the corresponding keyStreamID
      *
      * @param keyStreamID identifier of the key that needs to be wrapped in a KeyStoreObject
-     * @return a new KeyStoreObject containing all the KeyInformations from the Entry with corresponding KeyStreamId
+     * @return a new KeyInformationObject containing all the KeyInformation from the Entry with corresponding KeyStreamId
      */
-    public static KeyStoreObject getEntry(String keyStreamID) {
+    public static KeyInformationObject getEntryFromKeyInformation(String keyStreamID) {
         try {
             Connection conn = connect();
 
-            String sql = "SELECT * FROM " + tableName + " WHERE KeyStreamId = " + "\"" + keyStreamID + "\"";
+            String sql = "SELECT * FROM " + infoTableName + " WHERE KeyStreamId = " + "\"" + keyStreamID + "\"";
 
             Statement stmnt = conn.createStatement();
 
             ResultSet rs = stmnt.executeQuery(sql);
 
-            KeyStoreObject object = new KeyStoreObject(rs.getString("KeyStreamId"),
+            KeyInformationObject object = new KeyInformationObject(rs.getString("KeyStreamId"),
                     rs.getInt("KeyBuffer"), rs.getInt("Index_"),
                     rs.getString("Source_"), rs.getString("Destination"));
 
             stmnt.close();
             conn.close();
+            System.out.println("Selecting entry from KeyInformation table was successful!" + "\n");
+            return object;
+
+
+        } catch (SQLException e) {
+            System.out.println("Selecting entry from KeyInformation table failed!" + "\n");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /** Stores all the Entries of the KeyInformation table in an ArrayList and returns the List
+     *
+     * @return a ArrayList of KeyInformationObject which contain information about the keys currently in storage
+     */
+    public static ArrayList<KeyInformationObject> getKeyInformationAsList() {
+        try {
+            Connection conn = connect();
+
+            String sql = "SELECT * FROM " + infoTableName;
+            PreparedStatement stmnt = conn.prepareStatement(sql);
+            ResultSet rs = stmnt.executeQuery();
+            ArrayList<KeyInformationObject> result = new ArrayList<>();
+            while(rs.next()) {
+                KeyInformationObject res = new KeyInformationObject(rs.getString("KeyStreamID"),
+                        rs.getInt("KeyBuffer"), rs.getInt("Index_"), rs.getString("Source_"), rs.getString("Destination"));
+                result.add(res);
+            }
+            stmnt.close();
+            conn.close();
+            System.out.println("Generating list of KeyInformation table entries was successful" + "\n");
+            return result;
+        } catch (Exception e) {
+            System.out.println("Generating list of all entries from KeyInformation table failed!" + "\n");
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /**
+     *  ---------------------- Methods for the KeyStore Table --------------------------------
+     */
+
+
+    /**Following the Etsi paper there should be 2 Tables. #1 which holds all the information about a key
+     * and #2 which stores the real keys.
+     *
+     * ---> Method inserts a new Entry in table #2 (KeyStore)
+     *
+     * @param key the real key that needs to be stored
+     * @param used Integer indicator whether a key has been used. 0 = False(Not used),  1 = True(Used)
+     * @param keyStreamID the reference ID by which the real key can be located
+     * @return True if operation was successful, False if it wasn't.
+     */
+    public static boolean insertToKeyStore(String key, int used, String keyStreamID ){
+        try {
+            Connection conn = connect();
+            String sql = "INSERT INTO KeyStore(Key ,Used, KeyStreamID)  VALUES(?,?,?)";
+
+            PreparedStatement pstmnt = conn.prepareStatement(sql);
+            pstmnt.setString(1, key);
+            pstmnt.setInt(2, used);
+            pstmnt.setString(3, keyStreamID);
+
+            pstmnt.executeUpdate();
+            System.out.println("Insertion to KeyStore table was successful");
+            pstmnt.close();
+            conn.close();
+
+            return true;
+
+        }  catch (SQLException e ){
+            System.out.println("Insertion to KeyStore table failed!" + "\n" );
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    /** Deletes the real key in the KeyStore by a given keyStreamID
+     *
+     * @param keyStreamID the ID of the key that needs to be deleted from the DB
+     * @return True if operation was successful, False otherwise
+     */
+    static boolean deleteKeyByID(String keyStreamID){
+
+        try {
+            String sql = "DELETE FROM " + keyTableName + " WHERE KeyStreamId= ?";
+
+            Connection conn = connect();
+            PreparedStatement pstmnt = conn.prepareStatement(sql);
+
+            pstmnt.setString(1, keyStreamID);
+            pstmnt.executeUpdate();
+            System.out.println("Key was deleted successfully!");
+            pstmnt.close();
+            conn.close();
+
+            return true;
+        }
+
+        catch (SQLException e) {
+            System.out.println("Key deletion failed!" + "\n");
+            e.printStackTrace();
+            return false;
+        }
+
+    }
+
+
+    /** Get a new KeyStoreObject by the corresponding keyStreamID
+     *
+     * @param keyStreamID identifier of the key that needs to be wrapped in a KeyStoreObject
+     * @return a new KeyStoreObject containing the real key, used parameter and the keyStreamID from the Entry with corresponding KeyStreamId
+     */
+    public static KeyStoreObject getEntryFromKeyStore(String keyStreamID) {
+        try {
+            Connection conn = connect();
+
+            String sql = "SELECT * FROM " + keyTableName + " WHERE KeyStreamId = " + "\"" + keyStreamID + "\"";
+
+            Statement stmnt = conn.createStatement();
+
+            ResultSet rs = stmnt.executeQuery(sql);
+
+            KeyStoreObject object = new KeyStoreObject(rs.getString("Key"),
+                    rs.getInt("Used"),rs.getString("KeyStreamId"));
+
+            stmnt.close();
+            conn.close();
+            System.out.println("Selecting entry from KeyStore table was successful!" + "\n");
             return object;
 
 
@@ -233,32 +387,79 @@ public class KeyStoreDbManager {
         }
     }
 
-    /** Stores all the Entrys of the DB in an ArrayList and returns the List
+
+    /** Stores all the Entrys of the KeyStore Table in an ArrayList and returns the List
      *
      * @return a ArrayList of KeyStoreObjects which contain information about the keys currently in storage
      */
-    public static ArrayList<KeyStoreObject> getEntriesAsList () {
+    public static ArrayList<KeyStoreObject> getKeyStoreEntries () {
         try {
             Connection conn = connect();
 
-            String sql = "SELECT * FROM " + tableName;
+            String sql = "SELECT * FROM " + keyTableName;
             PreparedStatement stmnt = conn.prepareStatement(sql);
             ResultSet rs = stmnt.executeQuery();
             ArrayList<KeyStoreObject> result = new ArrayList<>();
             while(rs.next()) {
-                KeyStoreObject res = new KeyStoreObject(rs.getString("KeyStreamID"),
-                        rs.getInt("KeyBuffer"), rs.getInt("Index_"), rs.getString("Source_"), rs.getString("Destination"));
-                result.add(res);
+                KeyStoreObject object = new KeyStoreObject(rs.getString("Key"),
+                        rs.getInt("Used"),rs.getString("KeyStreamId"));
             }
             stmnt.close();
             conn.close();
+            System.out.println("Generating a list of all entries from KeyStore table succeeded!" + "\n");
             return result;
         } catch (Exception e) {
-            System.out.println("Generating a list of all entries failed!" + "\n");
+            System.out.println("Generating a list of all KeyStore table entries failed!" + "\n");
             e.printStackTrace();
             return null;
         }
     }
+
+
+    /**
+     *  ------ API Methods ------
+     */
+
+    /** from etsi paper: Reserve an association (Key_stream_ID) for a set of future keys at both ends of the QKD link
+     through this distributed QKD key management layer and establish a set of parameters that
+     define the expected levels of key service. This function shall block until the peers are
+     connected or until the Timeout value in the QoS parameter is exceeded.
+     *
+     * @param source identifier for the source application
+     * @param destination identifier for the destination application
+     * @param Qos                                               //Weiß selber ned wie der Parameter aussehen soll
+     * @param keyStreamID reference ID to locate a key
+     * @param status current state of the request
+     * @return number of status
+     */
+    public boolean open_Connect(String source, String destination, String Qos, String keyStreamID, int status){
+        return false;
+    }
+
+    /** from etsi: Terminate the association established for this Key_stream_ID. No further keys shall be
+     allocated for this Key_stream_ID after the association has been closed. Due to timing
+     differences at the other end of the link this peer operation will happen at some other time and
+     any unused keys shall be held until that occurs and then discarded or the TTL (Time To Live
+     QoS parameter) has expired.
+     *
+     * @param keyStreamID reference ID to locate a key
+     * @param status current state of the request
+     * @return number of status
+     */
+    public boolean close(String keyStreamID, int status){
+        return false;
+    }
+
+    /** Etsi paper page 9 latest version for more information
+     *
+     * @param keyStreamID reference ID to locate a key
+     * @param status current state of the request
+     * @return number of status
+     */
+    public String get_Key(String keyStreamID, int status){
+        return "requestedKey";
+    }
+
 
 
 
