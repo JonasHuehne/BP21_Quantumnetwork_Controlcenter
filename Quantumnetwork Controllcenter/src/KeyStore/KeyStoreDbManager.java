@@ -6,11 +6,14 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
 
 public class KeyStoreDbManager {
     private static final String dataBaseName = "KeyStore.db";
-    private static final String infoTableName = "KeyInformations";
+    private static final String infoTableName = "KeyInformation";
     private static final String keyTableName = "KeyStore";
 
 
@@ -325,6 +328,33 @@ public class KeyStoreDbManager {
         return false;
     }
 
+    /** Change the "Used" parameter of a KeyStore Entry from unused(=0) to used(=1)
+     *
+     * @param keyStreamID reference ID for a Key
+     * @return true if operation succeeded, false otherwise
+     */
+    public static boolean changeKeyToUsed(String keyStreamID){
+        try {
+            Connection conn = connect();
+
+            String sql = "UPDATE " + keyTableName + " SET Used = 1 WHERE KeyStreamID = ?";
+            PreparedStatement pstmnt = conn.prepareStatement(sql);
+
+            pstmnt.setString(1, keyStreamID);
+            pstmnt.executeUpdate();
+            System.out.println("Changed key from Unused to Used");
+            pstmnt.close();
+            conn.close();
+
+            return true;
+
+        } catch (SQLException e) {
+            System.out.println("Changing the used Parameter of Entry failed " + "\n");
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     /** Deletes the real key in the KeyStore by a given keyStreamID
      *
      * @param keyStreamID the ID of the key that needs to be deleted from the DB
@@ -432,8 +462,8 @@ public class KeyStoreDbManager {
      * @param status current state of the request
      * @return number of status
      */
-    public boolean open_Connect(String source, String destination, String Qos, String keyStreamID, int status){
-        return false;
+    public int open_Connect(String source, String destination, String Qos, String keyStreamID, int status){
+        return 1;
     }
 
     /** from etsi: Terminate the association established for this Key_stream_ID. No further keys shall be
@@ -446,18 +476,22 @@ public class KeyStoreDbManager {
      * @param status current state of the request
      * @return number of status
      */
-    public boolean close(String keyStreamID, int status){
-        return false;
+    public int close(String keyStreamID, int status){
+        //delete keyInformation for this ID
+        deleteKeyInformationByID(keyStreamID);
+        return 1;
     }
 
     /** Etsi paper page 9 latest version for more information
      *
      * @param keyStreamID reference ID to locate a key
      * @param status current state of the request
-     * @return number of status
+     * @return number of status + the key
      */
-    public String get_Key(String keyStreamID, int status){
-        return "requestedKey";
+    public Map.Entry<String, Integer> get_Key(String keyStreamID, int status) {
+
+
+        return new AbstractMap.SimpleEntry<String, Integer>("der_herauszugebenede_key", 1);
     }
 
 

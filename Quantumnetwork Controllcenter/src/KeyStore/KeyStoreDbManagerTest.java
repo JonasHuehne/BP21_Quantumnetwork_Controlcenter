@@ -86,6 +86,14 @@ class KeyStoreDbManagerTest {
     }
 
     @Test
+    void changeUsedStatusTest(){
+        boolean bool1 = KeyStoreDbManager.changeKeyToUsed("ersteID");
+        assertEquals(true, bool1);
+        KeyStoreObject testObj = KeyStoreDbManager.getEntryFromKeyStore("ersteID");
+        assertEquals(1, testObj.getUsed());
+    }
+
+    @Test
     void getAllEntriesfromKeyStoreTest(){
         ArrayList<KeyStoreObject> testList = KeyStoreDbManager.getKeyStoreEntriesAsList();
 
