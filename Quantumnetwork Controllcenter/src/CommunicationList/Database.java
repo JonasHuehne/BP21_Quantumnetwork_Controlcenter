@@ -7,15 +7,36 @@ import java.sql.Statement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 /**
  * Class to handle interaction with the communication list db
+ * @author Sarah Schumann
  */
 public class Database {
 
     private static Connection connection;
 
-    private static final String tableName = "CommunicationList";
+    private static final String TABLE_NAME = "CommunicationList";
+
+    /**
+     * Regex for checking the validity of the contact name
+     * only allows a-z, 0-9. _ and -
+     */
+    private static final String CONTACT_NAME_SYNTAX = "(\\w|_|-)*";
+
+    /**
+     * Regex for checking the validity of the ip
+     * only accepts the pattern x.x.x.x with x between 0 and 255
+     */
+    private static final String CONTACT_IP_SYNTAX =
+            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
+            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
+            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
+            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))";
+
+    private static final int MIN_PORT_NUMBER = 0;
+    private static final int MAX_PORT_NUMBER = 65535;
 
     /**
      * open a connection to the db
@@ -30,11 +51,15 @@ public class Database {
             connection = DriverManager.getConnection(dbPath);
 
             Statement stmt = connection.createStatement();
-            String sql = "CREATE TABLE IF NOT EXISTS " + tableName
+            // SQLite does not enforce the length of a VARCHAR,
+            // thus it is omitted here
+            String sql = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME
                     + "(ID INTEGER PRIMARY KEY AUTOINCREMENT, "
-                    + "Name VARCHAR(255) UNIQUE, IPAddress VARCHAR(255),  "
+                    + "Name VARCHAR UNIQUE, "
+                    + "IPAddress VARCHAR, "
                     + "Port INTEGER, "
-                    + "SignatureKey VARCHAR(2047));";
+                    + "SignatureKey VARCHAR, "
+                    + "CONSTRAINT uniqueIpPortPair UNIQUE (IPAddress, Port));";
             stmt.executeUpdate(sql);
             stmt.close();
             return true;
@@ -54,10 +79,24 @@ public class Database {
      */
     public static boolean insert (final String name, final String ipAddress, final int port, final String signatureKey) {
         try {
-            if ((connection == null || connection.isClosed()) && !connectToDb()) {
+            if (connection == null || connection.isClosed()) {
+                connectToDb();
+            }
+            // check for illegal input
+            if (!Pattern.matches(CONTACT_NAME_SYNTAX, name)) {
+                System.err.println("Problem with inserting data in the CommunicationList Database: \""
+                        + name + "\" violates the constraints");
+                return false;
+            } else if (!Pattern.matches(CONTACT_IP_SYNTAX, ipAddress)) {
+                System.err.println("Problem with inserting data in the CommunicationList Database: "
+                        + "IP Address " + ipAddress + " violates the constraints");
+                return false;
+            } else if (port < MIN_PORT_NUMBER || port > MAX_PORT_NUMBER) {
+                System.err.println("Problem with inserting data in the CommunicationList Database: "
+                        + "Port " + port + " violates the constraints");
                 return false;
             }
-            String sql = "INSERT INTO " + tableName + "(Name, IPAddress, Port, SignatureKey) VALUES(?, ?, ?, ?)";
+            String sql = "INSERT INTO " + TABLE_NAME + "(Name, IPAddress, Port, SignatureKey) VALUES(?, ?, ?, ?)";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             stmt.setString(2, ipAddress);
@@ -75,14 +114,18 @@ public class Database {
     /**
      * delete an entry from the db
      * @param name the designated name of the entry to be deleted as a String
-     * @return true if the deleting worked, false if error
+     * @return true if the deleting worked or name not exists, false if error,
+     * @throws IllegalArgumentException if name is null
      */
     public static boolean delete (final String name) {
+        if (name == null) {
+            throw new IllegalArgumentException("Input was null");
+        }
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "DELETE FROM " + tableName + " WHERE Name = ?";
+            String sql = "DELETE FROM " + TABLE_NAME + " WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             stmt.executeUpdate();
@@ -105,7 +148,13 @@ public class Database {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "UPDATE " + tableName + " SET Name = ? WHERE Name = ?";
+            // check for illegal input
+            if (!Pattern.matches(CONTACT_NAME_SYNTAX, newName)) {
+                System.err.println("Problem with updating data in the CommunicationList Database: \""
+                        + newName + "\" violates the constraints");
+                return false;
+            }
+            String sql = "UPDATE " + TABLE_NAME + " SET Name = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, newName);
             stmt.setString(2, oldName);
@@ -129,7 +178,13 @@ public class Database {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "UPDATE " + tableName + " SET IPAddress = ? WHERE Name = ?";
+            // check for illegal input
+            if (!Pattern.matches(CONTACT_IP_SYNTAX, ipAddress)) {
+                System.err.println("Problem with updating data in the CommunicationList Database: "
+                        + "IP Address " + ipAddress + " violates the constraints");
+                return false;
+            }
+            String sql = "UPDATE " + TABLE_NAME + " SET IPAddress = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, ipAddress);
             stmt.setString(2, name);
@@ -153,7 +208,13 @@ public class Database {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "UPDATE " + tableName + " SET Port = ? WHERE Name = ?";
+            // check for illegal input
+            if(port < MIN_PORT_NUMBER || port > MAX_PORT_NUMBER) {
+                System.err.println("Problem with updating data in the CommunicationList Database: "
+                        + "Port " + port + " violates the constraints");
+                return false;
+            }
+            String sql = "UPDATE " + TABLE_NAME + " SET Port = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, port);
             stmt.setString(2, name);
@@ -177,7 +238,7 @@ public class Database {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "UPDATE " + tableName + " SET SignatureKey = ? WHERE Name = ?";
+            String sql = "UPDATE " + TABLE_NAME + " SET SignatureKey = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, signatureKey);
             stmt.setString(2, name);
@@ -200,10 +261,13 @@ public class Database {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + tableName + " WHERE Name = ?";
+            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + TABLE_NAME + " WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
+            if(rs == null) {
+                return null;
+            }
             DbObject result = new DbObject(rs.getString("Name"), rs.getString("IPAddress"),
                     rs.getInt("Port"), rs.getString("SignatureKey"));
             rs.close();
@@ -224,7 +288,7 @@ public class Database {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + tableName;
+            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + TABLE_NAME;
             PreparedStatement stmt = connection.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
             ArrayList<DbObject> result = new ArrayList<>();

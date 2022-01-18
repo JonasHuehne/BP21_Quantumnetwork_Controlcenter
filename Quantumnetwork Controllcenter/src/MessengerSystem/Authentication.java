@@ -1,6 +1,7 @@
 package MessengerSystem;
 
 import CommunicationList.Database;
+import CommunicationList.DbObject;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -52,12 +53,21 @@ public class Authentication {
      * @param receivedSignature the received signature as String
      * @param sender the sender of the message, needed to look up the public key in the communication list
      * @return true if the signature matches the message, false otherwise or if Error
+     * @throws IllegalArgumentException if sender null or does not exist, or no Signature Key for sender
      */
     public static boolean verify (final String message, final String receivedSignature, final String sender) {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
             // get public key of sender from the db
-            String pubKey = Database.query(sender).getSignatureKey();
+            DbObject senderEntry = Database.query(sender);
+            if (senderEntry == null) {
+                throw new IllegalArgumentException("Sender not found Communication List");
+            }
+            String pubKey = senderEntry.getSignatureKey();
+            if (pubKey == null || pubKey.equals("")) {
+                throw new IllegalArgumentException
+                        ("No Public signature Key found in Database for " + sender);
+            }
             // get PublicKey object from String
             PublicKey publicKey = getPublicKeyFromString(pubKey);
             signature.initVerify(publicKey);
