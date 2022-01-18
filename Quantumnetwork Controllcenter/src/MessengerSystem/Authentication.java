@@ -26,6 +26,16 @@ public class Authentication {
 
     private static final String KEY_FILE_NAME = "signature";
 
+    public static void checkFolder () {
+        try {
+            if (!Files.exists(Path.of(KEY_PATH))) {
+                Files.createDirectory(Path.of(KEY_PATH));
+            }
+        } catch (Exception e) {
+            System.err.println("Error while creating the SignatureKeys directory: " + e.getMessage());
+        }
+    }
+
     /**
      * method to create a signature for a message using the designated private key
      * @param message the message to be signed with the private key
@@ -33,6 +43,7 @@ public class Authentication {
      */
     public static String sign (final String message) {
         try {
+            checkFolder();
             Signature signature = Signature.getInstance("SHA256withRSA");
             // get PrivateKey object from File
             PrivateKey privateKey = getPrivateKeyFromFile();
@@ -100,6 +111,7 @@ public class Authentication {
      */
     private static PrivateKey getPrivateKeyFromFile () {
         try {
+            checkFolder();
             if(!Files.exists(Path.of(KEY_PATH + KEY_FILE_NAME + ".key"))) {
                 System.err.println("Error while creating a private key from the signature key file: "
                                  + "no signature key file found");
@@ -128,6 +140,7 @@ public class Authentication {
      */
     public static String readPublicKeyStringFromFile (String fileName) {
         try {
+            checkFolder();
             String key = new String (Files.readAllBytes
                     (Path.of(KEY_PATH + fileName + ".pub")));
             return key
@@ -155,6 +168,7 @@ public class Authentication {
      */
     public static boolean deleteSignatureKeys() {
         try {
+            checkFolder();
             Files.delete(Path.of(KEY_PATH + KEY_FILE_NAME + ".key"));
             Files.delete(Path.of(KEY_PATH + KEY_FILE_NAME + ".pub"));
             return true;
@@ -172,6 +186,7 @@ public class Authentication {
      */
     public static boolean generateSignatureKeyPair () {
         try {
+            checkFolder();
             if (Files.exists(Path.of(KEY_PATH + KEY_FILE_NAME + ".key"))) {
                 deleteSignatureKeys();
             }
