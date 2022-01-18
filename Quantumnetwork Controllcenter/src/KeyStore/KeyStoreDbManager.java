@@ -84,7 +84,7 @@ public class KeyStoreDbManager {
      * @param source identifier for the source application
      * @param destination identifier for the destination application
      */
-    public static boolean insertToDb(  String keyStreamID, int keyBuffer, int index, String source, String destination ){
+    public static boolean insertToDb(  String keyStreamID, byte[] keyBuffer, int index, String source, String destination ){
 
         try{
             Connection conn = connect();

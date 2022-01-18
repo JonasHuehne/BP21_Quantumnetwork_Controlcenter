@@ -1,10 +1,9 @@
 package keyGeneration;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -14,9 +13,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
 import MessengerSystem.MessageSystem;
 import frame.QuantumnetworkControllcenter;
 import networkConnection.ConnectionState;
@@ -32,11 +28,16 @@ public class KeyGenerator implements Runnable{
 	
 	private String connectionID;
 	private Path pythonPath;
+	private String pythonScriptName = "examplePythonScript.py";
+	private int initiative = 0;
 	private Path connectionPath;
 	private Path localPath;
 	private Thread transferThread;
 	private String expectedOutgoingFilename = "out.txt";
 	private String expectedIncomingFilename = "in.txt";
+	private String expectedKeyFilename = "key.txt";
+	private String expectedTermination = "terminate.txt";
+	private boolean keyGenRunning;
 	
 	public KeyGenerator(String connectionID) {
 		this.connectionID = connectionID;
@@ -62,10 +63,37 @@ public class KeyGenerator implements Runnable{
 			return;
 		}
 		System.out.println("preGenSync successful");
+		initiative = 1;
 		
 		System.out.println("Starting KeyGen MessaginService");
+		
+		//Signal the Source
+		signalSourceAPI();
+		
+		//Start the process
 		KeyGenMessagingService();
 		
+	}
+	
+	/**This calls the python script that was set at the top of this class as pythonScriptName.
+	 * The script is expected to be in localFolder/python/
+	 */
+	private void signalPython() {
+		try {
+			System.out.println("Calling the python script with the following line: " + "python " + pythonPath.resolve(pythonScriptName) + " " + initiative + " " + connectionPath);
+			Runtime.getRuntime().exec("python " + pythonPath.resolve(pythonScriptName) + " " + initiative + " " + connectionPath);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	/**Dummy Method for signaling the source API.
+	 * Needs to be added once the API exists.
+	 */
+	private void signalSourceAPI() {
+		//TODO: add Implementation depending on SourceAPI.
+		return;
 	}
 
 	
@@ -76,13 +104,10 @@ public class KeyGenerator implements Runnable{
 	private boolean preGenChecks(String connectionID) {
 		boolean check = true;
 		
-		//Check if active connection is selected
-		check = check && MessageSystem.getActiveConnection().equals(connectionID);
-		
 		//Check if active connection is connected
-		check = check && MessageSystem.conMan.getConnectionState(MessageSystem.getActiveConnection()).equals(ConnectionState.CONNECTED);
+		check = check && MessageSystem.conMan.getConnectionState(connectionID).equals(ConnectionState.CONNECTED);
 		
-		
+		check = check && MessageSystem.getNumberOfPendingMessages(connectionID) == 0;
 		
 		return check;
 		
@@ -91,27 +116,29 @@ public class KeyGenerator implements Runnable{
 	
 	/**Returns true if both ends of the keyGen process agree to begin the generation process.
 	 * 
-	 * @return
+	 * @return true means the other party agreed and is checked and ready.
 	 */
 	private boolean preGenSync() {
-		System.out.println("Sending Sync Request via " + MessageSystem.getActiveConnection() + " !");
+		System.out.println("Sending Sync Request via " + connectionID + " !");
 		//Send Sync Request
-		MessageSystem.conMan.getConnectionEndpoint(MessageSystem.getActiveConnection()).pushMessage("sync:::");
+		MessageSystem.conMan.getConnectionEndpoint(connectionID).pushMessage("sync", "");
 		
 		
-		System.out.println("Starting to wair for response...");
+		System.out.println("Starting to wait for response...");
 		Instant startWait = Instant.now();
 		Instant current;
 		//Wait for Answer
-		while(!MessageSystem.previewReceivedMessage().equals("syncConfirm") && !MessageSystem.previewReceivedMessage().equals("syncReject")) {
-			System.out.println(MessageSystem.previewReceivedMessage());
+		while((MessageSystem.previewReceivedMessage(connectionID) == null) || ((!MessageSystem.previewReceivedMessage(connectionID).getHead().equals("syncConfirm")) && (!MessageSystem.previewReceivedMessage(connectionID).getHead().equals("syncReject")))) {
+			if(MessageSystem.previewReceivedMessage(connectionID) != null) {
+				//System.out.println(MessageSystem.previewReceivedMessage().getContent());
+			}
 			current = Instant.now();
 			if(Duration.between(startWait, current).toSeconds() >= 10) {
 				System.out.println("Time-out while waiting for Pre-Key-Generation Sync. Did not recieve an Accept- or Reject-Answer in time");
 				return false;
 			}
 		}
-		String msg = MessageSystem.readReceivedMessage();
+		String msg = MessageSystem.readReceivedMessage(connectionID);
 		System.out.println("Recieved Sync-Response: " + msg + "!");
 		if(msg.equals("syncConfirm")) {
 			return true;
@@ -129,27 +156,44 @@ public class KeyGenerator implements Runnable{
 		System.out.println("[" + connectionID + "]: Add confirmation-promt for KeyGen here!");
 		//for now, always accept
 		boolean accept = true;
-		if(accept) {
-			setUpFolders();
-			MessageSystem.conMan.getConnectionEndpoint(connectionID).pushMessage("msg:::syncConfirm");
-			transferData();
+		if(accept && preGenChecks(connectionID)) {
+			signalSourceAPI();
+			MessageSystem.conMan.getConnectionEndpoint(connectionID).pushMessage("syncConfirm", "syncConfirm");
+			initiative = 0;
+			KeyGenMessagingService();
 		}else {
-			MessageSystem.conMan.getConnectionEndpoint(connectionID).pushMessage("msg:::syncReject");
+			MessageSystem.conMan.getConnectionEndpoint(connectionID).pushMessage("syncReject", "syncReject");
 		}
 		
 	}
 	
+	/**This calls the python script and also starts the threads that handle the .txt files.
+	 * 
+	 */
 	private void KeyGenMessagingService() {
 		if(!setUpFolders()) {
 			System.out.println("Aborting KeyGenMessagingService, some Folders could not be found!");
 			return;
 		}
+		
+		//calling python
+		signalPython();
+		
+		
 		transferData();
 		
 	}
 	
+	
+	/**This starts the actual thread that deals with the message handling.
+	 * 
+	 */
 	private void transferData() {
+		if(keyGenRunning) {
+			System.out.println("Error: Key Gen Thread was already running, could not start a second one!");
+		}
 		transferThread = new Thread(this, connectionID + "_transferThread");
+		keyGenRunning = true;
 		transferThread.start();
 	}
 	
@@ -161,12 +205,12 @@ public class KeyGenerator implements Runnable{
 		
 		//Get own root folder
 		Path currentWorkingDir = Paths.get("").toAbsolutePath();
-        System.out.println(currentWorkingDir.normalize().toString());
+        //System.out.println(currentWorkingDir.normalize().toString());
         localPath = currentWorkingDir;
         
         //Get python folder
-        Path pythonScriptLocation = currentWorkingDir.resolve("python");
-        System.out.println(pythonScriptLocation.normalize().toString());
+        Path pythonScriptLocation = localPath.resolve("python");
+        //System.out.println(pythonScriptLocation.normalize().toString());
         if(!Files.isDirectory(pythonScriptLocation)) {
         	System.out.println("Error, could not find the Python Script folder, expected: " + pythonScriptLocation.normalize().toString());
         	return false;
@@ -176,7 +220,7 @@ public class KeyGenerator implements Runnable{
         //Prepare Connection Folder
         Path connectionFolderLocation = currentWorkingDir.resolve("connections");
         connectionFolderLocation = connectionFolderLocation.resolve(connectionID);
-        System.out.println(connectionFolderLocation.normalize().toString());
+        //System.out.println(connectionFolderLocation.normalize().toString());
         if(!Files.isDirectory(connectionFolderLocation)) {
         	System.out.println("Could not find the Connection folder for "+ connectionID +", expected: " + connectionFolderLocation.normalize().toString() + " Creating folder now!");
         	try {
@@ -196,39 +240,110 @@ public class KeyGenerator implements Runnable{
 	}
 	
 	
+	/**Transfers the contents of a key.txt file to the DB.
+	 * Needs to be adjusted if the DB is not changed to use Byte[].
+	 */
+	private void transferKeyFileToDB() {
+		//Read Key from File
+		byte[] key = null;
+		Path KeyFilePath = connectionPath.resolve(expectedKeyFilename);
+		if(Files.exists(KeyFilePath) && Files.notExists(connectionPath.resolve(expectedKeyFilename + ".lock"))) {
+			try {
+				//Read
+				key = Files.readAllBytes(KeyFilePath);
+				
+				//Delete
+				try {
+					Files.delete(KeyFilePath);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			} catch (IOException e) {
+				System.out.println("Error while reading the Key File!");
+				e.printStackTrace();
+			}
+		}else {
+			System.out.println("Error while trying to read the Key File! Either no " + expectedKeyFilename + " file was found or there was still a .lock file present!");
+		}
+		
+		//Insert into DB
+		String ownAddress = MessageSystem.conMan.getConnectionEndpoint(connectionID).getLocalAddress();
+		int ownPort = MessageSystem.conMan.getConnectionEndpoint(connectionID).getServerPort();
+		
+		String remoteAddress = MessageSystem.conMan.getConnectionEndpoint(connectionID).getRemoteAddress();
+		int remotePort = MessageSystem.conMan.getConnectionEndpoint(connectionID).getRemotePort();
+		
+		//TODO: Check in with Aron to make agree on interface according to standards. Ideally change DB Method Parameter to Byte[].
+		//KeyStoreDbManager.insertToDb(connectionID, key, 0, ownAddress + ":" + String.valueOf(ownPort), remoteAddress + ":" + String.valueOf(remotePort));
+		
+		//End the KeyGen Process and clean up.
+		shutdownKeyGen(false);
+	}
+	
+	/**This handles the shutdown of the KeyGen. It is called locally and removes all files that may be left behind.
+	 * It is called if the process is aborted/terminated or completed. If relay == true, this also calls the other involved party.
+	 * 
+	 * @param relay if True, this will cause a network Message to be sent.
+	 */
+	public void shutdownKeyGen(boolean relay) {
+		
+		System.out.println("Shutting down the KeyGen of " + connectionID);
+		keyGenRunning = false;
+		try {
+			Files.deleteIfExists(connectionPath.resolve(expectedOutgoingFilename));
+			Files.deleteIfExists(connectionPath.resolve(expectedOutgoingFilename + ".lock"));
+			Files.deleteIfExists(connectionPath.resolve(expectedIncomingFilename));
+			Files.deleteIfExists(connectionPath.resolve(expectedIncomingFilename + ".lock"));
+			Files.deleteIfExists(connectionPath.resolve(expectedKeyFilename));
+			Files.deleteIfExists(connectionPath.resolve(expectedKeyFilename + ".lock"));
+			Files.deleteIfExists(connectionPath.resolve(expectedTermination));
+			Files.deleteIfExists(connectionPath.resolve(expectedTermination + ".lock"));
+			
+			if(relay) {
+				MessageSystem.sendSignal(connectionID, "terminate");
+			}
+			
+		} catch (IOException e) {
+			System.out.println("Error while shutting down the KeyGen and deleting any potentially existing Files!");
+			e.printStackTrace();
+		}
+	}
+	
+	/**This is the tread that runs in the background and listens for .txt files, reads/writes them and then sends and deletes the files where needed.
+	 * 
+	 */
 	@Override
 	public void run() {
-		while(true) {
-			Path outFilePath = connectionPath.resolve(expectedOutgoingFilename);
-			Path inFilePath = connectionPath.resolve(expectedIncomingFilename);
+		
+		Path outFilePath = connectionPath.resolve(expectedOutgoingFilename);
+		Path inFilePath = connectionPath.resolve(expectedIncomingFilename);
+		
+		while(keyGenRunning) {	
 			
+			//Part 1
 			//Read outgoing file and send it.
-			if(Files.exists(outFilePath)) {
+			if(Files.exists(outFilePath) && Files.notExists(connectionPath.resolve(expectedOutgoingFilename + ".lock"))) {
 
 				//Read FileContent
-				Stream<String> outFileReader;
-				String outFileContent = "";
+				byte[] outFileContent = null;
 				try {
-					outFileReader = Files.lines(outFilePath);
-					outFileContent = outFileReader.collect(Collectors.joining("\n"));
-				    outFileReader.close();
+					outFileContent = Files.readAllBytes(outFilePath);
 				} catch (IOException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
 			    //Send FileContent
-				synchronized(this){
-			    String prevActiveConn = MessageSystem.getActiveConnection();
-			    MessageSystem.setActiveConnection(connectionID);
-			    MessageSystem.sendMessage(outFileContent);
-			    System.out.println("123");
-			    MessageSystem.setActiveConnection(prevActiveConn);	    
+			    try {
+					MessageSystem.sendMessage(connectionID, new String(outFileContent, "ISO-8859-1"));
+				} catch (UnsupportedEncodingException e) {
+					System.out.println("Error: unsupportet Encoding: ISO-8859-1!");
+					e.printStackTrace();	    
 				}
 				
 			    //Clear File Content
-			    outFileReader = null;
-			    outFileContent = "";
+			    outFileContent = null;
 			    
 			    //Delete out.txt
 			    try {
@@ -237,24 +352,54 @@ public class KeyGenerator implements Runnable{
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-			}else{
-				//System.out.println("File not found!");
-			}
-			
-			if(!Files.exists(inFilePath) && QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getMessageStack().size() > 0) {
-				String inFileContent = "";
-				//Recieve Message
-				synchronized(this){
-				    String prevActiveConn = MessageSystem.getActiveConnection();
-				    MessageSystem.setActiveConnection(connectionID);
-				    inFileContent = MessageSystem.readReceivedMessage();
-				    MessageSystem.setActiveConnection(prevActiveConn);	    
+			}else {
+				//Check for non-transmission Files
+				
+				//Key Result
+				if(Files.exists(connectionPath.resolve(expectedKeyFilename)) && Files.notExists(connectionPath.resolve(expectedKeyFilename + ".lock"))) {
+					System.out.println("Adding Key to KeyDB");
+					transferKeyFileToDB();
+					return;
+				}
+				
+				
+				//Abort Signal File
+				if(Files.exists(connectionPath.resolve(expectedTermination)) && Files.notExists(connectionPath.resolve(expectedTermination + ".lock"))) {
+					System.out.println("Aborting Key Generation");
+				
+					try {
+						Files.delete(connectionPath.resolve(expectedTermination));
+						shutdownKeyGen(true);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						shutdownKeyGen(true);
+						e.printStackTrace();
 					}
+					return;
+				}
 				
-				//System.out.println("[" + connectionID + "]: inFileContent recieved: " + inFileContent);
 				
+				
+			}
+			//Part 2
+			//Writing Incoming Files
+			if(!Files.exists(inFilePath) && QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getMessageStack().size() > 0) {
+				String inFileContent = null;
+				
+				//Receive Message
+				inFileContent = MessageSystem.readReceivedMessage(connectionID);    
+				
+				//Write temporary lock file
+				File lockFile = new File(connectionPath.resolve(inFilePath + ".lock").toString());
+				try {
+					lockFile.createNewFile();
+				} catch (IOException e1) {
+					System.out.println("Error while creating temp lock file for the new in.txt");
+					e1.printStackTrace();
+				}
+				//Write to file
 				try		
-				(Writer inWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(inFilePath.toString()), "utf-8"))) {
+				(Writer inWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(inFilePath.toString()), "ISO-8859-1"))) {
 					inWriter.write(inFileContent);
 				} catch (UnsupportedEncodingException e) {
 					// TODO Auto-generated catch block
@@ -266,6 +411,8 @@ public class KeyGenerator implements Runnable{
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				//Remove .lockFile
+				lockFile.delete();
 			}
 		}
 	}

@@ -1,6 +1,8 @@
 package networkConnection;
 
-public class networkPackage {
+import java.io.Serializable;
+
+public class networkPackage implements Serializable{
 
 	public String head;
 	public String content;

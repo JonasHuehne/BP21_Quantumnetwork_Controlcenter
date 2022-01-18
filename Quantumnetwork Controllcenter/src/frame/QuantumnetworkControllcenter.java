@@ -65,7 +65,14 @@ public class QuantumnetworkControllcenter {
 			e.printStackTrace();
 		}
 		
-		MessageSystem.setActiveConnection("Alice");
+		/**conMan.getConnectionEndpoint("Alice").pushMessage("msg", "testMessage123");
+		MessageSystem.setActiveConnection("Bob");
+		
+		while(MessageSystem.previewReceivedMessage().equals("")) {
+			
+		}
+		System.out.println("Recieved Message: " + MessageSystem.readReceivedMessage());
+		**/
 		
 		conMan.getConnectionEndpoint("Alice").getKeyGen().generateKey();
 		

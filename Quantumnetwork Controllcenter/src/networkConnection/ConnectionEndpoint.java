@@ -1,9 +1,9 @@
 package networkConnection;
 
-import java.io.BufferedReader;
+
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -29,8 +29,8 @@ public class ConnectionEndpoint implements Runnable{
 	private int remotePort;		//the Port of the connected Endpoint
 	
 	//Communication Channels
-	private BufferedReader serverIn;
-	private PrintWriter clientOut;
+	private ObjectInputStream serverIn;
+	private ObjectOutputStream clientOut;
 	
 	//State
 	private boolean listenForMessages = false;
@@ -42,8 +42,8 @@ public class ConnectionEndpoint implements Runnable{
 	private ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
 	private Thread messageThread = new Thread(this, connectionID + "_messageThread");
 	
-	private LinkedList<String> messageStack = new LinkedList<String>();
-	private LinkedList<String> confirmedMessageStack = new LinkedList<String>();
+	private LinkedList<networkPackage> messageStack = new LinkedList<networkPackage>();
+	private LinkedList<networkPackage> confirmedMessageStack = new LinkedList<networkPackage>();
 	
 	public ConnectionEndpoint(String connectionName, String localAddress, int serverPort) {
 		connectionID = connectionName;
@@ -124,6 +124,15 @@ public class ConnectionEndpoint implements Runnable{
 	public int getServerPort() {
 		return localServerPort;
 	}
+	
+	
+	public String getRemoteAddress() {
+		return remoteID;
+	}
+	
+	public int getRemotePort() {
+		return remotePort;
+	}
 	//------------//
 	//Client Side
 	//------------//
@@ -149,15 +158,15 @@ public class ConnectionEndpoint implements Runnable{
 		try {
 			//Connecting own Client Socket to foreign Server Socket
 			localClientSocket = new Socket(remoteID,remotePort);
-			clientOut = new PrintWriter(localClientSocket.getOutputStream(),true);
+			clientOut = new ObjectOutputStream(localClientSocket.getOutputStream());
 			isConnected = true;
 			
 			//Send Message to allow foreign Endpoint to connect with us.
 			System.out.println("[" + connectionID + "]: " + connectionID + " is sending a greeting.");
-			pushMessage("connreq:::" + localAddress + ":" + localServerPort);
+			pushMessage("connreq", localAddress + ":" + localServerPort);
 			System.out.println("[" + connectionID + "]: waiting for response");
 			remoteClientSocket = localServerSocket.accept();
-			serverIn = new BufferedReader(new InputStreamReader(remoteClientSocket.getInputStream()));
+			serverIn = new ObjectInputStream(remoteClientSocket.getInputStream());
 			System.out.println("[" + connectionID + "]: Connected " + connectionID + " to external ID and Port: " + remoteID + ", " + String.valueOf(remotePort) + "!");
 			isBuildingConnection = false;
 			listenForMessage();
@@ -184,7 +193,7 @@ public class ConnectionEndpoint implements Runnable{
 	public void closeConnection(boolean localRequest) {
 		if(isConnected && localRequest) {
 			//If close-request has local origin, message other connectionEndpoint about closing the connection.
-			pushMessage("termconn:::");
+			pushMessage("termconn","");
 		}
 		System.out.println("[" + connectionID + "]: Local Shutdown of ConnectionEndpoint " + connectionID);
 		isConnected = false;
@@ -230,38 +239,44 @@ public class ConnectionEndpoint implements Runnable{
 	 * 
 	 * @param message the String Message that should be send to the connected Partys Server.
 	 */
-	public void pushMessage(String message) {
+	public void pushMessage(String type, String message) {
 		//Check for existence of connection before attempting so send.
 		if(!isConnected) {
 			System.out.println("Warning: Attempted to push a message to another Endpoint while not beeing connected to anything!");
 			return;
 		}
-		System.out.println("[" + connectionID + "]: ConnectionEndpoint of " + connectionID + " is pushing Message: " + message + " to ServerSocket of " + remoteID + ":" + String.valueOf(remotePort) + "!");
-		clientOut.println(message);
+		System.out.println("Trying to send package");
+		//System.out.println("[" + connectionID + "]: ConnectionEndpoint of " + connectionID + " is pushing Message: " + message + " to ServerSocket of " + remoteID + ":" + String.valueOf(remotePort) + "!");
+		try {
+			clientOut.writeObject(new networkPackage(type, message));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return;
 	}
 	
-	public void addMessageToStack(String message) {
+	public void addMessageToStack(networkPackage message) {
 		messageStack.add(message);
 	}
 
-	public String readMessageFromStack() {
+	public networkPackage readMessageFromStack() {
 		if (messageStack.size()>0) {
 			return messageStack.pop();
 		}
-		return "";
+		return null;
 	}
 	
-	public String peekMessageFromStack() {
+	public networkPackage peekMessageFromStack() {
 		if (messageStack.size()>0) {
 			return messageStack.peekFirst();
 		}
-		return "";
+		return null;
 	}
 	
 	public String peekLatestMessageFromStack() {
 		if (messageStack.size()>0) {
-		return messageStack.peekLast();
+		return messageStack.peekLast().getContent();
 		}
 		return "";
 	}
@@ -270,7 +285,7 @@ public class ConnectionEndpoint implements Runnable{
 		return messageStack.size();
 	}
 	
-	private void registerConfirmation(String message) {
+	private void registerConfirmation(networkPackage message) {
 		confirmedMessageStack.add(message);
 	}
 	
@@ -308,7 +323,7 @@ public class ConnectionEndpoint implements Runnable{
 					System.out.println("[" + connectionID + "]: A ConnectionRequest has been received at " + connectionID + "s ServerSocket on Port " + localServerPort + "!");
 					
 					//Set ServerCommmChannels
-					serverIn = new BufferedReader(new InputStreamReader(remoteClientSocket.getInputStream()));
+					serverIn = new ObjectInputStream(remoteClientSocket.getInputStream());
 					waitingForConnection = false;
 					isConnected = true;
 					
@@ -349,15 +364,16 @@ public class ConnectionEndpoint implements Runnable{
 	 * @param message	the message that was just received and should be checked for keywords.
 	 * @return	the String message after it was processed.
 	 */
-	private void processMessage(String message) {
+	private void processMessage(networkPackage transmission) {
 		//Closing Message
-		System.out.println("[" + connectionID + "]: Processing Message: " + message);
+		System.out.println("Parsing: " + transmission.getHead() + "  -  " + transmission.getContent());
+		System.out.println("[" + connectionID + "]: Processing Message: " + transmission.getHead());
 		try {
-			switch(message.split(":::")[0]){
+			switch(transmission.getHead()){
 			
 			case "connreq":
 				//Parse Greeting
-				String greetingMessage = message.split(":::")[1];
+				String greetingMessage = transmission.getContent();
 				remoteID = greetingMessage.split(":")[0];
 				remotePort = Integer.parseInt(greetingMessage.split(":")[1]);
 				System.out.println("[" + connectionID + "]: Received initial Message: " + greetingMessage);
@@ -365,7 +381,7 @@ public class ConnectionEndpoint implements Runnable{
 				//Use greeting(ip:port) to establish back-connection to the ConnectionAttempt-Sources ServerSocket
 				System.out.println("[" + connectionID + "]: Connecting back to " + remoteID + " at Port: " + remotePort);
 				localClientSocket = new Socket(remoteID, remotePort);
-				clientOut = new PrintWriter(localClientSocket.getOutputStream(), true);
+				clientOut = new ObjectOutputStream(localClientSocket.getOutputStream());
 				return;
 				
 			case "termconn":
@@ -374,35 +390,52 @@ public class ConnectionEndpoint implements Runnable{
 				return;
 				
 			case "msg":
-				System.out.println("[" + connectionID + "]: Received Message: " + message + "!");
-				addMessageToStack( message.split(":::")[1]);
+				System.out.println("[" + connectionID + "]: Received Message: " + transmission.getHead() + "!");
+				addMessageToStack( transmission);
 				return;
 				
 			case "confirm":
-				System.out.println("[" + connectionID + "]: Received Confirm-Message: " + message + "!");
-				addMessageToStack( message.split(":::")[1]);
-				pushMessage("confirmback:::" + message.split(":::")[1]);
+				System.out.println("[" + connectionID + "]: Received Confirm-Message: " + transmission.getHead() + "!");
+				addMessageToStack( transmission);
+				pushMessage("confirmback", transmission.getContent());
 				return;
 				
 			case "confirmback":
-				System.out.println("[" + connectionID + "]: Received Confirm_Back-Message: " + message + "!");
-				registerConfirmation(message.split(":::")[1]);
+				System.out.println("[" + connectionID + "]: Received Confirm_Back-Message: " + transmission.getHead() + "!");
+				registerConfirmation(transmission);
 				return;
 				
 			case "sync":
-				System.out.println("[" + connectionID + "]: Received KeyGenSync-Message: " + message + "!");
+				System.out.println("[" + connectionID + "]: Received KeyGenSync-Message: " + transmission.getHead() + "!");
 				keyGen.keyGenSyncResponse();
 				return;
 				
+			case "syncConfirm":
+				//The SyncConfirm is added to the regular messagesStack and read by the KeyGenerator.
+				System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
+				addMessageToStack( transmission);
+				return;
+				
+			case "syncReject":
+				//The SyncConfirm is added to the regular messagesStack and read by the KeyGenerator.
+				System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
+				addMessageToStack( transmission);
+				return;			
+				
+			case "terminate":
+				//Terminating Key Gen
+				keyGen.shutdownKeyGen(false);
+				return;
+				
 			default:
-				System.out.println("ERROR: [" + connectionID + "]: Invalid message prefix in message: " + message);
+				System.out.println("ERROR: [" + connectionID + "]: Invalid message prefix in message: " + transmission.getHead());
 				return;
 			
 			
 		}
 		
 		} catch (IOException e) {
-			System.out.println("There was an issue at " + connectionID + " while tring to parse special commands from the latest Message: " + message + ".");
+			System.out.println("There was an issue at " + connectionID + " while tring to parse special commands from the latest Message: " + transmission.getHead() + ".");
 			e.printStackTrace();
 		}
 				
@@ -412,16 +445,16 @@ public class ConnectionEndpoint implements Runnable{
 	@Override
 	public void run() {
 		waitingForMessage = true;
-		String receivedMessage;
+		networkPackage receivedMessage;
 		while(waitingForMessage) {
 			try {
-				if(waitingForMessage && serverIn != null && isConnected && !waitingForConnection && (receivedMessage = serverIn.readLine()) != null) {
+				if(waitingForMessage && serverIn != null && isConnected && !waitingForConnection && (receivedMessage = (networkPackage) serverIn.readObject()) != null) {
 					System.out.println("[" + connectionID + "]: " + connectionID + " received Message!:");
 					System.out.println(receivedMessage);
 					processMessage(receivedMessage);
 
 				}
-			} catch (IOException e) {
+			} catch (IOException | ClassNotFoundException e) {
 				if(isConnected) {
 					System.out.println("Error while waiting for Message at " + connectionID + "!");
 					e.printStackTrace();
