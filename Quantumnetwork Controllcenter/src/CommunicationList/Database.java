@@ -51,6 +51,8 @@ public class Database {
             connection = DriverManager.getConnection(dbPath);
 
             Statement stmt = connection.createStatement();
+            // SQLite does not enforce the length of a VARCHAR,
+            // thus it is omitted here
             String sql = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME
                     + "(ID INTEGER PRIMARY KEY AUTOINCREMENT, "
                     + "Name VARCHAR UNIQUE, "

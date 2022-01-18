@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -14,8 +15,15 @@ import org.junit.jupiter.api.Test;
  * @author Sarah Schumann
  */
 class CommunicationListTests {
-    // IMPORTANT: only run tests one by one. There will be problems if they interleave,
-    // as they use the same database and always add and delete the test data.
+
+    @BeforeAll
+    // only works if no problem with delete and queryAll
+    static void setup() {
+        ArrayList<DbObject> entries = Database.queryAll();
+        for (DbObject e : entries) {
+            Database.delete(e.getName());
+        }
+    }
 
     @AfterEach
     // only works if no problem with delete and queryAll

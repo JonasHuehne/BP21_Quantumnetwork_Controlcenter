@@ -59,7 +59,8 @@ public class Authentication {
             // get public key of sender from the db
             String pubKey = Database.query(sender).getSignatureKey();
             if (pubKey == null || pubKey.equals("")) {
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException
+                        ("No Public signature Key found in Database for " + sender);
             }
             // get PublicKey object from String
             PublicKey publicKey = getPublicKeyFromString(pubKey);
