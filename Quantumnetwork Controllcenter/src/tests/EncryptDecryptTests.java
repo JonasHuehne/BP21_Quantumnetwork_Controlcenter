@@ -128,7 +128,7 @@ public class EncryptDecryptTests {
 	/*
 	 * Testing that correct Exception is thrown when null is used as key
 	 */
-	public void testEncryptionNullKey() {
+	public void testEncryptionNullStrKey() {
 		assertThrows(NullPointerException.class,() -> {
 			assertNull(AES256.encrypt(original,(String) null));
 			});
@@ -136,13 +136,45 @@ public class EncryptDecryptTests {
 	
 	@Test
 	/*
-	 * Testing that correct Exception is thrown when null is used as plaintext and key
+	 * Testing that correct Exception is thrown when null is used as key
 	 */
-	public void testEncryptionNullPlaintextKey() {
+	public void testEncryptionNullSecretKey() {
+		SecretKey sk = null;
+		
+		assertThrows(NullPointerException.class,() -> {
+			assertNull(AES256.encrypt(original,sk));
+			});
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown when null is used as plaintext with a valid key
+	 */
+	public void testEncryptionNullPlaintext() {
 		assertThrows(NullPointerException.class, () -> {
 			assertNull(AES256.encrypt(null, bitStringKey));
 		});
-		
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown when null is used as plaintext and key
+	 */
+	public void testEncryptionNullPlaintextStrKey() {
+		assertThrows(NullPointerException.class, () -> {
+			assertNull(AES256.encrypt(null,(String) null));
+		});
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown when null is used as plaintext and key
+	 */
+	public void testEncryptionNullPlaintextSecretKey() {
+		assertThrows(NullPointerException.class, () -> {
+			SecretKey sk = null;
+			assertNull(AES256.encrypt(null,sk));
+		});
 	}
 	
 	@Test
@@ -226,7 +258,7 @@ public class EncryptDecryptTests {
 	/*
 	 * Testing that correct Exception is thrown when null is used as key during decryption
 	 */
-	public void testDecryptionNullKey() {
+	public void testDecryptionNullStrKey() {
 		String encrypted = AES256.encrypt(original, bitStringKey);
 
 		assertThrows(NullPointerException.class,() -> {
@@ -236,13 +268,47 @@ public class EncryptDecryptTests {
 	
 	@Test
 	/*
-	 * Testing that correct Exception is thrown when null is used as cipher text and key
+	 * Testing that correct Exception is thrown when null is used as key during decryption
 	 */
-	public void testDecryptionNullPlaintextKey() {
+	public void testDecryptionNullSecretKey() {
+		String encrypted = AES256.encrypt(original, bitStringKey);
+		SecretKey sk = null;
+		
+		assertThrows(NullPointerException.class,() -> {
+			assertNull(AES256.decrypt(encrypted,sk));
+			});
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown when null is used as cipher text with a valid key
+	 */
+	public void testDecryptionNullPlaintext() {
 		assertThrows(NullPointerException.class, () -> {
 			assertNull(AES256.decrypt(null, bitStringKey));
 		});
 		
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown when null is used as plaintext and key
+	 */
+	public void testDecryptionNullPlaintextStrKey() {
+		assertThrows(NullPointerException.class, () -> {
+			assertNull(AES256.decrypt(null,(String) null));
+		});
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown when null is used as plaintext and key
+	 */
+	public void testDecryptionNullPlaintextSecretKey() {
+		assertThrows(NullPointerException.class, () -> {
+			SecretKey sk = null;
+			assertNull(AES256.decrypt(null,sk));
+		});
 	}
 	
 	@Test
