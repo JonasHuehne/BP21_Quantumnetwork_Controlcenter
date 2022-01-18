@@ -58,6 +58,9 @@ public class Authentication {
             Signature signature = Signature.getInstance("SHA256withRSA");
             // get public key of sender from the db
             String pubKey = Database.query(sender).getSignatureKey();
+            if (pubKey == null || pubKey.equals("")) {
+                throw new IllegalArgumentException();
+            }
             // get PublicKey object from String
             PublicKey publicKey = getPublicKeyFromString(pubKey);
             signature.initVerify(publicKey);

@@ -5,6 +5,7 @@ import CommunicationList.DbObject;
 
 import java.util.ArrayList;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -15,35 +16,89 @@ import org.junit.jupiter.api.Test;
 class CommunicationListTests {
     // IMPORTANT: only run tests one by one. There will be problems if they interleave,
     // as they use the same database and always add and delete the test data.
-    // Additionally, if they fail, you might need to make everything in the test above the first delete line a comment,
-    // run the test again, delete do uncomment the rest, and then run the test again.
+
+    @AfterEach
+    // only works if no problem with delete and queryAll
+    void cleanUp() {
+        ArrayList<DbObject> entries = Database.queryAll();
+        for (DbObject e : entries) {
+            Database.delete(e.getName());
+        }
+    }
 
     @Test
     void testInsertDelete() {
         boolean result1 = Database.insert("Name1", "155.155.155.155", 5, "ABC");
         Assertions.assertTrue(result1);
-
-        boolean result2 = Database.delete("Name1");
+        boolean result2 = Database.insert("Name2", "166.166.166.166", 7, "");
         Assertions.assertTrue(result2);
+
+        boolean result3 = Database.delete("Name1");
+        Assertions.assertTrue(result3);
+        DbObject result4 = Database.query("Name2");
+        Assertions.assertNotNull(result4);
+
+        boolean result5 = Database.delete("Name3");
+        Assertions.assertTrue(result5);
+        DbObject result6 = Database.query("Name2");
+        Assertions.assertNotNull(result6);
+
+        Assertions.assertThrows(IllegalArgumentException.class,
+                () -> Database.delete(null),
+                "Input was null");
+
+        boolean result7 = Database.insert(null, "0.0.0.0", 5, "");
+        Assertions.assertFalse(result7);
+        int result8 = Database.queryAll().size();
+        Assertions.assertEquals(1, result8);
+
+        boolean result9 = Database.insert("Name4", null, 5, "");
+        Assertions.assertFalse(result9);
+        DbObject result10 = Database.query("Name4");
+        Assertions.assertNull(result10);
+
+        boolean result11 = Database.insert("Name5", "2.2.2.2", 6, null);
+        Assertions.assertTrue(result11);
+        DbObject result12 = Database.query("Name5");
+        Assertions.assertNull(result12.getSignatureKey());
     }
 
     @Test
     void testUpdate() {
         boolean result1 = Database.insert("Name1", "155.155.155.155", 5, "ABC");
         Assertions.assertTrue(result1);
+
         boolean result2 = Database.updateName("Name1", "Name2");
         Assertions.assertTrue(result2);
+        DbObject result3 = Database.query("Name1");
+        Assertions.assertNull(result3);
+        DbObject result4 = Database.query("Name2");
+        Assertions.assertNotNull(result4);
 
-        boolean result3 = Database.updateIP("Name2", "144.144.144.144");
-        Assertions.assertTrue(result3);
-
-        boolean result4 = Database.updatePort("Name2", 7);
-        Assertions.assertTrue(result4);
-
-        boolean result5 = Database.updateSignatureKey("name2", "DEF");
+        boolean result5 = Database.updateIP("Name2", "144.144.144.144");
         Assertions.assertTrue(result5);
+        String result6 = Database.query("Name2").getIpAddress();
+        Assertions.assertEquals("144.144.144.144", result6);
 
-        Database.delete("Name2");
+        boolean result7 = Database.updatePort("Name2", 7);
+        Assertions.assertTrue(result7);
+        int result8 = Database.query("Name2").getPort();
+        Assertions.assertEquals(7, result8);
+
+        boolean result9 = Database.updateSignatureKey("Name2", "DEF");
+        Assertions.assertTrue(result9);
+        String result10 = Database.query("Name2").getSignatureKey();
+        Assertions.assertEquals("DEF", result10);
+
+        boolean result11 = Database.updateName("Name2", null);
+        Assertions.assertFalse(result11);
+        DbObject result12 = Database.query("Name2");
+        Assertions.assertNotNull(result12);
+
+        boolean result13 = Database.updateIP("Name2", null);
+        Assertions.assertFalse(result13);
+        String result14 = Database.query("Name2").getIpAddress();
+        Assertions.assertEquals("144.144.144.144", result14);
     }
 
     @Test
@@ -63,10 +118,6 @@ class CommunicationListTests {
         Assertions.assertEquals("155.155.155.155", testObject2.getIpAddress());
         Assertions.assertEquals(5, testObject2.getPort());
         Assertions.assertEquals("ABC", testObject2.getSignatureKey());
-
-        Database.delete("Name1");
-        Database.delete("Name2");
-        Database.delete("Name3");
     }
 
     @Test
@@ -80,10 +131,6 @@ class CommunicationListTests {
         Assertions.assertEquals(7, testList.get(1).getPort());
         Assertions.assertEquals("133.133.133.133", testList.get(2).getIpAddress());
         Assertions.assertEquals("DEF", testList.get(1).getSignatureKey());
-
-        Database.delete("Name1");
-        Database.delete("Name2");
-        Database.delete("Name3");
     }
 
     @Test
@@ -118,13 +165,6 @@ class CommunicationListTests {
         Assertions.assertFalse(result11);
         String result12 = Database.query("Name6").getIpAddress();
         Assertions.assertEquals("155.155.155.155", result12);
-
-        Database.delete("Name1");
-        Database.delete("Name2");
-        Database.delete("Name3");
-        Database.delete("Name4");
-        Database.delete("Name5");
-        Database.delete("Name6");
     }
 
     @Test
@@ -143,10 +183,6 @@ class CommunicationListTests {
         Assertions.assertTrue(result5);
         DbObject result6 = Database.query("Name3");
         Assertions.assertNotNull(result6);
-
-        Database.delete("Name1");
-        Database.delete("Name2");
-        Database.delete("Name3");
     }
 
     @Test
@@ -178,13 +214,6 @@ class CommunicationListTests {
         Assertions.assertFalse(result10);
         DbObject result11 = Database.query("Name 2");
         Assertions.assertNull(result11);
-
-        Database.delete("Näme");
-        Database.delete("Name1");
-        Database.delete("Nöme");
-        Database.delete("Nameß");
-        Database.delete("Name\\");
-        Database.delete("Name 2");
     }
 
     @Test
@@ -198,9 +227,6 @@ class CommunicationListTests {
         Assertions.assertTrue(result3);
         DbObject result4 = Database.query("Name-2");
         Assertions.assertNotNull(result4);
-
-        Database.delete("Name_1");
-        Database.delete("Name-2");
     }
 
     @Test
@@ -225,11 +251,6 @@ class CommunicationListTests {
         Assertions.assertFalse(result7);
         int result8 = Database.query("Name4").getPort();
         Assertions.assertEquals(4, result8);
-
-        Database.delete("Name1");
-        Database.delete("Name2");
-        Database.delete("Name3");
-        Database.delete("Name4");
     }
 
     @Test
@@ -243,8 +264,6 @@ class CommunicationListTests {
         Assertions.assertTrue(result3);
         int result4 = Database.query("Name1").getPort();
         Assertions.assertEquals(65535, result4);
-
-        Database.delete("Name1");
     }
 
     @Test
@@ -266,11 +285,6 @@ class CommunicationListTests {
         Assertions.assertFalse(result5);
         String result6 = Database.query("Name4").getIpAddress();
         Assertions.assertEquals("6.6.6.6", result6);
-
-        Database.delete("Name1");
-        Database.delete("Name2");
-        Database.delete("Name3");
-        Database.delete("Name4");
     }
 
 }

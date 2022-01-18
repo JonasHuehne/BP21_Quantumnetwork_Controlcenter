@@ -81,11 +81,17 @@ public class Database {
                 connectToDb();
             }
             // check for illegal input
-            if (!Pattern.matches(CONTACT_NAME_SYNTAX, name)
-                    || !Pattern.matches(CONTACT_IP_SYNTAX, ipAddress)
-                    || port < MIN_PORT_NUMBER || port > MAX_PORT_NUMBER) {
-                System.err.println("Problem with inserting data in the CommunicationList Database: " +
-                        "Name, IP Address or port violates the constraints");
+            if (!Pattern.matches(CONTACT_NAME_SYNTAX, name)) {
+                System.err.println("Problem with inserting data in the CommunicationList Database: \""
+                        + name + "\" violates the constraints");
+                return false;
+            } else if (!Pattern.matches(CONTACT_IP_SYNTAX, ipAddress)) {
+                System.err.println("Problem with inserting data in the CommunicationList Database: "
+                        + "IP Address " + ipAddress + " violates the constraints");
+                return false;
+            } else if (port < MIN_PORT_NUMBER || port > MAX_PORT_NUMBER) {
+                System.err.println("Problem with inserting data in the CommunicationList Database: "
+                        + "Port " + port + " violates the constraints");
                 return false;
             }
             String sql = "INSERT INTO " + TABLE_NAME + "(Name, IPAddress, Port, SignatureKey) VALUES(?, ?, ?, ?)";
@@ -106,9 +112,13 @@ public class Database {
     /**
      * delete an entry from the db
      * @param name the designated name of the entry to be deleted as a String
-     * @return true if the deleting worked, false if error
+     * @return true if the deleting worked or name not exists, false if error,
+     * @throws IllegalArgumentException if name is null
      */
     public static boolean delete (final String name) {
+        if (name == null) {
+            throw new IllegalArgumentException("Input was null");
+        }
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -138,8 +148,8 @@ public class Database {
             }
             // check for illegal input
             if (!Pattern.matches(CONTACT_NAME_SYNTAX, newName)) {
-                System.err.println("Problem with updating data in the CommunicationList Database: " +
-                        "Name violates the constraints");
+                System.err.println("Problem with updating data in the CommunicationList Database: \""
+                        + newName + "\" violates the constraints");
                 return false;
             }
             String sql = "UPDATE " + TABLE_NAME + " SET Name = ? WHERE Name = ?";
@@ -168,8 +178,8 @@ public class Database {
             }
             // check for illegal input
             if (!Pattern.matches(CONTACT_IP_SYNTAX, ipAddress)) {
-                System.err.println("Problem with updating data in the CommunicationList Database: " +
-                        "IP Address violates the constraints");
+                System.err.println("Problem with updating data in the CommunicationList Database: "
+                        + "IP Address " + ipAddress + " violates the constraints");
                 return false;
             }
             String sql = "UPDATE " + TABLE_NAME + " SET IPAddress = ? WHERE Name = ?";
@@ -198,8 +208,8 @@ public class Database {
             }
             // check for illegal input
             if(port < MIN_PORT_NUMBER || port > MAX_PORT_NUMBER) {
-                System.err.println("Problem with updating data in the CommunicationList Database: " +
-                        "Port violates the constraints");
+                System.err.println("Problem with updating data in the CommunicationList Database: "
+                        + "Port " + port + " violates the constraints");
                 return false;
             }
             String sql = "UPDATE " + TABLE_NAME + " SET Port = ? WHERE Name = ?";
