@@ -12,7 +12,7 @@ import networkConnection.ConnectionState;
  * Select active connectionEndpoint and start sending and receiving messages!
  * The first connectionEndpoint beeing created is automatically selected as active.
  * 
- * @author Jonas HÃ¼hne
+ * @author Jonas Hühne
  *
  */
 public class MessageSystem {

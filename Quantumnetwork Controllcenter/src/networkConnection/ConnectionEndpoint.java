@@ -11,10 +11,13 @@ import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import keyGeneration.KeyGenerator;
+
 public class ConnectionEndpoint implements Runnable{
 	
 	//Local information
 	private String connectionID;
+	private KeyGenerator keyGen;
 	
 	//Addresses, Sockets and Ports
 	private String localAddress;	//the own IP
@@ -44,6 +47,7 @@ public class ConnectionEndpoint implements Runnable{
 	
 	public ConnectionEndpoint(String connectionName, String localAddress, int serverPort) {
 		connectionID = connectionName;
+		keyGen = new KeyGenerator(connectionID);
 		this.localAddress = localAddress;
 		localServerPort = serverPort;
 		try {
@@ -77,6 +81,15 @@ public class ConnectionEndpoint implements Runnable{
 		}
 		return ConnectionState.ERROR;
 	}
+	
+	/**Allows access to the Key Generator that is responsible for this connectionEndpoint.
+	 * 
+	 * @return	The assigned Key Generator.
+	 */
+	public KeyGenerator getKeyGen() {
+		return keyGen;
+	}
+	
 	
 	/**updated the local IP
 	 * 
@@ -374,6 +387,11 @@ public class ConnectionEndpoint implements Runnable{
 			case "confirmback":
 				System.out.println("[" + connectionID + "]: Received Confirm_Back-Message: " + message + "!");
 				registerConfirmation(message.split(":::")[1]);
+				return;
+				
+			case "sync":
+				System.out.println("[" + connectionID + "]: Received KeyGenSync-Message: " + message + "!");
+				keyGen.keyGenSyncResponse();
 				return;
 				
 			default:

@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import MessengerSystem.MessageSystem;
+import keyGeneration.KeyGenerator;
 
 /*
  * Main Class of QuantumnetworkControllcenter
@@ -52,6 +53,22 @@ public class QuantumnetworkControllcenter {
 				}
 			}
 		});
+		
+		conMan.createNewConnectionEndpoint("Alice", 2300);
+		conMan.createNewConnectionEndpoint("Bob", 3300);
+		
+		conMan.getConnectionEndpoint("Bob").waitForConnection();
+		try {
+			conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 3300);
+		} catch (IOException e) {
+			System.out.println("Error while connection!");
+			e.printStackTrace();
+		}
+		
+		MessageSystem.setActiveConnection("Alice");
+		
+		conMan.getConnectionEndpoint("Alice").getKeyGen().generateKey();
+		
 	}
 	
 }
