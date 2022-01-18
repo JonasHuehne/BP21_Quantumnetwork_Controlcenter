@@ -30,7 +30,7 @@ public class Authentication {
      * a method to check, whether the folder for the signature keys already exists
      * creates it, if not
      */
-    public static void checkFolder () {
+    private static void checkFolder () {
         try {
             if (!Files.exists(Path.of(KEY_PATH))) {
                 Files.createDirectory(Path.of(KEY_PATH));
