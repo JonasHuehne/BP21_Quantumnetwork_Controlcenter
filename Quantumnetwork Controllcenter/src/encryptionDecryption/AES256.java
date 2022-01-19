@@ -36,7 +36,7 @@ public class AES256 {
 	 * @return A String containing the encrypted plain text, In case of an Error returns null
 	 * @throws NumberFormatException if strKey contains any other char besides 0 or 1
 	 */
-	public static String encrypt(String strPlaintext, String strKey) throws NullPointerException, NumberFormatException {
+	public static String encrypt(String strPlaintext, String strKey) {
 		
 		//checking that key has the right length
 		if(strKey.length() != KEY_LENGTH_BIT) {
@@ -59,7 +59,7 @@ public class AES256 {
 	 * @param key SecretKey object for AES256
 	 * @return A String containing the encrypted plain text, In case of an Error returns null
 	 */
-	public static String encrypt(String strPlaintext, SecretKey key) throws NullPointerException  {
+	public static String encrypt(String strPlaintext, SecretKey key) {
 		
 		//checking that key has the right length
 		if(key.getEncoded().length != KEY_LENGTH_BYTE) {
@@ -108,7 +108,7 @@ public class AES256 {
 	 * @return A String containing the decrypted cipher text, In case of an Error returns null
 	 * @throws NumberFormatException if strKey contains any other char besides 0 or 1
 	 */
-	public static String decrypt(String strCiphertext, String strKey) throws NullPointerException, NumberFormatException {
+	public static String decrypt(String strCiphertext, String strKey) {
 	
 		//checking that key has the right length
 		if(strKey.length() != KEY_LENGTH_BIT) {
@@ -129,7 +129,7 @@ public class AES256 {
 	 * @param key SecretKey object for AES256 that was used to encrypt the cipher text
 	 * @return A String containing the decrypted cipher text, In case of an Error returns null
 	 */
-	public static String decrypt(String strCiphertext, SecretKey key) throws NullPointerException {
+	public static String decrypt(String strCiphertext, SecretKey key) {
 		
 		//checking that key has the right length
 		if(key.getEncoded().length != KEY_LENGTH_BYTE) {
