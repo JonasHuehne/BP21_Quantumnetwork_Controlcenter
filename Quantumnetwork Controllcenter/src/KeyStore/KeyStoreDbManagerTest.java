@@ -2,6 +2,7 @@ package KeyStore;
 
 import org.junit.jupiter.api.Test;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,8 +19,10 @@ class KeyStoreDbManagerTest {
 
     @Test
     void insertToDb() {
-        boolean insertBool1 = KeyStoreDbManager.insertKeyInformation("nurEineTestID_01", 1122334455, 1, "vonHier", "nachHier");
-        boolean insertBool2 = KeyStoreDbManager.insertKeyInformation("nurEineTestID_02", 66778899, 2, "vonHier", "nachHier");
+        byte[] firstArray = "1122334455".getBytes();
+        byte[] secondArray = "66778899".getBytes();
+        boolean insertBool1 = KeyStoreDbManager.insertKeyInformation("nurEineTestID_01", firstArray, 1, "vonHier", "nachHier");
+        boolean insertBool2 = KeyStoreDbManager.insertKeyInformation("nurEineTestID_02", secondArray, 2, "vonHier", "nachHier");
         assertEquals(true, insertBool1);
         assertEquals(true, insertBool2);
     }
@@ -45,7 +48,7 @@ class KeyStoreDbManagerTest {
     void getEntryTest() {
         KeyInformationObject testObject = KeyStoreDbManager.getEntryFromKeyInformation("komplettNeueID");
         assert testObject != null;
-        int testBuffer = testObject.getBuffer();
+        byte[] testBuffer = testObject.getBuffer();
         int testIndex = testObject.getIndex();
 
         assertEquals(66778899, testBuffer);
@@ -55,13 +58,14 @@ class KeyStoreDbManagerTest {
 
     @Test
     void getEntrysAsListTest(){
+        byte[] keyBufferArray = "1111111".getBytes();
 
         // Bei jedem weiteren Durchlauf (nach dem 1.) muss die Zeile kommentiert werden da es nicht zweimal den selben eintrag in der Datenbank geben darf!
-        KeyStoreDbManager.insertKeyInformation("NewEntryID", 1111111, 1, "nirgendwo", "TuDarmstadt");
+        KeyStoreDbManager.insertKeyInformation("NewEntryID", keyBufferArray, 1, "nirgendwo", "TuDarmstadt");
         ArrayList<KeyInformationObject> testList = KeyStoreDbManager.getKeyInformationAsList();
 
-        int newEntryBuffer = testList.get(1).getBuffer(); // only 2 Entrys in DB
-        assertEquals(1111111, newEntryBuffer);
+        byte[] newEntryBuffer = testList.get(1).getBuffer(); // only 2 Entrys in DB
+        assertEquals(keyBufferArray[1], newEntryBuffer[1]);
     }
 
     /**

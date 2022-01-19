@@ -9,12 +9,12 @@ public final class KeyInformationObject {
 
 
     private final String keyStreamID;
-        private final int keyBuffer;
+        private final byte[] keyBuffer;
         private final int index;
         private final String source;
         private final String destination;
 
-        public KeyInformationObject(final String keyStreamID, final int keyBuffer,final  int index,final  String source,final String destination) {
+        public KeyInformationObject(final String keyStreamID, final byte[] keyBuffer,final  int index,final  String source,final String destination) {
             this.keyStreamID = keyStreamID;
             this.keyBuffer = keyBuffer;
             this.index = index;
@@ -35,7 +35,7 @@ public final class KeyInformationObject {
      *
      * @return Buffer of the entry
      */
-        public int getBuffer() {
+        public byte[] getBuffer() {
             return keyBuffer;
         }
 

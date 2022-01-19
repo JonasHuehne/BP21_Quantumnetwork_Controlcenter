@@ -110,7 +110,8 @@ public class KeyStoreDbManager {
      * @param source identifier for the source application
      * @param destination identifier for the destination application
      */
-    public static boolean insertKeyInformation(String keyStreamID, int keyBuffer, int index, String source, String destination ){
+
+    public static boolean insertKeyInformation(String keyStreamID, byte[] keyBuffer, int index, String source, String destination ){
 
         try{
             Connection conn = connect();
@@ -120,7 +121,7 @@ public class KeyStoreDbManager {
             PreparedStatement prepStmnt = conn.prepareStatement(sql);
 
             prepStmnt.setString(1, keyStreamID);
-            prepStmnt.setInt(2, keyBuffer);
+            prepStmnt.setBytes(2, keyBuffer);
             prepStmnt.setInt(3, index);
             prepStmnt.setString(4, source);
             prepStmnt.setString(5, destination);
@@ -245,7 +246,7 @@ public class KeyStoreDbManager {
             ResultSet rs = stmnt.executeQuery(sql);
 
             KeyInformationObject object = new KeyInformationObject(rs.getString("KeyStreamId"),
-                    rs.getInt("KeyBuffer"), rs.getInt("Index_"),
+                    rs.getBytes("KeyBuffer"), rs.getInt("Index_"),
                     rs.getString("Source_"), rs.getString("Destination"));
 
             stmnt.close();
@@ -275,7 +276,7 @@ public class KeyStoreDbManager {
             ArrayList<KeyInformationObject> result = new ArrayList<>();
             while(rs.next()) {
                 KeyInformationObject res = new KeyInformationObject(rs.getString("KeyStreamID"),
-                        rs.getInt("KeyBuffer"), rs.getInt("Index_"), rs.getString("Source_"), rs.getString("Destination"));
+                        rs.getBytes("KeyBuffer"), rs.getInt("Index_"), rs.getString("Source_"), rs.getString("Destination"));
                 result.add(res);
             }
             stmnt.close();
