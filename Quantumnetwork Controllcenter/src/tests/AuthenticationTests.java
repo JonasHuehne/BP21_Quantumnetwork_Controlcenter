@@ -125,8 +125,7 @@ class AuthenticationTests {
         QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Bob").waitForConnection();
         QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 3303);
 
-        MessageSystem.setActiveConnection("Bob");
-        boolean result = MessageSystem.sendAuthenticatedMessage("Hello");
+        boolean result = MessageSystem.sendAuthenticatedMessage("Bob", "Hello");
         Assertions.assertTrue(result);
 
         Database.delete("Alice");
@@ -156,12 +155,10 @@ class AuthenticationTests {
         QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Bob").waitForConnection();
         QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 3303);
 
-        MessageSystem.setActiveConnection("Bob");
-        MessageSystem.sendAuthenticatedMessage("Hello, how are you?");
+        MessageSystem.sendAuthenticatedMessage("Bob", "Hello, how are you?");
 
-        MessageSystem.setActiveConnection("Alice");
-        String message = MessageSystem.readAuthenticatedMessage();
-        Assertions.assertEquals("Hello, how are you?", message);
+        String message = MessageSystem.readAuthenticatedMessage("Alice");
+        Assertions.assertEquals(message, "Hello, how are you?");
 
         Database.delete("Alice");
         Database.delete("Bob");
@@ -190,16 +187,13 @@ class AuthenticationTests {
         QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Bob").waitForConnection();
         QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 3303);
 
-        MessageSystem.setActiveConnection("Alice");
-        MessageSystem.sendAuthenticatedMessage("Hello");
+        MessageSystem.sendAuthenticatedMessage("Alice", "Hello");
 
-        MessageSystem.setActiveConnection("Bob");
-        String message = MessageSystem.readAuthenticatedMessage();
+        String message = MessageSystem.readAuthenticatedMessage("Bob");
         Assertions.assertNull(message);
 
         Database.delete("Alice");
         Database.delete("Bob");
         Authentication.deleteSignatureKeys();
     }
-
 }

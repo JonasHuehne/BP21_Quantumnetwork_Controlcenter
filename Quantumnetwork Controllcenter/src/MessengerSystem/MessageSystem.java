@@ -7,54 +7,57 @@ import java.util.LinkedList;
 import frame.QuantumnetworkControllcenter;
 import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
+import networkConnection.NetworkPackage;
 
 /**High Level Message System. Contains methods for sending and receiving messages without dealing with low-level things.
  * Select active connectionEndpoint and start sending and receiving messages!
- * The first connectionEndpoint beeing created is automatically selected as active.
+ * The first connectionEndpoint being created is automatically selected as active.
  * 
- * @author Jonas Hühne
+ * @author Jonas Huehne
  *
  */
 public class MessageSystem {
 	
 public static ConnectionManager conMan;
-private static String activeConnection = null;
 
 
-/**This is used to set the active connectionEndpoint. Most Methods of this class operate in relation to that cE.
- * F.ex. sendMessage() sends a Message on that cEs Connection etc.
- * 
- * @param newActiveConnectionID the ID of the new active connectionEndpoint.
- */
-public static void setActiveConnection(String newActiveConnectionID) {
-	System.out.println("Active ConnectionEndpoint is: " + newActiveConnectionID);
-	activeConnection = newActiveConnectionID;
-}
-
-/**Can be used to find out what connectionEndpoint is currently in use.
- * 
- * @return the ID of the currently active connectionEndpoint
- */
-public static String getActiveConnection() {
-	return activeConnection;
-}
 	
 /**This sends a message on the currently active connection. No confirmation is expected from the recipient.
  * 
  * @param message the message to be sent on the active connection
  */
-public static void sendMessage(String message) {
+public static void sendMessage(String connectionID,String message) {
+
 	if(conMan == null) {
 		System.out.println("WARNING: Tried to send a message via the MessageSystem before initializing the QuantumnetworkControllcenter, thereby setting the connectionManager Reference.");
 		return;
 	}
-	System.out.println("[" + activeConnection + "]: Sending Message: " + message);
-	ConnectionState state = conMan.getConnectionState(activeConnection);
+
+	ConnectionState state = conMan.getConnectionState(connectionID);
 	if(state == ConnectionState.CONNECTED) {
-		conMan.sendMessage(activeConnection, "msg:::" + message);
+		conMan.sendMessage(connectionID, "msg", message);
 	}
 	else {
-		System.out.println("[" + activeConnection + "]: Sending of Confirm-Message: " + message + " aborted, because the ConnectionEndpoint was not connected to anything!");
+		System.out.println("[" + connectionID + "]: Sending of Confirm-Message: " + message + " aborted, because the ConnectionEndpoint was not connected to anything!");
+	}
+}
+
+/**Similar to sendMessage but allows for custom prefix. Used for internal system calls via the net.
+ * 
+ * @param signal used as message prefix, should be one of the cases inside ConnectionEndpoint.java -> processMessage()
+ */
+public static void sendSignal(String connectionID, String signal) {
+	if(conMan == null) {
+		System.out.println("WARNING: Tried to send a message via the MessageSystem before initializing the QuantumnetworkControllcenter, thereby setting the connectionManager Reference.");
+		return;
+	}
+
+	ConnectionState state = conMan.getConnectionState(connectionID);
+	if(state == ConnectionState.CONNECTED) {
+		conMan.sendMessage(connectionID, signal, signal);
+	}
+	else {
+		System.out.println("[" + connectionID + "]: Sending of Confirm-Message: " + signal + " aborted, because the ConnectionEndpoint was not connected to anything!");
 	}
 }
 
@@ -64,23 +67,23 @@ public static void sendMessage(String message) {
  * @param message the message to be sent on the active connection
  * @return returns True if the confirmation of the message has been received, False if it times out.
  */
-public static boolean sendConfirmedMessage(String message) {
-	System.out.println("[" + activeConnection + "]: Sending Confirm-Message: " + message);
-	ConnectionState state = QuantumnetworkControllcenter.conMan.getConnectionState(activeConnection);
+public static boolean sendConfirmedMessage(String connectionID, String message) {
+	//System.out.println("[" + connectionID + "]: Sending Confirm-Message: " + message);
+	ConnectionState state = QuantumnetworkControllcenter.conMan.getConnectionState(connectionID);
 	if(state == ConnectionState.CONNECTED) {
 		//Send message
-		QuantumnetworkControllcenter.conMan.sendMessage(activeConnection, "confirm:::" + message);
+		QuantumnetworkControllcenter.conMan.sendMessage(connectionID, "confirm", message);
 		boolean waitForConfirmation = true;
 		Instant startWait = Instant.now();
 		Instant current;
 		//Wait for confirmation
-		System.out.println("[" + activeConnection + "]: Starting to wait for Message Confirmation!");
+		System.out.println("[" + connectionID + "]: Starting to wait for Message Confirmation!");
 		while(waitForConfirmation) {
 			current = Instant.now();
-			if(Duration.between(startWait, current).toSeconds() <= 10 && QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).getConfirmations().contains(message)) {
+			if(Duration.between(startWait, current).toSeconds() <= 10 && QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getConfirmations().contains(message)) {
 				waitForConfirmation = false;
-				System.out.println("[" + activeConnection + "]: Message Confirmation received!");
-				QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).clearConfirmation(message);
+				System.out.println("[" + connectionID + "]: Message Confirmation received!");
+				QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).clearConfirmation(message);
 				return true;
 			}
 			else if (Duration.between(startWait, current).toSeconds() > 10) {
@@ -91,7 +94,7 @@ public static boolean sendConfirmedMessage(String message) {
 		return false;
 	}
 	else {
-		System.out.println("[" + activeConnection + "]: Sending of Confirm-Message: " + message + " aborted, because the ConnectionEndpoint was not connected to anything!");
+		System.out.println("[" + connectionID + "]: Sending of Confirm-Message: " + message + " aborted, because the ConnectionEndpoint was not connected to anything!");
 	}
 	return false;
 
@@ -101,40 +104,40 @@ public static boolean sendConfirmedMessage(String message) {
  * 
  * @return the oldest message
  */
-public static String readReceivedMessage() {
-	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).readMessageFromStack();
+public static String readReceivedMessage(String connectionID) {
+	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).readMessageFromStack().getContent();
 }
 
 /**returns the oldest message, but does not remove it from the queue
  * 
  * @return the oldest message that was received and not yet read(removed)
  */
-public static String previewReceivedMessage() {
-	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).peekMessageFromStack();
+public static NetworkPackage previewReceivedMessage(String connectionID) {
+	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).peekMessageFromStack();
 }
 
 /**returns the last message that was received but does not remove it from the queue
  * 
  * @return the latest message
  */
-public static String previewLastReceivedMessage() {
-	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).peekLatestMessageFromStack();
+public static String previewLastReceivedMessage(String connectionID) {
+	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).peekLatestMessageFromStack();
 }
 
 /**Returns the number of messages that are on the stack and waiting to be read(removed).
  * 
  * @return the number of messages.
  */
-public static int getNumberOfPendingMessages() {
-	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).sizeOfMessageStack();
+public static int getNumberOfPendingMessages(String connectionID) {
+	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).sizeOfMessageStack();
 }
 
 /**Returns a linkedList of all un-read messages
  * 
  * @return the list of unread messages.
  */
-public static LinkedList<String> getAllReceivedMessages(){
-	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).getMessageStack();
+public static LinkedList<String> getAllReceivedMessages(String connectionID){
+	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getMessageStack();
 }
 
 
@@ -145,10 +148,10 @@ public static LinkedList<String> getAllReceivedMessages(){
 	 * @param message the message to be sent
 	 * @return true if the sending of both messages worked, false otherwise
 	 */
-	public static boolean sendAuthenticatedMessage(final String message) {
+	public static boolean sendAuthenticatedMessage(String connectionID, final String message) {
 		String signature = Authentication.sign(message);
-		boolean res1 = sendConfirmedMessage(message);
-		boolean res2 = sendConfirmedMessage(signature);
+		boolean res1 = sendConfirmedMessage(connectionID, message);
+		boolean res2 = sendConfirmedMessage(connectionID, signature);
 		return res1 && res2;
 	}
 
@@ -157,17 +160,17 @@ public static LinkedList<String> getAllReceivedMessages(){
 	 * (currently implemented as receiving two messages, first the message, then the signature)
 	 * @return the received message as string, null if error none or if result of verify was false
 	 */
-	public static String readAuthenticatedMessage() {
+	public static String readAuthenticatedMessage(String connectionID) {
 		Instant startWait = Instant.now();
-		while(getNumberOfPendingMessages() < 2) {
+		while(getNumberOfPendingMessages(connectionID) < 2) {
 			Instant current = Instant.now();
 			if(Duration.between(startWait, current).toSeconds() > 10) {
 				return null;
 			}
 		}
-		String message = readReceivedMessage();
-		String signature = readReceivedMessage();
-		if(Authentication.verify(message, signature, getActiveConnection())) {
+		String message = readReceivedMessage(connectionID);
+		String signature = readReceivedMessage(connectionID);
+		if(Authentication.verify(message, signature, connectionID)) {
 			return message;
 		}
 		return null;
