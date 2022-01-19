@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import CommunicationList.Database;
 import CommunicationList.DbObject;
+import MessengerSystem.Authentication;
 import ui.Command;
 import ui.CommandHandler;
 
@@ -84,6 +85,7 @@ class CommandHandlerTest {
 			assertEquals(Command.CONTACTS_REMOVE.getHelp(), CommandHandler.processCommand("help contacts remove Jamie"));
 			assertEquals(Command.CONTACTS_SHOW.getHelp(), CommandHandler.processCommand("help contacts show all"));
 			assertEquals(Command.CONTACTS_UPDATE.getHelp(), CommandHandler.processCommand("help contacts update name=Alexa to name=Bobbie"));
+			assertEquals(Command.CONTACTS_UPDATE.getHelp(), CommandHandler.processCommand("help contacts update pk Alicia remove"));
 			assertEquals(Command.CONTACTS_SEARCH.getHelp(), CommandHandler.processCommand("help contacts search ip=102.35.122.49"));
 		}
 		
@@ -175,29 +177,143 @@ class CommandHandlerTest {
 		}
 		
 		@Test
-		void contacts_update_works() {
-		
+		void contacts_update_works_for_names() {
 			Database.insert("Alexa", "127.0.0.1", 1111, "NO KEY SET");
 			
 			CommandHandler.processCommand("contacts update Alexa name Bob");
 			
 			assertTrue(Database.queryAll().size() == 1);
 			assertNull(Database.query("Alexa"));
-			assertEquals(Database.query("Bob").getIpAddress(), "127.0.0.1");
-			assertEquals(Database.query("Bob").getPort(), 1111);
+			assertEquals("127.0.0.1", Database.query("Bob").getIpAddress());
+			assertEquals(1111, Database.query("Bob").getPort());
+		}
+		
+		@Test
+		void contacts_update_works_for_ips() {
+			Database.insert("Bob", "127.0.0.1", 1111, "NO KEY SET");
 			
 			CommandHandler.processCommand("contacts update Bob IP 168.0.0.1");
 			
 			assertTrue(Database.queryAll().size() == 1);
-			assertEquals(Database.query("Bob").getIpAddress(), "168.0.0.1");
-			assertEquals(Database.query("Bob").getPort(), 1111);
+			assertEquals("168.0.0.1", Database.query("Bob").getIpAddress());
+			assertEquals(1111, Database.query("Bob").getPort());		
+		}
+		
+		@Test
+		void contacts_update_works_for_ports() {
+			Database.insert("Bob", "127.0.0.1", 1111, "NO KEY SET");
 			
 			CommandHandler.processCommand("contacts update Bob Port 5555");
 			
 			assertTrue(Database.queryAll().size() == 1);
-			assertEquals(Database.query("Bob").getIpAddress(), "168.0.0.1");
-			assertEquals(Database.query("Bob").getPort(), 5555);
+			assertEquals("127.0.0.1", Database.query("Bob").getIpAddress());
+			assertEquals(5555, Database.query("Bob").getPort());
+		}
+		
+		@Test
+		void contacts_update_works_for_pks() {
+			Database.insert("Alicia", "127.0.0.1", 1111, "NO KEY SET");
 			
+			CommandHandler.processCommand("contacts update Alicia pk \"pkForTesting_1\"");
+			
+			// Assert that # of entries, Name, IP and Port remain unchanged
+			helper_Alicia_did_not_change();
+			
+			// Assert that pk was properly set
+			DbObject Alicia = Database.query("Alicia");
+			assertEquals(Authentication.readPublicKeyStringFromFile("pkForTesting_1"), Alicia.getSignatureKey());
+									
+			// Now check if pk can be deleted
+			System.out.println(CommandHandler.processCommand("contacts update Alicia pk remove"));
+			Alicia = Database.query("Alicia"); // re-query needed! If we forget this, the test throws an error, because the object would still be the old result!
+			assertEquals("NO KEY SET", Alicia.getSignatureKey());
+			
+			// TODO: There needs to be a publicly accessible "default" entry for an unset key in a constant somewhere sensible
+			// Possibly put it in the CommunicationList interface once that's finished
+		}
+		
+		@Test
+		void contacts_update_wrong_input_makes_no_changes_for_name() {
+			Database.insert("Alicia", "127.0.0.1", 1111, "NO KEY SET");
+			
+			/*
+			 * Note: Errors in this test may not neccessarily be caused by implementation issues of CommandHandler
+			 * It may be that the currently used CommunicationList simply does not enforce restrictions such names being alphanumeric, _ and - only
+			 */
+			
+			// Invalid name
+			CommandHandler.processCommand("contacts update Alicia name Böö-$$as");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia name Mörü<m");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia name ?_++qq&");
+			helper_Alicia_did_not_change();
+			
+		}
+		
+		@Test
+		void contacts_update_wrong_input_makes_no_changes_for_ip() {
+			Database.insert("Alicia", "127.0.0.1", 1111, "NO KEY SET");
+			
+			/*
+			 * Note: Errors in this test may not neccessarily be caused by implementation issues of CommandHandler
+			 * It may be that the currently used CommunicationList simply does not enforce restrictions such as 1234 being an invalid IP
+			 */
+			
+			// Invalid IP
+			CommandHandler.processCommand("contacts update Alicia ip 555.555.555");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia ip 1234");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia ip potatoes");
+			helper_Alicia_did_not_change();
+			
+		}
+		
+		@Test
+		void contacts_update_wrong_input_makes_no_changes_for_port() {
+			Database.insert("Alicia", "127.0.0.1", 1111, "NO KEY SET");
+			
+			/*
+			 * Note: Errors in this test may not neccessarily be caused by implementation issues of CommandHandler
+			 * It may be that the currently used CommunicationList simply does not enforce restrictions such as a max port of 65535
+			 */
+			
+			// Invalid IP
+			CommandHandler.processCommand("contacts update Alicia port 1000000000");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia port ??92394..");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia port potatoes");
+			helper_Alicia_did_not_change();
+			
+		}
+		
+		@Test
+		void contacts_update_wrong_input_makes_no_changes_for_pk() {
+			Database.insert("Alicia", "127.0.0.1", 1111, "NO KEY SET");
+			
+			// Invalid IP
+			CommandHandler.processCommand("contacts update Alicia pk \"\"");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia pk \"this_file_does_not_exist.png.jpg.gif.mp3\"");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia pk potatoes");
+			helper_Alicia_did_not_change();
+			
+		}
+		
+		/**
+		 * Helper Method for testing that update does not change the communication list when it is not supposed to.
+		 * Checks that the communicationlist has exactly one entry, with the name "Alicia", ip "127.0.0.1" and Port 1111
+		 * Does not check the pk associated with that entry in any way
+		 */
+		private void helper_Alicia_did_not_change() {
+			assertTrue(Database.queryAll().size() == 1);
+			DbObject Alicia = Database.query("Alicia");
+			assertNotNull(Alicia);
+			assertEquals("127.0.0.1", Alicia.getIpAddress());
+			assertEquals(1111, Alicia.getPort());
 		}
 		
 		@Test
