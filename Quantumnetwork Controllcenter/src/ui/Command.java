@@ -50,10 +50,9 @@ public enum Command {
 		+ "Syntax: \"contacts add <name> <ip> <port>\". "
 		+ "Name and IP can be any String up to 255 characters in length. For a normal IPv4 Adress the regular format is used, e.g. \"127.0.0.1\". "
 		+ "Port can be any Integer."),
-	CONTACTS_UPDATE (" (.{1,255} (?i)name(?-i) .{1,255})|(.{1,255} (?i)ip(?-i) .{1,255})|(.{1,255} (?i)port(?-i) \\d+)|(.{1,255} (?i)pk (?-i)\".+\")", 
+	CONTACTS_UPDATE (" (.{1,255} (?i)name(?-i) .{1,255})|(.{1,255} (?i)ip(?-i) .{1,255})|(.{1,255} (?i)port(?-i) \\d+)|(.{1,255} (?i)pk(?-i) ((\".+\")|remove))", 
 		"Updates one entry in the communication list, given the name of the entry to update, the attribute to change and the new value."
 		+ "If no update can be performed (e.g. no entry with the given name exists) an error message is displayed. "
-		+ "If no update can be performed (e.g. no entry with the given name exists) an error message is displayed. " 
 		+ System.lineSeparator() + System.lineSeparator()
 		+ "Syntax \"contacts update <name> <attr> <value>\". "
 		+ "The argument <name> specifies the entry to change, "
@@ -65,12 +64,19 @@ public enum Command {
 		+ "The path will have to be given in quotation marks to avoid issues with white spaces, e.g. the command would be:" + System.lineSeparator()
 		+ "contacts update Bob pk \"name_of_public_key_file\"" + System.lineSeparator()
 		+ "Currently accepted file formats are: .pub" + System.lineSeparator()
-		+ "The starting directory is " + System.getProperty("user.dir") + File.separator + "SignatureKeys" + File.separator),
+		+ "The starting directory is " + System.getProperty("user.dir") + File.separator + "SignatureKeys" + File.separator
+		+ System.lineSeparator() + System.lineSeparator()
+		+ "If you wish to remove a public key of a contact, enter: \"contacts update <name> pk remove\""),
+	
 	
 	// DEBUG COMMANDS, NOT INTENDED AS PART OF THE FINAL PRODUCT - DEVELOPER USE ONLY
 	// FUNCTIONALITY NOT GUARANTEED
 	DEBUG_GENSIGPAIR ("", "Generates a new public and private key pair for this machine."),
-	DEBUG_SHOWPK ("( .+)", "Shows the public key of specified user." + System.lineSeparator() + "Syntax: debug showpk <user>")
+	DEBUG_SHOWPK ("( .+)", "Shows the public key of specified user." + System.lineSeparator() + "Syntax: debug showpk <user>"),
+	DEBUG_SETPK ("( .+) (.+)", 
+			"Manually sets the public key of a contact to whatever the user entered. "
+			+ "This is done directly, no file is loaded." 
+			+ System.lineSeparator() + " Syntax: debug setpk <user> <newpk>")
 	
 	;
 	

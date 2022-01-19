@@ -69,6 +69,8 @@ public class CommandHandler {
 				return DebugCommandHandler.handleGenSigPair();
 			case DEBUG_SHOWPK:
 				return DebugCommandHandler.handleShowPk(commandArgs);
+			case DEBUG_SETPK:
+				return DebugCommandHandler.handleSetPk(commandArgs);
 			
 			default:
 				return "Not implemented yet.";
