@@ -1,5 +1,7 @@
 package ui;
 
+import java.util.Locale;
+
 /**
  * This enum contains the list of available console commands.
  * Each command has three attributes:
@@ -71,8 +73,8 @@ public enum Command {
 	 * @param helpText
 	 * 		The help text of a command describes its proper syntax in natural language, as well as its function.
 	 */
-	Command (String argumentsSyntax, String helpText) {
-		this.commandName = this.name().toLowerCase().replace('_', ' ');
+	Command (final String argumentsSyntax, final String helpText) {
+		this.commandName = this.name().toLowerCase(Locale.ENGLISH).replace('_', ' ');
 		// Command name is insensitive, rest of the command is case sensitive
 		this.commandPattern = "(?i)" + commandName + "(?-i)" + argumentsSyntax;
 		this.helpText = helpText;

@@ -9,7 +9,7 @@ import CommunicationList.DbObject;
  * The purpose of this class is to process text commands (given as Strings) and execute corresponding program method.
  * @author Sasha Petri
  */
-public class CommandHandler {
+final public class CommandHandler {
 
 	private CommandHandler() {
 		
@@ -36,7 +36,7 @@ public class CommandHandler {
 	 * @throws IllegalArgumentException
 	 * 		if the entered command is null
 	 */
-	public static String processCommand(String textCommand) throws IllegalArgumentException {
+	public static String processCommand(final String textCommand) throws IllegalArgumentException {
 		
 		/*
 		 *  We could just return INVALID_COMMAND here, however, if the input is null, 
@@ -78,7 +78,7 @@ public class CommandHandler {
 	 * 		a String informing the user that the command is unrecognized, if it does not correspond to any command in {@link Commands} <p>
 	 * 		or a String informing the user that the command could not be executed with the given arguments if the syntax was wrong
 	 */
-	private static String handleInvalidCommand(String textCommand) {
+	private static String handleInvalidCommand(final String textCommand) {
 		// See if the user has entered a valid command (but with an unrecognized syntax)
 		Command potentiallyValidCommand = CommandParser.getCommandOfName(textCommand, false);
 		if (potentiallyValidCommand == null) {
@@ -102,7 +102,7 @@ public class CommandHandler {
 	 * 		this method returns help for that command <br>
 	 * 		if neither of these two cases applies, an error message is returned that no help can be provided, because commandArgs does not contain a valid command name
 	 */
-	private static String handleHelp(String[] commandArgs) {
+	private static String handleHelp(final String[] commandArgs) {
 		if(commandArgs.length == 0) { // User typed just "help"
 			String availableCommands = "Available Commands: " + System.lineSeparator();
 			for (Command c : Arrays.asList(Command.values())) { // TODO Potentially add a "short help text" for each Command, either in Command or a seperate enum
