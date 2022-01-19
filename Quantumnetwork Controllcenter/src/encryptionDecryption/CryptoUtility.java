@@ -65,5 +65,4 @@ public class CryptoUtility {
 		//wrapping key information in SecretKey class for AES 
 		return new SecretKeySpec(byteKey, 0, byteKey.length, ALGORITHM_AES);
 	}
-	
 }

@@ -14,6 +14,7 @@ public class EncryptDecryptTests {
 	String original = "This is a Test!\"§$%&/()=?öäü to be fair a very long test text to see if it really works. So i am just going to smash my head on the keyboard a bit more: ajodaohglaenkohadoibhlaknowehojobhaskdjnfoaishcvon'#*_-:.,,;<>|adasogphopaidfhgvpoiiruhgaowenklödaioühoigüoh";
 	String bitStringKey = "0101010110101011101010111011101010101010101010101110011110000011101010111010111011100011000011110111101111101011010101011010101010111000011101010111101011110110111110001111100001111100011111010101110101110101110101110111101111000001111111010101010111101111";
 	String bitStringKeyWithChars = "abc1010110101011101010111011101010101010101010101110011110000011101010111010111011100011000011110111101111101011010101011010101010111000011101010111101011110110111110001111100001111100011111010101110101110101110101110111101111000001111111010101010111101111";
+	String bitStringKeyGreaterOne = "3011010110101011101010111011101010101010101010101110011110000011101010111010111011100011000011110111101111101011010101011010101010111000011101010111101011110110111110001111100001111100011111010101110101110101110101110111101111000001111111010101010111101111";
 	String bitStringKeyShort = "01110101";
 	String bitStringKeyLong = "0101010110101011101010111011101010101010101010101110011110000011101010111010111011100011000011110111101111101011010101011010101010111000011101010111101011110110111110001111100001111110101100011111010101110101110101110101110111101111000001111111010101010111101111";
 
@@ -72,6 +73,16 @@ public class EncryptDecryptTests {
 	public void testEncryptionBitStringContainsChars() {		
 		assertThrows(NumberFormatException.class,() -> {
 			assertNull(AES256.encrypt(original, bitStringKeyWithChars));
+			});
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown, when bit string for key contains Numbers greater 1 during encryption
+	 */
+	public void testEncryptionBitStringGreaterOne() {
+		assertThrows(NumberFormatException.class,() -> {
+			assertNull(AES256.encrypt(original, bitStringKeyGreaterOne));
 			});
 	}
 	
@@ -187,6 +198,18 @@ public class EncryptDecryptTests {
 		assertThrows(NumberFormatException.class,() -> {
 			assertNull(AES256.decrypt(encrypted, bitStringKeyWithChars));
 		});
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown, when bit string for key contains Numbers greater 1 during decryption
+	 */
+	public void testDecryptionBitStringGreaterOne() {
+		String encrypted = AES256.encrypt(original, bitStringKey);
+		
+		assertThrows(NumberFormatException.class,() -> {
+			assertNull(AES256.decrypt(encrypted, bitStringKeyGreaterOne));
+			});
 	}
 	
 	@Test
@@ -379,5 +402,72 @@ public class EncryptDecryptTests {
 		});
 	}
 	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown, when bit string for key contains Chars
+	 */
+	public void testStringToSecretKeyAES256BitStringContainsChars() {		
+		assertThrows(NumberFormatException.class,() -> {
+			assertNull(CryptoUtility.stringToSecretKeyAES256(bitStringKeyWithChars));
+		});
+	}
 	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown, when bit string for key contains Chars
+	 */
+	public void testStringToSecretKeyAES256BitStringGreaterOne() {		
+		assertThrows(NumberFormatException.class,() -> {
+			assertNull(CryptoUtility.stringToSecretKeyAES256(bitStringKeyGreaterOne));
+		});
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Error message is shown when using a too short bit string
+	 */
+	public void testStringToSecretKeyAES256BitStringTooShort() {
+		System.setErr(new PrintStream(outputErrCaptor));
+		
+		assertNull(CryptoUtility.stringToSecretKeyAES256(bitStringKeyShort));
+		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
+		
+		System.setErr(standardErr);
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Error message is shown when using a too long bit string
+	 */
+	public void testStringToSecretKeyAES256BitStringTooLong() {
+		System.setErr(new PrintStream(outputErrCaptor));
+		
+		assertNull(CryptoUtility.stringToSecretKeyAES256(bitStringKeyLong));
+		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
+		
+		System.setErr(standardErr);
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown when null used as String
+	 */
+	public void testStringToSecretKeyAES256Null() {
+		assertThrows(NullPointerException.class, () -> {
+			assertNull(CryptoUtility.stringToSecretKeyAES256(null));
+		});
+	}
+	
+	@Test
+	/*
+	 * Testing that SecretKey object contains the correct key information.
+	 */
+	public void testStringToSecretKeyAES256ValidBitString() {
+		SecretKey sk = CryptoUtility.stringToSecretKeyAES256(bitStringKey);
+		byte[] bytes = CryptoUtility.bitString256ToByteArray32(bitStringKey);
+		byte[] keyBytes = sk.getEncoded();
+		for(int i = 0; i < 32; i++) {
+			assertEquals(bytes[i], keyBytes[i]);
+		}
+	}
 }
