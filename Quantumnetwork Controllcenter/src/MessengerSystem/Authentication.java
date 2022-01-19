@@ -82,7 +82,7 @@ public class Authentication {
             if (senderEntry == null) {
                 throw new IllegalArgumentException("Sender not found Communication List");
             }
-            String pubKey = QuantumnetworkControllcenter.communicationList.query(sender).getSignatureKey();
+            String pubKey = senderEntry.getSignatureKey();
             if (pubKey == null || pubKey.equals("")) {
                 throw new IllegalArgumentException
                         ("No Public signature Key found in Database for " + sender);

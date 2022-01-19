@@ -1,6 +1,6 @@
 package tests;
 
-import CommunicationList.DbObject;
+import communicationList.DbObject;
 import MessengerSystem.Authentication;
 import MessengerSystem.MessageSystem;
 import frame.QuantumnetworkControllcenter;
