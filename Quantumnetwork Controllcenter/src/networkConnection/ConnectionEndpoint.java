@@ -13,6 +13,12 @@ import java.util.concurrent.Executors;
 
 import keyGeneration.KeyGenerator;
 
+/**Represents a single connection end that can connect to any other connection end.
+ * Handles connection management and low-level transmissions.
+ * 
+ * @author Jonas Huehne
+ *
+ */
 public class ConnectionEndpoint implements Runnable{
 	
 	//Local information

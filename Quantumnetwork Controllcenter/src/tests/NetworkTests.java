@@ -11,6 +11,11 @@ import frame.QuantumnetworkControllcenter;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionState;
 
+/**Run all tests together, do not exclude testConnectionEndpoint as it creates the conMan needed in later tests.
+ * 
+ * @author Jonas Huehne
+ *
+ */
 public class NetworkTests {
 	
 	QuantumnetworkControllcenter QCC = new QuantumnetworkControllcenter();

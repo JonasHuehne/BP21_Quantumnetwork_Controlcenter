@@ -11,9 +11,9 @@ import networkConnection.NetworkPackage;
 
 /**High Level Message System. Contains methods for sending and receiving messages without dealing with low-level things.
  * Select active connectionEndpoint and start sending and receiving messages!
- * The first connectionEndpoint beeing created is automatically selected as active.
+ * The first connectionEndpoint being created is automatically selected as active.
  * 
- * @author Jonas Hühne
+ * @author Jonas Huehne
  *
  */
 public class MessageSystem {
