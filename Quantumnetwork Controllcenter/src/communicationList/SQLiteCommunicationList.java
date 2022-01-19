@@ -10,12 +10,13 @@ import java.util.ArrayList;
 
 /**
  * Class to handle interaction with the communication list db
+ * @author Sarah Schumann
  */
 public class SQLiteCommunicationList implements CommunicationList {
 
     private Connection connection;
 
-    private static final String tableName = "CommunicationList";
+    private static final String TABLE_NAME = "CommunicationList";
 
     /**
      * open a connection to the db
@@ -30,7 +31,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             connection = DriverManager.getConnection(dbPath);
 
             Statement stmt = connection.createStatement();
-            String sql = "CREATE TABLE IF NOT EXISTS " + tableName
+            String sql = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME
                     + "(ID INTEGER PRIMARY KEY AUTOINCREMENT, "
                     + "Name VARCHAR(255) UNIQUE, IPAddress VARCHAR(255),  "
                     + "Port INTEGER, "
@@ -58,7 +59,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             if ((connection == null || connection.isClosed()) && !connectToDb()) {
                 return false;
             }
-            String sql = "INSERT INTO " + tableName + "(Name, IPAddress, Port, SignatureKey) VALUES(?, ?, ?, ?)";
+            String sql = "INSERT INTO " + TABLE_NAME + "(Name, IPAddress, Port, SignatureKey) VALUES(?, ?, ?, ?)";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             stmt.setString(2, ipAddress);
@@ -84,7 +85,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "DELETE FROM " + tableName + " WHERE Name = ?";
+            String sql = "DELETE FROM " + TABLE_NAME + " WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             stmt.executeUpdate();
@@ -108,7 +109,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "UPDATE " + tableName + " SET Name = ? WHERE Name = ?";
+            String sql = "UPDATE " + TABLE_NAME + " SET Name = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, newName);
             stmt.setString(2, oldName);
@@ -133,7 +134,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "UPDATE " + tableName + " SET IPAddress = ? WHERE Name = ?";
+            String sql = "UPDATE " + TABLE_NAME + " SET IPAddress = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, ipAddress);
             stmt.setString(2, name);
@@ -158,7 +159,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "UPDATE " + tableName + " SET Port = ? WHERE Name = ?";
+            String sql = "UPDATE " + TABLE_NAME + " SET Port = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setInt(1, port);
             stmt.setString(2, name);
@@ -183,7 +184,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "UPDATE " + tableName + " SET SignatureKey = ? WHERE Name = ?";
+            String sql = "UPDATE " + TABLE_NAME + " SET SignatureKey = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, signatureKey);
             stmt.setString(2, name);
@@ -207,7 +208,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + tableName + " WHERE Name = ?";
+            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + TABLE_NAME + " WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
@@ -232,7 +233,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
             }
-            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + tableName;
+            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + TABLE_NAME;
             PreparedStatement stmt = connection.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
             ArrayList<DbObject> result = new ArrayList<>();
