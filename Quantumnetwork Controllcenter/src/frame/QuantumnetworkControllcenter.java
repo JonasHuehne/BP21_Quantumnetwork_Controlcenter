@@ -53,29 +53,6 @@ public class QuantumnetworkControllcenter {
 				}
 			}
 		});
-		
-		conMan.createNewConnectionEndpoint("Alice", 2300);
-		conMan.createNewConnectionEndpoint("Bob", 3300);
-		
-		conMan.getConnectionEndpoint("Bob").waitForConnection();
-		try {
-			conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 3300);
-		} catch (IOException e) {
-			System.out.println("Error while connection!");
-			e.printStackTrace();
-		}
-		
-		/**conMan.getConnectionEndpoint("Alice").pushMessage("msg", "testMessage123");
-		MessageSystem.setActiveConnection("Bob");
-		
-		while(MessageSystem.previewReceivedMessage().equals("")) {
-			
-		}
-		System.out.println("Recieved Message: " + MessageSystem.readReceivedMessage());
-		**/
-		
-		conMan.getConnectionEndpoint("Alice").getKeyGen().generateKey();
-		
 	}
 	
 }
