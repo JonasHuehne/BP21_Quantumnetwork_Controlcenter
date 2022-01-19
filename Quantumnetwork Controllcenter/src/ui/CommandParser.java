@@ -63,7 +63,7 @@ public class CommandParser {
 	/**
 	 * Extracts the arguments from a given text command.
 	 * @param input
-	 * 		A String corresponding to a {@link Command} <br>
+	 * 		A String corresponding to a {@link Command}, including its arguments (e.g. "help contacts add") <br>
 	 * 		Any amount of whitespaces will be treated as one whitespace, leading and trailing whitespaces will be ignored
 	 * @return
 	 * 		The arguments of the given text command, e.g. for "contacts search Bob" this method would return ["Bob"] <br>
@@ -75,9 +75,10 @@ public class CommandParser {
 		Command command = match(input);
 		if(command == null) return null;
 		
+		// remove the command itself from the command string
 		String argumentString = normInput(input).substring(command.getCommandName().length());
 		
-		if(argumentString == "") { // If there are no arguments, return empty array
+		if(argumentString.isBlank()) { // If there are no arguments, return empty array
 			return new String[]{};
 		} else { 
 			// Extracts all arguments from the argument string, e.g. "Alice name Bob" becomes ["Alice", "name", "Bob"]
@@ -85,7 +86,7 @@ public class CommandParser {
 			String[] argumentsUncleaned = argumentString.split(" "); // this array contains a few entries of form "", which we don't want
 			Stream<String> stream = Arrays.stream(argumentsUncleaned);
 			ArrayList<String> arrList = new ArrayList<String>(); // this list will contain only the non-empty strings, and then be converted to an array
-			stream.forEach(str -> {if(str != "") arrList.add(str);});
+			stream.forEach(str -> {if(!str.isBlank()) arrList.add(str);});
 			return arrList.toArray(new String[0]);
 		}
 	}
@@ -101,7 +102,7 @@ public class CommandParser {
 	public static String normInput(String input) {
 		if (input == null) return null;
 		// Remove leading & trailing whitespace, and replace any double+ whitespaces with single spaces
-		String out = input.trim().replaceAll("\\s+", " ");
+		String out = input.replaceAll("\\s+", " ").strip();
 		return out;
 	}
 }

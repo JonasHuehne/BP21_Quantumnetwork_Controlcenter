@@ -180,6 +180,7 @@ class CommandParserTests {
 		void test_extract_arguments_for_help() {
 			
 			Assertions.assertArrayEquals(new String[]{}, CommandParser.extractArguments("help"));
+			Assertions.assertArrayEquals(new String[]{}, CommandParser.extractArguments("help "));
 			Assertions.assertArrayEquals(new String[]{"help"}, CommandParser.extractArguments("help help"));
 			Assertions.assertArrayEquals(new String[]{"help"}, CommandParser.extractArguments("help 		help 	"));
 			
