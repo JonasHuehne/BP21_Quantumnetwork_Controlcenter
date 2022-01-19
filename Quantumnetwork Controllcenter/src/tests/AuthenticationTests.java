@@ -17,7 +17,7 @@ class AuthenticationTests {
     // as they use the same database and always add and delete the test data.
     // Additionally, if they fail, you might need to make everything in the test above the first delete line a comment,
     // run the test again, delete do uncomment the rest, and then run the test again.
-
+/*
     @Test
     void testSign () {
         String result = Authentication.sign("Hello");
@@ -91,7 +91,7 @@ class AuthenticationTests {
         Database.delete("Alice");
         Database.delete("Bob");
     }
-
+*/
     @Test
     // only realistically testable if signing, verifying, sending and receiving of messages work
     void testLocalReceiveAuthenticatedMessage () throws IOException {
@@ -121,7 +121,7 @@ class AuthenticationTests {
         Database.delete("Alice");
         Database.delete("Bob");
     }
-
+/*
     @Test
     // only realistically testable if signing, verifying, sending and receiving of messages work
     void testFalseLocalAuthenticatedMessage () throws IOException {
@@ -151,4 +151,5 @@ class AuthenticationTests {
         Database.delete("Alice");
         Database.delete("Bob");
     }
+    */
 }

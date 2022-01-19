@@ -78,7 +78,7 @@ public class NetworkTests {
 	}
 	
 	@Test
-	public void testMessageLowLeve() {
+	public void testMessageLowLevel() {
 		ConnectionEndpoint ce1 = QuantumnetworkControllcenter.conMan.getConnectionEndpoint("ceTest1");
 		ConnectionEndpoint ce2 = QuantumnetworkControllcenter.conMan.getConnectionEndpoint("ceTest2");
 		//Start checking for a Message
@@ -90,7 +90,6 @@ public class NetworkTests {
 		try {
 			TimeUnit.MILLISECONDS.sleep(250);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		

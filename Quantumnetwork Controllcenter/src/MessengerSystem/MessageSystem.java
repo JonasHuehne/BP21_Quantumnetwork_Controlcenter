@@ -7,7 +7,7 @@ import java.util.LinkedList;
 import frame.QuantumnetworkControllcenter;
 import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
-import networkConnection.networkPackage;
+import networkConnection.NetworkPackage;
 
 /**High Level Message System. Contains methods for sending and receiving messages without dealing with low-level things.
  * Select active connectionEndpoint and start sending and receiving messages!
@@ -68,7 +68,7 @@ public static void sendSignal(String connectionID, String signal) {
  * @return returns True if the confirmation of the message has been received, False if it times out.
  */
 public static boolean sendConfirmedMessage(String connectionID, String message) {
-	System.out.println("[" + connectionID + "]: Sending Confirm-Message: " + message);
+	//System.out.println("[" + connectionID + "]: Sending Confirm-Message: " + message);
 	ConnectionState state = QuantumnetworkControllcenter.conMan.getConnectionState(connectionID);
 	if(state == ConnectionState.CONNECTED) {
 		//Send message
@@ -112,7 +112,7 @@ public static String readReceivedMessage(String connectionID) {
  * 
  * @return the oldest message that was received and not yet read(removed)
  */
-public static networkPackage previewReceivedMessage(String connectionID) {
+public static NetworkPackage previewReceivedMessage(String connectionID) {
 	return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).peekMessageFromStack();
 }
 

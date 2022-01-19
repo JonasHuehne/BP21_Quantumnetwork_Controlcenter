@@ -42,8 +42,8 @@ public class ConnectionEndpoint implements Runnable{
 	private ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
 	private Thread messageThread = new Thread(this, connectionID + "_messageThread");
 	
-	private LinkedList<networkPackage> messageStack = new LinkedList<networkPackage>();
-	private LinkedList<networkPackage> confirmedMessageStack = new LinkedList<networkPackage>();
+	private LinkedList<NetworkPackage> messageStack = new LinkedList<NetworkPackage>();
+	private LinkedList<NetworkPackage> confirmedMessageStack = new LinkedList<NetworkPackage>();
 	
 	public ConnectionEndpoint(String connectionName, String localAddress, int serverPort) {
 		connectionID = connectionName;
@@ -140,7 +140,7 @@ public class ConnectionEndpoint implements Runnable{
 	/**Tries to connect to another Endpoints ServerSocket
 	 * 
 	 * @param targetServerIP	the IP or Name of the other Party.
-	 * @param targetServerPort	the Port on which the other Partys ServerSocket is listening for connections.
+	 * @param targetServerPort	the Port on which the other Parties ServerSocket is listening for connections.
 	 * @throws IOException 
 	 */
 	public void establishConnection(String targetServerIP, int targetServerPort) throws IOException {
@@ -248,7 +248,7 @@ public class ConnectionEndpoint implements Runnable{
 		System.out.println("Trying to send package");
 		//System.out.println("[" + connectionID + "]: ConnectionEndpoint of " + connectionID + " is pushing Message: " + message + " to ServerSocket of " + remoteID + ":" + String.valueOf(remotePort) + "!");
 		try {
-			clientOut.writeObject(new networkPackage(type, message));
+			clientOut.writeObject(new NetworkPackage(type, message));
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -256,18 +256,18 @@ public class ConnectionEndpoint implements Runnable{
 		return;
 	}
 	
-	public void addMessageToStack(networkPackage message) {
+	public void addMessageToStack(NetworkPackage message) {
 		messageStack.add(message);
 	}
 
-	public networkPackage readMessageFromStack() {
+	public NetworkPackage readMessageFromStack() {
 		if (messageStack.size()>0) {
 			return messageStack.pop();
 		}
 		return null;
 	}
 	
-	public networkPackage peekMessageFromStack() {
+	public NetworkPackage peekMessageFromStack() {
 		if (messageStack.size()>0) {
 			return messageStack.peekFirst();
 		}
@@ -285,7 +285,7 @@ public class ConnectionEndpoint implements Runnable{
 		return messageStack.size();
 	}
 	
-	private void registerConfirmation(networkPackage message) {
+	private void registerConfirmation(NetworkPackage message) {
 		confirmedMessageStack.add(message);
 	}
 	
@@ -328,7 +328,7 @@ public class ConnectionEndpoint implements Runnable{
 					isConnected = true;
 					
 					//Wait for greeting
-					System.out.println("[" + connectionID + "]: Wating for Greeting from connecting Party");
+					System.out.println("[" + connectionID + "]: Waiting for Greeting from connecting Party");
 					listenForMessage();
 					
 				
@@ -354,19 +354,19 @@ public class ConnectionEndpoint implements Runnable{
 			return;
 		}
 		listenForMessages = true;
-		System.out.println("[" + connectionID + "]: Waiting for Message has startet!");
+		System.out.println("[" + connectionID + "]: Waiting for Message has started!");
 		messageThread.start();
 		return;			
 	}
 	
 	/**PreProcessing-step to filter out ConnectionCommands
 	 * 
-	 * @param message	the message that was just received and should be checked for keywords.
+	 * @param transmission	the transmission that was just received and should be checked for keywords in the header.
 	 * @return	the String message after it was processed.
 	 */
-	private void processMessage(networkPackage transmission) {
+	private void processMessage(NetworkPackage transmission) {
 		//Closing Message
-		System.out.println("Parsing: " + transmission.getHead() + "  -  " + transmission.getContent());
+		//System.out.println("Parsing: " + transmission.getHead() + "  -  " + transmission.getContent());
 		System.out.println("[" + connectionID + "]: Processing Message: " + transmission.getHead());
 		try {
 			switch(transmission.getHead()){
@@ -417,7 +417,7 @@ public class ConnectionEndpoint implements Runnable{
 				return;
 				
 			case "syncReject":
-				//The SyncConfirm is added to the regular messagesStack and read by the KeyGenerator.
+				//The SyncReject is added to the regular messagesStack and read by the KeyGenerator.
 				System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
 				addMessageToStack( transmission);
 				return;			
@@ -435,7 +435,7 @@ public class ConnectionEndpoint implements Runnable{
 		}
 		
 		} catch (IOException e) {
-			System.out.println("There was an issue at " + connectionID + " while tring to parse special commands from the latest Message: " + transmission.getHead() + ".");
+			System.out.println("There was an issue at " + connectionID + " while trying to parse special commands from the latest Message: " + transmission.getHead() + ".");
 			e.printStackTrace();
 		}
 				
@@ -445,10 +445,10 @@ public class ConnectionEndpoint implements Runnable{
 	@Override
 	public void run() {
 		waitingForMessage = true;
-		networkPackage receivedMessage;
+		NetworkPackage receivedMessage;
 		while(waitingForMessage) {
 			try {
-				if(waitingForMessage && serverIn != null && isConnected && !waitingForConnection && (receivedMessage = (networkPackage) serverIn.readObject()) != null) {
+				if(waitingForMessage && serverIn != null && isConnected && !waitingForConnection && (receivedMessage = (NetworkPackage) serverIn.readObject()) != null) {
 					System.out.println("[" + connectionID + "]: " + connectionID + " received Message!:");
 					System.out.println(receivedMessage);
 					processMessage(receivedMessage);

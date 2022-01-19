@@ -2,12 +2,12 @@ package networkConnection;
 
 import java.io.Serializable;
 
-public class networkPackage implements Serializable{
+public class NetworkPackage implements Serializable{
 
 	public String head;
 	public String content;
 	
-	public networkPackage(String head, String content) {
+	public NetworkPackage(String head, String content) {
 		this.head = head;
 		this.content = content;
 	}

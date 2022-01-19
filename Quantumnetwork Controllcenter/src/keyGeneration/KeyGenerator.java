@@ -65,13 +65,13 @@ public class KeyGenerator implements Runnable{
 		System.out.println("preGenSync successful");
 		initiative = 1;
 		
-		System.out.println("Starting KeyGen MessaginService");
+		System.out.println("Starting KeyGen MessagingService");
 		
 		//Signal the Source
 		signalSourceAPI();
 		
 		//Start the process
-		KeyGenMessagingService();
+		keyGenMessagingService();
 		
 	}
 	
@@ -83,7 +83,6 @@ public class KeyGenerator implements Runnable{
 			System.out.println("Calling the python script with the following line: " + "python " + pythonPath.resolve(pythonScriptName) + " " + initiative + " " + connectionPath);
 			Runtime.getRuntime().exec("python " + pythonPath.resolve(pythonScriptName) + " " + initiative + " " + connectionPath);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -139,7 +138,7 @@ public class KeyGenerator implements Runnable{
 			}
 		}
 		String msg = MessageSystem.readReceivedMessage(connectionID);
-		System.out.println("Recieved Sync-Response: " + msg + "!");
+		System.out.println("Received Sync-Response: " + msg + "!");
 		if(msg.equals("syncConfirm")) {
 			return true;
 		}
@@ -153,14 +152,14 @@ public class KeyGenerator implements Runnable{
 	 * 
 	 */
 	public void keyGenSyncResponse() {
-		System.out.println("[" + connectionID + "]: Add confirmation-promt for KeyGen here!");
+		System.out.println("[" + connectionID + "]: Add confirmation-prompt for KeyGen here!");
 		//for now, always accept
 		boolean accept = true;
 		if(accept && preGenChecks(connectionID)) {
 			signalSourceAPI();
 			MessageSystem.conMan.getConnectionEndpoint(connectionID).pushMessage("syncConfirm", "syncConfirm");
 			initiative = 0;
-			KeyGenMessagingService();
+			keyGenMessagingService();
 		}else {
 			MessageSystem.conMan.getConnectionEndpoint(connectionID).pushMessage("syncReject", "syncReject");
 		}
@@ -170,7 +169,7 @@ public class KeyGenerator implements Runnable{
 	/**This calls the python script and also starts the threads that handle the .txt files.
 	 * 
 	 */
-	private void KeyGenMessagingService() {
+	private void keyGenMessagingService() {
 		if(!setUpFolders()) {
 			System.out.println("Aborting KeyGenMessagingService, some Folders could not be found!");
 			return;
@@ -226,7 +225,6 @@ public class KeyGenerator implements Runnable{
         	try {
 				Files.createDirectories(connectionFolderLocation);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				System.out.println("Error: Could not create Connection Folder!");
 				e.printStackTrace();
 				return false;
@@ -246,17 +244,16 @@ public class KeyGenerator implements Runnable{
 	private void transferKeyFileToDB() {
 		//Read Key from File
 		byte[] key = null;
-		Path KeyFilePath = connectionPath.resolve(expectedKeyFilename);
-		if(Files.exists(KeyFilePath) && Files.notExists(connectionPath.resolve(expectedKeyFilename + ".lock"))) {
+		Path keyFilePath = connectionPath.resolve(expectedKeyFilename);
+		if(Files.exists(keyFilePath) && Files.notExists(connectionPath.resolve(expectedKeyFilename + ".lock"))) {
 			try {
 				//Read
-				key = Files.readAllBytes(KeyFilePath);
+				key = Files.readAllBytes(keyFilePath);
 				
 				//Delete
 				try {
-					Files.delete(KeyFilePath);
+					Files.delete(keyFilePath);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			} catch (IOException e) {
@@ -274,7 +271,7 @@ public class KeyGenerator implements Runnable{
 		String remoteAddress = MessageSystem.conMan.getConnectionEndpoint(connectionID).getRemoteAddress();
 		int remotePort = MessageSystem.conMan.getConnectionEndpoint(connectionID).getRemotePort();
 		
-		//TODO: Check in with Aron to make agree on interface according to standards. Ideally change DB Method Parameter to Byte[].
+		//TODO: Check in with Aron to agree on interface according to standards. Ideally change DB Method Parameter to Byte[].
 		//KeyStoreDbManager.insertToDb(connectionID, key, 0, ownAddress + ":" + String.valueOf(ownPort), remoteAddress + ":" + String.valueOf(remotePort));
 		
 		//End the KeyGen Process and clean up.
@@ -330,7 +327,6 @@ public class KeyGenerator implements Runnable{
 				try {
 					outFileContent = Files.readAllBytes(outFilePath);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 				
@@ -349,7 +345,6 @@ public class KeyGenerator implements Runnable{
 			    try {
 					Files.delete(outFilePath);
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
 			}else {
@@ -371,7 +366,6 @@ public class KeyGenerator implements Runnable{
 						Files.delete(connectionPath.resolve(expectedTermination));
 						shutdownKeyGen(true);
 					} catch (IOException e) {
-						// TODO Auto-generated catch block
 						shutdownKeyGen(true);
 						e.printStackTrace();
 					}
@@ -402,13 +396,13 @@ public class KeyGenerator implements Runnable{
 				(Writer inWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(inFilePath.toString()), "ISO-8859-1"))) {
 					inWriter.write(inFileContent);
 				} catch (UnsupportedEncodingException e) {
-					// TODO Auto-generated catch block
+
 					e.printStackTrace();
 				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
+
 					e.printStackTrace();
 				} catch (IOException e) {
-					// TODO Auto-generated catch block
+
 					e.printStackTrace();
 				}
 				//Remove .lockFile
