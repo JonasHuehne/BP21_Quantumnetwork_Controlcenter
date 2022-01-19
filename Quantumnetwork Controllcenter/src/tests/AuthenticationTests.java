@@ -7,10 +7,14 @@ import frame.QuantumnetworkControllcenter;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 /**
  * class for automated tests for the authentication
+ * @author Sarah Schumann
  */
 class AuthenticationTests {
     // IMPORTANT: only run tests one by one. There might be problems if they interleave,
@@ -18,35 +22,67 @@ class AuthenticationTests {
     // Additionally, if they fail, you might need to make everything in the test above the first delete line a comment,
     // run the test again, delete do uncomment the rest, and then run the test again.
 
+
     @Test
-    void testSign () {
-        String result = Authentication.sign("Hello");
-        Assertions.assertNotNull(result);
+    void testSignatureKeyGeneration () {
+        boolean result1 = Authentication.generateSignatureKeyPair();
+        Assertions.assertTrue(result1);
+
+        boolean result2 = Files.exists(Path.of(System.getProperty("user.dir")
+                + File.separator + "SignatureKeys" + File.separator + "signature.key"));
+        Assertions.assertTrue(result2);
+
+        boolean result3 = Files.exists(Path.of(System.getProperty("user.dir")
+                + File.separator + "SignatureKeys" + File.separator + "signature.pub"));
+        Assertions.assertTrue(result3);
+
+        boolean result4 = Authentication.deleteSignatureKeys();
+        Assertions.assertTrue(result4);
     }
 
     @Test
-    // only testable, if signing works
+    // relies on signature key generation in authentication class
+    void testSign () {
+        Authentication.generateSignatureKeyPair();
+
+        String result = Authentication.sign("Hello");
+        Assertions.assertNotNull(result);
+
+        Authentication.deleteSignatureKeys();
+    }
+
+    @Test
+    // only testable, if signing and signature key generation work
     void testVerifyTrue () {
-        Database.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("public_key.pem"));
+        Authentication.generateSignatureKeyPair();
+        Database.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
+
         String signature = Authentication.sign("Hello");
         boolean result = Authentication.verify("Hello", signature, "self");
         Assertions.assertTrue(result);
+
         Database.delete("self");
+        Authentication.deleteSignatureKeys();
     }
 
     @Test
-    // only testable, if signing works
+    // only testable, if signing and signature key generation work
     void testVerifyFalse () {
-        Database.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("public_key.pem"));
+        Authentication.generateSignatureKeyPair();
+
+        Database.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
         String signature = Authentication.sign("Hello");
         boolean result = Authentication.verify("Hallo", signature, "self");
         Assertions.assertFalse(result);
+
         Database.delete("self");
+        Authentication.deleteSignatureKeys();
     }
 
     @Test
-    // only testable, if signing works
+    // only testable, if signing and signature key generation work
     void testVerifyFalse2 () {
+        Authentication.generateSignatureKeyPair();
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                 "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -55,18 +91,22 @@ class AuthenticationTests {
                 "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                 "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                 "1QIDAQAB";
-        Database.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("public_key.pem"));
+        Database.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
         Database.insert("other", "128.0.0.1", 2505, otherPublicKeyString);
+
         String signature = Authentication.sign("Hello");
         boolean result = Authentication.verify("Hello", signature, "other");
         Assertions.assertFalse(result);
+
         Database.delete("self");
         Database.delete("other");
+        Authentication.deleteSignatureKeys();
     }
 
     @Test
-    // only realistically testable if signing and sending of messages work
+    // only realistically testable if signature key generation, signing and sending of messages work
     void testLocalSendAuthenticatedMessage () throws IOException {
+        Authentication.generateSignatureKeyPair();
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                 "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -75,7 +115,7 @@ class AuthenticationTests {
                 "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                 "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                 "1QIDAQAB";
-        Database.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("public_key.pem"));
+        Database.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
         Database.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
@@ -90,11 +130,13 @@ class AuthenticationTests {
 
         Database.delete("Alice");
         Database.delete("Bob");
+        Authentication.deleteSignatureKeys();
     }
 
     @Test
-    // only realistically testable if signing, verifying, sending and receiving of messages work
+    // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
     void testLocalReceiveAuthenticatedMessage () throws IOException {
+        Authentication.generateSignatureKeyPair();
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                         "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -103,7 +145,7 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        Database.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("public_key.pem"));
+        Database.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
         Database.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
@@ -120,11 +162,13 @@ class AuthenticationTests {
 
         Database.delete("Alice");
         Database.delete("Bob");
+        Authentication.deleteSignatureKeys();
     }
 
     @Test
-    // only realistically testable if signing, verifying, sending and receiving of messages work
+    // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
     void testFalseLocalAuthenticatedMessage () throws IOException {
+        Authentication.generateSignatureKeyPair();
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                         "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -133,7 +177,7 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        Database.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("public_key.pem"));
+        Database.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
         Database.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
@@ -150,6 +194,6 @@ class AuthenticationTests {
 
         Database.delete("Alice");
         Database.delete("Bob");
+        Authentication.deleteSignatureKeys();
     }
-    
 }
