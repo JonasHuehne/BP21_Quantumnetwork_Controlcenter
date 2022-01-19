@@ -9,7 +9,7 @@ import CommunicationList.DbObject;
  * The purpose of this class is to process text commands (given as Strings) and execute corresponding program method.
  * @author Sasha Petri
  */
-public class CommandHandler {
+public final class CommandHandler {
 
 	private CommandHandler() {
 		
