@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import CommunicationList.Database;
 import CommunicationList.DbObject;
+import MessengerSystem.Authentication;
 
 /**
  * The purpose of this class is to be used by {@link CommandHandler}, specifically for executing commands pertaining to the Communication List.
@@ -98,9 +99,15 @@ class CommunicationListCommandHandler {
 	 * 		commandArgs[2] is the value that the specified attribute will be set to
 	 * @return
 	 * 		a String stating whether or not the update was successful
+	 * @throws IllegalArgumentException
+	 * 		if commandArgs is not of length 3
 	 */
 	static String handleContactsUpdate(String[] commandArgs) {
 		// Check if entry actually exists, since we can't update a non-existant entry
+		if(commandArgs.length != 3) 
+			throw new IllegalArgumentException("The method handleContactUpdate(commandArgs) expects an array of size 3, but size was " + commandArgs.length + ".");
+				
+		
 		String oldName = commandArgs[0];
 		DbObject entryToChange = Database.query(oldName);
 		if (entryToChange == null) {
@@ -133,6 +140,20 @@ class CommunicationListCommandHandler {
 			} else {
 				return "Could not change Port of \"" + oldName + "\" to " + newPort + ". " + SEE_CONSOLE;
 			}
+		case "pk": // Updating the pk associated with a contact
+			// commandArgs[2] should be of the form ".+" (regex) when this function is called, due to previous syntax checking
+			String pkLocation = commandArgs[2].substring(1, commandArgs[2].length() - 1); // get the location without the "" around it
+			String pkString = Authentication.readPublicKeyStringFromFile(pkLocation); // load the pk itself
+			if(pkString == null) { // If there was an error loading the pk from the file
+				return "ERROR - Could not load the public key at location: \"" + pkLocation + "\"." + SEE_CONSOLE;
+			} else { // If the pk could be loaded, try to insert it into the data base
+				boolean pkChangeSuccess = Database.updateSignatureKey(oldName, pkString);
+				if(pkChangeSuccess) {
+					return "Successfully changed public key associated with \"" + oldName + "\".";
+				} else {
+					return "Could not change the public key associated with \"" + oldName + "\"" + SEE_CONSOLE;
+				}
+			}			
 		default:
 			return "ERROR - Can not update the attribute \"" + attributeToUpdate + "\". This functionality has either not been implemented yet, or something went wrong.";
 		}

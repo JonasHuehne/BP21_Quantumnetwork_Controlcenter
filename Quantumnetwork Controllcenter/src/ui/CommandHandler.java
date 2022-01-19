@@ -63,6 +63,13 @@ public class CommandHandler {
 				return CommunicationListCommandHandler.handleContactsShow();
 			case CONTACTS_UPDATE:
 				return CommunicationListCommandHandler.handleContactsUpdate(commandArgs);
+			
+			// Debug Commands, not intended to be part of the final product, but useful for manual testing
+			case DEBUG_GENSIGPAIR:
+				return DebugCommandHandler.handleGenSigPair();
+			case DEBUG_SHOWPK:
+				return DebugCommandHandler.handleShowPk(commandArgs);
+			
 			default:
 				return "Not implemented yet.";
 		}
