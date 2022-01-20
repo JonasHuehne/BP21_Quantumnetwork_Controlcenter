@@ -11,8 +11,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedList;
 
 /**
@@ -30,9 +28,9 @@ public class ConsoleUI {
 	private JFrame frmQuantumNetworkControl;
 	
 	/** Title displayed in the applications border */
-	private final String APPLICATION_TITLE = "Quantum Network Control Center Console UI";
+	private static final String APPLICATION_TITLE = "Quantum Network Control Center Console UI";
 	/** Text displayed on startup in the {@link #consoleOutArea} */
-	private final String INITIAL_TEXT = "Welcome to the Quantum Network Control Center. What would you like to do?" + System.lineSeparator() + "Enter \"help\" for a list of commands.";
+	private static final String INITIAL_TEXT = "Welcome to the Quantum Network Control Center. What would you like to do?" + System.lineSeparator() + "Enter \"help\" for a list of commands.";
 	
 	/** The text area for the user input (commands) */
 	private JTextField consoleInArea;

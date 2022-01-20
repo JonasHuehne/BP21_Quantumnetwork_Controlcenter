@@ -75,6 +75,10 @@ public class KeyStoreDbManager {
 
     }
 
+     /*
+      * TODO: <Sasha> What's going on with keyBuffer here? Is it supposed to be an int or a byte array?
+      * Why is the javadoc incomplete, and why does it call it an array of char bytes? Char is 2 bytes, not 1 byte.
+      */
 
     /** Inserts a new Entry to the DB
      *

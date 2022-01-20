@@ -2,12 +2,12 @@ package networkConnection;
 
 import java.util.*;
 
-import MessengerSystem.MessageSystem;
+
 
 
 /**A class that holds any number of Connections from a local ConnectionEndpoint to another.
  * 
- * @author Jonas Hühne
+ * @author Jonas Huehne
  *
  */
 public class ConnectionManager {
@@ -28,9 +28,6 @@ public class ConnectionManager {
 	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, int serverPort) {
 		if(!connections.containsKey(endpointName) && !isPortInUse(serverPort)) {
 			connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, serverPort));
-			if(connections.size()==1) {
-				MessageSystem.setActiveConnection(endpointName);
-			}
 			return connections.get(endpointName);
 		}
 		
@@ -62,9 +59,9 @@ public class ConnectionManager {
 	 * @param connectionID	the Identifier of the intended connectionEndpoint.
 	 * @param message		the String Message that is supposed to be sent via the designated Endpoint.
 	 */
-	public void sendMessage(String connectionID,String message) {
+	public void sendMessage(String connectionID, String type, String message) {
 		ConnectionEndpoint activeConnectionEndpoint = connections.get(connectionID);
-		activeConnectionEndpoint.pushMessage(message);
+		activeConnectionEndpoint.pushMessage(type, message);
 	}
 	
 	

@@ -11,6 +11,11 @@ import frame.QuantumnetworkControllcenter;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionState;
 
+/**Run all tests together, do not exclude testConnectionEndpoint as it creates the conMan needed in later tests.
+ * 
+ * @author Jonas Huehne
+ *
+ */
 public class NetworkTests {
 	
 	QuantumnetworkControllcenter QCC = new QuantumnetworkControllcenter();
@@ -78,25 +83,23 @@ public class NetworkTests {
 	}
 	
 	@Test
-	public void testMessageLowLeve() {
+	public void testMessageLowLevel() {
 		ConnectionEndpoint ce1 = QuantumnetworkControllcenter.conMan.getConnectionEndpoint("ceTest1");
 		ConnectionEndpoint ce2 = QuantumnetworkControllcenter.conMan.getConnectionEndpoint("ceTest2");
 		//Start checking for a Message
 		ce2.listenForMessage();
 		//Send a Message
-		ce1.pushMessage("msg:::test Message 1");
+		ce1.pushMessage("msg", "test Message 1");
 		
 		//Wait
 		try {
 			TimeUnit.MILLISECONDS.sleep(250);
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		
 		//Check if Message was stored in Queue
 		assert(ce2.sizeOfMessageStack() == 1);
-		MessageSystem.setActiveConnection("ceTest2");
 		assert(ce2.sizeOfMessageStack() == 1);
 		
 		//Test against unintended access to original data.
@@ -112,7 +115,14 @@ public class NetworkTests {
 		
 		//Close the connection again
 		ce1.closeConnection(true);
-
+		
+		//Wait
+		try {
+			TimeUnit.MILLISECONDS.sleep(250);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		//Check that both connectionEndpoints are closed down.
 		assert(ce1.reportState() == ConnectionState.CLOSED);
@@ -133,17 +143,13 @@ public class NetworkTests {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
-		//Select active connectionEndpoint
-		MessageSystem.setActiveConnection("ceTest8");
-		assert(MessageSystem.getActiveConnection() == "ceTest8");
 
 		//Test regular Messages
 		ce4.listenForMessage();
 		
-		MessageSystem.sendMessage("Test Message 3");
-		MessageSystem.sendMessage("Test Message 4");
-		MessageSystem.sendMessage("Test Message 5");
+		MessageSystem.sendMessage("ceTest8", "Test Message 3");
+		MessageSystem.sendMessage("ceTest8", "Test Message 4");
+		MessageSystem.sendMessage("ceTest8", "Test Message 5");
 		
 		//Wait
 		try {
@@ -153,30 +159,27 @@ public class NetworkTests {
 			e.printStackTrace();
 		}
 		
-		MessageSystem.setActiveConnection("ceTest9");
-		assert(MessageSystem.getNumberOfPendingMessages() == 3);
+		assert(MessageSystem.getNumberOfPendingMessages("ceTest9") == 3);
 		//Test Message Content
-		assert(MessageSystem.previewReceivedMessage().equals("Test Message 3"));
+		assert(MessageSystem.previewReceivedMessage("ceTest9").getContent().equals("Test Message 3"));
 		//Test non-removing preview
-		assert(MessageSystem.previewReceivedMessage().equals("Test Message 3"));
+		assert(MessageSystem.previewReceivedMessage("ceTest9").getContent().equals("Test Message 3"));
 		//Test non-removing preview of latest message
-		assert(MessageSystem.previewLastReceivedMessage().equals("Test Message 5"));
+		assert(MessageSystem.previewLastReceivedMessage("ceTest9").equals("Test Message 5"));
 		//Test Message Read
-		assert(MessageSystem.readReceivedMessage().equals("Test Message 3"));
+		assert(MessageSystem.readReceivedMessage("ceTest9").equals("Test Message 3"));
 		//Test removing-reading
-		assert(MessageSystem.readReceivedMessage().equals("Test Message 4"));
+		assert(MessageSystem.readReceivedMessage("ceTest9").equals("Test Message 4"));
 		//Try sending confirmed Messages
-		MessageSystem.setActiveConnection("ceTest8");
-		MessageSystem.sendConfirmedMessage("Confirmed Test Message 1");
+		MessageSystem.sendConfirmedMessage("ceTest8", "Confirmed Test Message 1");
 		
 		//Check for no unintended confirmations on message stack
-		assert(MessageSystem.getNumberOfPendingMessages() == 0);
+		assert(MessageSystem.getNumberOfPendingMessages("ceTest8") == 0);
 		
 		//Check Message Order after confirmed Message
-		MessageSystem.setActiveConnection("ceTest9");
-		assert(MessageSystem.getNumberOfPendingMessages() == 2);
-		assert(MessageSystem.readReceivedMessage().equals("Test Message 5"));
-		assert(MessageSystem.readReceivedMessage().equals("Confirmed Test Message 1"));
+		assert(MessageSystem.getNumberOfPendingMessages("ceTest9") == 2);
+		assert(MessageSystem.readReceivedMessage("ceTest9").equals("Test Message 5"));
+		assert(MessageSystem.readReceivedMessage("ceTest9").equals("Confirmed Test Message 1"));
 		
 		QuantumnetworkControllcenter.conMan.destroyAllConnectionEndpoints();
 		assert(QuantumnetworkControllcenter.conMan.returnAllConnections().size() == 0);

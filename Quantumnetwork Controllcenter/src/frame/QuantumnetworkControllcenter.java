@@ -7,14 +7,17 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import MessengerSystem.MessageSystem;
+import keyGeneration.KeyGenerator;
 
-/*
+/**
  * Main Class of QuantumnetworkControllcenter
+ * 
+ * @author Lukas Dentler
  */
 public class QuantumnetworkControllcenter {
 	
 	public static ConnectionManager conMan;
-	/*
+	/**
 	 * Method to initialize a Quantumnetwork Controllcenter
 	 */
 	public static void initialize() {
@@ -30,7 +33,7 @@ public class QuantumnetworkControllcenter {
 	}
 	 
 	
-	/*
+	/**
 	 * Main-method to run QuantumnetworkControllcenter
 	 */
 	public static void main(String[] args) {

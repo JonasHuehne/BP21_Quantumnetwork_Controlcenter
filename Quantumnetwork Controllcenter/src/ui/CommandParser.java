@@ -22,7 +22,7 @@ public class CommandParser {
 	 * 		e.g. the input string is "xjcvnxvjn" or it is "contacts add Annie" (incomplete syntax for {@link Command#CONTACTS_ADD}) <br>
 	 * 		If the input is null, null is returned.
 	 */
-	public static Command match(String textCommand) { 
+	public static Command match(final String textCommand) { 
 		String normedInput = normInput(textCommand);	
 		if (normedInput == null) return null;
 		for (Command command : Command.values()) {
@@ -47,7 +47,7 @@ public class CommandParser {
 	 * 		The Command with the name given by <b>commandName</b>, with strictness decided as above.
 	 * 		null if there is no such command, or if commandName is null
 	 */
-	public static Command getCommandOfName(String commandName, boolean strict) {
+	public static Command getCommandOfName(final String commandName, final boolean strict) {
 		if (commandName == null) return null;
 		String normedInput = normInput(commandName).toLowerCase();
 		for(Command c : Command.values()) {
@@ -70,7 +70,7 @@ public class CommandParser {
 	 * 		Returns an empty array iff the given command has no arguments following it (e.g. "contacts show") <br>
 	 * 		Returns null iff {@link #match(String)} would return null for <b>input</b>
 	 */
-	public static String[] extractArguments(String input) {
+	public static String[] extractArguments(final String input) {
 		
 		Command command = match(input);
 		if(command == null) return null;
@@ -99,7 +99,7 @@ public class CommandParser {
 	 * @return 
 	 * 		the resulting String
 	 */
-	public static String normInput(String input) {
+	public static String normInput(final String input) {
 		if (input == null) return null;
 		// Remove leading & trailing whitespace, and replace any double+ whitespaces with single spaces
 		String out = input.replaceAll("\\s+", " ").strip();
