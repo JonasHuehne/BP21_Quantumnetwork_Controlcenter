@@ -25,7 +25,7 @@ public final class CommandHandler {
 	 */
 	
 	
-	// Generally intended to be used in {@link ConsoleUI}, but is independend of that class and could for example just as well be used with sysin / sysout
+	// Generally intended to be used in {@link ConsoleUI}, but is independent of that class and could for example just as well be used with sysin / sysout
 	/**
 	 * Processes a given text command and executes the corresponding program method.
 	 * @param textCommand
@@ -78,13 +78,13 @@ public final class CommandHandler {
 	}
 	
 	/**
-	 * This method is used to handle the case of an user entering an invalid command. <p>
+	 * This method is used to handle the case of a user entering an invalid command. <p>
 	 * A command can be invalid either because it is not recognized (textCommand does not correspond to a commandName of any {@link Command})
 	 * or because the syntax of the command was wrong (e.g. "contacts update Bob port Potato").
 	 * @param textCommand
-	 * 		a command entered by an user, which can not be executed 
+	 * 		a command entered by a user, which can not be executed 
 	 * @return
-	 * 		a String informing the user that the command is unrecognized, if it does not correspond to any command in {@link Commands} <p>
+	 * 		a String informing the user that the command is unrecognized, if it does not correspond to any command in {@link Command} <p>
 	 * 		or a String informing the user that the command could not be executed with the given arguments if the syntax was wrong
 	 */
 	private static String handleInvalidCommand(String textCommand) {
@@ -114,7 +114,7 @@ public final class CommandHandler {
 	private static String handleHelp(String[] commandArgs) {
 		if(commandArgs.length == 0) { // User typed just "help"
 			String availableCommands = "Available Commands: " + System.lineSeparator();
-			for (Command c : Arrays.asList(Command.values())) { // TODO Potentially add a "short help text" for each Command, either in Command or a seperate enum
+			for (Command c : Arrays.asList(Command.values())) { // TODO Potentially add a "short help text" for each Command, either in Command or a separate enum
 				availableCommands += " " + c.getCommandName() + System.lineSeparator();
 			}
 			availableCommands += "Enter help <commandName> for additional information on a command";

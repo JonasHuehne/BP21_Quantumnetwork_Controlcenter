@@ -17,7 +17,7 @@ public class CommandParser {
 	 * 		Any amount of whitespaces will be treated as one whitespace, leading and trailing whitespaces will be ignored.
 	 * @return 
 	 * 		If the input string fits the syntax ({@link Command#getCommandPattern()}) of a Command exactly, that Command is returned,
-	 * 		e.g. for "help" this method returns {@link #HELP} and for "contacts add Annie 127.0.0.1 1234" it returns {@link Command#CONTACTS_ADD} <br>
+	 * 		e.g. for "help" this method returns {@link Command#HELP} and for "contacts add Annie 127.0.0.1 1234" it returns {@link Command#CONTACTS_ADD} <br>
 	 * 		If the input string does not fit the syntax of a Command exactly, then null is returned,
 	 * 		e.g. the input string is "xjcvnxvjn" or it is "contacts add Annie" (incomplete syntax for {@link Command#CONTACTS_ADD}) <br>
 	 * 		If the input is null, null is returned.

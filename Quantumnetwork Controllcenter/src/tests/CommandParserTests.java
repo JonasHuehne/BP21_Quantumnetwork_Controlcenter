@@ -261,77 +261,77 @@ class CommandParserTests {
 		@Test
 		void test_extract_arguments_for_help() {
 			
-			Assertions.assertArrayEquals(new String[]{}, CommandParser.extractArguments("help"));
-			Assertions.assertArrayEquals(new String[]{}, CommandParser.extractArguments("help "));
-			Assertions.assertArrayEquals(new String[]{"help"}, CommandParser.extractArguments("help help"));
-			Assertions.assertArrayEquals(new String[]{"help"}, CommandParser.extractArguments("help 		help 	"));
+			assertArrayEquals(new String[]{}, CommandParser.extractArguments("help"));
+			assertArrayEquals(new String[]{}, CommandParser.extractArguments("help "));
+			assertArrayEquals(new String[]{"help"}, CommandParser.extractArguments("help help"));
+			assertArrayEquals(new String[]{"help"}, CommandParser.extractArguments("help 		help 	"));
 			
 			/* 
 			 * Help is allowed to be followed by any String syntactically. 
 			 * The semantics of help only giving a valid output if followed by nothing or an actual command are not the job of the CommandParser. 
 			 */
 			
-			Assertions.assertArrayEquals(new String[]{"contacts", "add"}, CommandParser.extractArguments("help contacts add"));
-			Assertions.assertArrayEquals(new String[]{"contacts", "remove"}, CommandParser.extractArguments("help contacts remove"));
-			Assertions.assertArrayEquals(new String[]{"contacts", "show"}, CommandParser.extractArguments("help contacts show"));
+			assertArrayEquals(new String[]{"contacts", "add"}, CommandParser.extractArguments("help contacts add"));
+			assertArrayEquals(new String[]{"contacts", "remove"}, CommandParser.extractArguments("help contacts remove"));
+			assertArrayEquals(new String[]{"contacts", "show"}, CommandParser.extractArguments("help contacts show"));
 			
-			Assertions.assertArrayEquals(new String[]{"contacts", "add"}, CommandParser.extractArguments("		help 	 contacts 	add		"));
-			Assertions.assertArrayEquals(new String[]{"contacts", "remove"}, CommandParser.extractArguments("     help  		contacts 	remove   "));
-			Assertions.assertArrayEquals(new String[]{"contacts", "show"}, CommandParser.extractArguments("	  help 			contacts   show	 "));
+			assertArrayEquals(new String[]{"contacts", "add"}, CommandParser.extractArguments("		help 	 contacts 	add		"));
+			assertArrayEquals(new String[]{"contacts", "remove"}, CommandParser.extractArguments("     help  		contacts 	remove   "));
+			assertArrayEquals(new String[]{"contacts", "show"}, CommandParser.extractArguments("	  help 			contacts   show	 "));
 		}
 		
 		@Test
 		void test_extract_arguments_for_contacts_add() {
-			Assertions.assertArrayEquals(new String[]{"Bob", "127.0.0.1", "80"}, CommandParser.extractArguments("contacts add Bob 127.0.0.1 80"));
-			Assertions.assertArrayEquals(new String[]{"Alice", "168.0.0.8", "25565"}, CommandParser.extractArguments("contacts add Alice 168.0.0.8 25565"));
+			assertArrayEquals(new String[]{"Bob", "127.0.0.1", "80"}, CommandParser.extractArguments("contacts add Bob 127.0.0.1 80"));
+			assertArrayEquals(new String[]{"Alice", "168.0.0.8", "25565"}, CommandParser.extractArguments("contacts add Alice 168.0.0.8 25565"));
 			
-			Assertions.assertArrayEquals(new String[]{"Bob", "127.0.0.1", "80"}, CommandParser.extractArguments("	contacts	  add 	Bob 	 127.0.0.1	  80"));
-			Assertions.assertArrayEquals(new String[]{"Alice", "168.0.0.8", "25565"}, CommandParser.extractArguments(" contacts 	 add 	Alice 	168.0.0.8 		25565"));
+			assertArrayEquals(new String[]{"Bob", "127.0.0.1", "80"}, CommandParser.extractArguments("	contacts	  add 	Bob 	 127.0.0.1	  80"));
+			assertArrayEquals(new String[]{"Alice", "168.0.0.8", "25565"}, CommandParser.extractArguments(" contacts 	 add 	Alice 	168.0.0.8 		25565"));
 		}
 		
 		@Test
 		void test_extract_arguments_for_contacts_remove() {
-			Assertions.assertArrayEquals(new String[]{"Alice"}, CommandParser.extractArguments("contacts remove Alice"));
-			Assertions.assertArrayEquals(new String[]{"Bob"}, CommandParser.extractArguments("contacts remove Bob"));
+			assertArrayEquals(new String[]{"Alice"}, CommandParser.extractArguments("contacts remove Alice"));
+			assertArrayEquals(new String[]{"Bob"}, CommandParser.extractArguments("contacts remove Bob"));
 			
-			Assertions.assertArrayEquals(new String[]{"Alice"}, CommandParser.extractArguments("	 contacts 	  remove	 Alice  	"));
-			Assertions.assertArrayEquals(new String[]{"Bob"}, CommandParser.extractArguments(" 	contacts 	remove 	    	Bob	 	"));
+			assertArrayEquals(new String[]{"Alice"}, CommandParser.extractArguments("	 contacts 	  remove	 Alice  	"));
+			assertArrayEquals(new String[]{"Bob"}, CommandParser.extractArguments(" 	contacts 	remove 	    	Bob	 	"));
 		}
 		
 		@Test
 		void test_extract_arguments_for_contacts_update() {
-			Assertions.assertArrayEquals(new String[]{"Alice", "ip", "168.0.0.4"}, CommandParser.extractArguments("contacts update Alice ip 168.0.0.4"));
-			Assertions.assertArrayEquals(new String[]{"Alice", "name", "Bob"}, CommandParser.extractArguments("contacts update Alice name Bob"));
-			Assertions.assertArrayEquals(new String[]{"Cassie", "port", "3434"}, CommandParser.extractArguments("contacts update Cassie port 3434"));
+			assertArrayEquals(new String[]{"Alice", "ip", "168.0.0.4"}, CommandParser.extractArguments("contacts update Alice ip 168.0.0.4"));
+			assertArrayEquals(new String[]{"Alice", "name", "Bob"}, CommandParser.extractArguments("contacts update Alice name Bob"));
+			assertArrayEquals(new String[]{"Cassie", "port", "3434"}, CommandParser.extractArguments("contacts update Cassie port 3434"));
 			
-			Assertions.assertArrayEquals(new String[]{"Alice", "ip", "168.0.0.4"}, CommandParser.extractArguments("  contacts 	 update 	 Alice	 ip		 168.0.0.4 "));
-			Assertions.assertArrayEquals(new String[]{"Alice", "name", "Bob"}, CommandParser.extractArguments("		contacts		 update 	 Alice 	  name	 Bob "));
-			Assertions.assertArrayEquals(new String[]{"Cassie", "port", "3434"}, CommandParser.extractArguments("	 contacts 	 update 	Cassie 	 port	 3434	 "));			
+			assertArrayEquals(new String[]{"Alice", "ip", "168.0.0.4"}, CommandParser.extractArguments("  contacts 	 update 	 Alice	 ip		 168.0.0.4 "));
+			assertArrayEquals(new String[]{"Alice", "name", "Bob"}, CommandParser.extractArguments("		contacts		 update 	 Alice 	  name	 Bob "));
+			assertArrayEquals(new String[]{"Cassie", "port", "3434"}, CommandParser.extractArguments("	 contacts 	 update 	Cassie 	 port	 3434	 "));			
 		}
 		
 		@Test
 		void test_extract_arguments_for_contacts_update_pk() {
-			Assertions.assertArrayEquals(new String[] {"Alicia", "pk", "\"pkForTesting_1\""}, CommandParser.extractArguments("contacts update Alicia pk \"pkForTesting_1\""));
-			Assertions.assertArrayEquals(new String[] {"Alicia", "pk", "\"nonsense_xyz.png.mp4\""}, CommandParser.extractArguments("contacts update Alicia pk \"nonsense_xyz.png.mp4\""));	
-			Assertions.assertArrayEquals(new String[] {"Alicia", "pk", "remove"}, CommandParser.extractArguments("contacts update Alicia pk remove"));
+			assertArrayEquals(new String[] {"Alicia", "pk", "\"pkForTesting_1\""}, CommandParser.extractArguments("contacts update Alicia pk \"pkForTesting_1\""));
+			assertArrayEquals(new String[] {"Alicia", "pk", "\"nonsense_xyz.png.mp4\""}, CommandParser.extractArguments("contacts update Alicia pk \"nonsense_xyz.png.mp4\""));	
+			assertArrayEquals(new String[] {"Alicia", "pk", "remove"}, CommandParser.extractArguments("contacts update Alicia pk remove"));
 		
-			Assertions.assertArrayEquals(new String[] {"Alicia", "pk", "\"pkForTesting_1\""}, CommandParser.extractArguments("	contacts  update   Alicia  pk   \"pkForTesting_1\" "));
-			Assertions.assertArrayEquals(new String[] {"Alicia", "pk", "\"nonsense_xyz.png.mp4\""}, CommandParser.extractArguments("  contacts update  Alicia pk   \"nonsense_xyz.png.mp4\"   "));	
-			Assertions.assertArrayEquals(new String[] {"Alicia", "pk", "remove"}, CommandParser.extractArguments(" contacts 	update Alicia pk   	remove "));
+			assertArrayEquals(new String[] {"Alicia", "pk", "\"pkForTesting_1\""}, CommandParser.extractArguments("	contacts  update   Alicia  pk   \"pkForTesting_1\" "));
+			assertArrayEquals(new String[] {"Alicia", "pk", "\"nonsense_xyz.png.mp4\""}, CommandParser.extractArguments("  contacts update  Alicia pk   \"nonsense_xyz.png.mp4\"   "));	
+			assertArrayEquals(new String[] {"Alicia", "pk", "remove"}, CommandParser.extractArguments(" contacts 	update Alicia pk   	remove "));
 		}
 		
 		@Test
 		void test_extract_arguments_for_contacts_search() {
-			Assertions.assertArrayEquals(new String[]{"Alice"}, CommandParser.extractArguments("contacts search Alice"));
-			Assertions.assertArrayEquals(new String[]{"Bob"}, CommandParser.extractArguments("contacts search Bob"));
+			assertArrayEquals(new String[]{"Alice"}, CommandParser.extractArguments("contacts search Alice"));
+			assertArrayEquals(new String[]{"Bob"}, CommandParser.extractArguments("contacts search Bob"));
 			
-			Assertions.assertArrayEquals(new String[]{"Alice"}, CommandParser.extractArguments("	 contacts 	 search 		Alice		"));
-			Assertions.assertArrayEquals(new String[]{"Bob"}, CommandParser.extractArguments("		contacts 		search 	 Bob		"));
+			assertArrayEquals(new String[]{"Alice"}, CommandParser.extractArguments("	 contacts 	 search 		Alice		"));
+			assertArrayEquals(new String[]{"Bob"}, CommandParser.extractArguments("		contacts 		search 	 Bob		"));
 		}
 		
 		@Test
 		void test_extract_arguments_for_contacts_show() {
-			Assertions.assertArrayEquals(new String[]{}, CommandParser.extractArguments("contacts show"));
+			assertArrayEquals(new String[]{}, CommandParser.extractArguments("contacts show"));
 		}
 	}
 	

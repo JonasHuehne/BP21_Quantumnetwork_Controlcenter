@@ -31,7 +31,7 @@ import ui.CommandHandler;
  */
 class CommandHandlerTest {
 	
-
+	private final String NO_KEY = "";
 	
 	@Nested
 	class invalid_inputs {
@@ -142,9 +142,9 @@ class CommandHandlerTest {
 		@Test
 		void contacts_remove_works() {
 			
-			Database.insert("Alexa", "127.0.0.1", 1, "NO KEY SET");
-			Database.insert("Billie", "127.0.0.2", 2, "NO KEY SET");
-			Database.insert("Charlie", "127.0.0.3", 3, "NO KEY SET");
+			Database.insert("Alexa", "127.0.0.1", 1, NO_KEY);
+			Database.insert("Billie", "127.0.0.2", 2, NO_KEY);
+			Database.insert("Charlie", "127.0.0.3", 3, NO_KEY);
 			
 			CommandHandler.processCommand("contacts remove Alexa");
 			CommandHandler.processCommand("contacts remove Billie");
@@ -157,9 +157,9 @@ class CommandHandlerTest {
 		@Test
 		void contacts_show_works() {
 			
-			Database.insert("Alexa", "127.0.0.1", 1111, "NO KEY SET");
-			Database.insert("Billie", "127.0.0.2", 2222, "NO KEY SET");
-			Database.insert("Charlie", "127.0.0.3", 3333, "NO KEY SET");
+			Database.insert("Alexa", "127.0.0.1", 1111, NO_KEY);
+			Database.insert("Billie", "127.0.0.2", 2222, NO_KEY);
+			Database.insert("Charlie", "127.0.0.3", 3333, NO_KEY);
 			
 			String shownContacts = CommandHandler.processCommand("contacts show");
 			
@@ -178,7 +178,7 @@ class CommandHandlerTest {
 		
 		@Test
 		void contacts_update_works_for_names() {
-			Database.insert("Alexa", "127.0.0.1", 1111, "NO KEY SET");
+			Database.insert("Alexa", "127.0.0.1", 1111, NO_KEY);
 			
 			CommandHandler.processCommand("contacts update Alexa name Bob");
 			
@@ -190,7 +190,7 @@ class CommandHandlerTest {
 		
 		@Test
 		void contacts_update_works_for_ips() {
-			Database.insert("Bob", "127.0.0.1", 1111, "NO KEY SET");
+			Database.insert("Bob", "127.0.0.1", 1111, NO_KEY);
 			
 			CommandHandler.processCommand("contacts update Bob IP 168.0.0.1");
 			
@@ -201,7 +201,7 @@ class CommandHandlerTest {
 		
 		@Test
 		void contacts_update_works_for_ports() {
-			Database.insert("Bob", "127.0.0.1", 1111, "NO KEY SET");
+			Database.insert("Bob", "127.0.0.1", 1111, NO_KEY);
 			
 			CommandHandler.processCommand("contacts update Bob Port 5555");
 			
@@ -212,7 +212,7 @@ class CommandHandlerTest {
 		
 		@Test
 		void contacts_update_works_for_pks() {
-			Database.insert("Alicia", "127.0.0.1", 1111, "NO KEY SET");
+			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
 			
 			CommandHandler.processCommand("contacts update Alicia pk \"pkForTesting_1\"");
 			

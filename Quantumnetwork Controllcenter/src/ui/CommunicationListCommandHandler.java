@@ -107,7 +107,7 @@ class CommunicationListCommandHandler {
 	 * 		if commandArgs[1] is "port" and commandArgs[2] can not be parsed to an integer
 	 */
 	static String handleContactsUpdate(String[] commandArgs) {
-		// Check if entry actually exists, since we can't update a non-existant entry
+		// Check if entry actually exists, since we can't update a non-existent entry
 		if(commandArgs.length != 3) 
 			throw new IllegalArgumentException("The method handleContactUpdate(commandArgs) expects an array of size 3, but size was " + commandArgs.length + ".");
 				
@@ -149,7 +149,7 @@ class CommunicationListCommandHandler {
 			}
 			break;
 		case "pk": // Updating the pk associated with a contact
-			// comandArgs[2] will either be >>remove<< or of the form >>".+"<<   ((>> << used as quotation marks here))
+			// commandArgs[2] will either be >>remove<< or of the form >>".+"<<   ((>> << used as quotation marks here))
 			// Behaviour is dependent on which of these two it is
 			
 			if(commandArgs[2].equals("remove")) { // User wishes to remove the pk associated with this contact
@@ -157,14 +157,14 @@ class CommunicationListCommandHandler {
 				if (pkDeleteSuccess) {
 					output = "Successfully updated the communication list. Contact \"" + oldName + "\" no longer has a public key associated with them.";
 				} else {
-					output = "ERROR - Could not update the contact \"" + oldName + "\" to no longer have a public key assosicated with them. " + SEE_CONSOLE;
+					output = "ERROR - Could not update the contact \"" + oldName + "\" to no longer have a public key assosciated with them. " + SEE_CONSOLE;
 				}
 			} else { // User wishes to update the pk associated with this contact / add a pk if not present
 				String pkLocation = commandArgs[2].substring(1, commandArgs[2].length() - 1); // get the location without the "" around it
 				String pkString = Authentication.readPublicKeyStringFromFile(pkLocation); // load the pk itself
 				if(pkString == null) { // If there was an error loading the pk from the file
 					output = "ERROR - Could not load the public key at location: \"" + pkLocation + "\". " + SEE_CONSOLE;
-				} else { // If the pk could be loaded, try to insert it into the data base
+				} else { // If the pk could be loaded, try to insert it into the database
 					boolean pkChangeSuccess = Database.updateSignatureKey(oldName, pkString);
 					if(pkChangeSuccess) {
 						output = "Successfully changed public key associated with \"" + oldName + "\".";
