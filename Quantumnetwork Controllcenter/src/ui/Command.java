@@ -21,9 +21,13 @@ public enum Command {
 	// https://www.vogella.com/tutorials/JavaRegularExpressions/article.html
 	// https://regex101.com/
 	
-	// TODO: If restrictions of which characters are allowed for Name & IP are created, update the patterns here accordingly
-	// Likely this would take the form of replacing . by \\w 
-	// (which stands for any word character, i.e. any letter, digit, _ or other unicode punctuation https://www.fileformat.info/info/unicode/category/Pc/list.htm)
+	/*
+	 * For the moment, the only syntax requirements enforced on names by the parser is: no whitespaces.
+	 * And the only syntax requirement enforced on IPs is that they consist of only "." and numbers (IPv4).
+	 * Semantic requirements for IPs (i.e. 256.0.555.1234 being invalid) are not enforced here.
+	 * Other naming restrictions such as Umlaute not being allowed is also not enforced here.
+	 * Enforcing these falls under the responsibility of the CommunicationList into which names & IPs are inserted.
+	 */
 	
 	HELP ("( .+)?", 
 		"The help command displays a list of available commands. "
@@ -33,24 +37,30 @@ public enum Command {
 		"Displays all contacts in the communication list."
 		+ System.lineSeparator() + System.lineSeparator()		 
 		+ "Syntax: \"contacts show\""),
-	CONTACTS_SEARCH (" .{1,255}", 
+	CONTACTS_SEARCH (" \\S{1,255}", 
 		"Searches for one entry in the communication list by name, displaying it if found. "
 		 + "If no entry of that name is found, an error message is displayed. "
 		+ System.lineSeparator() + System.lineSeparator()
 		 + "Syntax: \"contacts search <name>\""),
-	CONTACTS_REMOVE (" .{1,255}", 
+	CONTACTS_REMOVE (" \\S{1,255}", 
 		"Removes one entry in the communication list, given the name of the contact. "
 		+ "If no entry of that name is found, an error message is displayed. "
 		+ System.lineSeparator() + System.lineSeparator()
 		+ "Syntax: \"contacts remove <name>\""),
-	CONTACTS_ADD (" .{1,255} .{1,255} \\d+", 
+	CONTACTS_ADD (" \\S{1,255} (\\d|\\.){1,255} \\d+", 
 		"Adds one entry to the communication list, given the name, IP and port of the new contact. "
 		+ System.lineSeparator() + System.lineSeparator()
 		+ "If it can not be added (e.g. because an entry of that name already exists) an error message is displayed. "
 		+ "Syntax: \"contacts add <name> <ip> <port>\". "
 		+ "Name and IP can be any String up to 255 characters in length. For a normal IPv4 Adress the regular format is used, e.g. \"127.0.0.1\". "
 		+ "Port can be any Integer."),
-	CONTACTS_UPDATE (" (.{1,255} (?i)name(?-i) .{1,255})|(.{1,255} (?i)ip(?-i) .{1,255})|(.{1,255} (?i)port(?-i) \\d+)|(.{1,255} (?i)pk(?-i) ((\".+\")|remove))", 
+	CONTACTS_UPDATE (" " // Formated to make the capturing groups of the regex clearer
+			+ "(" // Because naming restrictions might change, the only name restriction enforced *here* is "no whitespaces" (for easy parsing)
+			+  "(\\S{1,255} (?i)name(?-i) \\S{1,255})" // updating the name
+			+ "|(\\S{1,255} (?i)ip(?-i) (\\d|\\.){1,255})"   // updating the ip
+			+ "|(\\S{1,255} (?i)port(?-i) \\d+)"     // updating the port
+			+ "|(\\S{1,255} (?i)pk(?-i) ((\".+\")|remove))" // updating the pk
+			+ ")", 
 		"Updates one entry in the communication list, given the name of the entry to update, the attribute to change and the new value."
 		+ "If no update can be performed (e.g. no entry with the given name exists) an error message is displayed. "
 		+ System.lineSeparator() + System.lineSeparator()

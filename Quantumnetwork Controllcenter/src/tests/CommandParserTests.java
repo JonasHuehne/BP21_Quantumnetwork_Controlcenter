@@ -233,12 +233,14 @@ class CommandParserTests {
 			assertNull(CommandParser.match("contacts update"));
 			assertNull(CommandParser.match("contacts update "));
 			assertNull(CommandParser.match("contacts update name"));
-			// assertNull(CommandParser.match("contacts update Bob name Alice ip 127.0.0.1"));
-			// assertNull(CommandParser.match("contacts update Bob name ,,,$$--+*?"));
+			assertNull(CommandParser.match("contacts update Bob name Alice ip 127.0.0.1"));
 			assertNull(CommandParser.match("contacts update Alice ip "));
-			// assertNull(CommandParser.match("contacts update Alice ip PotatoChips");
+			assertNull(CommandParser.match("contacts update Alice ip PotatoChips"));
 			assertNull(CommandParser.match("contacts update Cassie port Potato"));
 			assertNull(CommandParser.match("contacts update Alicia pk ABC"));
+			assertNull(CommandParser.match("contacts update Bob Bobbington name Alice Aliceton"));
+			assertNull(CommandParser.match("contacts update pk"));
+			assertNull(CommandParser.match("contacts update pk \"???\""));
 			
 			assertNull(CommandParser.match("     "));
 		}
