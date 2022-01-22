@@ -1,38 +1,75 @@
 package KeyStore;
 
-public class KeyStoreObject {
-    /**
-     * This Class represents an KeyStore Object which holds the real key
-     */
+/**
+ *   Class represents a KeyInformationObject Object.
+ *   Containing all the necessary Information about a certain key
+ */
 
-    private final String key;
-    private final int used; // 0=False, 1=True
+public final class KeyStoreObject {
+
     private final String keyStreamID;
+        private final byte[] keyBuffer;
+        private final int index;
+        private final String source;
+        private final String destination;
+        private final boolean used;
 
-    public KeyStoreObject(String key, int used, String keyStreamID) {
-        this.key = key;
-        this.used = used;
-        this.keyStreamID = keyStreamID;
+        public KeyStoreObject(final String keyStreamID, final byte[] keyBuffer, final  int index, final  String source, final String destination, boolean used) {
+            this.keyStreamID = keyStreamID;
+            this.keyBuffer = keyBuffer;
+            this.index = index;
+            this.source = source;
+            this.destination = destination;
+            this.used = used;
 
+        }
+
+    /**
+     *
+     * @return KeyStreamID of the entry
+     */
+    public String getID() {
+            return keyStreamID;
+        }
+
+    /**
+     *
+     * @return keyBuffer (=key) of the entry
+     */
+        public byte[] getBuffer() {
+            return keyBuffer;
+        }
+
+    /**
+     *
+     * @return Index of entry
+     */
+        public int getIndex(){
+            return index;
+        }
+
+    /**
+     *
+     * @return Source of the entry
+     */
+        public String getSource(){
+            return source;
+        }
+
+    /**
+     *
+     * @return Destination of the entry
+     */
+        public String getDestination(){
+            return destination;
+        }
+
+    /**
+     *
+     * @return boolean parameter indicating whether this key has been used already
+     */
+    public boolean getUsed(){return used;}
     }
 
-    /**
-     *
-     * @return the key from an KeyStore Object
-     */
-    public String getKey(){return key;}
 
-    /**
-     *
-     * @return the used parameter which indicates if a key has already been used
-     */
-    public int getUsed(){return used;}
-
-    /**
-     *
-     * @return the keyStreamID of an KeyStore Object
-     */
-    public String getKeyStreamID(){return keyStreamID;}
-
-}
 

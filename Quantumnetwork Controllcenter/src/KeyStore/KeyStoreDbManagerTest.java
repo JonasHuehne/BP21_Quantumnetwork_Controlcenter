@@ -21,10 +21,17 @@ class KeyStoreDbManagerTest {
     void insertToDb() {
         byte[] firstArray = "1122334455".getBytes();
         byte[] secondArray = "66778899".getBytes();
-        boolean insertBool1 = KeyStoreDbManager.insertKeyInformation("nurEineTestID_01", firstArray, 1, "vonHier", "nachHier");
-        boolean insertBool2 = KeyStoreDbManager.insertKeyInformation("nurEineTestID_02", secondArray, 2, "vonHier", "nachHier");
+        boolean insertBool1 = KeyStoreDbManager.insertToKeyStore("nurEineTestID_01", firstArray, 1, "vonHier", "nachHier", false);
+        boolean insertBool2 = KeyStoreDbManager.insertToKeyStore("nurEineTestID_02", secondArray, 2, "vonHier", "nachHier", false);
         assertEquals(true, insertBool1);
         assertEquals(true, insertBool2);
+    }
+
+    @Test
+    void failedInsertion(){
+        //KeyStreamID ist bereits in DB
+        boolean failedInsertion = KeyStoreDbManager.insertToKeyStore("nurEineTestID_01", "987364".getBytes(), 3, "100.187.878", "764937", false);
+        assertEquals(false, failedInsertion);
     }
 
     @Test
@@ -46,12 +53,14 @@ class KeyStoreDbManagerTest {
 
     @Test
     void getEntryTest() {
-        KeyInformationObject testObject = KeyStoreDbManager.getEntryFromKeyInformation("komplettNeueID");
+        KeyStoreObject testObject = KeyStoreDbManager.getEntryFromKeyStore("komplettNeueID");
         assert testObject != null;
         byte[] testBuffer = testObject.getBuffer();
         int testIndex = testObject.getIndex();
+        System.out.println(new String(testBuffer));
+        
 
-        assertEquals(66778899, testBuffer);
+        assertEquals("66778899", new String(testBuffer) );
         assertEquals(2, testIndex);
 
     }
@@ -61,60 +70,14 @@ class KeyStoreDbManagerTest {
         byte[] keyBufferArray = "1111111".getBytes();
 
         // Bei jedem weiteren Durchlauf (nach dem 1.) muss die Zeile kommentiert werden da es nicht zweimal den selben eintrag in der Datenbank geben darf!
-        KeyStoreDbManager.insertKeyInformation("NewEntryID", keyBufferArray, 1, "nirgendwo", "TuDarmstadt");
-        ArrayList<KeyInformationObject> testList = KeyStoreDbManager.getKeyInformationAsList();
+        KeyStoreDbManager.insertToKeyStore("NewEntryID", keyBufferArray, 1, "nirgendwo", "TuDarmstadt", false);
+        ArrayList<KeyStoreObject> testList = KeyStoreDbManager.getKeyStoreAsList();
 
         byte[] newEntryBuffer = testList.get(1).getBuffer(); // only 2 Entrys in DB
         assertEquals(keyBufferArray[1], newEntryBuffer[1]);
     }
 
-    /**
-     *  ------- Tests for the KeyStore Table -------
-     */
 
-    @Test
-    void insertToKeyStoreTable(){
-        KeyStoreDbManager manager = new KeyStoreDbManager();
-        boolean bool1 = KeyStoreDbManager.insertToKeyStore("super sicherer Schlüssel", 0, "ersteID");
-        boolean bool2 = KeyStoreDbManager.insertToKeyStore("2iuhfd92f7gsaao3gc<au", 0, "zweiteID");
-
-        assertEquals(true, bool1);
-        assertEquals(true, bool2);
-    }
-
-    @Test
-    void getEntryFromKeyStoretest(){
-        KeyStoreObject testObject = KeyStoreDbManager.getEntryFromKeyStore("ersteID");
-        assertEquals("super sicherer Schlüssel", testObject.getKey());
-        assertEquals(0, testObject.getUsed());
-    }
-
-    @Test
-    void changeUsedStatusTest(){
-        boolean bool1 = KeyStoreDbManager.changeKeyToUsed("ersteID");
-        assertEquals(true, bool1);
-        KeyStoreObject testObj = KeyStoreDbManager.getEntryFromKeyStore("ersteID");
-        assertEquals(1, testObj.getUsed());
-    }
-
-    @Test
-    void getAllEntriesfromKeyStoreTest(){
-        ArrayList<KeyStoreObject> testList = KeyStoreDbManager.getKeyStoreEntriesAsList();
-
-        assertEquals("2iuhfd92f7gsaao3gc<au", testList.get(1).getKey());
-        assertEquals("zweiteID", testList.get(1).getKeyStreamID());
-    }
-
-    @Test
-    void deleteKeyStoreEntryTest(){
-        boolean bool1 = KeyStoreDbManager.deleteKeyByID("zweiteID");
-        boolean bool2 = KeyStoreDbManager.deleteKeyByID("ersteID");
-
-        ArrayList<KeyStoreObject> testList = KeyStoreDbManager.getKeyStoreEntriesAsList();
-        assertEquals(true, bool1);
-        assertEquals(true, bool2);
-        assertEquals(0, testList.size());
-    }
 
 
 
