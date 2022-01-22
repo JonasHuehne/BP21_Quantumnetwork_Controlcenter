@@ -3,6 +3,7 @@ package KeyStore;
 /**
  *   Class represents a KeyInformationObject Object.
  *   Containing all the necessary Information about a certain key
+ * @author Aron Hernandez
  */
 
 public final class KeyStoreObject {

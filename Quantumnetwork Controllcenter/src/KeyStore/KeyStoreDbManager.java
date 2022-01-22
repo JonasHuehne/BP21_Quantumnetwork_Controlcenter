@@ -10,6 +10,11 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Map;
 
+/**
+ * This class supplies methods for creating, editing, getting and deleting entries from the KeyStore.db which holds all the keys
+ * @author Aron Hernandez
+ */
+
 public class KeyStoreDbManager {
     private static final String dataBaseName = "KeyStore.db";
     private static final String tableName = "KeyStorage";
