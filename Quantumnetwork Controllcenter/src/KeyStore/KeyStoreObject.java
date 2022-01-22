@@ -28,7 +28,7 @@ public final class KeyStoreObject {
      *
      * @return KeyStreamID of the entry
      */
-    public String getID() {
+    protected String getID() {
             return keyStreamID;
         }
 
@@ -36,7 +36,7 @@ public final class KeyStoreObject {
      *
      * @return keyBuffer (=key) of the entry
      */
-        public byte[] getBuffer() {
+        protected byte[] getBuffer() {
             return keyBuffer;
         }
 
@@ -44,7 +44,7 @@ public final class KeyStoreObject {
      *
      * @return Index of entry
      */
-        public int getIndex(){
+        protected int getIndex(){
             return index;
         }
 
@@ -52,7 +52,7 @@ public final class KeyStoreObject {
      *
      * @return Source of the entry
      */
-        public String getSource(){
+        protected String getSource(){
             return source;
         }
 
@@ -60,7 +60,7 @@ public final class KeyStoreObject {
      *
      * @return Destination of the entry
      */
-        public String getDestination(){
+        protected String getDestination(){
             return destination;
         }
 
@@ -68,7 +68,7 @@ public final class KeyStoreObject {
      *
      * @return boolean parameter indicating whether this key has been used already
      */
-    public boolean getUsed(){return used;}
+    protected boolean getUsed(){return used;}
     }
 
 
