@@ -1,5 +1,7 @@
 package KeyStore;
 
+import org.sqlite.SQLiteDataSource;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -8,6 +10,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -195,6 +198,10 @@ public class KeyStoreDbManager {
      * @return True if operation was successful, False otherwise
      */
     static boolean deleteKeyInformationByID(String keyStreamID){
+        if (!KeyStoreDbManager.doesKeyStreamIdExist(keyStreamID)){
+            System.err.println("Deleting Key entry from DB failed because the given keyStreamID does not exist!"  + "\n");
+            return false;
+        }
 
         try {
             String sql = "DELETE FROM " + tableName + " WHERE KeyStreamId= ?";
@@ -305,6 +312,18 @@ public class KeyStoreDbManager {
             e.printStackTrace();
             return null;
         }
+    }
+
+    static boolean doesKeyStreamIdExist(String keyStreamID){
+        List<KeyStoreObject> keyList = KeyStoreDbManager.getKeyStoreAsList();
+        List<String> keyStreamIdList = new ArrayList<>();
+        for (KeyStoreObject obj: keyList) {
+            String temp = obj.getID();
+            keyStreamIdList.add(temp);
+        }
+
+        return keyStreamIdList.contains(keyStreamID);
+
     }
 
 

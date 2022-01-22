@@ -7,6 +7,11 @@ import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ *  Class for testing the methods of KeyStoreDbManager
+ * @author Aron Hernandez
+ */
+
 class KeyStoreDbManagerTest {
 
     //Junit 5.7
@@ -45,10 +50,21 @@ class KeyStoreDbManagerTest {
     }
 
     @Test
+    void failedDeletion(){
+        boolean failedDeletionBool = KeyStoreDbManager.deleteKeyInformationByID("nichtVorhandeneID");
+        assertEquals(false, failedDeletionBool);
+    }
+
+    @Test
     void updateKeyStramIDTest() {
         boolean updateBool = KeyStoreDbManager.updateKeyStreamID(2, "komplettNeueID");
         assertEquals(true, updateBool);
         KeyStoreDbManager.selectAll();
+    }
+
+    @Test
+    void changeUsedTest(){
+        boolean changeBool = KeyStoreDbManager.changeKeyToUsed("komplettNeueID");
     }
 
     @Test
@@ -58,7 +74,7 @@ class KeyStoreDbManagerTest {
         byte[] testBuffer = testObject.getBuffer();
         int testIndex = testObject.getIndex();
         System.out.println(new String(testBuffer));
-        
+
 
         assertEquals("66778899", new String(testBuffer) );
         assertEquals(2, testIndex);
