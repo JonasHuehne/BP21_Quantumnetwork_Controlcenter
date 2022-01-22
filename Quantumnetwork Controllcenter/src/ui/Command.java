@@ -77,12 +77,11 @@ public enum Command {
 		+ "The starting directory is " + System.getProperty("user.dir") + File.separator + "SignatureKeys" + File.separator
 		+ System.lineSeparator() + System.lineSeparator()
 		+ "If you wish to remove a public key of a contact, enter: \"contacts update <name> pk remove\""),
-	
+	CONTACTS_SHOWPK ("( \\S+)", "Shows the public key of specified user." + System.lineSeparator() + "Syntax: contacts showpk <user>"),
 	
 	// DEBUG COMMANDS, NOT INTENDED AS PART OF THE FINAL PRODUCT - DEVELOPER USE ONLY
 	// FUNCTIONALITY NOT GUARANTEED
 	DEBUG_GENSIGPAIR ("", "Generates a new public and private key pair for this machine."),
-	DEBUG_SHOWPK ("( .+)", "Shows the public key of specified user." + System.lineSeparator() + "Syntax: debug showpk <user>"),
 	DEBUG_SETPK ("( .+) (.+)", 
 			"Manually sets the public key of a contact to whatever the user entered. "
 			+ "This is done directly, no file is loaded." 

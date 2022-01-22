@@ -14,7 +14,7 @@ class CommunicationListCommandHandler {
 	
 	private final static String SEE_CONSOLE = "Please see the system console for an error log.";
 	/** What to enter in the CommunicationList as the public key of an entry which currently has no key associated with it (e.g. a new contact) */
-	private final static String NO_KEY = "NO KEY SET";
+	private final static String NO_KEY = "";
 
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_ADD}. 
@@ -40,14 +40,13 @@ class CommunicationListCommandHandler {
 	
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_REMOVE}.
-	 * Removes the contact with the name given in commandArgs from the {@link Database}.
-	 * @param commandArgs
-	 * 		commandArgs[0] is the name of the contact to remove
+	 * Removes the contact with the given name from the {@link Database}.
+	 * @param name
+	 * 		the name of the contact to remove
 	 * @return
 	 * 		a String describing whether or not the contact was successfully remove from the {@link Database}
 	 */
-	static String handleContactsRemove(String[] commandArgs) {
-		String name = commandArgs[0];
+	static String handleContactsRemove(String name) {
 		boolean success = Database.delete(name);
 		if(success) {
 			return "Successfully deleted the contact \"" + name + "\" from the contact list.";
@@ -58,15 +57,14 @@ class CommunicationListCommandHandler {
 	
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_SEARCH}.
-	 * Searches for the contact with the name given in commandArgs in the {@link Database}.
-	 * @param commandArgs
-	 * 		commandArgs[0] is the name of the contact to search
+	 * Searches for the contact with the given name in the {@link Database}.
+	 * @param name
+	 * 		the name of the contact to search
 	 * @return
 	 * 		a String containing the contact's information if found <br>
 	 * 		otherwise returns a String saying that the contact could not be found
 	 */
-	static String handleContactsSearch(String[] commandArgs) {
-		String name = commandArgs[0];
+	static String handleContactsSearch(String name) {
 		DbObject query = Database.query(name);
 		if (query == null) {
 			return "ERROR - Could not find a contact with the name \"" + name + "\" in the contact list. "+ SEE_CONSOLE;
@@ -154,11 +152,22 @@ class CommunicationListCommandHandler {
 			// Behaviour is dependent on which of these two it is
 			
 			if(commandArgs[2].equals("remove")) { // User wishes to remove the pk associated with this contact
-				boolean pkDeleteSuccess = Database.updateSignatureKey(oldName, NO_KEY);
-				if (pkDeleteSuccess) {
-					output = "Successfully updated the communication list. Contact \"" + oldName + "\" no longer has a public key associated with them.";
-				} else {
-					output = "ERROR - Could not update the contact \"" + oldName + "\" to no longer have a public key assosciated with them. " + SEE_CONSOLE;
+				
+				/*
+				 * Because we don't want to display "deleted public key for ..." if there is no key to delete,
+				 * we first check if the entry has a key set. Not 100% efficient, but it should be a better UX.
+				 */
+				String oldPk = Database.query(oldName).getSignatureKey();
+				if (oldPk == null || oldPk.isBlank()) {
+					output = "Can not remove public key of contact \"" + oldName + "\" - there is no key to remove.";
+					break;
+				} else { // if pk exists, try to remove it
+					boolean pkDeleteSuccess = Database.updateSignatureKey(oldName, NO_KEY);
+					if (pkDeleteSuccess) {
+						output = "Successfully updated the communication list. Contact \"" + oldName + "\" no longer has a public key associated with them.";
+					} else {
+						output = "ERROR - Could not update the contact \"" + oldName + "\" to no longer have a public key assosciated with them. " + SEE_CONSOLE;
+					}
 				}
 			} else { // User wishes to update the pk associated with this contact / add a pk if not present
 				String pkLocation = commandArgs[2].substring(1, commandArgs[2].length() - 1); // get the location without the "" around it
@@ -182,7 +191,48 @@ class CommunicationListCommandHandler {
 		return output;
 	}
 	
+	/**
+	 * Handles the execution of the Command {@link Command#CONTACTS_SHOWPK}.
+	 * For a given contact in the list, it shows the public key associated with that contact.
+	 * @param contactName
+	 * 	the name of the contact whose pk is to be shown
+	 * @return
+	 * 	if contact could be found in the communication list and has a pk:
+	 * 	 a String containing the public key of the contact, and a description of which contact it belongs to
+	 * 	if contact could be found in the communication list, but has no pk: 
+	 * 	 a String describing that the contact has no pk associated with it <br>
+	 * 	if contact does not exist or could not be found, a String containing that information <br>
+	 */
+	static String handleShowPk(String contactName) {
+		String out;
+		DbObject contact  = Database.query(contactName);
+		
+		if(contact == null) {
+			out =  "ERROR - Could not show public key of contact \"" + contactName + "\" - no such contact could be found in the communication list.";
+		} else {
+			String publicKey = contact.getSignatureKey();
+			if (publicKey == null || publicKey.isBlank()) {
+				out = "Contact \"" + "\" has no public key associated with them.";
+			} else {
+				out = "Public Key associated with contact \""  + contactName + "\" is: " + System.lineSeparator() + contact.getSignatureKey();
+			}
+		}
+		return out;
+	}
+	
+	/**
+	 * @param dbo any {@link DbObject}
+	 * @return a simple string representation of it, containing name, ip, port and the first few symbols of its pk if set
+	 */
 	private static String dbObjectToString(DbObject dbo) {
-		return "[Name: " + dbo.getName() + " IP: " + dbo.getIpAddress() + " Port: " + dbo.getPort() + "]";
+		String out = "[Name: " + dbo.getName() + " | IP: " + dbo.getIpAddress() + " | Port: " + dbo.getPort();
+		if (dbo.getSignatureKey() == null || dbo.getSignatureKey().isBlank()) {
+			out += " | no public key set ]";
+		} else { // if the contact has a public key, display the first n symbols of it
+			final int SHORTENED_PK_LENGTH = 7;
+			String shortenedPk = dbo.getSignatureKey().substring(0, Math.min(SHORTENED_PK_LENGTH, dbo.getSignatureKey().length()));
+			out += " | public key = " + shortenedPk + "... ]";
+		}
+		return out;
 	}
 }

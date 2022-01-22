@@ -2,9 +2,6 @@ package ui;
 
 import java.util.Arrays;
 
-import CommunicationList.Database;
-import CommunicationList.DbObject;
-
 /**
  * The purpose of this class is to process text commands (given as Strings) and execute corresponding program method.
  * @author Sasha Petri
@@ -56,22 +53,21 @@ public final class CommandHandler {
 			case CONTACTS_ADD:
 				return CommunicationListCommandHandler.handleContactsAdd(commandArgs);
 			case CONTACTS_REMOVE:
-				return CommunicationListCommandHandler.handleContactsRemove(commandArgs);
+				return CommunicationListCommandHandler.handleContactsRemove(commandArgs[0]);
 			case CONTACTS_SEARCH:
-				return CommunicationListCommandHandler.handleContactsSearch(commandArgs);
+				return CommunicationListCommandHandler.handleContactsSearch(commandArgs[0]);
 			case CONTACTS_SHOW:
 				return CommunicationListCommandHandler.handleContactsShow();
 			case CONTACTS_UPDATE:
 				return CommunicationListCommandHandler.handleContactsUpdate(commandArgs);
+			case CONTACTS_SHOWPK:
+				return CommunicationListCommandHandler.handleShowPk(commandArgs[0]);
 			
 			// Debug Commands, not intended to be part of the final product, but useful for manual testing
 			case DEBUG_GENSIGPAIR:
 				return DebugCommandHandler.handleGenSigPair();
-			case DEBUG_SHOWPK:
-				return DebugCommandHandler.handleShowPk(commandArgs);
 			case DEBUG_SETPK:
 				return DebugCommandHandler.handleSetPk(commandArgs);
-			
 			default:
 				return "Not implemented yet.";
 		}

@@ -2,15 +2,12 @@ package tests;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.nio.charset.Charset;
 import java.util.Random;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import ui.Command;
 import ui.CommandParser;
@@ -334,6 +331,15 @@ class CommandParserTests {
 		@Test
 		void test_extract_arguments_for_contacts_show() {
 			assertArrayEquals(new String[]{}, CommandParser.extractArguments("contacts show"));
+		}
+		
+		@Test
+		void test_extract_arguments_for_contacts_showpk() {
+			assertArrayEquals(new String[] {"Alexa"}, CommandParser.extractArguments("contacts showpk Alexa"));
+			assertArrayEquals(new String[] {"Bobbie"}, CommandParser.extractArguments("contacts showpk Bobbie"));
+			
+			assertArrayEquals(new String[] {"Alexa"}, CommandParser.extractArguments(helper_randomizeWhiteSpace("contacts showpk Alexa")));
+			assertArrayEquals(new String[] {"Bobbie"}, CommandParser.extractArguments(helper_randomizeWhiteSpace("contacts showpk Bobbie")));
 		}
 	}
 	

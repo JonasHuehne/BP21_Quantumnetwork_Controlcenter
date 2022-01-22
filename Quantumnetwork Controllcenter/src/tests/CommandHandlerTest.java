@@ -4,10 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -89,6 +87,11 @@ class CommandHandlerTest {
 			assertEquals(Command.CONTACTS_SEARCH.getHelp(), CommandHandler.processCommand("help contacts search ip=102.35.122.49"));
 		}
 		
+		@Test
+		void help_for_gibberish_outputs_no_help_can_be_provided() {
+			String out = CommandHandler.processCommand("help udvusdeujfeifeir");
+			assertTrue(out.contains("not a valid command"));
+		}
 	}
 	
 	@Nested
@@ -226,7 +229,7 @@ class CommandHandlerTest {
 			// Now check if pk can be deleted
 			System.out.println(CommandHandler.processCommand("contacts update Alicia pk remove"));
 			Alicia = Database.query("Alicia"); // re-query needed! If we forget this, the test throws an error, because the object would still be the old result!
-			assertEquals("NO KEY SET", Alicia.getSignatureKey());
+			assertEquals(NO_KEY, Alicia.getSignatureKey());
 			
 			// TODO: There needs to be a publicly accessible "default" entry for an unset key in a constant somewhere sensible
 			// Possibly put it in the CommunicationList interface once that's finished
@@ -234,7 +237,7 @@ class CommandHandlerTest {
 		
 		@Test
 		void contacts_update_wrong_input_makes_no_changes_for_name() {
-			Database.insert("Alicia", "127.0.0.1", 1111, "NO KEY SET");
+			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
 			
 			/*
 			 * Note: Errors in this test may not neccessarily be caused by implementation issues of CommandHandler
@@ -253,7 +256,7 @@ class CommandHandlerTest {
 		
 		@Test
 		void contacts_update_wrong_input_makes_no_changes_for_ip() {
-			Database.insert("Alicia", "127.0.0.1", 1111, "NO KEY SET");
+			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
 			
 			/*
 			 * Note: Errors in this test may not neccessarily be caused by implementation issues of CommandHandler
@@ -272,7 +275,7 @@ class CommandHandlerTest {
 		
 		@Test
 		void contacts_update_wrong_input_makes_no_changes_for_port() {
-			Database.insert("Alicia", "127.0.0.1", 1111, "NO KEY SET");
+			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
 			
 			/*
 			 * Note: Errors in this test may not neccessarily be caused by implementation issues of CommandHandler
@@ -291,7 +294,7 @@ class CommandHandlerTest {
 		
 		@Test
 		void contacts_update_wrong_input_makes_no_changes_for_pk() {
-			Database.insert("Alicia", "127.0.0.1", 1111, "NO KEY SET");
+			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
 			
 			// Invalid IP
 			CommandHandler.processCommand("contacts update Alicia pk \"\"");
@@ -319,7 +322,7 @@ class CommandHandlerTest {
 		@Test
 		void contacts_search_works() {
 			
-			Database.insert("Alexa", "127.0.0.1", 45345, "NO KEY SET");
+			Database.insert("Alexa", "127.0.0.1", 45345, NO_KEY);
 			
 			String searched = CommandHandler.processCommand("contacts search Alexa");
 			
@@ -327,6 +330,50 @@ class CommandHandlerTest {
 			assertTrue(searched.contains("127.0.0.1"));
 			assertTrue(searched.contains("45345"));
 
+		}
+		
+		@Test
+		void contacts_show_pk_works() {
+			String exampleKey = "BLABLAKEYBLABLA123";
+			String exampleKey2 = "XXXXXXXXXXXXXXXXX";
+			Database.insert("Alexa", "127.0.0.1", 45345, exampleKey);
+			
+			String shouldContainKey = CommandHandler.processCommand("contacts showpk Alexa");
+			assertTrue(shouldContainKey.contains(exampleKey));
+			assertFalse(shouldContainKey.contains(exampleKey2));
+				
+			Database.updateSignatureKey("Alexa", exampleKey2);
+			String shouldContainKey2 = CommandHandler.processCommand("contacts showpk Alexa");
+			assertFalse(shouldContainKey2.contains(exampleKey));
+			assertTrue(shouldContainKey2.contains(exampleKey2));
+			
+			Database.updateSignatureKey("Alexa", "");
+			String shouldContainNeitherKey = CommandHandler.processCommand("contacts showpk Alexa");
+			assertFalse(shouldContainNeitherKey.contains(exampleKey));
+			assertFalse(shouldContainNeitherKey.contains(exampleKey));
+			
+			
+			
+		}
+		
+		@Test
+		void contacts_show_informs_user_in_edge_cases() { 
+			/*
+			 * NOTE: These tests might easily break if some string literals are changed,
+			 * which is not optimal (although it may still warn the developer if they forgot something...).
+			 * Not sure how else to automatically test for users being informed 
+			 * about a contact having no pk, or contact not existing.
+			 */
+			Database.insert("Alexa", "127.0.0.1", 45345, "");
+			
+			// user should be informed that Alexa currently has no public key associated
+			String shouldContainNoPublicKey = CommandHandler.processCommand("contacts showpk Alexa");
+			assertTrue(shouldContainNoPublicKey.contains("no public key"));
+						
+			// if trying to see the pk of 
+			Database.delete("Alexa");
+			String shouldInformUserNoSuchContact = CommandHandler.processCommand("contacts showpk Alexa");
+			assertTrue(shouldInformUserNoSuchContact.contains("no such contact"));
 		}
 		
 	}
