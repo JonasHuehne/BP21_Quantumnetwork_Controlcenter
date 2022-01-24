@@ -75,6 +75,10 @@ public class KeyStoreDbManager {
 
     }
 
+     /*
+      * TODO: <Sasha> What's going on with keyBuffer here? Is it supposed to be an int or a byte array?
+      * Why is the javadoc incomplete, and why does it call it an array of char bytes? Char is 2 bytes, not 1 byte.
+      */
 
     /** Inserts a new Entry to the DB
      *
@@ -84,7 +88,7 @@ public class KeyStoreDbManager {
      * @param source identifier for the source application
      * @param destination identifier for the destination application
      */
-    public static boolean insertToDb(  String keyStreamID, byte[] keyBuffer, int index, String source, String destination ){
+    public static boolean insertToDb(  String keyStreamID, int keyBuffer, int index, String source, String destination ){
 
         try{
             Connection conn = connect();

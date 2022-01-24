@@ -4,16 +4,15 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import CommunicationList.Database;
 import CommunicationList.DbObject;
+import MessengerSystem.Authentication;
 import ui.Command;
 import ui.CommandHandler;
 
@@ -30,7 +29,7 @@ import ui.CommandHandler;
  */
 class CommandHandlerTest {
 	
-
+	private final String NO_KEY = "";
 	
 	@Nested
 	class invalid_inputs {
@@ -84,9 +83,15 @@ class CommandHandlerTest {
 			assertEquals(Command.CONTACTS_REMOVE.getHelp(), CommandHandler.processCommand("help contacts remove Jamie"));
 			assertEquals(Command.CONTACTS_SHOW.getHelp(), CommandHandler.processCommand("help contacts show all"));
 			assertEquals(Command.CONTACTS_UPDATE.getHelp(), CommandHandler.processCommand("help contacts update name=Alexa to name=Bobbie"));
+			assertEquals(Command.CONTACTS_UPDATE.getHelp(), CommandHandler.processCommand("help contacts update pk Alicia remove"));
 			assertEquals(Command.CONTACTS_SEARCH.getHelp(), CommandHandler.processCommand("help contacts search ip=102.35.122.49"));
 		}
 		
+		@Test
+		void help_for_gibberish_outputs_no_help_can_be_provided() {
+			String out = CommandHandler.processCommand("help udvusdeujfeifeir");
+			assertTrue(out.contains("not a valid command"));
+		}
 	}
 	
 	@Nested
@@ -140,9 +145,9 @@ class CommandHandlerTest {
 		@Test
 		void contacts_remove_works() {
 			
-			Database.insert("Alexa", "127.0.0.1", 1, "NO KEY SET");
-			Database.insert("Billie", "127.0.0.2", 2, "NO KEY SET");
-			Database.insert("Charlie", "127.0.0.3", 3, "NO KEY SET");
+			Database.insert("Alexa", "127.0.0.1", 1, NO_KEY);
+			Database.insert("Billie", "127.0.0.2", 2, NO_KEY);
+			Database.insert("Charlie", "127.0.0.3", 3, NO_KEY);
 			
 			CommandHandler.processCommand("contacts remove Alexa");
 			CommandHandler.processCommand("contacts remove Billie");
@@ -155,9 +160,9 @@ class CommandHandlerTest {
 		@Test
 		void contacts_show_works() {
 			
-			Database.insert("Alexa", "127.0.0.1", 1111, "NO KEY SET");
-			Database.insert("Billie", "127.0.0.2", 2222, "NO KEY SET");
-			Database.insert("Charlie", "127.0.0.3", 3333, "NO KEY SET");
+			Database.insert("Alexa", "127.0.0.1", 1111, NO_KEY);
+			Database.insert("Billie", "127.0.0.2", 2222, NO_KEY);
+			Database.insert("Charlie", "127.0.0.3", 3333, NO_KEY);
 			
 			String shownContacts = CommandHandler.processCommand("contacts show");
 			
@@ -175,35 +180,149 @@ class CommandHandlerTest {
 		}
 		
 		@Test
-		void contacts_update_works() {
-		
-			Database.insert("Alexa", "127.0.0.1", 1111, "NO KEY SET");
+		void contacts_update_works_for_names() {
+			Database.insert("Alexa", "127.0.0.1", 1111, NO_KEY);
 			
 			CommandHandler.processCommand("contacts update Alexa name Bob");
 			
 			assertTrue(Database.queryAll().size() == 1);
 			assertNull(Database.query("Alexa"));
-			assertEquals(Database.query("Bob").getIpAddress(), "127.0.0.1");
-			assertEquals(Database.query("Bob").getPort(), 1111);
+			assertEquals("127.0.0.1", Database.query("Bob").getIpAddress());
+			assertEquals(1111, Database.query("Bob").getPort());
+		}
+		
+		@Test
+		void contacts_update_works_for_ips() {
+			Database.insert("Bob", "127.0.0.1", 1111, NO_KEY);
 			
 			CommandHandler.processCommand("contacts update Bob IP 168.0.0.1");
 			
 			assertTrue(Database.queryAll().size() == 1);
-			assertEquals(Database.query("Bob").getIpAddress(), "168.0.0.1");
-			assertEquals(Database.query("Bob").getPort(), 1111);
+			assertEquals("168.0.0.1", Database.query("Bob").getIpAddress());
+			assertEquals(1111, Database.query("Bob").getPort());		
+		}
+		
+		@Test
+		void contacts_update_works_for_ports() {
+			Database.insert("Bob", "127.0.0.1", 1111, NO_KEY);
 			
 			CommandHandler.processCommand("contacts update Bob Port 5555");
 			
 			assertTrue(Database.queryAll().size() == 1);
-			assertEquals(Database.query("Bob").getIpAddress(), "168.0.0.1");
-			assertEquals(Database.query("Bob").getPort(), 5555);
+			assertEquals("127.0.0.1", Database.query("Bob").getIpAddress());
+			assertEquals(5555, Database.query("Bob").getPort());
+		}
+		
+		@Test
+		void contacts_update_works_for_pks() {
+			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
 			
+			CommandHandler.processCommand("contacts update Alicia pk \"pkForTesting_1\"");
+			
+			// Assert that # of entries, Name, IP and Port remain unchanged
+			helper_Alicia_did_not_change();
+			
+			// Assert that pk was properly set
+			DbObject Alicia = Database.query("Alicia");
+			assertEquals(Authentication.readPublicKeyStringFromFile("pkForTesting_1"), Alicia.getSignatureKey());
+									
+			// Now check if pk can be deleted
+			System.out.println(CommandHandler.processCommand("contacts update Alicia pk remove"));
+			Alicia = Database.query("Alicia"); // re-query needed! If we forget this, the test throws an error, because the object would still be the old result!
+			assertEquals(NO_KEY, Alicia.getSignatureKey());
+			
+			// TODO: There needs to be a publicly accessible "default" entry for an unset key in a constant somewhere sensible
+			// Possibly put it in the CommunicationList interface once that's finished
+		}
+		
+		@Test
+		void contacts_update_wrong_input_makes_no_changes_for_name() {
+			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
+			
+			/*
+			 * Note: Errors in this test may not neccessarily be caused by implementation issues of CommandHandler
+			 * It may be that the currently used CommunicationList simply does not enforce restrictions such names being alphanumeric, _ and - only
+			 */
+			
+			// Invalid name
+			CommandHandler.processCommand("contacts update Alicia name Böö-$$as");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia name Mörü<m");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia name ?_++qq&");
+			helper_Alicia_did_not_change();
+			
+		}
+		
+		@Test
+		void contacts_update_wrong_input_makes_no_changes_for_ip() {
+			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
+			
+			/*
+			 * Note: Errors in this test may not neccessarily be caused by implementation issues of CommandHandler
+			 * It may be that the currently used CommunicationList simply does not enforce restrictions such as 1234 being an invalid IP
+			 */
+			
+			// Invalid IP
+			CommandHandler.processCommand("contacts update Alicia ip 555.555.555");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia ip 1234");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia ip potatoes");
+			helper_Alicia_did_not_change();
+			
+		}
+		
+		@Test
+		void contacts_update_wrong_input_makes_no_changes_for_port() {
+			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
+			
+			/*
+			 * Note: Errors in this test may not neccessarily be caused by implementation issues of CommandHandler
+			 * It may be that the currently used CommunicationList simply does not enforce restrictions such as a max port of 65535
+			 */
+			
+			// Invalid IP
+			CommandHandler.processCommand("contacts update Alicia port 1000000000");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia port ??92394..");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia port potatoes");
+			helper_Alicia_did_not_change();
+			
+		}
+		
+		@Test
+		void contacts_update_wrong_input_makes_no_changes_for_pk() {
+			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
+			
+			// Invalid IP
+			CommandHandler.processCommand("contacts update Alicia pk \"\"");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia pk \"this_file_does_not_exist.png.jpg.gif.mp3\"");
+			helper_Alicia_did_not_change();
+			CommandHandler.processCommand("contacts update Alicia pk potatoes");
+			helper_Alicia_did_not_change();
+			
+		}
+		
+		/**
+		 * Helper Method for testing that update does not change the communication list when it is not supposed to.
+		 * Checks that the communicationlist has exactly one entry, with the name "Alicia", ip "127.0.0.1" and Port 1111
+		 * Does not check the pk associated with that entry in any way
+		 */
+		private void helper_Alicia_did_not_change() {
+			assertTrue(Database.queryAll().size() == 1);
+			DbObject Alicia = Database.query("Alicia");
+			assertNotNull(Alicia);
+			assertEquals("127.0.0.1", Alicia.getIpAddress());
+			assertEquals(1111, Alicia.getPort());
 		}
 		
 		@Test
 		void contacts_search_works() {
 			
-			Database.insert("Alexa", "127.0.0.1", 45345, "NO KEY SET");
+			Database.insert("Alexa", "127.0.0.1", 45345, NO_KEY);
 			
 			String searched = CommandHandler.processCommand("contacts search Alexa");
 			
@@ -211,6 +330,50 @@ class CommandHandlerTest {
 			assertTrue(searched.contains("127.0.0.1"));
 			assertTrue(searched.contains("45345"));
 
+		}
+		
+		@Test
+		void contacts_show_pk_works() {
+			String exampleKey = "BLABLAKEYBLABLA123";
+			String exampleKey2 = "XXXXXXXXXXXXXXXXX";
+			Database.insert("Alexa", "127.0.0.1", 45345, exampleKey);
+			
+			String shouldContainKey = CommandHandler.processCommand("contacts showpk Alexa");
+			assertTrue(shouldContainKey.contains(exampleKey));
+			assertFalse(shouldContainKey.contains(exampleKey2));
+				
+			Database.updateSignatureKey("Alexa", exampleKey2);
+			String shouldContainKey2 = CommandHandler.processCommand("contacts showpk Alexa");
+			assertFalse(shouldContainKey2.contains(exampleKey));
+			assertTrue(shouldContainKey2.contains(exampleKey2));
+			
+			Database.updateSignatureKey("Alexa", "");
+			String shouldContainNeitherKey = CommandHandler.processCommand("contacts showpk Alexa");
+			assertFalse(shouldContainNeitherKey.contains(exampleKey));
+			assertFalse(shouldContainNeitherKey.contains(exampleKey));
+			
+			
+			
+		}
+		
+		@Test
+		void contacts_show_informs_user_in_edge_cases() { 
+			/*
+			 * NOTE: These tests might easily break if some string literals are changed,
+			 * which is not optimal (although it may still warn the developer if they forgot something...).
+			 * Not sure how else to automatically test for users being informed 
+			 * about a contact having no pk, or contact not existing.
+			 */
+			Database.insert("Alexa", "127.0.0.1", 45345, "");
+			
+			// user should be informed that Alexa currently has no public key associated
+			String shouldContainNoPublicKey = CommandHandler.processCommand("contacts showpk Alexa");
+			assertTrue(shouldContainNoPublicKey.contains("no public key"));
+						
+			// if trying to see the pk of 
+			Database.delete("Alexa");
+			String shouldInformUserNoSuchContact = CommandHandler.processCommand("contacts showpk Alexa");
+			assertTrue(shouldInformUserNoSuchContact.contains("no such contact"));
 		}
 		
 	}

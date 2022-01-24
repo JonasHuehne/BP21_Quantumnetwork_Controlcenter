@@ -2,14 +2,11 @@ package ui;
 
 import java.util.Arrays;
 
-import CommunicationList.Database;
-import CommunicationList.DbObject;
-
 /**
  * The purpose of this class is to process text commands (given as Strings) and execute corresponding program method.
  * @author Sasha Petri
  */
-final public class CommandHandler {
+public final class CommandHandler {
 
 	private CommandHandler() {
 		
@@ -25,7 +22,7 @@ final public class CommandHandler {
 	 */
 	
 	
-	// Generally intended to be used in {@link ConsoleUI}, but is independend of that class and could for example just as well be used with sysin / sysout
+	// Generally intended to be used in {@link ConsoleUI}, but is independent of that class and could for example just as well be used with sysin / sysout
 	/**
 	 * Processes a given text command and executes the corresponding program method.
 	 * @param textCommand
@@ -36,7 +33,7 @@ final public class CommandHandler {
 	 * @throws IllegalArgumentException
 	 * 		if the entered command is null
 	 */
-	public static String processCommand(final String textCommand) throws IllegalArgumentException {
+	public static String processCommand(String textCommand) throws IllegalArgumentException {
 		
 		/*
 		 *  We could just return INVALID_COMMAND here, however, if the input is null, 
@@ -56,29 +53,37 @@ final public class CommandHandler {
 			case CONTACTS_ADD:
 				return CommunicationListCommandHandler.handleContactsAdd(commandArgs);
 			case CONTACTS_REMOVE:
-				return CommunicationListCommandHandler.handleContactsRemove(commandArgs);
+				return CommunicationListCommandHandler.handleContactsRemove(commandArgs[0]);
 			case CONTACTS_SEARCH:
-				return CommunicationListCommandHandler.handleContactsSearch(commandArgs);
+				return CommunicationListCommandHandler.handleContactsSearch(commandArgs[0]);
 			case CONTACTS_SHOW:
 				return CommunicationListCommandHandler.handleContactsShow();
 			case CONTACTS_UPDATE:
 				return CommunicationListCommandHandler.handleContactsUpdate(commandArgs);
+			case CONTACTS_SHOWPK:
+				return CommunicationListCommandHandler.handleShowPk(commandArgs[0]);
+			
+			// Debug Commands, not intended to be part of the final product, but useful for manual testing
+			case DEBUG_GENSIGPAIR:
+				return DebugCommandHandler.handleGenSigPair();
+			case DEBUG_SETPK:
+				return DebugCommandHandler.handleSetPk(commandArgs);
 			default:
 				return "Not implemented yet.";
 		}
 	}
 	
 	/**
-	 * This method is used to handle the case of an user entering an invalid command. <p>
+	 * This method is used to handle the case of a user entering an invalid command. <p>
 	 * A command can be invalid either because it is not recognized (textCommand does not correspond to a commandName of any {@link Command})
 	 * or because the syntax of the command was wrong (e.g. "contacts update Bob port Potato").
 	 * @param textCommand
-	 * 		a command entered by an user, which can not be executed 
+	 * 		a command entered by a user, which can not be executed 
 	 * @return
-	 * 		a String informing the user that the command is unrecognized, if it does not correspond to any command in {@link Commands} <p>
+	 * 		a String informing the user that the command is unrecognized, if it does not correspond to any command in {@link Command} <p>
 	 * 		or a String informing the user that the command could not be executed with the given arguments if the syntax was wrong
 	 */
-	private static String handleInvalidCommand(final String textCommand) {
+	private static String handleInvalidCommand(String textCommand) {
 		// See if the user has entered a valid command (but with an unrecognized syntax)
 		Command potentiallyValidCommand = CommandParser.getCommandOfName(textCommand, false);
 		if (potentiallyValidCommand == null) {
@@ -102,10 +107,10 @@ final public class CommandHandler {
 	 * 		this method returns help for that command <br>
 	 * 		if neither of these two cases applies, an error message is returned that no help can be provided, because commandArgs does not contain a valid command name
 	 */
-	private static String handleHelp(final String[] commandArgs) {
+	private static String handleHelp(String[] commandArgs) {
 		if(commandArgs.length == 0) { // User typed just "help"
 			String availableCommands = "Available Commands: " + System.lineSeparator();
-			for (Command c : Arrays.asList(Command.values())) { // TODO Potentially add a "short help text" for each Command, either in Command or a seperate enum
+			for (Command c : Arrays.asList(Command.values())) { // TODO Potentially add a "short help text" for each Command, either in Command or a separate enum
 				availableCommands += " " + c.getCommandName() + System.lineSeparator();
 			}
 			availableCommands += "Enter help <commandName> for additional information on a command";

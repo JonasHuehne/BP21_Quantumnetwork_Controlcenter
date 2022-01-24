@@ -1,6 +1,6 @@
 package ui;
 
-import java.util.Locale;
+import java.io.File;
 
 /**
  * This enum contains the list of available console commands.
@@ -21,9 +21,13 @@ public enum Command {
 	// https://www.vogella.com/tutorials/JavaRegularExpressions/article.html
 	// https://regex101.com/
 	
-	// TODO: If restrictions of which characters are allowed for Name & IP are created, update the patterns here accordingly
-	// Likely this would take the form of replacing . by \\w 
-	// (which stands for any word character, i.e. any letter, digit, _ or other unicode punctuation https://www.fileformat.info/info/unicode/category/Pc/list.htm)
+	/*
+	 * For the moment, the only syntax requirements enforced on names by the parser is: no whitespaces.
+	 * And the only syntax requirement enforced on IPs is that they consist of only "." and numbers (IPv4).
+	 * Semantic requirements for IPs (i.e. 256.0.555.1234 being invalid) are not enforced here.
+	 * Other naming restrictions such as Umlaute not being allowed is also not enforced here.
+	 * Enforcing these falls under the responsibility of the CommunicationList into which names & IPs are inserted.
+	 */
 	
 	HELP ("( .+)?", 
 		"The help command displays a list of available commands. "
@@ -31,29 +35,59 @@ public enum Command {
 		 + "When describing the syntax of a command <argument> describes a mandatory argument, while [argument] describes an optional argument."),
 	CONTACTS_SHOW ("", 
 		"Displays all contacts in the communication list."
-		 + "Syntax: \"contacts show\""),
-	CONTACTS_SEARCH (" .{1,255}", 
+		+ System.lineSeparator() + System.lineSeparator()		 
+		+ "Syntax: \"contacts show\""),
+	CONTACTS_SEARCH (" \\S{1,255}", 
 		"Searches for one entry in the communication list by name, displaying it if found. "
 		 + "If no entry of that name is found, an error message is displayed. "
+		+ System.lineSeparator() + System.lineSeparator()
 		 + "Syntax: \"contacts search <name>\""),
-	CONTACTS_REMOVE (" .{1,255}", 
+	CONTACTS_REMOVE (" \\S{1,255}", 
 		"Removes one entry in the communication list, given the name of the contact. "
 		+ "If no entry of that name is found, an error message is displayed. "
+		+ System.lineSeparator() + System.lineSeparator()
 		+ "Syntax: \"contacts remove <name>\""),
-	CONTACTS_ADD (" .{1,255} .{1,255} \\d+", 
+	CONTACTS_ADD (" \\S{1,255} (\\d|\\.){1,255} \\d+", 
 		"Adds one entry to the communication list, given the name, IP and port of the new contact. "
+		+ "To add a public key to the contact for authenticated communication, please use the \"contacts update\" command."
+		+ System.lineSeparator() + System.lineSeparator()
 		+ "If it can not be added (e.g. because an entry of that name already exists) an error message is displayed. "
 		+ "Syntax: \"contacts add <name> <ip> <port>\". "
 		+ "Name and IP can be any String up to 255 characters in length. For a normal IPv4 Adress the regular format is used, e.g. \"127.0.0.1\". "
 		+ "Port can be any Integer."),
-	CONTACTS_UPDATE (" (.{1,255} (?i)name(?-i) .{1,255})|(.{1,255} (?i)ip(?-i) .{1,255})|(.{1,255} (?i)port(?-i) \\d+)", 
+	CONTACTS_UPDATE (" " // Formated to make the capturing groups of the regex clearer
+			+ "(" // Because naming restrictions might change, the only name restriction enforced *here* is "no whitespaces" (for easy parsing)
+			+  "(\\S{1,255} (?i)name(?-i) \\S{1,255})" // updating the name
+			+ "|(\\S{1,255} (?i)ip(?-i) (\\d|\\.){1,255})"   // updating the ip
+			+ "|(\\S{1,255} (?i)port(?-i) \\d+)"     // updating the port
+			+ "|(\\S{1,255} (?i)pk(?-i) ((\".+\")|remove))" // updating the pk
+			+ ")", 
 		"Updates one entry in the communication list, given the name of the entry to update, the attribute to change and the new value."
 		+ "If no update can be performed (e.g. no entry with the given name exists) an error message is displayed. "
+		+ System.lineSeparator() + System.lineSeparator()
 		+ "Syntax \"contacts update <name> <attr> <value>\". "
 		+ "The argument <name> specifies the entry to change, "
-		+ "<attr> may be either \"name\", \"ip\" or \"port\", specifying the attribute to change, "
-		+ "<value> is the new value that the given attribute is to be set to. "
-		+ "Example: \"contacts update Bob name Bobbie\"")
+		+ "<attr> may be either \"name\", \"ip\", \"port\" or \"pk\", specifying the attribute to change, "
+		+ "<value> is the new value that the given attribute is to be set to. " + System.lineSeparator()
+		+ "Example: \"contacts update Bob name Bobbie\"" 
+		+ System.lineSeparator() + System.lineSeparator()
+		+ "Adding a public key: If <attr> is \"pk\" then <value> will have to be the path to the public key file. "
+		+ "The path will have to be given in quotation marks to avoid issues with white spaces, e.g. the command would be:" + System.lineSeparator()
+		+ "contacts update Bob pk \"name_of_public_key_file\"" + System.lineSeparator()
+		+ "Currently accepted file formats are: .pub  -  For now, please enter the file name without the extension" + System.lineSeparator()
+		+ "The starting directory is " + System.getProperty("user.dir") + File.separator + "SignatureKeys" + File.separator
+		+ System.lineSeparator() + System.lineSeparator()
+		+ "If you wish to remove a public key of a contact, enter: \"contacts update <name> pk remove\""),
+	CONTACTS_SHOWPK ("( \\S+)", "Shows the public key of specified user." + System.lineSeparator() + "Syntax: contacts showpk <user>"),
+	
+	// DEBUG COMMANDS, NOT INTENDED AS PART OF THE FINAL PRODUCT - DEVELOPER USE ONLY
+	// FUNCTIONALITY NOT GUARANTEED
+	DEBUG_GENSIGPAIR ("", "Generates a new public and private key pair for this machine."),
+	DEBUG_SETPK ("( .+) (.+)", 
+			"Manually sets the public key of a contact to whatever the user entered. "
+			+ "This is done directly, no file is loaded." 
+			+ System.lineSeparator() + " Syntax: debug setpk <user> <newpk>")
+	
 	;
 	
 	/** Unique name of the command, in lower case */
@@ -73,8 +107,8 @@ public enum Command {
 	 * @param helpText
 	 * 		The help text of a command describes its proper syntax in natural language, as well as its function.
 	 */
-	Command (final String argumentsSyntax, final String helpText) {
-		this.commandName = this.name().toLowerCase(Locale.ENGLISH).replace('_', ' ');
+	Command (String argumentsSyntax, String helpText) {
+		this.commandName = this.name().toLowerCase().replace('_', ' ');
 		// Command name is insensitive, rest of the command is case sensitive
 		this.commandPattern = "(?i)" + commandName + "(?-i)" + argumentsSyntax;
 		this.helpText = helpText;
