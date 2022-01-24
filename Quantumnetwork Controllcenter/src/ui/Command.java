@@ -49,6 +49,7 @@ public enum Command {
 		+ "Syntax: \"contacts remove <name>\""),
 	CONTACTS_ADD (" \\S{1,255} (\\d|\\.){1,255} \\d+", 
 		"Adds one entry to the communication list, given the name, IP and port of the new contact. "
+		+ "To add a public key to the contact for authenticated communication, please use the \"contacts update\" command."
 		+ System.lineSeparator() + System.lineSeparator()
 		+ "If it can not be added (e.g. because an entry of that name already exists) an error message is displayed. "
 		+ "Syntax: \"contacts add <name> <ip> <port>\". "
@@ -73,7 +74,7 @@ public enum Command {
 		+ "Adding a public key: If <attr> is \"pk\" then <value> will have to be the path to the public key file. "
 		+ "The path will have to be given in quotation marks to avoid issues with white spaces, e.g. the command would be:" + System.lineSeparator()
 		+ "contacts update Bob pk \"name_of_public_key_file\"" + System.lineSeparator()
-		+ "Currently accepted file formats are: .pub" + System.lineSeparator()
+		+ "Currently accepted file formats are: .pub  -  For now, please enter the file name without the extension" + System.lineSeparator()
 		+ "The starting directory is " + System.getProperty("user.dir") + File.separator + "SignatureKeys" + File.separator
 		+ System.lineSeparator() + System.lineSeparator()
 		+ "If you wish to remove a public key of a contact, enter: \"contacts update <name> pk remove\""),
