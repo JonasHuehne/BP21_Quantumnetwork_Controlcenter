@@ -344,7 +344,7 @@ public class KeyStoreDbManager {
 
     }
 
-    /**
+    /*
      *  ------ API Methods ------
      */
 
