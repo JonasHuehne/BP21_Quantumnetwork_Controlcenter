@@ -1,25 +1,27 @@
 package KeyStore;
 
+/**
+ *   Class represents a KeyInformationObject Object.
+ *   Containing all the necessary Information about a certain key
+ * @author Aron Hernandez
+ */
+
 public final class KeyStoreObject {
 
-    /**
-     *   Class represents a KeyStore Object.
-     *   Containing all the necessary Information about a certain key
-     */
-
-
     private final String keyStreamID;
-        private final int keyBuffer;
+        private final byte[] keyBuffer;
         private final int index;
         private final String source;
         private final String destination;
+        private final boolean used;
 
-        public KeyStoreObject(final String keyStreamID, final int keyBuffer,final  int index,final  String source,final String destination) {
+        public KeyStoreObject(final String keyStreamID, final byte[] keyBuffer, final  int index, final  String source, final String destination, boolean used) {
             this.keyStreamID = keyStreamID;
             this.keyBuffer = keyBuffer;
             this.index = index;
             this.source = source;
             this.destination = destination;
+            this.used = used;
 
         }
 
@@ -27,15 +29,15 @@ public final class KeyStoreObject {
      *
      * @return KeyStreamID of the entry
      */
-    public String getID() {
+    protected String getID() {
             return keyStreamID;
         }
 
     /**
      *
-     * @return Buffer of the entry
+     * @return keyBuffer (=key) of the entry
      */
-        public int getBuffer() {
+        protected byte[] getKeyBuffer() {
             return keyBuffer;
         }
 
@@ -43,7 +45,7 @@ public final class KeyStoreObject {
      *
      * @return Index of entry
      */
-        public int getIndex(){
+        protected int getIndex(){
             return index;
         }
 
@@ -51,7 +53,7 @@ public final class KeyStoreObject {
      *
      * @return Source of the entry
      */
-        public String getSource(){
+        protected String getSource(){
             return source;
         }
 
@@ -59,9 +61,16 @@ public final class KeyStoreObject {
      *
      * @return Destination of the entry
      */
-        public String getDestination(){
+        protected String getDestination(){
             return destination;
         }
 
+    /**
+     *
+     * @return boolean parameter indicating whether this key has been used already
+     */
+    protected boolean getUsed(){return used;}
     }
+
+
 
