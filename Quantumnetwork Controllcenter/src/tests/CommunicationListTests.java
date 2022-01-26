@@ -1,13 +1,14 @@
 package tests;
 
 import CommunicationList.Database;
+import CommunicationList.SQLiteDatabase;
 import CommunicationList.DbObject;
 
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -16,112 +17,115 @@ import org.junit.jupiter.api.Test;
  */
 class CommunicationListTests {
 
-    @BeforeAll
+    Database db;
+
+    @BeforeEach
     // only works if no problem with delete and queryAll
-    static void setup() {
-        ArrayList<DbObject> entries = Database.queryAll();
+    void setup() {
+        db = new SQLiteDatabase();
+        ArrayList<DbObject> entries = db.queryAll();
         for (DbObject e : entries) {
-            Database.delete(e.getName());
+            db.delete(e.getName());
         }
     }
 
     @AfterEach
     // only works if no problem with delete and queryAll
     void cleanUp() {
-        ArrayList<DbObject> entries = Database.queryAll();
+        ArrayList<DbObject> entries = db.queryAll();
         for (DbObject e : entries) {
-            Database.delete(e.getName());
+            db.delete(e.getName());
         }
     }
 
     @Test
     void testInsertDelete() {
-        boolean result1 = Database.insert("Name1", "155.155.155.155", 5, "ABC");
+        boolean result1 = db.insert("Name1", "155.155.155.155", 5, "ABC");
         Assertions.assertTrue(result1);
-        boolean result2 = Database.insert("Name2", "166.166.166.166", 7, "");
+        boolean result2 = db.insert("Name2", "166.166.166.166", 7, "");
         Assertions.assertTrue(result2);
 
-        boolean result3 = Database.delete("Name1");
+        boolean result3 = db.delete("Name1");
         Assertions.assertTrue(result3);
-        DbObject result4 = Database.query("Name2");
+        DbObject result4 = db.query("Name2");
         Assertions.assertNotNull(result4);
 
-        boolean result5 = Database.delete("Name3");
+        boolean result5 = db.delete("Name3");
         Assertions.assertTrue(result5);
-        DbObject result6 = Database.query("Name2");
+        DbObject result6 = db.query("Name2");
         Assertions.assertNotNull(result6);
 
         Assertions.assertThrows(IllegalArgumentException.class,
-                () -> Database.delete(null),
+                () -> db.delete(null),
                 "Input was null");
 
-        boolean result7 = Database.insert(null, "0.0.0.0", 5, "");
+        boolean result7 = db.insert(null, "0.0.0.0", 5, "");
         Assertions.assertFalse(result7);
-        int result8 = Database.queryAll().size();
+        int result8 = db.queryAll().size();
         Assertions.assertEquals(1, result8);
 
-        boolean result9 = Database.insert("Name4", null, 5, "");
+        boolean result9 = db.insert("Name4", null, 5, "");
         Assertions.assertFalse(result9);
-        DbObject result10 = Database.query("Name4");
+        DbObject result10 = db.query("Name4");
         Assertions.assertNull(result10);
 
-        boolean result11 = Database.insert("Name5", "2.2.2.2", 6, null);
+        boolean result11 = db.insert("Name5", "2.2.2.2", 6, null);
         Assertions.assertTrue(result11);
-        DbObject result12 = Database.query("Name5");
+        DbObject result12 = db.query("Name5");
         Assertions.assertNull(result12.getSignatureKey());
     }
 
     @Test
     void testUpdate() {
-        boolean result1 = Database.insert("Name1", "155.155.155.155", 5, "ABC");
+        boolean result1 = db.insert("Name1", "155.155.155.155", 5, "ABC");
         Assertions.assertTrue(result1);
 
-        boolean result2 = Database.updateName("Name1", "Name2");
+        boolean result2 = db.updateName("Name1", "Name2");
         Assertions.assertTrue(result2);
-        DbObject result3 = Database.query("Name1");
+        DbObject result3 = db.query("Name1");
         Assertions.assertNull(result3);
-        DbObject result4 = Database.query("Name2");
+        DbObject result4 = db.query("Name2");
         Assertions.assertNotNull(result4);
 
-        boolean result5 = Database.updateIP("Name2", "144.144.144.144");
+        boolean result5 = db.updateIP("Name2", "144.144.144.144");
         Assertions.assertTrue(result5);
-        String result6 = Database.query("Name2").getIpAddress();
+        String result6 = db.query("Name2").getIpAddress();
         Assertions.assertEquals("144.144.144.144", result6);
 
-        boolean result7 = Database.updatePort("Name2", 7);
+        boolean result7 = db.updatePort("Name2", 7);
         Assertions.assertTrue(result7);
-        int result8 = Database.query("Name2").getPort();
+        int result8 = db.query("Name2").getPort();
         Assertions.assertEquals(7, result8);
 
-        boolean result9 = Database.updateSignatureKey("Name2", "DEF");
+        boolean result9 = db.updateSignatureKey("Name2", "DEF");
         Assertions.assertTrue(result9);
-        String result10 = Database.query("Name2").getSignatureKey();
+        String result10 = db.query("Name2").getSignatureKey();
         Assertions.assertEquals("DEF", result10);
 
-        boolean result11 = Database.updateName("Name2", null);
+        boolean result11 = db.updateName("Name2", null);
         Assertions.assertFalse(result11);
-        DbObject result12 = Database.query("Name2");
+        DbObject result12 = db.query("Name2");
         Assertions.assertNotNull(result12);
 
-        boolean result13 = Database.updateIP("Name2", null);
+        boolean result13 = db.updateIP("Name2", null);
         Assertions.assertFalse(result13);
-        String result14 = Database.query("Name2").getIpAddress();
+        String result14 = db.query("Name2").getIpAddress();
         Assertions.assertEquals("144.144.144.144", result14);
     }
 
     @Test
     void testQuery() {
-        Database.insert("Name1", "155.155.155.155", 5, "ABC");
-        Database.insert("Name2", "154.154.154.154", 7, "DEF");
-        Database.insert("Name3", "133.133.133.133", 2, "GHI");
+        db.insert("Name1", "155.155.155.155", 5, "ABC");
+        db.insert("Name2", "154.154.154.154", 7, "DEF");
+        db.insert("Name3", "133.133.133.133", 2, "GHI");
 
-        DbObject testObject1 = Database.query("Name2");
+        DbObject testObject1 = db.query("Name2");
         Assertions.assertEquals("Name2", testObject1.getName());
         Assertions.assertEquals("154.154.154.154", testObject1.getIpAddress());
         Assertions.assertEquals(7, testObject1.getPort());
         Assertions.assertEquals("DEF", testObject1.getSignatureKey());
 
-        DbObject testObject2 = Database.query("Name1");
+        DbObject testObject2 = db.query("Name1");
         Assertions.assertEquals("Name1", testObject2.getName());
         Assertions.assertEquals("155.155.155.155", testObject2.getIpAddress());
         Assertions.assertEquals(5, testObject2.getPort());
@@ -130,11 +134,11 @@ class CommunicationListTests {
 
     @Test
     void testQueryAll() {
-        Database.insert("Name1", "155.155.155.155", 5, "ABC");
-        Database.insert("Name2", "154.154.154.154", 7, "DEF");
-        Database.insert("Name3", "133.133.133.133", 2, "GHI");
+        db.insert("Name1", "155.155.155.155", 5, "ABC");
+        db.insert("Name2", "154.154.154.154", 7, "DEF");
+        db.insert("Name3", "133.133.133.133", 2, "GHI");
 
-        ArrayList<DbObject> testList = Database.queryAll();
+        ArrayList<DbObject> testList = db.queryAll();
         Assertions.assertEquals("Name1", testList.get(0).getName());
         Assertions.assertEquals(7, testList.get(1).getPort());
         Assertions.assertEquals("133.133.133.133", testList.get(2).getIpAddress());
@@ -143,155 +147,155 @@ class CommunicationListTests {
 
     @Test
     void testFalseIP() {
-        boolean result1 = Database.insert("Name1", "abc", 5, "ABC");
+        boolean result1 = db.insert("Name1", "abc", 5, "ABC");
         Assertions.assertFalse(result1);
-        DbObject result2 = Database.query("Name1");
+        DbObject result2 = db.query("Name1");
         Assertions.assertNull(result2);
 
-        boolean result3 = Database.insert("Name2", "1555.155.155.155", 5, "");
+        boolean result3 = db.insert("Name2", "1555.155.155.155", 5, "");
         Assertions.assertFalse(result3);
-        DbObject result4 = Database.query("Name2");
+        DbObject result4 = db.query("Name2");
         Assertions.assertNull(result4);
 
-        boolean result5 = Database.insert("Name3", "155.155.555.155", 5, "");
+        boolean result5 = db.insert("Name3", "155.155.555.155", 5, "");
         Assertions.assertFalse(result5);
-        DbObject result6 = Database.query("Name3");
+        DbObject result6 = db.query("Name3");
         Assertions.assertNull(result6);
 
-        boolean result7 = Database.insert("Name4", "299.299.299.299", 5, "");
+        boolean result7 = db.insert("Name4", "299.299.299.299", 5, "");
         Assertions.assertFalse(result7);
-        DbObject result8 = Database.query("Name4");
+        DbObject result8 = db.query("Name4");
         Assertions.assertNull(result8);
 
-        boolean result9 = Database.insert("Name5", "1.1.256.1", 5, "");
+        boolean result9 = db.insert("Name5", "1.1.256.1", 5, "");
         Assertions.assertFalse(result9);
-        DbObject result10 = Database.query("Name5");
+        DbObject result10 = db.query("Name5");
         Assertions.assertNull(result10);
 
-        Database.insert("Name6", "155.155.155.155", 5, "");
-        boolean result11 = Database.updateIP("Name6", "1.1.1.288");
+        db.insert("Name6", "155.155.155.155", 5, "");
+        boolean result11 = db.updateIP("Name6", "1.1.1.288");
         Assertions.assertFalse(result11);
-        String result12 = Database.query("Name6").getIpAddress();
+        String result12 = db.query("Name6").getIpAddress();
         Assertions.assertEquals("155.155.155.155", result12);
     }
 
     @Test
     void testCorrectIP() {
-        boolean result1 = Database.insert("Name1", "5.5.5.5", 5, "");
+        boolean result1 = db.insert("Name1", "5.5.5.5", 5, "");
         Assertions.assertTrue(result1);
-        DbObject result2 = Database.query("Name1");
+        DbObject result2 = db.query("Name1");
         Assertions.assertNotNull(result2);
 
-        boolean result3 = Database.insert("Name2", "255.255.255.255", 5, "");
+        boolean result3 = db.insert("Name2", "255.255.255.255", 5, "");
         Assertions.assertTrue(result3);
-        DbObject result4 = Database.query("Name2");
+        DbObject result4 = db.query("Name2");
         Assertions.assertNotNull(result4);
 
-        boolean result5 = Database.insert("Name3", "0.0.0.0", 8, "");
+        boolean result5 = db.insert("Name3", "0.0.0.0", 8, "");
         Assertions.assertTrue(result5);
-        DbObject result6 = Database.query("Name3");
+        DbObject result6 = db.query("Name3");
         Assertions.assertNotNull(result6);
     }
 
     @Test
     void testFalseName() {
-        boolean result1 = Database.insert("Näme", "5.5.5.5", 5, "");
+        boolean result1 = db.insert("Näme", "5.5.5.5", 5, "");
         Assertions.assertFalse(result1);
-        DbObject result2 = Database.query("Näme");
+        DbObject result2 = db.query("Näme");
         Assertions.assertNull(result2);
 
-        Database.insert("Name1", "5.5.5.5", 5, "");
-        boolean result3 = Database.updateName("Name1", "Nöme");
+        db.insert("Name1", "5.5.5.5", 5, "");
+        boolean result3 = db.updateName("Name1", "Nöme");
         Assertions.assertFalse(result3);
-        DbObject result4 = Database.query("Nöme");
-        DbObject result5 = Database.query("Name1");
+        DbObject result4 = db.query("Nöme");
+        DbObject result5 = db.query("Name1");
         Assertions.assertNull(result4);
         Assertions.assertNotNull(result5);
 
-        boolean result6 = Database.insert("Nameß", "5.5.5.5", 5, "");
+        boolean result6 = db.insert("Nameß", "5.5.5.5", 5, "");
         Assertions.assertFalse(result6);
-        DbObject result7 = Database.query("Nameß");
+        DbObject result7 = db.query("Nameß");
         Assertions.assertNull(result7);
 
-        boolean result8 = Database.insert("Name\\", "5.5.5.5", 5, "");
+        boolean result8 = db.insert("Name\\", "5.5.5.5", 5, "");
         Assertions.assertFalse(result8);
-        DbObject result9 = Database.query("Name\\");
+        DbObject result9 = db.query("Name\\");
         Assertions.assertNull(result9);
 
-        boolean result10 = Database.insert("Name 2", "5.5.5.5", 5, "");
+        boolean result10 = db.insert("Name 2", "5.5.5.5", 5, "");
         Assertions.assertFalse(result10);
-        DbObject result11 = Database.query("Name 2");
+        DbObject result11 = db.query("Name 2");
         Assertions.assertNull(result11);
     }
 
     @Test
     void testCorrectName() {
-        boolean result1 = Database.insert("Name_1", "5.5.5.5", 5, "");
+        boolean result1 = db.insert("Name_1", "5.5.5.5", 5, "");
         Assertions.assertTrue(result1);
-        DbObject result2 = Database.query("Name_1");
+        DbObject result2 = db.query("Name_1");
         Assertions.assertNotNull(result2);
 
-        boolean result3 = Database.insert("Name-2", "6.6.6.6", 6, "");
+        boolean result3 = db.insert("Name-2", "6.6.6.6", 6, "");
         Assertions.assertTrue(result3);
-        DbObject result4 = Database.query("Name-2");
+        DbObject result4 = db.query("Name-2");
         Assertions.assertNotNull(result4);
     }
 
     @Test
     void testFalsePort() {
-        boolean result1 = Database.insert("Name1", "5.5.5.5", -20, "");
+        boolean result1 = db.insert("Name1", "5.5.5.5", -20, "");
         Assertions.assertFalse(result1);
-        DbObject result2 = Database.query("Name1");
+        DbObject result2 = db.query("Name1");
         Assertions.assertNull(result2);
 
-        boolean result3 = Database.insert("Name2", "5.5.5.5", -1, "");
+        boolean result3 = db.insert("Name2", "5.5.5.5", -1, "");
         Assertions.assertFalse(result3);
-        DbObject result4 = Database.query("Name2");
+        DbObject result4 = db.query("Name2");
         Assertions.assertNull(result4);
 
-        boolean result5 = Database.insert("Name3", "5.5.5.5", 65536, "");
+        boolean result5 = db.insert("Name3", "5.5.5.5", 65536, "");
         Assertions.assertFalse(result5);
-        DbObject result6 = Database.query("Name3");
+        DbObject result6 = db.query("Name3");
         Assertions.assertNull(result6);
 
-        Database.insert("Name4", "5.5.5.5", 4, "");
-        boolean result7 = Database.updatePort("Name4", 70000);
+        db.insert("Name4", "5.5.5.5", 4, "");
+        boolean result7 = db.updatePort("Name4", 70000);
         Assertions.assertFalse(result7);
-        int result8 = Database.query("Name4").getPort();
+        int result8 = db.query("Name4").getPort();
         Assertions.assertEquals(4, result8);
     }
 
     @Test
     void testCorrectPort() {
-        boolean result1 = Database.insert("Name1", "5.5.5.5", 0, "");
+        boolean result1 = db.insert("Name1", "5.5.5.5", 0, "");
         Assertions.assertTrue(result1);
-        int result2 = Database.query("Name1").getPort();
+        int result2 = db.query("Name1").getPort();
         Assertions.assertEquals(0, result2);
 
-        boolean result3 = Database.updatePort("Name1", 65535);
+        boolean result3 = db.updatePort("Name1", 65535);
         Assertions.assertTrue(result3);
-        int result4 = Database.query("Name1").getPort();
+        int result4 = db.query("Name1").getPort();
         Assertions.assertEquals(65535, result4);
     }
 
     @Test
     void testFalseIpPortPair() {
-        Database.insert("Name1", "5.5.5.5", 0, "");
-        boolean result1 = Database.insert("Name2", "5.5.5.5", 0, "");
+        db.insert("Name1", "5.5.5.5", 0, "");
+        boolean result1 = db.insert("Name2", "5.5.5.5", 0, "");
         Assertions.assertFalse(result1);
-        DbObject result2 = Database.query("Name2");
+        DbObject result2 = db.query("Name2");
         Assertions.assertNull(result2);
 
-        Database.insert("Name3", "5.5.5.5", 3, "");
-        boolean result3 = Database.updatePort("Name3", 0);
+        db.insert("Name3", "5.5.5.5", 3, "");
+        boolean result3 = db.updatePort("Name3", 0);
         Assertions.assertFalse(result3);
-        int result4 = Database.query("Name3").getPort();
+        int result4 = db.query("Name3").getPort();
         Assertions.assertEquals(3, result4);
 
-        Database.insert("Name4", "6.6.6.6", 0, "");
-        boolean result5 = Database.updateIP("Name4", "5.5.5.5");
+        db.insert("Name4", "6.6.6.6", 0, "");
+        boolean result5 = db.updateIP("Name4", "5.5.5.5");
         Assertions.assertFalse(result5);
-        String result6 = Database.query("Name4").getIpAddress();
+        String result6 = db.query("Name4").getIpAddress();
         Assertions.assertEquals("6.6.6.6", result6);
     }
 

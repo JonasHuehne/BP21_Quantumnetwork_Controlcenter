@@ -2,6 +2,7 @@ package MessengerSystem;
 
 import CommunicationList.Database;
 import CommunicationList.DbObject;
+import frame.QuantumnetworkControllcenter;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -78,11 +79,11 @@ public class Authentication {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
             // get public key of sender from the db
-            DbObject senderEntry = Database.query(sender);
+            DbObject senderEntry = QuantumnetworkControllcenter.communicationList.query(sender);
             if (senderEntry == null) {
                 throw new IllegalArgumentException("Sender not found Communication List");
             }
-            String pubKey = senderEntry.getSignatureKey();
+            String pubKey = QuantumnetworkControllcenter.communicationList.query(sender).getSignatureKey();
             if (pubKey == null || pubKey.equals("")) {
                 throw new IllegalArgumentException
                         ("No Public signature Key found in Database for " + sender);

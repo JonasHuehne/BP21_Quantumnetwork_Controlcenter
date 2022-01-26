@@ -1,5 +1,7 @@
 package frame;
 
+import CommunicationList.Database;
+import CommunicationList.SQLiteDatabase;
 import networkConnection.ConnectionManager;
 import ui.ConsoleUI;
 import java.awt.EventQueue;
@@ -17,6 +19,8 @@ import keyGeneration.KeyGenerator;
 public class QuantumnetworkControllcenter {
 	
 	public static ConnectionManager conMan;
+	public static Database communicationList;
+
 	/**
 	 * Method to initialize a Quantumnetwork Controllcenter
 	 */
@@ -28,6 +32,9 @@ public class QuantumnetworkControllcenter {
 		String localIP = "127.0.0.1"; //Must be changed manually as of right now. Use IP depending on intended communication Range (local Machine, local Network or Internet)
 		conMan = new ConnectionManager(localIP);
 		MessageSystem.conMan = conMan;
+
+		// Communication List Init
+		communicationList = new SQLiteDatabase();
 		
 		System.out.println("QuantumnetworkControllcenter initialized");
 	}

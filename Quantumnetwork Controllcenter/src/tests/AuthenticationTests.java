@@ -1,16 +1,19 @@
 package tests;
 
-import CommunicationList.Database;
+import CommunicationList.DbObject;
 import MessengerSystem.Authentication;
 import MessengerSystem.MessageSystem;
 import frame.QuantumnetworkControllcenter;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 
 /**
  * class for automated tests for the authentication
@@ -22,6 +25,18 @@ class AuthenticationTests {
     // Additionally, if they fail, you might need to make everything in the test above the first delete line a comment,
     // run the test again, delete do uncomment the rest, and then run the test again.
 
+    @BeforeEach
+    void setup () {
+        QuantumnetworkControllcenter.initialize();
+    }
+
+    @AfterEach
+    void cleanUp () {
+        ArrayList<DbObject> entries = QuantumnetworkControllcenter.communicationList.queryAll();
+        for (DbObject e : entries) {
+            QuantumnetworkControllcenter.communicationList.delete(e.getName());
+        }
+    }
 
     @Test
     void testSignatureKeyGeneration () {
@@ -55,13 +70,12 @@ class AuthenticationTests {
     // only testable, if signing and signature key generation work
     void testVerifyTrue () {
         Authentication.generateSignatureKeyPair();
-        Database.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
+        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
 
         String signature = Authentication.sign("Hello");
         boolean result = Authentication.verify("Hello", signature, "self");
         Assertions.assertTrue(result);
 
-        Database.delete("self");
         Authentication.deleteSignatureKeys();
     }
 
@@ -70,12 +84,11 @@ class AuthenticationTests {
     void testVerifyFalse () {
         Authentication.generateSignatureKeyPair();
 
-        Database.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
+        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
         String signature = Authentication.sign("Hello");
         boolean result = Authentication.verify("Hallo", signature, "self");
         Assertions.assertFalse(result);
 
-        Database.delete("self");
         Authentication.deleteSignatureKeys();
     }
 
@@ -85,21 +98,19 @@ class AuthenticationTests {
         Authentication.generateSignatureKeyPair();
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
-                "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
-                "yG6ClQS/YQ6hGQ4BH/FMz8h3HWsA/d9rhL1csmz8xJeqCoK0djEph1qGkso/AyoK" +
-                "LohV1zXgRM3EMV09ZgJAEktw6xxuzDtoLvDe7LMtYb/ahtdpYQMGSaHmUlEsC5Wk" +
-                "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
-                "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
-                "1QIDAQAB";
-        Database.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
-        Database.insert("other", "128.0.0.1", 2505, otherPublicKeyString);
+                        "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
+                        "yG6ClQS/YQ6hGQ4BH/FMz8h3HWsA/d9rhL1csmz8xJeqCoK0djEph1qGkso/AyoK" +
+                        "LohV1zXgRM3EMV09ZgJAEktw6xxuzDtoLvDe7LMtYb/ahtdpYQMGSaHmUlEsC5Wk" +
+                        "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
+                        "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
+                        "1QIDAQAB";
+        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
+        QuantumnetworkControllcenter.communicationList.insert("other", "128.0.0.1", 2505, otherPublicKeyString);
 
         String signature = Authentication.sign("Hello");
         boolean result = Authentication.verify("Hello", signature, "other");
         Assertions.assertFalse(result);
 
-        Database.delete("self");
-        Database.delete("other");
         Authentication.deleteSignatureKeys();
     }
 
@@ -109,14 +120,14 @@ class AuthenticationTests {
         Authentication.generateSignatureKeyPair();
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
-                "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
-                "yG6ClQS/YQ6hGQ4BH/FMz8h3HWsA/d9rhL1csmz8xJeqCoK0djEph1qGkso/AyoK" +
-                "LohV1zXgRM3EMV09ZgJAEktw6xxuzDtoLvDe7LMtYb/ahtdpYQMGSaHmUlEsC5Wk" +
-                "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
-                "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
-                "1QIDAQAB";
-        Database.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
-        Database.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
+                        "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
+                        "yG6ClQS/YQ6hGQ4BH/FMz8h3HWsA/d9rhL1csmz8xJeqCoK0djEph1qGkso/AyoK" +
+                        "LohV1zXgRM3EMV09ZgJAEktw6xxuzDtoLvDe7LMtYb/ahtdpYQMGSaHmUlEsC5Wk" +
+                        "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
+                        "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
+                        "1QIDAQAB";
+        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
+        QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
         QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Alice", 2303);
@@ -128,8 +139,6 @@ class AuthenticationTests {
         boolean result = MessageSystem.sendAuthenticatedMessage("Bob", "Hello");
         Assertions.assertTrue(result);
 
-        Database.delete("Alice");
-        Database.delete("Bob");
         Authentication.deleteSignatureKeys();
     }
 
@@ -145,8 +154,8 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        Database.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
-        Database.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
+        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
+        QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
         QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Alice", 2303);
@@ -160,8 +169,6 @@ class AuthenticationTests {
         String message = MessageSystem.readAuthenticatedMessage("Alice");
         Assertions.assertEquals(message, "Hello, how are you?");
 
-        Database.delete("Alice");
-        Database.delete("Bob");
         Authentication.deleteSignatureKeys();
     }
 
@@ -177,8 +184,8 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        Database.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
-        Database.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
+        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
+        QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
         QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Alice", 2303);
@@ -192,8 +199,6 @@ class AuthenticationTests {
         String message = MessageSystem.readAuthenticatedMessage("Bob");
         Assertions.assertNull(message);
 
-        Database.delete("Alice");
-        Database.delete("Bob");
         Authentication.deleteSignatureKeys();
     }
 }

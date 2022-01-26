@@ -2,9 +2,9 @@ package ui;
 
 import java.util.ArrayList;
 
-import CommunicationList.Database;
 import CommunicationList.DbObject;
 import MessengerSystem.Authentication;
+import frame.QuantumnetworkControllcenter;
 
 /**
  * The purpose of this class is to be used by {@link CommandHandler}, specifically for executing commands pertaining to the Communication List.
@@ -18,46 +18,46 @@ class CommunicationListCommandHandler {
 
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_ADD}. 
-	 * Adds the contact described in commandArgs to the {@link Database}
+	 * Adds the contact described in commandArgs to the {@link CommunicationList.Database}
 	 * @param commandArgs
 	 * 		commandArgs[0] is the name of the contact to add <br>
 	 * 		commandArgs[1] is the IP of the contact to add <br>
 	 * 		commandArgs[2] is the port of the contact to add
 	 * @return
-	 * 		a String describing whether or not the contact was successfully added to the {@link Database}
+	 * 		a String describing whether or not the contact was successfully added to the {@link CommunicationList.Database}
 	 */
 	static String handleContactsAdd(String[] commandArgs) {
 		String name = commandArgs[0];
 		String ip = commandArgs[1];
 		int port = Integer.parseInt(commandArgs[2]);
-		boolean success = Database.insert(name, ip, port, NO_KEY);
+		boolean success = QuantumnetworkControllcenter.communicationList.insert(name, ip, port, NO_KEY);
 		if(success) {
 			return "Successfully inserted new contact (" + name + ", " + ip + ", " + port + ") into the contact list."; 
 		} else {
 			return "ERROR - Could not add new contact to the contact list. " + SEE_CONSOLE;
 		}
 	}
-	
+
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_REMOVE}.
-	 * Removes the contact with the given name from the {@link Database}.
+	 * Removes the contact with the given name from the {@link CommunicationList.Database}.
 	 * @param name
 	 * 		the name of the contact to remove
 	 * @return
-	 * 		a String describing whether or not the contact was successfully remove from the {@link Database}
+	 * 		a String describing whether or not the contact was successfully remove from the {@link CommunicationList.Database}
 	 */
 	static String handleContactsRemove(String name) {
-		boolean success = Database.delete(name);
+		boolean success = QuantumnetworkControllcenter.communicationList.delete(name);
 		if(success) {
 			return "Successfully deleted the contact \"" + name + "\" from the contact list.";
 		} else {
 			return "ERROR - Could not remove the contact \"" + name +  "\" from the contact list. " + SEE_CONSOLE;
 		}
 	}
-	
+
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_SEARCH}.
-	 * Searches for the contact with the given name in the {@link Database}.
+	 * Searches for the contact with the given name in the {@link CommunicationList.Database}.
 	 * @param name
 	 * 		the name of the contact to search
 	 * @return
@@ -65,7 +65,7 @@ class CommunicationListCommandHandler {
 	 * 		otherwise returns a String saying that the contact could not be found
 	 */
 	static String handleContactsSearch(String name) {
-		DbObject query = Database.query(name);
+		DbObject query = QuantumnetworkControllcenter.communicationList.query(name);
 		if (query == null) {
 			return "ERROR - Could not find a contact with the name \"" + name + "\" in the contact list. "+ SEE_CONSOLE;
 		} else {
@@ -75,10 +75,10 @@ class CommunicationListCommandHandler {
 	
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_SHOW}.
-	 * @return a String containing a list of all contacts in the {@link Database}
+	 * @return a String containing a list of all contacts in the {@link CommunicationList.Database}
 	 */
 	static String handleContactsShow() {
-		ArrayList<DbObject> entries = Database.queryAll();
+		ArrayList<DbObject> entries = QuantumnetworkControllcenter.communicationList.queryAll();
 		if (entries == null) {
 			return "ERROR - There was a problem with querying the database. " + SEE_CONSOLE;
 		} else {
@@ -92,7 +92,7 @@ class CommunicationListCommandHandler {
 	
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_UPDATE}.
-	 * Updates an entry in the {@link Database}, as specified in commandArgs.
+	 * Updates an entry in the {@link CommunicationList.Database}, as specified in commandArgs.
 	 * @param commandArgs
 	 * 		commandArgs[0] is the name of the contact to update <br>
 	 * 		commandArgs[1] is one of the following Strings: "name","ip","port","pk" (not case sensitive)
@@ -113,7 +113,7 @@ class CommunicationListCommandHandler {
 		String output;
 		
 		String oldName = commandArgs[0];
-		DbObject entryToChange = Database.query(oldName);
+		DbObject entryToChange = QuantumnetworkControllcenter.communicationList.query(oldName);
 		if (entryToChange == null) {
 			output = "ERROR - Could not find a contact with the name \"" + commandArgs[0] + "\" in the contact list. " + SEE_CONSOLE;
 		}
@@ -122,7 +122,7 @@ class CommunicationListCommandHandler {
 		switch (attributeToUpdate) {
 		case "name":
 			String newName = commandArgs[2];
-			boolean nameChangeSuccess = Database.updateName(oldName, newName);
+			boolean nameChangeSuccess = QuantumnetworkControllcenter.communicationList.updateName(oldName, newName);
 			if (nameChangeSuccess) {
 				output = "Successfully changed name of \"" + oldName + "\" to " + newName;
 			} else {
@@ -131,7 +131,7 @@ class CommunicationListCommandHandler {
 			break;
 		case "ip":
 			String newIP = commandArgs[2];
-			boolean ipChangeSuccess = Database.updateIP(oldName, newIP);
+			boolean ipChangeSuccess = QuantumnetworkControllcenter.communicationList.updateIP(oldName, newIP);
 			if (ipChangeSuccess) {
 				output = "Successfully changed IP of \"" + oldName + "\" to " + newIP;
 			} else {
@@ -140,7 +140,7 @@ class CommunicationListCommandHandler {
 			break;
 		case "port":
 			int newPort = Integer.parseInt(commandArgs[2]);
-			boolean portChangeSuccess = Database.updatePort(oldName, newPort);
+			boolean portChangeSuccess = QuantumnetworkControllcenter.communicationList.updatePort(oldName, newPort);
 			if (portChangeSuccess) {
 				output = "Successfully changed Port of \"" + oldName + "\" to " + newPort;
 			} else {
@@ -157,12 +157,12 @@ class CommunicationListCommandHandler {
 				 * Because we don't want to display "deleted public key for ..." if there is no key to delete,
 				 * we first check if the entry has a key set. Not 100% efficient, but it should be a better UX.
 				 */
-				String oldPk = Database.query(oldName).getSignatureKey();
+				String oldPk = QuantumnetworkControllcenter.communicationList.query(oldName).getSignatureKey();
 				if (oldPk == null || oldPk.isBlank()) {
 					output = "Can not remove public key of contact \"" + oldName + "\" - there is no key to remove.";
 					break;
 				} else { // if pk exists, try to remove it
-					boolean pkDeleteSuccess = Database.updateSignatureKey(oldName, NO_KEY);
+					boolean pkDeleteSuccess = QuantumnetworkControllcenter.communicationList.updateSignatureKey(oldName, NO_KEY);
 					if (pkDeleteSuccess) {
 						output = "Successfully updated the communication list. Contact \"" + oldName + "\" no longer has a public key associated with them.";
 					} else {
@@ -175,7 +175,7 @@ class CommunicationListCommandHandler {
 				if(pkString == null) { // If there was an error loading the pk from the file
 					output = "ERROR - Could not load the public key at location: \"" + pkLocation + "\". " + SEE_CONSOLE;
 				} else { // If the pk could be loaded, try to insert it into the database
-					boolean pkChangeSuccess = Database.updateSignatureKey(oldName, pkString);
+					boolean pkChangeSuccess = QuantumnetworkControllcenter.communicationList.updateSignatureKey(oldName, pkString);
 					if(pkChangeSuccess) {
 						output = "Successfully changed public key associated with \"" + oldName + "\".";
 					} else {
@@ -205,7 +205,7 @@ class CommunicationListCommandHandler {
 	 */
 	static String handleShowPk(String contactName) {
 		String out;
-		DbObject contact  = Database.query(contactName);
+		DbObject contact  = QuantumnetworkControllcenter.communicationList.query(contactName);
 		
 		if(contact == null) {
 			out =  "ERROR - Could not show public key of contact \"" + contactName + "\" - no such contact could be found in the communication list.";
