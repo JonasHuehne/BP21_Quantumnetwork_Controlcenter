@@ -2,8 +2,9 @@ package ui;
 
 import java.util.ArrayList;
 
-import CommunicationList.DbObject;
 import MessengerSystem.Authentication;
+import communicationList.SQLiteCommunicationList;
+import communicationList.DbObject;
 import frame.QuantumnetworkControllcenter;
 
 /**
@@ -17,14 +18,14 @@ class CommunicationListCommandHandler {
 	private final static String NO_KEY = "";
 
 	/**
-	 * Handles the execution of the command {@link Command#CONTACTS_ADD}. 
-	 * Adds the contact described in commandArgs to the {@link CommunicationList.Database}
+	 * Handles the execution of the command {@link Command#CONTACTS_ADD}.
+	 * Adds the contact described in commandArgs to the {@link communicationList.CommunicationList}
 	 * @param commandArgs
 	 * 		commandArgs[0] is the name of the contact to add <br>
 	 * 		commandArgs[1] is the IP of the contact to add <br>
 	 * 		commandArgs[2] is the port of the contact to add
 	 * @return
-	 * 		a String describing whether or not the contact was successfully added to the {@link CommunicationList.Database}
+	 * 		a String describing whether or not the contact was successfully added to the {@link communicationList.CommunicationList}
 	 */
 	static String handleContactsAdd(String[] commandArgs) {
 		String name = commandArgs[0];
@@ -40,11 +41,11 @@ class CommunicationListCommandHandler {
 
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_REMOVE}.
-	 * Removes the contact with the given name from the {@link CommunicationList.Database}.
+	 * Removes the contact with the given name from the {@link communicationList.CommunicationList}.
 	 * @param name
 	 * 		the name of the contact to remove
 	 * @return
-	 * 		a String describing whether or not the contact was successfully remove from the {@link CommunicationList.Database}
+	 * 		a String describing whether or not the contact was successfully remove from the {@link communicationList.CommunicationList}
 	 */
 	static String handleContactsRemove(String name) {
 		boolean success = QuantumnetworkControllcenter.communicationList.delete(name);
@@ -57,7 +58,7 @@ class CommunicationListCommandHandler {
 
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_SEARCH}.
-	 * Searches for the contact with the given name in the {@link CommunicationList.Database}.
+	 * Searches for the contact with the given name in the {@link communicationList.CommunicationList}.
 	 * @param name
 	 * 		the name of the contact to search
 	 * @return
@@ -75,7 +76,7 @@ class CommunicationListCommandHandler {
 	
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_SHOW}.
-	 * @return a String containing a list of all contacts in the {@link CommunicationList.Database}
+	 * @return a String containing a list of all contacts in the {@link communicationList.CommunicationList}
 	 */
 	static String handleContactsShow() {
 		ArrayList<DbObject> entries = QuantumnetworkControllcenter.communicationList.queryAll();
@@ -92,7 +93,7 @@ class CommunicationListCommandHandler {
 	
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_UPDATE}.
-	 * Updates an entry in the {@link CommunicationList.Database}, as specified in commandArgs.
+	 * Updates an entry in the {@link communicationList.CommunicationList}, as specified in commandArgs.
 	 * @param commandArgs
 	 * 		commandArgs[0] is the name of the contact to update <br>
 	 * 		commandArgs[1] is one of the following Strings: "name","ip","port","pk" (not case sensitive)

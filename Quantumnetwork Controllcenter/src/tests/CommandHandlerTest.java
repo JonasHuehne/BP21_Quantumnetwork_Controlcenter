@@ -3,14 +3,15 @@ package tests;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import CommunicationList.DbObject;
-import CommunicationList.Database;
+import communicationList.CommunicationList;
+import communicationList.DbObject;
 import frame.QuantumnetworkControllcenter;
 import MessengerSystem.Authentication;
 import ui.Command;
@@ -30,7 +31,7 @@ import ui.CommandHandler;
 class CommandHandlerTest {
 
 	private final String NO_KEY = "";
-	Database db;
+	CommunicationList db;
 	
 	@Nested
 	class invalid_inputs {

@@ -1,9 +1,8 @@
 package tests;
 
-import CommunicationList.Database;
-import CommunicationList.SQLiteDatabase;
-import CommunicationList.DbObject;
-
+import communicationList.CommunicationList;
+import communicationList.SQLiteCommunicationList;
+import communicationList.DbObject;
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.AfterEach;
@@ -17,12 +16,12 @@ import org.junit.jupiter.api.Test;
  */
 class CommunicationListTests {
 
-    Database db;
+    CommunicationList db;
 
     @BeforeEach
     // only works if no problem with delete and queryAll
     void setup() {
-        db = new SQLiteDatabase();
+        db = new SQLiteCommunicationList();
         ArrayList<DbObject> entries = db.queryAll();
         for (DbObject e : entries) {
             db.delete(e.getName());

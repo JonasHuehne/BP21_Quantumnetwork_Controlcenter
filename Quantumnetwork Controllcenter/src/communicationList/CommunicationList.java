@@ -1,10 +1,10 @@
-package CommunicationList;
+package communicationList;
 
 import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 
-public interface Database {
+public interface CommunicationList {
 
     boolean insert(final String name, final String ipAddress, final int port, final String signatureKey);
 

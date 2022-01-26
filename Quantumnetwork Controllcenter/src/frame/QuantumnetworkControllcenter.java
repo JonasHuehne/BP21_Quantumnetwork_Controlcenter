@@ -1,12 +1,10 @@
 package frame;
 
-import CommunicationList.Database;
-import CommunicationList.SQLiteDatabase;
+import communicationList.CommunicationList;
+import communicationList.SQLiteCommunicationList;
 import networkConnection.ConnectionManager;
 import ui.ConsoleUI;
 import java.awt.EventQueue;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
 import MessengerSystem.MessageSystem;
 import keyGeneration.KeyGenerator;
@@ -19,7 +17,7 @@ import keyGeneration.KeyGenerator;
 public class QuantumnetworkControllcenter {
 	
 	public static ConnectionManager conMan;
-	public static Database communicationList;
+	public static CommunicationList communicationList;
 
 	/**
 	 * Method to initialize a Quantumnetwork Controllcenter
@@ -34,7 +32,7 @@ public class QuantumnetworkControllcenter {
 		MessageSystem.conMan = conMan;
 
 		// Communication List Init
-		communicationList = new SQLiteDatabase();
+		communicationList = new SQLiteCommunicationList();
 		
 		System.out.println("QuantumnetworkControllcenter initialized");
 	}

@@ -1,6 +1,4 @@
-package CommunicationList;
-
-import jdk.jfr.Percentage;
+package communicationList;
 
 import java.io.File;
 import java.sql.Connection;
@@ -13,7 +11,7 @@ import java.util.ArrayList;
 /**
  * Class to handle interaction with the communication list db
  */
-public class SQLiteDatabase implements Database {
+public class SQLiteCommunicationList implements CommunicationList {
 
     private Connection connection;
 

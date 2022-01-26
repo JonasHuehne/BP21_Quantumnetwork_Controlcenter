@@ -1,7 +1,6 @@
 package MessengerSystem;
 
-import CommunicationList.Database;
-import CommunicationList.DbObject;
+import communicationList.DbObject;
 import frame.QuantumnetworkControllcenter;
 
 import java.io.File;

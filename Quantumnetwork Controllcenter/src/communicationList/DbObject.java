@@ -1,4 +1,4 @@
-package CommunicationList;
+package communicationList;
 
 /**
  * class for bundling information of a sb entry in the communication list
