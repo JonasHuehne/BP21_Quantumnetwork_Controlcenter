@@ -40,7 +40,8 @@ public class KeyStoreDbManager {
         } catch (ClassNotFoundException | SQLException e) {
 
             System.err.println("Connection to database failed!" + "\n");
-            e.printStackTrace();
+            System.err.println(e.toString());
+
         }
 
         return con;
@@ -51,7 +52,7 @@ public class KeyStoreDbManager {
      *
      * @returns True if Database and table were created successfully, False otherwise
      */
-    static boolean createNewKeyStoreAndTable() {
+    protected static boolean createNewKeyStoreAndTable() {
 
         try {
             Connection conn = KeyStoreDbManager.connect();
@@ -79,7 +80,7 @@ public class KeyStoreDbManager {
 
         } catch (SQLException e) {
             System.err.println("Database creation failed!" + "\n");
-            e.printStackTrace();
+            System.err.println(e.toString());
 
             return false;
         }
@@ -126,8 +127,9 @@ public class KeyStoreDbManager {
         }
 
         catch (SQLException e ){
-            System.err.println("Insertion to KeyInformation table failed!" + "\n" );
-            e.printStackTrace();
+            System.err.println("Insertion to KeyInformation table failed!" + "\n");
+            System.err.println(e.toString());
+
         }
         return false;
     }
@@ -138,7 +140,7 @@ public class KeyStoreDbManager {
      * @param key the new Key as a byte[]
      * @return True if operation was successful, false otherwise.
      */
-    public static boolean addKeyBuffer(String keyStreamID, byte[] key){
+    protected static boolean addKeyBuffer(String keyStreamID, byte[] key){
 
         if (!doesKeyStreamIdExist(keyStreamID)){
             System.err.println("There is no Entry with this KeyStreamID" + "\n");
@@ -160,9 +162,10 @@ public class KeyStoreDbManager {
                 System.out.println("Renaming entry in KeyInformation table succeeded!\" + \"\\n\"");
                 return true;
 
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 System.err.println("Renaming entry in KeyInformation table failed!" + "\n");
-                e.printStackTrace();
+                System.err.println(e.toString());
+
                 return false;
             }
         }
@@ -176,7 +179,7 @@ public class KeyStoreDbManager {
      *
      * @return True if output was displayed correctly, False otherwise
      */
-    static boolean selectAll(){
+    protected static boolean selectAll(){
 
         try {
             String sql = "SELECT * FROM " + tableName;
@@ -197,7 +200,7 @@ public class KeyStoreDbManager {
             return true;
         } catch (SQLException e) {
             System.err.println( "Selecting every entry from KeyStore.db failed!" );
-            e.printStackTrace();
+            System.err.println(e.toString());
             return false;
         }
     }
@@ -207,7 +210,7 @@ public class KeyStoreDbManager {
      * @param keyStreamID the ID of the key that needs to be deleted from the DB
      * @return True if operation was successful, False otherwise
      */
-    static boolean deleteKeyInformationByID(String keyStreamID){
+    protected static boolean deleteKeyInformationByID(String keyStreamID){
         if (!KeyStoreDbManager.doesKeyStreamIdExist(keyStreamID)){
             System.err.println("Deleting Key entry from DB failed because the given keyStreamID does not exist!"  + "\n");
             return false;
@@ -230,7 +233,7 @@ public class KeyStoreDbManager {
 
         catch (SQLException e) {
             System.err.println("Deleting entry from KeyInformation table failed!" + "\n");
-            e.printStackTrace();
+            System.err.println(e.toString());
             return false;
         }
 
@@ -241,7 +244,7 @@ public class KeyStoreDbManager {
      * @param keyStreamID reference ID for a Key
      * @return true if operation succeeded, false otherwise
      */
-    public static boolean changeKeyToUsed(String keyStreamID){
+    protected static boolean changeKeyToUsed(String keyStreamID){
         try {
             Connection conn = connect();
 
@@ -258,7 +261,7 @@ public class KeyStoreDbManager {
 
         } catch (SQLException e) {
             System.err.println("Changing the used Parameter of Entry failed " + "\n");
-            e.printStackTrace();
+            System.err.println(e.toString());
             return false;
         }
     }
@@ -268,7 +271,7 @@ public class KeyStoreDbManager {
      * @param keyStreamID identifier of the key that needs to be wrapped in a KeyStoreObject
      * @return a new KeyInformationObject containing all the KeyInformation from the Entry with corresponding KeyStreamId
      */
-     static KeyStoreObject getEntryFromKeyStore(String keyStreamID) {
+     protected static KeyStoreObject getEntryFromKeyStore(String keyStreamID) {
          if (!doesKeyStreamIdExist(keyStreamID)){
              System.err.println("There is no Entry with this KeyStreamID!"  + "\n");
              return null;
@@ -295,7 +298,7 @@ public class KeyStoreDbManager {
 
         } catch (SQLException e) {
             System.err.println("Selecting entry from KeyInformation table failed!" + "\n");
-            e.printStackTrace();
+            System.err.println(e.toString());
             return null;
         }
     }
@@ -304,7 +307,7 @@ public class KeyStoreDbManager {
      *
      * @return a ArrayList of KeyInformationObject which contain information about the keys currently in storage
      */
-     static ArrayList<KeyStoreObject> getKeyStoreAsList() {
+     protected static ArrayList<KeyStoreObject> getKeyStoreAsList() {
         try {
             Connection conn = connect();
 
@@ -322,9 +325,9 @@ public class KeyStoreDbManager {
             conn.close();
             System.out.println("Generating list of KeyInformation table entries was successful" + "\n");
             return result;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             System.err.println("Generating list of all entries from KeyInformation table failed!" + "\n");
-            e.printStackTrace();
+            System.err.println(e.toString());
             return null;
         }
     }
@@ -334,7 +337,7 @@ public class KeyStoreDbManager {
      * @param keyStreamID reference ID to locate a key
      * @return true if the keyStreamID exists, false otherwise
      */
-    static boolean doesKeyStreamIdExist(String keyStreamID){
+   protected static boolean doesKeyStreamIdExist(String keyStreamID){
         List<String> keyIdList = KeyStoreDbManager.getKeyStoreAsList().stream().map(obj -> new String(obj.getID())).collect(Collectors.toList());
 
         return keyIdList.contains(keyStreamID);
