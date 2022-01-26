@@ -1,7 +1,5 @@
 package KeyStore;
 
-import org.sqlite.SQLiteDataSource;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -12,6 +10,7 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * This class supplies methods for creating, editing, getting and deleting entries from the KeyStore.db which holds all the keys
@@ -63,7 +62,7 @@ public class KeyStoreDbManager {
             // create Table
             String keyInformationSQL = "CREATE TABLE IF NOT EXISTS " + tableName +
                     " (KeyStreamId CHAR(128) UNIQUE ," +
-                    " KeyBuffer INTEGER NOT NULL, " + // Index muss definitiv noch angepasst werden, Frage im Treffen heute nach
+                    " KeyBuffer INTEGER UNIQUE , " + // Index muss definitiv noch angepasst werden, Frage im Treffen heute nach
                     " Index_ INTEGER NOT NULL , " +
                     " Source_ TEXT NOT NULL, " +
                     " Destination TEXT NOT NULL, " +
@@ -133,34 +132,45 @@ public class KeyStoreDbManager {
         return false;
     }
 
-    /** (Api needs a function which reserves an empty KeyStreamID, therefore we should be able to rename one by the index (i guess))
+    /**
      *
-     * @param index the index of the keyStreamID to be renamed
-     * @param newID new KeyStreamID
-     * @return True if operation was successful, False otherwise
+     * @param keyStreamID reference ID to locate a Key.
+     * @param key the new Key as a byte[]
+     * @return True if operation was successful, false otherwise.
      */
-    public static boolean updateKeyStreamID (int index, String newID) {
-        try {
-            Connection conn = connect();
-            String sql = "UPDATE " + tableName + " SET KeyStreamId = ? WHERE Index_ = ?";
-            PreparedStatement pstmnt = conn.prepareStatement(sql);
-            pstmnt.setString(1, newID);
-            pstmnt.setInt(2, index);
-            pstmnt.executeUpdate();
+    public static boolean addKeyBuffer(String keyStreamID, byte[] key){
 
-            pstmnt.close();
-            conn.close();
-            System.out.println("Renaming entry in KeyInformation table succeeded!\" + \"\\n\"");
-            return true;
+        if (!doesKeyStreamIdExist(keyStreamID)){
+            System.err.println("There is no Entry with this KeyStreamID" + "\n");
+            return false;
+        }
+        KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
 
-        } catch (Exception e) {
-            System.err.println("Renaming entry in KeyInformation table failed!" + "\n");
-            e.printStackTrace();
+        if (obj.getKeyBuffer() == null) {
+            try {
+                Connection conn = connect();
+                String sql = "UPDATE " + tableName + " SET KeyBuffer = ? WHERE KeyStreamID = ?";
+                PreparedStatement pstmnt = conn.prepareStatement(sql);
+                pstmnt.setBytes(1, key);
+                pstmnt.setString(2, keyStreamID);
+                pstmnt.executeUpdate();
+
+                pstmnt.close();
+                conn.close();
+                System.out.println("Renaming entry in KeyInformation table succeeded!\" + \"\\n\"");
+                return true;
+
+            } catch (Exception e) {
+                System.err.println("Renaming entry in KeyInformation table failed!" + "\n");
+                e.printStackTrace();
+                return false;
+            }
+        }
+        else {
+            System.err.println("This Entry already has a dedicated keyBuffer." + "\n");
             return false;
         }
     }
-
-
 
     /** Displays all entries on the console
      *
@@ -259,6 +269,11 @@ public class KeyStoreDbManager {
      * @return a new KeyInformationObject containing all the KeyInformation from the Entry with corresponding KeyStreamId
      */
      static KeyStoreObject getEntryFromKeyStore(String keyStreamID) {
+         if (!doesKeyStreamIdExist(keyStreamID)){
+             System.err.println("There is no Entry with this KeyStreamID!"  + "\n");
+             return null;
+         }
+
         try {
             Connection conn = connect();
 
@@ -314,20 +329,17 @@ public class KeyStoreDbManager {
         }
     }
 
+    /** Check whether this keyStreamId exists in the KeyStore or not.
+     *
+     * @param keyStreamID reference ID to locate a key
+     * @return true if the keyStreamID exists, false otherwise
+     */
     static boolean doesKeyStreamIdExist(String keyStreamID){
-        List<KeyStoreObject> keyList = KeyStoreDbManager.getKeyStoreAsList();
-        List<String> keyStreamIdList = new ArrayList<>();
-        for (KeyStoreObject obj: keyList) {
-            String temp = obj.getID();
-            keyStreamIdList.add(temp);
-        }
+        List<String> keyIdList = KeyStoreDbManager.getKeyStoreAsList().stream().map(obj -> new String(obj.getID())).collect(Collectors.toList());
 
-        return keyStreamIdList.contains(keyStreamID);
+        return keyIdList.contains(keyStreamID);
 
     }
-
-
-
 
     /**
      *  ------ API Methods ------
@@ -340,13 +352,40 @@ public class KeyStoreDbManager {
      *
      * @param source identifier for the source application
      * @param destination identifier for the destination application
-     * @param Qos                                               //Weiß selber ned wie der Parameter aussehen soll
+     * @param qosParameters multiple parameters that are delivered as a QoS Object                                       //Weiß selber ned wie der Parameter aussehen soll
      * @param keyStreamID reference ID to locate a key
-     * @param status current state of the request
      * @return number of status
      */
-    static int open_Connect(String source, String destination, String Qos, String keyStreamID, int status){
-        return 1;
+    static int open_Connect(String source, String destination, QoS qosParameters, String keyStreamID, boolean peerConnected){
+
+        int timeout = qosParameters.getTimeout();
+        int exceeded = 10;// bin mir nicht sicher ob das überhaupt in die methode gehört oder ob das von woanders angesteuert wird
+
+        //return 5 -----> if KeyStramID already exists
+        if(!doesKeyStreamIdExist(keyStreamID)){
+            return 5;
+        }
+
+        boolean insertbool = insertToKeyStore(keyStreamID, null, 0, source, destination, false);
+
+        if(insertbool) {
+            //return 0 -----> if everything was succesfull
+            if (peerConnected) return 0;
+
+            //return 1 -----> if connection was established but peer is not connected
+            return 1;
+
+        }
+        else{
+            return -1; // indicating that something went wrong
+        }
+
+        //TODO
+
+        //return 6 -----> if the timeout parameter is exceeded -----> when is it exceeded tho?
+
+        //return 7 -----> if OPEN failed because requested QoS settings could not be met, counter proposal included in return has occurred
+
     }
 
     /** from etsi: Terminate the association established for this Key_stream_ID. No further keys shall be
@@ -356,41 +395,45 @@ public class KeyStoreDbManager {
      QoS parameter) has expired.
      *
      * @param keyStreamID reference ID to locate a key
-     * @param status current state of the request
      * @return number of status
      */
-    static int close(String keyStreamID, int status){
+    static int close(String keyStreamID, boolean peerConnected){
         //delete keyInformation for this ID
-        deleteKeyInformationByID(keyStreamID);
-        return 1;
+
+        //return 0 -----> if everything was succesfull
+        if (doesKeyStreamIdExist(keyStreamID)){
+           deleteKeyInformationByID(keyStreamID);
+           if (peerConnected) return 0;
+            return 1;
+        }
+        System.err.println("There is no Entry with this KeyStreamID" + "\n");
+        return -1; // -1 = new Status parameter indicating that the operation failed
+
+
     }
 
     /** Etsi paper page 9 latest version for more information
      *
      * @param keyStreamID reference ID to locate a key
-     * @param status current state of the request
      * @return number of status + the key
      */
-    static Map.Entry<String, Integer> get_Key(String keyStreamID, int status) {
+    static Map.Entry<byte[], Integer> get_Key(String keyStreamID) {
+        AbstractMap.SimpleEntry<byte[], Integer> pair;
 
+        if(doesKeyStreamIdExist(keyStreamID)){
+            KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
+            int index = obj.getIndex();
+            byte[] key = obj.getKeyBuffer();
 
-        return new AbstractMap.SimpleEntry<String, Integer>("der_herauszugebenede_key", 1);
-    }
-
-    static boolean executeSQL(String sql){
-        try {
-            Connection conn = connect();
-
-            Statement stmnt = conn.createStatement();
-            stmnt.executeUpdate(sql);
-
-            return true;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
+            return new AbstractMap.SimpleEntry<byte[], Integer>(key, index);
         }
+
+        return null;
+
+
     }
+
+
 
 
 

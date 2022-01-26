@@ -2,7 +2,6 @@ package KeyStore;
 
 import org.junit.jupiter.api.Test;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,13 +39,20 @@ class KeyStoreDbManagerTest {
     }
 
     @Test
+    void doesKSIdExistTest(){
+        boolean existing = KeyStoreDbManager.doesKeyStreamIdExist("nurEineTestID_01");
+        assertEquals(true, existing);
+
+        boolean nonExisting = KeyStoreDbManager.doesKeyStreamIdExist("nichtVorhandeneID");
+        assertEquals(false, nonExisting);
+    }
+
+    @Test
     void deleteEntryByID() {
         boolean deleteBool = KeyStoreDbManager.deleteKeyInformationByID("nurEineTestID_01");
 
-
         assertEquals(true, deleteBool);
-        boolean selectBool = KeyStoreDbManager.selectAll();
-        assertEquals(true, selectBool);
+
     }
 
     @Test
@@ -55,23 +61,17 @@ class KeyStoreDbManagerTest {
         assertEquals(false, failedDeletionBool);
     }
 
-    @Test
-    void updateKeyStramIDTest() {
-        boolean updateBool = KeyStoreDbManager.updateKeyStreamID(2, "komplettNeueID");
-        assertEquals(true, updateBool);
-        KeyStoreDbManager.selectAll();
-    }
 
     @Test
     void changeUsedTest(){
-        boolean changeBool = KeyStoreDbManager.changeKeyToUsed("komplettNeueID");
+        boolean changeBool = KeyStoreDbManager.changeKeyToUsed("nurEineTestID_02");
     }
 
     @Test
     void getEntryTest() {
-        KeyStoreObject testObject = KeyStoreDbManager.getEntryFromKeyStore("komplettNeueID");
+        KeyStoreObject testObject = KeyStoreDbManager.getEntryFromKeyStore("nurEineTestID_02");
         assert testObject != null;
-        byte[] testBuffer = testObject.getBuffer();
+        byte[] testBuffer = testObject.getKeyBuffer();
         int testIndex = testObject.getIndex();
         System.out.println(new String(testBuffer));
 
@@ -82,16 +82,48 @@ class KeyStoreDbManagerTest {
     }
 
     @Test
+    void failedGetEntry(){
+        KeyStoreObject obj = KeyStoreDbManager.getEntryFromKeyStore("gibtsNicht");
+        assertNull(obj);
+    }
+
+    @Test
     void getEntrysAsListTest(){
-        byte[] keyBufferArray = "1111111".getBytes();
+        byte[] keyBufferArray = "123456789".getBytes();
 
         // Bei jedem weiteren Durchlauf (nach dem 1.) muss die Zeile kommentiert werden da es nicht zweimal den selben eintrag in der Datenbank geben darf!
         KeyStoreDbManager.insertToKeyStore("NewEntryID", keyBufferArray, 1, "nirgendwo", "TuDarmstadt", false);
         ArrayList<KeyStoreObject> testList = KeyStoreDbManager.getKeyStoreAsList();
 
-        byte[] newEntryBuffer = testList.get(1).getBuffer(); // only 2 Entrys in DB
-        assertEquals(keyBufferArray[1], newEntryBuffer[1]);
+        byte[] newEntryBuffer = testList.get(1).getKeyBuffer(); // only 2 Entrys in DB
+        assertEquals(new String(keyBufferArray), new String(newEntryBuffer));
     }
+
+    @Test
+    void addKeyBufferTest(){
+        boolean insertBool = KeyStoreDbManager.insertToKeyStore("KSID_Ohne_Key", null, 3, "München","Darmstadt", false );
+        assertEquals(true, insertBool);
+
+        byte[] keyTobeInserted = "0110101".getBytes();
+
+        boolean addKeyBool = KeyStoreDbManager.addKeyBuffer("KSID_Ohne_Key", keyTobeInserted);
+        assertEquals(true, addKeyBool);
+
+        byte[] neuerKey = KeyStoreDbManager.getEntryFromKeyStore("KSID_Ohne_Key").getKeyBuffer();
+        assertEquals(new String(keyTobeInserted), new String(neuerKey));
+
+    }
+
+    @Test
+    void failedAddKeyBufferTest(){
+        byte[] testKey = "28736432".getBytes();
+        boolean failedKeyAddition = KeyStoreDbManager.addKeyBuffer("KSID_Ohne_Key", testKey);
+        assertEquals(false, failedKeyAddition);
+    }
+
+
+
+
 
 
 
