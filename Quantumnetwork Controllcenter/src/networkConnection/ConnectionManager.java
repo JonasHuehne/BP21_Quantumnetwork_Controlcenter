@@ -2,11 +2,8 @@ package networkConnection;
 
 import java.util.*;
 
-
-
-
 /**A class that holds any number of Connections from a local ConnectionEndpoint to another.
- * 
+ *
  * @author Jonas Huehne
  *
  */

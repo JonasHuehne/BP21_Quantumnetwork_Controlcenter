@@ -2,14 +2,13 @@ package frame;
 
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
-import MessengerSystem.Authentication;
-import MessengerSystem.SHA256withRSAAuthentication;
+import messengerSystem.Authentication;
+import messengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionManager;
 import ui.ConsoleUI;
 import java.awt.EventQueue;
 
-import MessengerSystem.MessageSystem;
-import keyGeneration.KeyGenerator;
+import messengerSystem.MessageSystem;
 
 /**
  * Main Class of QuantumnetworkControllcenter

@@ -6,7 +6,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
-import MessengerSystem.MessageSystem;
+import messengerSystem.MessageSystem;
 import frame.QuantumnetworkControllcenter;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionState;

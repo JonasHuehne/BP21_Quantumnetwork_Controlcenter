@@ -1,4 +1,4 @@
-package MessengerSystem;
+package messengerSystem;
 
 import communicationList.DbObject;
 import frame.QuantumnetworkControllcenter;
