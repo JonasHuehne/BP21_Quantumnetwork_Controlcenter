@@ -2,6 +2,8 @@ package frame;
 
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
+import MessengerSystem.Authentication;
+import MessengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionManager;
 import ui.ConsoleUI;
 import java.awt.EventQueue;
@@ -18,6 +20,7 @@ public class QuantumnetworkControllcenter {
 	
 	public static ConnectionManager conMan;
 	public static CommunicationList communicationList;
+	public static Authentication authentication;
 
 	/**
 	 * Method to initialize a Quantumnetwork Controllcenter
@@ -33,6 +36,9 @@ public class QuantumnetworkControllcenter {
 
 		// Communication List Init
 		communicationList = new SQLiteCommunicationList();
+
+		// Authentication Init
+		authentication = new SHA256withRSAAuthentication();
 		
 		System.out.println("QuantumnetworkControllcenter initialized");
 	}

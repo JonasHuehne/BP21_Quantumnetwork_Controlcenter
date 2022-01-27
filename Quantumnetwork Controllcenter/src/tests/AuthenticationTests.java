@@ -3,6 +3,7 @@ package tests;
 import communicationList.DbObject;
 import MessengerSystem.Authentication;
 import MessengerSystem.MessageSystem;
+import MessengerSystem.SHA256withRSAAuthentication;
 import frame.QuantumnetworkControllcenter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -20,10 +21,6 @@ import java.util.ArrayList;
  * @author Sarah Schumann
  */
 class AuthenticationTests {
-    // IMPORTANT: only run tests one by one. There might be problems if they interleave,
-    // as they use the same database and always add and delete the test data.
-    // Additionally, if they fail, you might need to make everything in the test above the first delete line a comment,
-    // run the test again, delete do uncomment the rest, and then run the test again.
 
     @BeforeEach
     void setup () {
@@ -36,11 +33,13 @@ class AuthenticationTests {
         for (DbObject e : entries) {
             QuantumnetworkControllcenter.communicationList.delete(e.getName());
         }
+
+        SHA256withRSAAuthentication.deleteSignatureKeys();
     }
 
     @Test
     void testSignatureKeyGeneration () {
-        boolean result1 = Authentication.generateSignatureKeyPair();
+        boolean result1 = SHA256withRSAAuthentication.generateSignatureKeyPair();
         Assertions.assertTrue(result1);
 
         boolean result2 = Files.exists(Path.of(System.getProperty("user.dir")
@@ -51,51 +50,45 @@ class AuthenticationTests {
                 + File.separator + "SignatureKeys" + File.separator + "signature.pub"));
         Assertions.assertTrue(result3);
 
-        boolean result4 = Authentication.deleteSignatureKeys();
+        boolean result4 = SHA256withRSAAuthentication.deleteSignatureKeys();
         Assertions.assertTrue(result4);
     }
 
     @Test
-    // relies on signature key generation in authentication class
+        // relies on signature key generation in authentication class
     void testSign () {
-        Authentication.generateSignatureKeyPair();
+        SHA256withRSAAuthentication.generateSignatureKeyPair();
 
-        String result = Authentication.sign("Hello");
+        String result = QuantumnetworkControllcenter.authentication.sign("Hello");
         Assertions.assertNotNull(result);
-
-        Authentication.deleteSignatureKeys();
     }
 
     @Test
-    // only testable, if signing and signature key generation work
+        // only testable, if signing and signature key generation work
     void testVerifyTrue () {
-        Authentication.generateSignatureKeyPair();
-        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
+        SHA256withRSAAuthentication.generateSignatureKeyPair();
+        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature"));
 
-        String signature = Authentication.sign("Hello");
-        boolean result = Authentication.verify("Hello", signature, "self");
+        String signature = QuantumnetworkControllcenter.authentication.sign("Hello");
+        boolean result = QuantumnetworkControllcenter.authentication.verify("Hello", signature, "self");
         Assertions.assertTrue(result);
-
-        Authentication.deleteSignatureKeys();
     }
 
     @Test
-    // only testable, if signing and signature key generation work
+        // only testable, if signing and signature key generation work
     void testVerifyFalse () {
-        Authentication.generateSignatureKeyPair();
+        SHA256withRSAAuthentication.generateSignatureKeyPair();
 
-        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
-        String signature = Authentication.sign("Hello");
-        boolean result = Authentication.verify("Hallo", signature, "self");
+        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature"));
+        String signature = QuantumnetworkControllcenter.authentication.sign("Hello");
+        boolean result = QuantumnetworkControllcenter.authentication.verify("Hallo", signature, "self");
         Assertions.assertFalse(result);
-
-        Authentication.deleteSignatureKeys();
     }
 
     @Test
-    // only testable, if signing and signature key generation work
+        // only testable, if signing and signature key generation work
     void testVerifyFalse2 () {
-        Authentication.generateSignatureKeyPair();
+        SHA256withRSAAuthentication.generateSignatureKeyPair();
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                         "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -104,20 +97,18 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
+        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature"));
         QuantumnetworkControllcenter.communicationList.insert("other", "128.0.0.1", 2505, otherPublicKeyString);
 
-        String signature = Authentication.sign("Hello");
-        boolean result = Authentication.verify("Hello", signature, "other");
+        String signature = QuantumnetworkControllcenter.authentication.sign("Hello");
+        boolean result = QuantumnetworkControllcenter.authentication.verify("Hello", signature, "other");
         Assertions.assertFalse(result);
-
-        Authentication.deleteSignatureKeys();
     }
 
     @Test
-    // only realistically testable if signature key generation, signing and sending of messages work
+        // only realistically testable if signature key generation, signing and sending of messages work
     void testLocalSendAuthenticatedMessage () throws IOException {
-        Authentication.generateSignatureKeyPair();
+        SHA256withRSAAuthentication.generateSignatureKeyPair();
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                         "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -126,7 +117,7 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
+        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 2303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature"));
         QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
@@ -138,14 +129,12 @@ class AuthenticationTests {
 
         boolean result = MessageSystem.sendAuthenticatedMessage("Bob", "Hello");
         Assertions.assertTrue(result);
-
-        Authentication.deleteSignatureKeys();
     }
 
     @Test
-    // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
+        // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
     void testLocalReceiveAuthenticatedMessage () throws IOException {
-        Authentication.generateSignatureKeyPair();
+        SHA256withRSAAuthentication.generateSignatureKeyPair();
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                         "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -154,7 +143,7 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
+        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 2303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature"));
         QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
@@ -168,14 +157,12 @@ class AuthenticationTests {
 
         String message = MessageSystem.readAuthenticatedMessage("Alice");
         Assertions.assertEquals(message, "Hello, how are you?");
-
-        Authentication.deleteSignatureKeys();
     }
 
     @Test
-    // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
+        // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
     void testFalseLocalAuthenticatedMessage () throws IOException {
-        Authentication.generateSignatureKeyPair();
+        SHA256withRSAAuthentication.generateSignatureKeyPair();
         String otherPublicKeyString =
                 "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                         "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -184,7 +171,7 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 2303, Authentication.readPublicKeyStringFromFile("signature"));
+        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 2303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature"));
         QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
@@ -198,7 +185,5 @@ class AuthenticationTests {
 
         String message = MessageSystem.readAuthenticatedMessage("Bob");
         Assertions.assertNull(message);
-
-        Authentication.deleteSignatureKeys();
     }
 }

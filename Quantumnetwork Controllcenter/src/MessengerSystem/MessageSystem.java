@@ -149,7 +149,7 @@ public static LinkedList<String> getAllReceivedMessages(String connectionID){
 	 * @return true if the sending of both messages worked, false otherwise
 	 */
 	public static boolean sendAuthenticatedMessage(String connectionID, final String message) {
-		String signature = Authentication.sign(message);
+		String signature = QuantumnetworkControllcenter.authentication.sign(message);
 		boolean res1 = sendConfirmedMessage(connectionID, message);
 		boolean res2 = sendConfirmedMessage(connectionID, signature);
 		return res1 && res2;
@@ -170,7 +170,7 @@ public static LinkedList<String> getAllReceivedMessages(String connectionID){
 		}
 		String message = readReceivedMessage(connectionID);
 		String signature = readReceivedMessage(connectionID);
-		if(Authentication.verify(message, signature, connectionID)) {
+		if(QuantumnetworkControllcenter.authentication.verify(message, signature, connectionID)) {
 			return message;
 		}
 		return null;
