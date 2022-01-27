@@ -1,4 +1,4 @@
-package KeyStore;
+package keyStore;
 
 import org.junit.jupiter.api.Test;
 

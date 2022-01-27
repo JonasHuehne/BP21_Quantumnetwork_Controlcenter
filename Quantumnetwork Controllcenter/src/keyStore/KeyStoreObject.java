@@ -1,4 +1,4 @@
-package KeyStore;
+package keyStore;
 
 /**
  *   Class represents a KeyInformationObject Object.
