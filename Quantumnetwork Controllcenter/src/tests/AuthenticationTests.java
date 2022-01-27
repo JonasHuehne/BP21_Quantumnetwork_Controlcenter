@@ -54,7 +54,7 @@ class AuthenticationTests {
     }
 
     @Test
-        // relies on signature key generation in authentication class
+    // relies on signature key generation in authentication class
     void testSign () {
         SHA256withRSAAuthentication.generateSignatureKeyPair();
 
@@ -63,7 +63,7 @@ class AuthenticationTests {
     }
 
     @Test
-        // only testable, if signing and signature key generation work
+    // only testable, if signing and signature key generation work
     void testVerifyTrue () {
         SHA256withRSAAuthentication.generateSignatureKeyPair();
         QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature"));
@@ -74,7 +74,7 @@ class AuthenticationTests {
     }
 
     @Test
-        // only testable, if signing and signature key generation work
+    // only testable, if signing and signature key generation work
     void testVerifyFalse () {
         SHA256withRSAAuthentication.generateSignatureKeyPair();
 
@@ -85,7 +85,7 @@ class AuthenticationTests {
     }
 
     @Test
-        // only testable, if signing and signature key generation work
+    // only testable, if signing and signature key generation work
     void testVerifyFalse2 () {
         SHA256withRSAAuthentication.generateSignatureKeyPair();
         String otherPublicKeyString =
@@ -105,7 +105,7 @@ class AuthenticationTests {
     }
 
     @Test
-        // only realistically testable if signature key generation, signing and sending of messages work
+    // only realistically testable if signature key generation, signing and sending of messages work
     void testLocalSendAuthenticatedMessage () throws IOException {
         SHA256withRSAAuthentication.generateSignatureKeyPair();
         String otherPublicKeyString =
@@ -131,7 +131,7 @@ class AuthenticationTests {
     }
 
     @Test
-        // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
+    // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
     void testLocalReceiveAuthenticatedMessage () throws IOException {
         SHA256withRSAAuthentication.generateSignatureKeyPair();
         String otherPublicKeyString =
@@ -159,7 +159,7 @@ class AuthenticationTests {
     }
 
     @Test
-        // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
+    // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
     void testFalseLocalAuthenticatedMessage () throws IOException {
         SHA256withRSAAuthentication.generateSignatureKeyPair();
         String otherPublicKeyString =

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 
+import messengerSystem.SHA256withRSAAuthentication;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -13,7 +14,7 @@ import org.junit.jupiter.api.Test;
 import communicationList.CommunicationList;
 import communicationList.DbObject;
 import frame.QuantumnetworkControllcenter;
-import MessengerSystem.Authentication;
+import messengerSystem.Authentication;
 import ui.Command;
 import ui.CommandHandler;
 
@@ -229,7 +230,7 @@ class CommandHandlerTest {
 
 			// Assert that pk was properly set
 			DbObject Alicia = QuantumnetworkControllcenter.communicationList.query("Alicia");
-			assertEquals(Authentication.readPublicKeyStringFromFile("pkForTesting_1"), Alicia.getSignatureKey());
+			assertEquals(SHA256withRSAAuthentication.readPublicKeyStringFromFile("pkForTesting_1"), Alicia.getSignatureKey());
 
 			// Now check if pk can be deleted
 			System.out.println(CommandHandler.processCommand("contacts update Alicia pk remove"));

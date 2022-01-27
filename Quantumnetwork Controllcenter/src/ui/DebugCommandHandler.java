@@ -1,12 +1,12 @@
 package ui;
 
-import CommunicationList.Database;
-import MessengerSystem.Authentication;
+import frame.QuantumnetworkControllcenter;
+import messengerSystem.SHA256withRSAAuthentication;
 
 public class DebugCommandHandler {
 
 	static String handleGenSigPair() {
-		boolean b = Authentication.generateSignatureKeyPair();
+		boolean b = SHA256withRSAAuthentication.generateSignatureKeyPair();
 		String out;
 		if (b) {
 			out = "Successfully generated a key pair for Authentication.";
@@ -30,7 +30,7 @@ public class DebugCommandHandler {
 		
 		if(commandArgs.length != 2) throw new IllegalArgumentException("Illegal commandArgs array size, expected 2, got: " + commandArgs.length);
 		
-		boolean success = Database.updateSignatureKey(commandArgs[0], commandArgs[1]);
+		boolean success = QuantumnetworkControllcenter.communicationList.updateSignatureKey(commandArgs[0], commandArgs[1]);
 		
 		if (success) {
 			out = "Successfully changed pk of contact \"" + commandArgs[0] + "\" to: " + System.lineSeparator() + commandArgs[1];

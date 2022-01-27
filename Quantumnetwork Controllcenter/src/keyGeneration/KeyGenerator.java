@@ -13,7 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import MessengerSystem.MessageSystem;
+import messengerSystem.MessageSystem;
 import frame.QuantumnetworkControllcenter;
 import networkConnection.ConnectionState;
 
