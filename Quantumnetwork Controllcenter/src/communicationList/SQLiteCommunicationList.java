@@ -1,4 +1,4 @@
-package CommunicationList;
+package communicationList;
 
 import java.io.File;
 import java.sql.Connection;
@@ -13,9 +13,9 @@ import java.util.regex.Pattern;
  * Class to handle interaction with the communication list db
  * @author Sarah Schumann
  */
-public class Database {
+public class SQLiteCommunicationList implements CommunicationList {
 
-    private static Connection connection;
+    private Connection connection;
 
     private static final String TABLE_NAME = "CommunicationList";
 
@@ -31,9 +31,9 @@ public class Database {
      */
     private static final String CONTACT_IP_SYNTAX =
             "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
-            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
-            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
-            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))";
+                    "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
+                    "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
+                    "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))";
 
     private static final int MIN_PORT_NUMBER = 0;
     private static final int MAX_PORT_NUMBER = 65535;
@@ -42,7 +42,7 @@ public class Database {
      * open a connection to the db
      * @return true if it worked, false if error
      */
-    private static boolean connectToDb() {
+    private boolean connectToDb() {
         try{
             Class.forName("org.sqlite.JDBC");
 
@@ -77,7 +77,8 @@ public class Database {
      * @param signatureKey the public signature key as a string
      * @return true if the insert worked, false if error
      */
-    public static boolean insert (final String name, final String ipAddress, final int port, final String signatureKey) {
+    @Override
+    public boolean insert (final String name, final String ipAddress, final int port, final String signatureKey) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -114,10 +115,10 @@ public class Database {
     /**
      * delete an entry from the db
      * @param name the designated name of the entry to be deleted as a String
-     * @return true if the deleting worked or name not exists, false if error,
-     * @throws IllegalArgumentException if name is null
+     * @return true if the deleting worked, false if error
      */
-    public static boolean delete (final String name) {
+    @Override
+    public boolean delete (final String name) {
         if (name == null) {
             throw new IllegalArgumentException("Input was null");
         }
@@ -143,7 +144,8 @@ public class Database {
      * @param newName the new name as a string
      * @return true if the update worked, false if error
      */
-    public static boolean updateName (final String oldName, final String newName) {
+    @Override
+    public boolean updateName (final String oldName, final String newName) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -173,7 +175,8 @@ public class Database {
      * @param ipAddress the new IP address as a string
      * @return true if the update worked, false if error
      */
-    public static boolean updateIP (final String name, final String ipAddress) {
+    @Override
+    public boolean updateIP (final String name, final String ipAddress) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -203,7 +206,8 @@ public class Database {
      * @param port the new port as an int
      * @return true if the update worked, false if error
      */
-    public static boolean updatePort (final String name, final int port) {
+    @Override
+    public boolean updatePort (final String name, final int port) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -233,7 +237,8 @@ public class Database {
      * @param signatureKey the new signatureKey as a string
      * @return true if the update worked, false if error
      */
-    public static boolean updateSignatureKey (final String name, final String signatureKey) {
+    @Override
+    public boolean updateSignatureKey (final String name, final String signatureKey) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -256,7 +261,8 @@ public class Database {
      * @param name the designated name of the entry to return as string
      * @return a DbObject with the date of the entry, null if error
      */
-    public static DbObject query (final String name) {
+    @Override
+    public DbObject query (final String name) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -283,7 +289,8 @@ public class Database {
      * query all entries in the db
      * @return ArrayList of DbObjects for all entries in the database, null if error
      */
-    public static ArrayList<DbObject> queryAll () {
+    @Override
+    public ArrayList<DbObject> queryAll () {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();

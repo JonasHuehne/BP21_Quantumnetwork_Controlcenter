@@ -10,8 +10,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import CommunicationList.Database;
-import CommunicationList.DbObject;
+import communicationList.CommunicationList;
+import communicationList.DbObject;
+import frame.QuantumnetworkControllcenter;
 import MessengerSystem.Authentication;
 import ui.Command;
 import ui.CommandHandler;
@@ -28,8 +29,9 @@ import ui.CommandHandler;
  * @author Sasha Petri
  */
 class CommandHandlerTest {
-	
+
 	private final String NO_KEY = "";
+	CommunicationList db;
 	
 	@Nested
 	class invalid_inputs {
@@ -99,11 +101,14 @@ class CommandHandlerTest {
 		
 		@BeforeEach
 		void before_each () {
+			// initialize the database
+			QuantumnetworkControllcenter.initialize();
+
 			// Ensure that the Database is clear of all entries
-			ArrayList<DbObject> entries = Database.queryAll();
+			ArrayList<DbObject> entries = QuantumnetworkControllcenter.communicationList.queryAll();
 			if(entries != null) {
 				for (DbObject entry : entries) {
-					Database.delete(entry.getName());
+					QuantumnetworkControllcenter.communicationList.delete(entry.getName());
 				}
 			}
 		}
@@ -111,10 +116,10 @@ class CommandHandlerTest {
 		@AfterEach 
 		void after_each() {
 			// Do not leave any entries in the Database
-			ArrayList<DbObject> entries = Database.queryAll();
+			ArrayList<DbObject> entries = QuantumnetworkControllcenter.communicationList.queryAll();
 			if(entries != null) {
 				for (DbObject entry : entries) {
-					Database.delete(entry.getName());
+					QuantumnetworkControllcenter.communicationList.delete(entry.getName());
 				}
 			}
 		}
@@ -126,11 +131,11 @@ class CommandHandlerTest {
 			CommandHandler.processCommand("contacts add Billie 138.0.0.5 9999");
 			CommandHandler.processCommand("contacts add Charlie 168.0.1.7 26665");
 			
-			DbObject Alexa = Database.query("Alexa");
-			DbObject Billie = Database.query("Billie");
-			DbObject Charlie = Database.query("Charlie");
+			DbObject Alexa = QuantumnetworkControllcenter.communicationList.query("Alexa");
+			DbObject Billie = QuantumnetworkControllcenter.communicationList.query("Billie");
+			DbObject Charlie = QuantumnetworkControllcenter.communicationList.query("Charlie");
 			
-			assertTrue(Database.queryAll().size() == 3);
+			assertTrue(QuantumnetworkControllcenter.communicationList.queryAll().size() == 3);
 			
 			assertEquals(Alexa.getIpAddress(), "127.0.0.1");
 			assertEquals(Billie.getIpAddress(), "138.0.0.5");
@@ -144,25 +149,25 @@ class CommandHandlerTest {
 		
 		@Test
 		void contacts_remove_works() {
-			
-			Database.insert("Alexa", "127.0.0.1", 1, NO_KEY);
-			Database.insert("Billie", "127.0.0.2", 2, NO_KEY);
-			Database.insert("Charlie", "127.0.0.3", 3, NO_KEY);
-			
+
+			QuantumnetworkControllcenter.communicationList.insert("Alexa", "127.0.0.1", 1, NO_KEY);
+			QuantumnetworkControllcenter.communicationList.insert("Billie", "127.0.0.2", 2, NO_KEY);
+			QuantumnetworkControllcenter.communicationList.insert("Charlie", "127.0.0.3", 3, NO_KEY);
+
 			CommandHandler.processCommand("contacts remove Alexa");
 			CommandHandler.processCommand("contacts remove Billie");
 			CommandHandler.processCommand("contacts remove Charlie");
 			
-			assertTrue(Database.queryAll().size() == 0);
+			assertTrue(QuantumnetworkControllcenter.communicationList.queryAll().size() == 0);
 			
 		}
 		
 		@Test
 		void contacts_show_works() {
-			
-			Database.insert("Alexa", "127.0.0.1", 1111, NO_KEY);
-			Database.insert("Billie", "127.0.0.2", 2222, NO_KEY);
-			Database.insert("Charlie", "127.0.0.3", 3333, NO_KEY);
+
+			QuantumnetworkControllcenter.communicationList.insert("Alexa", "127.0.0.1", 1111, NO_KEY);
+			QuantumnetworkControllcenter.communicationList.insert("Billie", "127.0.0.2", 2222, NO_KEY);
+			QuantumnetworkControllcenter.communicationList.insert("Charlie", "127.0.0.3", 3333, NO_KEY);
 			
 			String shownContacts = CommandHandler.processCommand("contacts show");
 			
@@ -178,76 +183,76 @@ class CommandHandlerTest {
 			assertTrue(shownContacts.contains("2222"));
 			assertTrue(shownContacts.contains("3333"));
 		}
-		
+
 		@Test
 		void contacts_update_works_for_names() {
-			Database.insert("Alexa", "127.0.0.1", 1111, NO_KEY);
-			
+			QuantumnetworkControllcenter.communicationList.insert("Alexa", "127.0.0.1", 1111, NO_KEY);
+
 			CommandHandler.processCommand("contacts update Alexa name Bob");
-			
-			assertTrue(Database.queryAll().size() == 1);
-			assertNull(Database.query("Alexa"));
-			assertEquals("127.0.0.1", Database.query("Bob").getIpAddress());
-			assertEquals(1111, Database.query("Bob").getPort());
+
+			assertTrue(QuantumnetworkControllcenter.communicationList.queryAll().size() == 1);
+			assertNull(QuantumnetworkControllcenter.communicationList.query("Alexa"));
+			assertEquals("127.0.0.1", QuantumnetworkControllcenter.communicationList.query("Bob").getIpAddress());
+			assertEquals(1111, QuantumnetworkControllcenter.communicationList.query("Bob").getPort());
 		}
-		
+
 		@Test
 		void contacts_update_works_for_ips() {
-			Database.insert("Bob", "127.0.0.1", 1111, NO_KEY);
-			
+			QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 1111, NO_KEY);
+
 			CommandHandler.processCommand("contacts update Bob IP 168.0.0.1");
-			
-			assertTrue(Database.queryAll().size() == 1);
-			assertEquals("168.0.0.1", Database.query("Bob").getIpAddress());
-			assertEquals(1111, Database.query("Bob").getPort());		
+
+			assertTrue(QuantumnetworkControllcenter.communicationList.queryAll().size() == 1);
+			assertEquals("168.0.0.1", QuantumnetworkControllcenter.communicationList.query("Bob").getIpAddress());
+			assertEquals(1111, QuantumnetworkControllcenter.communicationList.query("Bob").getPort());
 		}
-		
+
 		@Test
 		void contacts_update_works_for_ports() {
-			Database.insert("Bob", "127.0.0.1", 1111, NO_KEY);
-			
+			QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 1111, NO_KEY);
+
 			CommandHandler.processCommand("contacts update Bob Port 5555");
-			
-			assertTrue(Database.queryAll().size() == 1);
-			assertEquals("127.0.0.1", Database.query("Bob").getIpAddress());
-			assertEquals(5555, Database.query("Bob").getPort());
+
+			assertTrue(QuantumnetworkControllcenter.communicationList.queryAll().size() == 1);
+			assertEquals("127.0.0.1", QuantumnetworkControllcenter.communicationList.query("Bob").getIpAddress());
+			assertEquals(5555, QuantumnetworkControllcenter.communicationList.query("Bob").getPort());
 		}
-		
+
 		@Test
 		void contacts_update_works_for_pks() {
-			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
-			
+			QuantumnetworkControllcenter.communicationList.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
+
 			CommandHandler.processCommand("contacts update Alicia pk \"pkForTesting_1\"");
-			
+
 			// Assert that # of entries, Name, IP and Port remain unchanged
 			helper_Alicia_did_not_change();
-			
+
 			// Assert that pk was properly set
-			DbObject Alicia = Database.query("Alicia");
+			DbObject Alicia = QuantumnetworkControllcenter.communicationList.query("Alicia");
 			assertEquals(Authentication.readPublicKeyStringFromFile("pkForTesting_1"), Alicia.getSignatureKey());
-									
+
 			// Now check if pk can be deleted
 			System.out.println(CommandHandler.processCommand("contacts update Alicia pk remove"));
-			Alicia = Database.query("Alicia"); // re-query needed! If we forget this, the test throws an error, because the object would still be the old result!
+			Alicia = QuantumnetworkControllcenter.communicationList.query("Alicia"); // re-query needed! If we forget this, the test throws an error, because the object would still be the old result!
 			assertEquals(NO_KEY, Alicia.getSignatureKey());
-			
+
 			// TODO: There needs to be a publicly accessible "default" entry for an unset key in a constant somewhere sensible
 			// Possibly put it in the CommunicationList interface once that's finished
 		}
 		
 		@Test
 		void contacts_update_wrong_input_makes_no_changes_for_name() {
-			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
+			QuantumnetworkControllcenter.communicationList.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
 			
 			/*
-			 * Note: Errors in this test may not neccessarily be caused by implementation issues of CommandHandler
+			 * Note: Errors in this test may not necessarily be caused by implementation issues of CommandHandler
 			 * It may be that the currently used CommunicationList simply does not enforce restrictions such names being alphanumeric, _ and - only
 			 */
 			
 			// Invalid name
-			CommandHandler.processCommand("contacts update Alicia name Böö-$$as");
+			CommandHandler.processCommand("contacts update Alicia name Bï¿½ï¿½-$$as");
 			helper_Alicia_did_not_change();
-			CommandHandler.processCommand("contacts update Alicia name Mörü<m");
+			CommandHandler.processCommand("contacts update Alicia name Mï¿½rï¿½<m");
 			helper_Alicia_did_not_change();
 			CommandHandler.processCommand("contacts update Alicia name ?_++qq&");
 			helper_Alicia_did_not_change();
@@ -256,10 +261,10 @@ class CommandHandlerTest {
 		
 		@Test
 		void contacts_update_wrong_input_makes_no_changes_for_ip() {
-			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
+			QuantumnetworkControllcenter.communicationList.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
 			
 			/*
-			 * Note: Errors in this test may not neccessarily be caused by implementation issues of CommandHandler
+			 * Note: Errors in this test may not necessarily be caused by implementation issues of CommandHandler
 			 * It may be that the currently used CommunicationList simply does not enforce restrictions such as 1234 being an invalid IP
 			 */
 			
@@ -275,10 +280,10 @@ class CommandHandlerTest {
 		
 		@Test
 		void contacts_update_wrong_input_makes_no_changes_for_port() {
-			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
+			QuantumnetworkControllcenter.communicationList.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
 			
 			/*
-			 * Note: Errors in this test may not neccessarily be caused by implementation issues of CommandHandler
+			 * Note: Errors in this test may not necessarily be caused by implementation issues of CommandHandler
 			 * It may be that the currently used CommunicationList simply does not enforce restrictions such as a max port of 65535
 			 */
 			
@@ -294,7 +299,7 @@ class CommandHandlerTest {
 		
 		@Test
 		void contacts_update_wrong_input_makes_no_changes_for_pk() {
-			Database.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
+			QuantumnetworkControllcenter.communicationList.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
 			
 			// Invalid IP
 			CommandHandler.processCommand("contacts update Alicia pk \"\"");
@@ -312,8 +317,8 @@ class CommandHandlerTest {
 		 * Does not check the pk associated with that entry in any way
 		 */
 		private void helper_Alicia_did_not_change() {
-			assertTrue(Database.queryAll().size() == 1);
-			DbObject Alicia = Database.query("Alicia");
+			assertTrue(QuantumnetworkControllcenter.communicationList.queryAll().size() == 1);
+			DbObject Alicia = QuantumnetworkControllcenter.communicationList.query("Alicia");
 			assertNotNull(Alicia);
 			assertEquals("127.0.0.1", Alicia.getIpAddress());
 			assertEquals(1111, Alicia.getPort());
@@ -321,8 +326,8 @@ class CommandHandlerTest {
 		
 		@Test
 		void contacts_search_works() {
-			
-			Database.insert("Alexa", "127.0.0.1", 45345, NO_KEY);
+
+			QuantumnetworkControllcenter.communicationList.insert("Alexa", "127.0.0.1", 45345, NO_KEY);
 			
 			String searched = CommandHandler.processCommand("contacts search Alexa");
 			
@@ -336,18 +341,18 @@ class CommandHandlerTest {
 		void contacts_show_pk_works() {
 			String exampleKey = "BLABLAKEYBLABLA123";
 			String exampleKey2 = "XXXXXXXXXXXXXXXXX";
-			Database.insert("Alexa", "127.0.0.1", 45345, exampleKey);
+			QuantumnetworkControllcenter.communicationList.insert("Alexa", "127.0.0.1", 45345, exampleKey);
 			
 			String shouldContainKey = CommandHandler.processCommand("contacts showpk Alexa");
 			assertTrue(shouldContainKey.contains(exampleKey));
 			assertFalse(shouldContainKey.contains(exampleKey2));
 				
-			Database.updateSignatureKey("Alexa", exampleKey2);
+			QuantumnetworkControllcenter.communicationList.updateSignatureKey("Alexa", exampleKey2);
 			String shouldContainKey2 = CommandHandler.processCommand("contacts showpk Alexa");
 			assertFalse(shouldContainKey2.contains(exampleKey));
 			assertTrue(shouldContainKey2.contains(exampleKey2));
 			
-			Database.updateSignatureKey("Alexa", "");
+			QuantumnetworkControllcenter.communicationList.updateSignatureKey("Alexa", "");
 			String shouldContainNeitherKey = CommandHandler.processCommand("contacts showpk Alexa");
 			assertFalse(shouldContainNeitherKey.contains(exampleKey));
 			assertFalse(shouldContainNeitherKey.contains(exampleKey));
@@ -364,14 +369,14 @@ class CommandHandlerTest {
 			 * Not sure how else to automatically test for users being informed 
 			 * about a contact having no pk, or contact not existing.
 			 */
-			Database.insert("Alexa", "127.0.0.1", 45345, "");
+			QuantumnetworkControllcenter.communicationList.insert("Alexa", "127.0.0.1", 45345, "");
 			
 			// user should be informed that Alexa currently has no public key associated
 			String shouldContainNoPublicKey = CommandHandler.processCommand("contacts showpk Alexa");
 			assertTrue(shouldContainNoPublicKey.contains("no public key"));
 						
 			// if trying to see the pk of 
-			Database.delete("Alexa");
+			QuantumnetworkControllcenter.communicationList.delete("Alexa");
 			String shouldInformUserNoSuchContact = CommandHandler.processCommand("contacts showpk Alexa");
 			assertTrue(shouldInformUserNoSuchContact.contains("no such contact"));
 		}
