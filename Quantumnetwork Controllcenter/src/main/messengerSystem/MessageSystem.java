@@ -4,7 +4,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedList;
 
+import main.encryptionDecryption.AES256;
 import main.frame.QuantumnetworkControllcenter;
+import main.keyStore.KeyStoreDbManager;
+import main.keyStore.KeyStoreObject;
 import main.networkConnection.ConnectionManager;
 import main.networkConnection.ConnectionState;
 import main.networkConnection.NetworkPackage;
@@ -154,6 +157,36 @@ public class MessageSystem {
 	}
 
 	/**
+	 * sends a signed message with encrypted tex
+	 * 
+	 * @param connectionID the ID of the reciever
+	 * @param message the message to be sent
+	 * @return true if the sending of the message worked, false otherwise
+	 */
+	public static boolean sendEncryptedMessage(String connectionID, final String message) {
+		
+		//getting key
+		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
+		byte[] byteKey = keyObject.getKeyBuffer();
+		
+		//marking key as used
+		KeyStoreDbManager.changeKeyToUsed(connectionID);
+		
+		/*
+		 * TODO 
+		 * hier entsteht noch ziemliches durcheinander!
+		 * Möglichkeiten das sauberer zu lösen:
+		 * - keys in der DB direct in passender Länge speichern 
+		 * - dem folgend eine möglichkeit den entsprechenden key als used zu markieren oder besser:
+		 * 	 beim erhalten des Keys diret als used markieren
+		 */
+		
+		String encrypted = AES256.encrypt(message, byteKey);
+		
+		return sendAuthenticatedMessage(connectionID, encrypted);		
+	}
+	
+	/**
 	 * receives a signed message
 	 * (currently implemented as receiving two messages, first the message, then the signature)
 	 * @return the received message as string, null if error none or if result of verify was false
@@ -172,6 +205,31 @@ public class MessageSystem {
 			return message;
 		}
 		return null;
+	}
+	
+	public static String readEncryptedMessage(String connectionID) {
+		String encrypted = readAuthenticatedMessage(connectionID);
+		
+		//getting key
+		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
+		byte[] byteKey = keyObject.getKeyBuffer();
+				
+		//marking key as used
+		KeyStoreDbManager.changeKeyToUsed(connectionID);
+		
+		/*
+		 * TODO
+		 * 
+		 * auch hier herrscht noch Durcheinander und Unklarheiten:
+		 * -wie genau wird sich auf einen key geeinigt?
+		 *  wird das über eine vorherige message gelöst 
+		 *  oder wird vom KeyStore eine methode implementiert bei der immer der älteste unused key zurückgegeben wird?
+		 *  
+		 * Wenn sich vorher auf den key geeinigt wird muss noch ein paramete key hinzugefügt werden!
+		 */
+		
+		//decrypting the message and then returning it
+		return AES256.decrypt(encrypted, byteKey);
 	}
 
 }

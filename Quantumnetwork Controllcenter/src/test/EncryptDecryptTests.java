@@ -17,7 +17,10 @@ public class EncryptDecryptTests {
 	String bitStringKeyGreaterOne = "3011010110101011101010111011101010101010101010101110011110000011101010111010111011100011000011110111101111101011010101011010101010111000011101010111101011110110111110001111100001111100011111010101110101110101110101110111101111000001111111010101010111101111";
 	String bitStringKeyShort = "01110101";
 	String bitStringKeyLong = "0101010110101011101010111011101010101010101010101110011110000011101010111010111011100011000011110111101111101011010101011010101010111000011101010111101011110110111110001111100001111110101100011111010101110101110101110101110111101111000001111111010101010111101111";
-
+	byte[] byteKey = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32}; 
+	byte [] byteKeyLong = new byte [] { (byte) 0,  (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
+	byte [] byteKeyShort = new byte[] { (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
+	
 	private final PrintStream standardOut = System.out;
 	private final PrintStream standardErr = System.err;
 	private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
@@ -36,6 +39,19 @@ public class EncryptDecryptTests {
 	public void testEncryptionDecryptionBitStringKey(){
 		String encrypted = AES256.encrypt(original, bitStringKey);
 		String decrypted = AES256.decrypt(encrypted, bitStringKey);
+			
+		assertNotEquals(original,encrypted);
+		assertNotEquals(encrypted,decrypted);
+		assertEquals(decrypted,original);
+	}
+	
+	@Test
+	/*
+	 * Testing encryption and decryption with a byte array as Key
+	 */
+	public void testEncryptionDecryptionByteArrayKey(){
+		String encrypted = AES256.encrypt(original, byteKey);
+		String decrypted = AES256.decrypt(encrypted, byteKey);
 			
 		assertNotEquals(original,encrypted);
 		assertNotEquals(encrypted,decrypted);
@@ -65,6 +81,42 @@ public class EncryptDecryptTests {
 		assertNotEquals(encrypted,decrypted);
 		assertEquals(decrypted,original);
 	}	
+	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown when null is used as key
+	 */
+	public void testEncryptionNullByteKey() {
+		assertThrows(NullPointerException.class,() -> {
+			assertNull(AES256.encrypt(original,(byte []) null));
+			});
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Error message is shown when using a too long byte array during encryption
+	 */
+	public void testEncryptionByteArrayTooLong() {
+		System.setErr(new PrintStream(outputErrCaptor));
+		
+		assertNull(AES256.encrypt(original, byteKeyLong));	
+		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
+		
+		System.setErr(standardErr);
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Error message is shown when using a too short byte array during encryption
+	 */
+	public void testEncryptionByteArrayTooShort() {
+		System.setErr(new PrintStream(outputErrCaptor));
+		
+		assertNull(AES256.encrypt(original, byteKeyShort));
+		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
+		
+		System.setErr(standardErr);
+	}
 	
 	@Test
 	/*
@@ -187,6 +239,47 @@ public class EncryptDecryptTests {
 			assertNull(AES256.encrypt(null,sk));
 		});
 	}
+	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown when null is used as key during decryption
+	 */
+	public void testDecryptionNullByteKey() {
+		String encrypted = AES256.encrypt(original, byteKey);
+
+		assertThrows(NullPointerException.class,() -> {
+			assertNull(AES256.decrypt(encrypted, (byte[]) null));
+			});
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Error message is shown when using a too long byte array during decryption
+	 */
+	public void testDecryptionByteArrayTooLong() {
+		System.setErr(new PrintStream(outputErrCaptor));
+		String encrypted = AES256.encrypt(original, byteKey);
+		
+		assertNull(AES256.decrypt(encrypted, byteKeyLong));
+		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
+		
+		System.setErr(standardErr);
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Error message is shown when using a too short byte array during decryption
+	 */
+	public void testDecryptionByteArrayTooShort() {
+		System.setErr(new PrintStream(outputErrCaptor));
+		String encrypted = AES256.encrypt(original, byteKey);
+		
+		assertNull(AES256.decrypt(encrypted, byteKeyShort));
+		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
+		
+		System.setErr(standardErr);
+	}
+	//TODO
 	
 	@Test
 	/*
@@ -400,6 +493,54 @@ public class EncryptDecryptTests {
 		assertThrows(NumberFormatException.class,()->{
 			assertNull(CryptoUtility.bitString256ToByteArray32(bitStringKeyWithChars));
 		});
+	}
+	
+	@Test
+	/*
+	 * Testing that SecretKey object contains the correct key information.
+	 */
+	public void testByteArrayToSecretKeyAES256ValidByteArray() {
+		SecretKey sk = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
+		byte[] keyBytes = sk.getEncoded();
+		for(int i = 0; i < 32; i++) {
+			assertEquals(byteKey[i], keyBytes[i]);
+		}
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Exception is thrown when null used as byte array
+	 */
+	public void testByteArrayToSecretKeyAES256Null() {
+		assertThrows(NullPointerException.class, () -> {
+			assertNull(CryptoUtility.byteArrayToSecretKeyAES256(null));
+		});
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Error message is shown when using a too long byte array
+	 */
+	public void testStringToSecretKeyAES256ByteArraygTooLong() {
+		System.setErr(new PrintStream(outputErrCaptor));
+		
+		assertNull(CryptoUtility.byteArrayToSecretKeyAES256(byteKeyLong));
+		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
+		
+		System.setErr(standardErr);
+	}
+	
+	@Test
+	/*
+	 * Testing that correct Error message is shown when using a too short byte array
+	 */
+	public void testStringToSecretKeyAES256ByteArrayTooShort() {
+		System.setErr(new PrintStream(outputErrCaptor));
+		
+		assertNull(CryptoUtility.byteArrayToSecretKeyAES256(byteKeyShort));
+		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
+		
+		System.setErr(standardErr);
 	}
 	
 	@Test

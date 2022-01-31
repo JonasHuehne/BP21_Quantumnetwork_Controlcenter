@@ -37,7 +37,7 @@ public final class KeyStoreObject {
      *
      * @return keyBuffer (=key) of the entry
      */
-        protected byte[] getKeyBuffer() {
+        public byte[] getKeyBuffer() {
             return keyBuffer;
         }
 
