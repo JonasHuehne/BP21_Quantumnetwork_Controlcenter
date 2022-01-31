@@ -1,4 +1,4 @@
-package main.encryptionDecryption;
+package encryptionDecryption;
 import javax.crypto.Cipher;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;

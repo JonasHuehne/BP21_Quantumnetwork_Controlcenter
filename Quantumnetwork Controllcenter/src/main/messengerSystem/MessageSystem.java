@@ -1,13 +1,13 @@
-package main.messengerSystem;
+package messengerSystem;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedList;
 
-import main.frame.QuantumnetworkControllcenter;
-import main.networkConnection.ConnectionManager;
-import main.networkConnection.ConnectionState;
-import main.networkConnection.NetworkPackage;
+import frame.QuantumnetworkControllcenter;
+import networkConnection.ConnectionManager;
+import networkConnection.ConnectionState;
+import networkConnection.NetworkPackage;
 
 /**High Level Message System. Contains methods for sending and receiving messages without dealing with low-level things.
  * Select active connectionEndpoint and start sending and receiving messages!

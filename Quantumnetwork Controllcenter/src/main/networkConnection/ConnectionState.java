@@ -1,4 +1,4 @@
-package main.networkConnection;
+package networkConnection;
 /**
  * Represents the State of a single ConnectionEndpoint.
  * @author Jonas Huehne
