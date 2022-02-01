@@ -52,7 +52,7 @@ public class KeyStoreDbManager {
      *
      * @returns True if Database and table were created successfully, False otherwise
      */
-    protected static boolean createNewKeyStoreAndTable() {
+    public static boolean createNewKeyStoreAndTable() {
 
         try {
             Connection conn = KeyStoreDbManager.connect();
@@ -214,7 +214,7 @@ public class KeyStoreDbManager {
      * @param keyStreamID the ID of the key that needs to be deleted from the DB
      * @return True if operation was successful, False otherwise
      */
-    protected static boolean deleteKeyInformationByID(String keyStreamID){
+    public static boolean deleteKeyInformationByID(String keyStreamID){
         if (!KeyStoreDbManager.doesKeyStreamIdExist(keyStreamID)){
             System.err.println("Deleting Key entry from DB failed because the given keyStreamID does not exist!"  + "\n");
             return false;
@@ -327,10 +327,10 @@ public class KeyStoreDbManager {
             }
             stmnt.close();
             conn.close();
-            System.out.println("Generating list of KeyInformation table entries was successful" + "\n");
+            System.out.println("Generating list of KeyInformation table entries was successful");
             return result;
         } catch (SQLException e) {
-            System.err.println("Generating list of all entries from KeyInformation table failed!" + "\n");
+            System.err.println("Generating list of all entries from KeyInformation table failed!");
             System.err.println(e.toString());
             return null;
         }
@@ -341,7 +341,7 @@ public class KeyStoreDbManager {
      * @param keyStreamID reference ID to locate a key
      * @return true if the keyStreamID exists, false otherwise
      */
-   protected static boolean doesKeyStreamIdExist(String keyStreamID){
+   public static boolean doesKeyStreamIdExist(String keyStreamID){
         List<String> keyIdList = KeyStoreDbManager.getKeyStoreAsList().stream().map(obj -> new String(obj.getID())).collect(Collectors.toList());
 
         return keyIdList.contains(keyStreamID);
