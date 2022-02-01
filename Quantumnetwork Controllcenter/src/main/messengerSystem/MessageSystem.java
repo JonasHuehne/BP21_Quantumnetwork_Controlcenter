@@ -218,8 +218,9 @@ public class MessageSystem {
 				return null;
 			}
 		}
-		String message = readReceivedMessage(connectionID).getContent();
-		String signature = readReceivedMessage(connectionID).getContent();
+		NetworkPackage msg = readReceivedMessage(connectionID);
+		String message = msg.getContent();
+		String signature = msg.getSignature();
 		if(QuantumnetworkControllcenter.authentication.verify(message, signature, connectionID)) {
 			return message;
 		}
