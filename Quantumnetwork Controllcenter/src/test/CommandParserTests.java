@@ -1,5 +1,3 @@
-package test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.Random;
@@ -9,8 +7,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
-import main.ui.Command;
-import main.ui.CommandParser;
+import ui.Command;
+import ui.CommandParser;
 
 /**
  * @author Sasha Petri

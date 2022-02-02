@@ -1,15 +1,13 @@
-package test;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 
-import main.messengerSystem.MessageSystem;
-import main.frame.QuantumnetworkControllcenter;
-import main.networkConnection.ConnectionEndpoint;
-import main.networkConnection.ConnectionState;
+import messengerSystem.MessageSystem;
+import frame.QuantumnetworkControllcenter;
+import networkConnection.ConnectionEndpoint;
+import networkConnection.ConnectionState;
 
 /**Run all tests together, do not exclude testConnectionEndpoint as it creates the conMan needed in later tests.
  * 

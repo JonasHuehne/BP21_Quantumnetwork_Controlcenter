@@ -1,4 +1,4 @@
-package main.keyStore;
+package keyStore;
 
 /**
  * This Class represents a QoS (= Quality of Service) Object. This Class contains many parameters which are essential for the KeyStore

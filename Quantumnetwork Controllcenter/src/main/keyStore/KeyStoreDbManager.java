@@ -1,4 +1,4 @@
-package main.keyStore;
+package keyStore;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
