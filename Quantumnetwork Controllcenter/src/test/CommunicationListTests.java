@@ -321,8 +321,10 @@ class CommunicationListTests {
         Assertions.assertFalse(db.insert("ipv6Test8", "155:155:155:155", 3000, "sig8"));
         
         //Test wrong insert 3
-        Assertions.assertFalse(db.insert("ipv6Test9", "20501.0db8.85a3.08d3.1319.8a2e.0370.7344", 2600, "sig9"));
-        Assertions.assertFalse(db.insert("ipv6Test10", "2a02:0908:2614::8d95:487e.8fec.ba99", 3000, "sig10"));
+        Assertions.assertFalse(db.insert("ipv6Test9", "20501:0db8:85a3:08d3:1319:8a2e:0370:7344", 2600, "sig9"));
+        
+        //Test ::
+        Assertions.assertTrue(db.insert("ipv6Test10", "2a02:0908:2614::8d95:487e:8fec:ba99", 3000, "sig10"));
 
         //Test delete and query
         Assertions.assertTrue(db.delete("ipv6Test3"));
