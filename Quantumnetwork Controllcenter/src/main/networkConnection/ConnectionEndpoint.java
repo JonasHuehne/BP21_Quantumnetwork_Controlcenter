@@ -1,4 +1,4 @@
-package main.networkConnection;
+package networkConnection;
 
 
 import java.io.IOException;
@@ -11,8 +11,8 @@ import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import main.keyGeneration.KeyGenerator;
-import main.messengerSystem.SHA256withRSAAuthentication;
+import keyGeneration.KeyGenerator;
+import messengerSystem.SHA256withRSAAuthentication;
 
 /**Represents a single connection endpoint at a given port, that can connect to a single other connection endpoint on the same machine, in the same local network or via the internet.
  * Handles connection management and low-level transmissions. Use waitForConnection() and establishConnections() to connect 2 endpoints. Do not call pushMessage()

@@ -1,10 +1,10 @@
-package main.ui;
+package ui;
 
 import java.util.ArrayList;
 
-import main.communicationList.DbObject;
-import main.frame.QuantumnetworkControllcenter;
-import main.messengerSystem.SHA256withRSAAuthentication;
+import communicationList.DbObject;
+import frame.QuantumnetworkControllcenter;
+import messengerSystem.SHA256withRSAAuthentication;
 
 /**
  * The purpose of this class is to be used by {@link CommandHandler}, specifically for executing commands pertaining to the Communication List.

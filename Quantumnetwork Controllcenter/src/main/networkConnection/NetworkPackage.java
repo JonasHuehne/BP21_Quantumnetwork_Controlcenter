@@ -1,4 +1,4 @@
-package main.networkConnection;
+package networkConnection;
 
 import java.io.Serializable;
 
@@ -9,6 +9,7 @@ import java.io.Serializable;
  */
 public class NetworkPackage implements Serializable{
 
+	private static final long serialVersionUID = -6406450845229886762L;
 	private TransmissionTypeEnum head;
 	private String typeArgument; 
 	private String content;

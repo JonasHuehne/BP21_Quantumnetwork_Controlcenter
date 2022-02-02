@@ -1,4 +1,4 @@
-package main.communicationList;
+package communicationList;
 
 import java.util.ArrayList;
 

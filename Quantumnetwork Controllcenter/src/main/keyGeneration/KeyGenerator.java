@@ -1,4 +1,4 @@
-package main.keyGeneration;
+package keyGeneration;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -13,11 +13,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
-import main.messengerSystem.MessageSystem;
-import main.frame.QuantumnetworkControllcenter;
-import main.keyStore.KeyStoreDbManager;
-import main.networkConnection.ConnectionState;
-import main.networkConnection.TransmissionTypeEnum;
+import messengerSystem.MessageSystem;
+import frame.QuantumnetworkControllcenter;
+import keyStore.KeyStoreDbManager;
+import networkConnection.ConnectionState;
+import networkConnection.TransmissionTypeEnum;
 
 /**This class contains everything that it needed to generate a secure key.
  * After the key is generated, it is stored in the KeyDB.

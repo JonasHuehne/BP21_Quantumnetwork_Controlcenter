@@ -1,18 +1,14 @@
-package main.frame;
+package frame;
 
-import main.communicationList.CommunicationList;
-import main.communicationList.SQLiteCommunicationList;
-import main.keyStore.KeyStoreDbManager;
-import main.messengerSystem.Authentication;
-import main.messengerSystem.SHA256withRSAAuthentication;
-import main.networkConnection.ConnectionManager;
-import main.networkConnection.TransmissionTypeEnum;
-import main.ui.ConsoleUI;
+import communicationList.CommunicationList;
+import communicationList.SQLiteCommunicationList;
+import messengerSystem.Authentication;
+import messengerSystem.SHA256withRSAAuthentication;
+import networkConnection.ConnectionManager;
+import ui.ConsoleUI;
 import java.awt.EventQueue;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 
-import main.messengerSystem.MessageSystem;
+import messengerSystem.MessageSystem;
 
 /**
  * Main Class of QuantumnetworkControllcenter

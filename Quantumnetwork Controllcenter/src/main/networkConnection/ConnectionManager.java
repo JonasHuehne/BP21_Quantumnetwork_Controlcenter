@@ -1,4 +1,4 @@
-package main.networkConnection;
+package networkConnection;
 
 import java.util.*;
 

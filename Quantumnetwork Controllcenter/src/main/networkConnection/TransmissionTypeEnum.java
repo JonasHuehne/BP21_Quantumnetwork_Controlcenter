@@ -1,4 +1,4 @@
-package main.networkConnection;
+package networkConnection;
 
 /**This Enum is used to indicate what type of transmission is being sent/received.
  * These Values are used to control the automatic processing of received messages in connectionEndpoint.processMessage().

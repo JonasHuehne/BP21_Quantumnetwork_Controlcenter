@@ -1,15 +1,15 @@
-package main.messengerSystem;
+package messengerSystem;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedList;
 import java.util.Random;
 
-import main.frame.QuantumnetworkControllcenter;
-import main.networkConnection.ConnectionManager;
-import main.networkConnection.ConnectionState;
-import main.networkConnection.NetworkPackage;
-import main.networkConnection.TransmissionTypeEnum;
+import frame.QuantumnetworkControllcenter;
+import networkConnection.ConnectionManager;
+import networkConnection.ConnectionState;
+import networkConnection.NetworkPackage;
+import networkConnection.TransmissionTypeEnum;
 
 /**High Level Message System. Contains methods for sending and receiving messages without dealing with low-level things, like signals and prefixes.
  * Send and receiving messages via these methods, the connectionID determines which connectionEndpoint to interact with.
