@@ -33,3 +33,11 @@ Choose the main class "Quantumnetwork Controllcenter" of the package "frame" for
 Choose an Export destination  
 Choose the option "Extract required libraries into the generated JAR"  
 Click "Finish"
+
+<i>VisualStudioCode:</i> (untested)  
+You need the "Project Manager for Java" Extension, eg included in the "Java Extension Pack"  
+To export as a jar, you have to click the arror in the topline of the Java Projects Section (should read "Export Jar")  
+Choose the main class (here: QuantumnetworkControllcenter in the frame Package)  
+Make sure to include the jdbc lib in the next step, as well as the target classes, but not include any other libraries  
+click okay  
+you should now have a jar file
