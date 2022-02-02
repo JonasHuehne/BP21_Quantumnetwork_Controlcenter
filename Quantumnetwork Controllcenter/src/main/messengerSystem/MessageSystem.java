@@ -184,7 +184,12 @@ public class MessageSystem {
 
 	
 	/**
-	 * sends a signed message
+	 * sends a signed message, it is the first variant of sendAuthenticatedMessage()
+	 * The first variant with 2 parameters sends confirmedMessages, meaning it will wait for a confirmation that the message was received on the other end.
+	 * It should be used for standard message- and filetransfers, i.e. transmissions of type TRANSMISSION.
+	 * 
+	 * The second variant with 4 parameters does not expect a confirmation, but allows for any TransmissionType to be used.
+	 * It is intended to be used for signals to the program at the other end of the connection, i.e. anything other than transmissionType TRANSMISSION
 	 * 
 	 * @param connectionID the name of the ConnectionEndpoint
 	 * @param message the message to be sent
@@ -196,23 +201,35 @@ public class MessageSystem {
 
 	}
 	
+	/**
+	 * sends a signed message, it is the second variant of sendAuthenticatedMessage()
+	 * The first variant with 2 parameters sends confirmedMessages, meaning it will wait for a confirmation that the message was received on the other end.
+	 * It should be used for standard message- and filetransfers, i.e. transmissions of type TRANSMISSION.
+	 * 
+	 * The second variant with 4 parameters does not expect a confirmation, but allows for any TransmissionType to be used.
+	 * It is intended to be used for signals to the program at the other end of the connection, i.e. anything other than transmissionType TRANSMISSION
+	 * 
+	 * @param connectionID the name of the ConnectionEndpoint
+	 * @param type	the type of the transmission. For TransmissionType == TRANSMISSION, i.e. content transmissions, use the first variant instead.
+	 * @param argument	the optional argument, use depends on the chosen TransmissionType. Refer to ConnectionEndpoint.processMessage() for more information.
+	 * @param message	the actual message to be transmitted. Can be empty. Most transmissions with content will use the first variant of this method.
+	 * @return Always returns true, because it does not expect a confirmation.
+	 */
 	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final String message) {
 		String signature = QuantumnetworkControllcenter.authentication.sign(message);
-		//sendMessage(connectionID, message);
-		//sendMessage(connectionID, signature);
 		sendMessage(connectionID, type, argument, message, signature);
 		return true;
 	}
 
 	/**
 	 * receives a signed message
-	 * (currently implemented as receiving two messages, first the message, then the signature)
+	 * 
 	 * @param connectionID the name of the ConnectionEndpoint
-	 * @return the received message as string, null if error none or if result of verify was false
+	 * @return the received message as string, null if error none, on time-out or if result of verify was false
 	 */
 	public static String readAuthenticatedMessage(String connectionID) {
 		Instant startWait = Instant.now();
-		while(getNumberOfPendingMessages(connectionID) < 2) {
+		while(getNumberOfPendingMessages(connectionID) < 1) {
 			Instant current = Instant.now();
 			if(Duration.between(startWait, current).toSeconds() > 10) {
 				return null;

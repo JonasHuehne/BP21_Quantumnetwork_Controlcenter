@@ -29,11 +29,6 @@ public class SQLiteCommunicationList implements CommunicationList {
      * Regex for checking the validity of the ip
      * only accepts the pattern x.x.x.x with x between 0 and 255
      */
-    /*private static final String CONTACT_IPV4_SYNTAX =
-            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
-            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
-            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
-            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))";*/
 
     private static final String CONTACT_IPV4_SYNTAX =
             "(((([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\.){3})" +

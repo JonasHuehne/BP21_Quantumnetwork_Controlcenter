@@ -534,8 +534,6 @@ public class ConnectionEndpoint implements Runnable{
 		while(waitingForMessage) {
 			try {
 				if(waitingForMessage && serverIn != null && isConnected && !waitingForConnection && (receivedMessage = (NetworkPackage) serverIn.readObject()) != null) {
-					//System.out.println("[" + connectionID + "]: " + connectionID + " received Message!:");
-					//System.out.println(receivedMessage);
 					processMessage(receivedMessage);
 
 				}

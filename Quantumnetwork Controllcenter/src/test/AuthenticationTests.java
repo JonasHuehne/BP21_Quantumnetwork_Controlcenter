@@ -116,15 +116,15 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 2303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature"));
-        QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
+        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 6603, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature"));
+        QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 6604, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
-        QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Alice", 2303);
-        QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Bob", 3303);
+        QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Alice", 6603);
+        QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Bob", 6604);
 
         QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Bob").waitForConnection();
-        QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 3303);
+        QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 6604);
 
         boolean result = MessageSystem.sendAuthenticatedMessage("Bob", "Hello");
         Assertions.assertTrue(result);
@@ -142,15 +142,15 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 2303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature"));
-        QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
+        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 9303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature"));
+        QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 8303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
-        QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Alice", 2303);
-        QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Bob", 3303);
+        QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Alice", 9303);
+        QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Bob", 8303);
 
         QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Bob").waitForConnection();
-        QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 3303);
+        QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 8303);
 
         MessageSystem.sendAuthenticatedMessage("Bob", "Hello, how are you?");
 
