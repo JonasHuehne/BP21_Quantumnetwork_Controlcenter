@@ -157,9 +157,9 @@ public class MessageSystem {
 	}
 
 	/**
-	 * sends a signed message with encrypted tex
+	 * sends a signed message with encrypted text
 	 * 
-	 * @param connectionID the ID of the reciever
+	 * @param connectionID the ID of the receiver
 	 * @param message the message to be sent
 	 * @return true if the sending of the message worked, false otherwise
 	 */
@@ -169,6 +169,7 @@ public class MessageSystem {
 		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
 		byte[] byteKey = keyObject.getKeyBuffer();
 		
+		//TODO wird später vermutlich nicht mehr benötigt
 		//marking key as used
 		KeyStoreDbManager.changeKeyToUsed(connectionID);
 		
@@ -207,6 +208,11 @@ public class MessageSystem {
 		return null;
 	}
 	
+	/**
+	 * receives a signed message with encrypted text
+	 * 
+	 * @return the received and decrypted message as string, null if error none or if result of verify was false
+	 */
 	public static String readEncryptedMessage(String connectionID) {
 		String encrypted = readAuthenticatedMessage(connectionID);
 		
@@ -214,6 +220,7 @@ public class MessageSystem {
 		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
 		byte[] byteKey = keyObject.getKeyBuffer();
 				
+		//TODO wird später vermutlich nicht mehr benötigt
 		//marking key as used
 		KeyStoreDbManager.changeKeyToUsed(connectionID);
 		
