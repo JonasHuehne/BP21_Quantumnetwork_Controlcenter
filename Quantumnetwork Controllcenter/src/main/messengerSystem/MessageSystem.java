@@ -4,7 +4,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedList;
 import java.util.Random;
-
 import frame.QuantumnetworkControllcenter;
 import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;

@@ -1,9 +1,8 @@
-package test;
 
-import main.communicationList.DbObject;
-import main.messengerSystem.SHA256withRSAAuthentication;
-import main.messengerSystem.MessageSystem;
-import main.frame.QuantumnetworkControllcenter;
+import communicationList.DbObject;
+import messengerSystem.SHA256withRSAAuthentication;
+import messengerSystem.MessageSystem;
+import frame.QuantumnetworkControllcenter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

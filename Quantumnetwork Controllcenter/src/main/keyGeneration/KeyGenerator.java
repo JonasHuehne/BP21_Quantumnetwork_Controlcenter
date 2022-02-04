@@ -19,6 +19,7 @@ import keyStore.KeyStoreDbManager;
 import networkConnection.ConnectionState;
 import networkConnection.TransmissionTypeEnum;
 
+
 /**This class contains everything that it needed to generate a secure key.
  * After the key is generated, it is stored in the KeyDB.
  * 

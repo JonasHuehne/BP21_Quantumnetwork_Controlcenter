@@ -1,18 +1,16 @@
+
 package test;
 
 import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
 import org.junit.jupiter.api.Test;
-
-import main.messengerSystem.MessageSystem;
-import main.frame.QuantumnetworkControllcenter;
-import main.networkConnection.ConnectionEndpoint;
-import main.networkConnection.ConnectionState;
-import main.networkConnection.TransmissionTypeEnum;
+import messengerSystem.MessageSystem;
+import frame.QuantumnetworkControllcenter;
+import networkConnection.ConnectionEndpoint;
+import networkConnection.ConnectionState;
+import networkConnection.TransmissionTypeEnum;
 
 /**Attention: Some tests may cause a red error message to appear in the log. Unless an exception is thrown, this is an intended byproduct of the tests
  * 

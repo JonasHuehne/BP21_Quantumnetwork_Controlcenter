@@ -1,8 +1,6 @@
-package test;
-
-import main.communicationList.CommunicationList;
-import main.communicationList.SQLiteCommunicationList;
-import main.communicationList.DbObject;
+import communicationList.CommunicationList;
+import communicationList.SQLiteCommunicationList;
+import communicationList.DbObject;
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.AfterEach;
