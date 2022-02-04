@@ -1,14 +1,14 @@
-package main.frame;
+package frame;
 
-import main.communicationList.CommunicationList;
-import main.communicationList.SQLiteCommunicationList;
-import main.messengerSystem.Authentication;
-import main.messengerSystem.SHA256withRSAAuthentication;
-import main.networkConnection.ConnectionManager;
-import main.ui.ConsoleUI;
+import communicationList.CommunicationList;
+import communicationList.SQLiteCommunicationList;
+import messengerSystem.Authentication;
+import messengerSystem.SHA256withRSAAuthentication;
+import networkConnection.ConnectionManager;
+import ui.ConsoleUI;
 import java.awt.EventQueue;
 
-import main.messengerSystem.MessageSystem;
+import messengerSystem.MessageSystem;
 
 /**
  * Main Class of QuantumnetworkControllcenter
@@ -29,7 +29,7 @@ public class QuantumnetworkControllcenter {
 		//TODO add initialization of further Classes
 		
 		//Network Connection Init
-		String localIP = "127.0.0.1"; //Must be changed manually as of right now. Use IP depending on intended communication Range (local Machine, local Network or Internet)
+		String localIP = "127.0.0.1";//Must be changed manually as of right now. Use IP depending on intended communication Range (local Machine, local Network or Internet)
 		conMan = new ConnectionManager(localIP);
 		MessageSystem.conMan = conMan;
 

@@ -1,7 +1,5 @@
-package test;
-
-import main.encryptionDecryption.AES256;
-import main.encryptionDecryption.CryptoUtility;
+import encryptionDecryption.AES256;
+import encryptionDecryption.CryptoUtility;
 import static org.junit.jupiter.api.Assertions.*;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;

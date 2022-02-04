@@ -1,4 +1,4 @@
-package main.messengerSystem;
+package messengerSystem;
 
 public interface Authentication {
 

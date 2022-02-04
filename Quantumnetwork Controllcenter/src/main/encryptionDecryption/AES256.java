@@ -1,4 +1,4 @@
-package main.encryptionDecryption;
+package encryptionDecryption;
 
 
 import java.nio.charset.StandardCharsets;

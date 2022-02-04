@@ -1,7 +1,7 @@
-package main.ui;
+package ui;
 
-import main.frame.QuantumnetworkControllcenter;
-import main.messengerSystem.SHA256withRSAAuthentication;
+import frame.QuantumnetworkControllcenter;
+import messengerSystem.SHA256withRSAAuthentication;
 
 public class DebugCommandHandler {
 

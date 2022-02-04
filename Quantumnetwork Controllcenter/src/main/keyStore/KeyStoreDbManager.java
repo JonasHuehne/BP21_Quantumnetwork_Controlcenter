@@ -1,4 +1,4 @@
-package main.keyStore;
+package keyStore;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -327,10 +327,10 @@ public class KeyStoreDbManager {
             }
             stmnt.close();
             conn.close();
-            System.out.println("Generating list of KeyInformation table entries was successful" + "\n");
+            System.out.println("Generating list of KeyInformation table entries was successful");
             return result;
         } catch (SQLException e) {
-            System.err.println("Generating list of all entries from KeyInformation table failed!" + "\n");
+            System.err.println("Generating list of all entries from KeyInformation table failed!");
             System.err.println(e.toString());
             return null;
         }

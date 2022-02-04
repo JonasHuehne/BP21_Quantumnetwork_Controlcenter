@@ -1,21 +1,19 @@
-package test;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.ArrayList;
 
-import main.messengerSystem.SHA256withRSAAuthentication;
+import messengerSystem.SHA256withRSAAuthentication;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import main.communicationList.CommunicationList;
-import main.communicationList.DbObject;
-import main.frame.QuantumnetworkControllcenter;
-import main.ui.Command;
-import main.ui.CommandHandler;
+import communicationList.CommunicationList;
+import communicationList.DbObject;
+import frame.QuantumnetworkControllcenter;
+import ui.Command;
+import ui.CommandHandler;
 
 /**
  * This class is used to perform unit tests for the {@link CommandHandler} class,
