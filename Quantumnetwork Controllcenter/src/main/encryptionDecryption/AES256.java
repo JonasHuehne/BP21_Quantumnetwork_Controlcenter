@@ -56,6 +56,28 @@ public class AES256 {
 	 * Encrypts the given plain text String using the AES-256 CBC algorithm and a suitable key
 	 * 
 	 * @param strPlaintext the plain text that should be encrypted (only UTF-8 chars are guaranteed to work)
+	 * @param byteKey a byte array with 256 bit (32 byte)
+	 * @return A String containing the encrypted plain text, In case of an Error returns null
+	 */
+	public static String encrypt(String strPlaintext, byte[] byteKey) {
+		
+		//checking that key has the right length
+		if(byteKey.length != KEY_LENGTH_BYTE) {
+			System.err.println(KEY_WRONG_SIZE);
+			return null;
+		}
+		
+		//generating SecretKey from byte array
+		SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
+		
+		//calling encrypt with key as arg
+		return encrypt(strPlaintext, key);
+	}
+	
+	/**
+	 * Encrypts the given plain text String using the AES-256 CBC algorithm and a suitable key
+	 * 
+	 * @param strPlaintext the plain text that should be encrypted (only UTF-8 chars are guaranteed to work)
 	 * @param key SecretKey object for AES256
 	 * @return A String containing the encrypted plain text, In case of an Error returns null
 	 */
@@ -118,6 +140,28 @@ public class AES256 {
 		
 		//generating SecretKey from String
 		SecretKey key = CryptoUtility.stringToSecretKeyAES256(strKey);
+		
+		//calling decrypt with key as arg
+		return decrypt(strCiphertext, key);
+	}
+	
+	/**
+	 * Decrypts the given cipher text String using the AES-256 CBC algorithm and the corresponding key used to encrypt the cipher text
+	 * 
+	 * @param strCiphertext the cipher text that should be decrypted as a Base64 encoded String
+	 * @param byteKey the key used to encrypt the cipher text as byte array
+	 * @return A String containing the decrypted cipher text, In case of an Error returns null
+	 */
+	public static String decrypt(String strCiphertext, byte[] byteKey) {
+		
+		//checking that key has the right length
+		if(byteKey.length != KEY_LENGTH_BYTE) {
+			System.err.println(KEY_WRONG_SIZE);
+			return null;
+		}
+		
+		//generating SecretKey from String
+		SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
 		
 		//calling decrypt with key as arg
 		return decrypt(strCiphertext, key);

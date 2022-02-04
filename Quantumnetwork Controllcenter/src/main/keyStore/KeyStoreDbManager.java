@@ -144,7 +144,7 @@ public class KeyStoreDbManager {
      * @param key the new Key as a byte[]
      * @return True if operation was successful, false otherwise.
      */
-    protected static boolean addKeyBuffer(String keyStreamID, byte[] key){
+    public static boolean addKeyBuffer(String keyStreamID, byte[] key){
 
         if (!doesKeyStreamIdExist(keyStreamID)){
             System.err.println("There is no Entry with this KeyStreamID" + "\n");
@@ -183,7 +183,7 @@ public class KeyStoreDbManager {
      *
      * @return True if output was displayed correctly, False otherwise
      */
-    protected static boolean selectAll(){
+    public static boolean selectAll(){
 
         try {
             String sql = "SELECT * FROM " + tableName;
@@ -248,7 +248,7 @@ public class KeyStoreDbManager {
      * @param keyStreamID reference ID for a Key
      * @return true if operation succeeded, false otherwise
      */
-    protected static boolean changeKeyToUsed(String keyStreamID){
+    public static boolean changeKeyToUsed(String keyStreamID){
         try {
             Connection conn = connect();
 
@@ -275,7 +275,7 @@ public class KeyStoreDbManager {
      * @param keyStreamID identifier of the key that needs to be wrapped in a KeyStoreObject
      * @return a new KeyInformationObject containing all the KeyInformation from the Entry with corresponding KeyStreamId
      */
-     protected static KeyStoreObject getEntryFromKeyStore(String keyStreamID) {
+     public static KeyStoreObject getEntryFromKeyStore(String keyStreamID) {
          if (!doesKeyStreamIdExist(keyStreamID)){
              System.err.println("There is no Entry with this KeyStreamID!"  + "\n");
              return null;
@@ -311,7 +311,7 @@ public class KeyStoreDbManager {
      *
      * @return a ArrayList of KeyInformationObject which contain information about the keys currently in storage
      */
-     protected static ArrayList<KeyStoreObject> getKeyStoreAsList() {
+     public static ArrayList<KeyStoreObject> getKeyStoreAsList() {
         try {
             Connection conn = connect();
 
