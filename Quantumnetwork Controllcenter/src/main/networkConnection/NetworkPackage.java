@@ -9,19 +9,55 @@ import java.io.Serializable;
  */
 public class NetworkPackage implements Serializable{
 
-	public String head;
-	public String content;
+	private static final long serialVersionUID = -6406450845229886762L;
+	private TransmissionTypeEnum head;
+	private String typeArgument; 
+	private String content;
+	private String signature;
 	
-	public NetworkPackage(String head, String content) {
+	/**Supply the newly created NetworkPackage with a TransmissionType, an Argument depending on the type and the actual content of the package.
+	 * 
+	 * @param head	the type of the transmission
+	 * @param typeArgument	additional argument depending on the transmission type
+	 * @param content	the actual content of the transmission
+	 * @param sig	the signature if the NetworkPackage is used for authenticated communication
+	 */
+	public NetworkPackage(TransmissionTypeEnum head, String typeArgument, String content, String sig) {
 		this.head = head;
+		this.typeArgument = typeArgument;
 		this.content = content;
+		this.signature = sig;
 	}
 	
-	public String getHead() {
+	/**Returns the type of this NetworkPackage.
+	 * 
+	 * @return the TransmissionTypeEnum that describes this NetworkPackages type.
+	 */
+	public TransmissionTypeEnum getHead() {
 		return head;
 	}
 	
+	/**Returns the argument of this transmission, may be "" depending on the transmissionType.
+	 * 
+	 * @return the argument String
+	 */
+	public String getTypeArg() {
+		return typeArgument;
+	}
+	
+	/**Returns the content of the transmission. May be "".
+	 * 
+	 * @return the transmissions content String.
+	 */
 	public String getContent() {
 		return content;
+	}
+	
+	/**Returns the signature of the transmission. May be "" for non-authenticated messages.
+	 * 
+	 * @return the signature of the transmission
+	 */
+	public String getSignature() {
+		return signature;
 	}
 }

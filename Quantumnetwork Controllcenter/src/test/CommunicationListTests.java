@@ -34,6 +34,7 @@ class CommunicationListTests {
             db.delete(e.getName());
         }
     }
+    
 
     @Test
     void testInsertDelete() {
@@ -296,4 +297,35 @@ class CommunicationListTests {
         Assertions.assertEquals("6.6.6.6", result6);
     }
 
+    @Test
+    void testIPV6() {
+    	//Test correct insert
+        Assertions.assertTrue(db.insert("ipv6Test1", "2001:0db8:85a3:08d3:1319:8a2e:0370:7344", 2000, "sig1"));
+        Assertions.assertTrue(db.insert("ipv6Test2", "2a02:0908:2614:b920:8d95:487e:8fec:ba99", 3000, "sig2"));
+        
+        
+        //Test abridged insert
+        Assertions.assertTrue(db.insert("ipv6Test3", "2001:db8:85a3:8d3:1319:8a2e:370:7344", 2200, "sig3"));
+        Assertions.assertTrue(db.insert("ipv6Test4", "2a02:908:2614:b920:8d95:487e:8fec:ba99", 3200, "sig4"));
+        
+        
+        //Test wrong insert
+        Assertions.assertFalse(db.insert("ipv6Test5", "2001.0db8.85a3.08d3.1319.8a2e.0370.7344", 2600, "sig5"));
+        Assertions.assertFalse(db.insert("ipv6Test6", "2a02:0908:2614:b920:8d95:487e.8fec.ba99", 3000, "sig6"));
+        
+        
+        //Test wrong insert 2
+        Assertions.assertFalse(db.insert("ipv6Test7", "2001:0db(:(%a3:08d3:131):8a2e:0§70:7344", 200, "sig7"));
+        Assertions.assertFalse(db.insert("ipv6Test8", "155:155:155:155", 3000, "sig8"));
+        
+        //Test wrong insert 3
+        Assertions.assertFalse(db.insert("ipv6Test9", "20501:0db8:85a3:08d3:1319:8a2e:0370:7344", 2600, "sig9"));
+        
+        //Test ::
+        Assertions.assertTrue(db.insert("ipv6Test10", "2a02:0908:2614::8d95:487e:8fec:ba99", 3000, "sig10"));
+
+        //Test delete and query
+        Assertions.assertTrue(db.delete("ipv6Test3"));
+        Assertions.assertNotNull(db.query("ipv6Test4"));
+    }
 }
