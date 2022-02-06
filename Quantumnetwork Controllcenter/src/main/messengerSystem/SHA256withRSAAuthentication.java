@@ -4,6 +4,9 @@ import communicationList.Contact;
 import frame.QuantumnetworkControllcenter;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.PrivateKey;
@@ -15,6 +18,7 @@ import java.security.KeyPair;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+import java.util.Properties;
 
 /**
  * class providing the methods necessary for authentication
@@ -25,19 +29,116 @@ public class SHA256withRSAAuthentication implements Authentication {
     private static final String KEY_PATH = System.getProperty("user.dir")
             + File.separator + "SignatureKeys" + File.separator;
 
+    private static final String PROPERTIES_PATH = System.getProperty("user.dir")
+            + File.separator + "properties" + File.separator;
+
+    private static final String STRINGS_FILE_NAME = "strings.xml";
+
     private static final String KEY_FILE_NAME = "signature";
+
+    private static final String PRIVATE_KEY_PROP_NAME = "privateKeyFile";
+    private static String PRIVATE_KEY_FILE = "";
+
+    private static final String PUBLIC_KEY_PROP_NAME = "publicKeyFile";
+    private static String PUBLIC_KEY_FILE = "";
+
+    /**
+     * Constructor of the class, calls the methods to check
+     * if the needed folders and files exist
+     */
+    public SHA256withRSAAuthentication() {
+        checkSignatureFolderExists();
+        Properties properties = getStringProperties();
+        PRIVATE_KEY_FILE = properties.getProperty(PRIVATE_KEY_PROP_NAME);
+        PUBLIC_KEY_FILE = properties.getProperty(PUBLIC_KEY_FILE);
+    }
 
     /**
      * a method to check, whether the folder for the signature keys already exists
      * creates it, if not
+     * @return true if already there or created, false if error
      */
-    private static void checkFolder () {
+    private static boolean checkSignatureFolderExists() {
         try {
             if (!Files.exists(Path.of(KEY_PATH))) {
                 Files.createDirectory(Path.of(KEY_PATH));
             }
+            return true;
         } catch (Exception e) {
             System.err.println("Error while creating the SignatureKeys directory: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * a method to check, whether the folder for the properties already exists,
+     * as well as if the xml file for the strings is there or not;
+     * sets the properties for the key files to the current status
+     * if it was newly created (using {@link #setKeyProperties(Properties)})
+     * @return true if already there or created successfully, false if error
+     */
+    private static boolean checkPropertiesExist () {
+        try {
+            if (!Files.exists(Path.of(PROPERTIES_PATH))) {
+                Files.createDirectory(Path.of(PROPERTIES_PATH));
+            }
+            if (!Files.exists(Path.of(PROPERTIES_PATH + STRINGS_FILE_NAME))) {
+                // create the file
+                Files.createFile(Path.of(PROPERTIES_PATH + STRINGS_FILE_NAME));
+                return setKeyProperties(null);
+            }
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error while creating the properties directory or strings.xml file: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * a method to get the current key properties,
+     * will check if the file exists by calling {@link #checkPropertiesExist()}
+     * @return the properties as a Properties object, null if error
+     */
+    private static Properties getStringProperties () {
+        try {
+            checkPropertiesExist();
+            // create an input stream
+            FileInputStream in = new FileInputStream(PROPERTIES_PATH + STRINGS_FILE_NAME);
+            // read the properties from file
+            Properties properties = new Properties();
+            properties.loadFromXML(in);
+            return properties;
+        } catch (Exception e) {
+            System.err.println("Error while reading the properties: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * a method to set the Key Properties to the current status
+     * @param prop the current properties in the file,
+     *             !can be set to null, if nothing in the file yet
+     * @return true if it worked, false if error
+     */
+    private static boolean setKeyProperties (Properties prop) {
+        try {
+            // create an output stream
+            FileOutputStream out = new FileOutputStream(PROPERTIES_PATH + STRINGS_FILE_NAME);
+            // set the properties
+            Properties properties;
+            if (prop == null) {
+                properties = new Properties();
+            } else {
+                properties = prop;
+            }
+            properties.setProperty(PRIVATE_KEY_PROP_NAME, PRIVATE_KEY_FILE);
+            properties.setProperty(PUBLIC_KEY_PROP_NAME, PUBLIC_KEY_FILE);
+            // write the properties to the file
+            properties.storeToXML(out, null, StandardCharsets.ISO_8859_1);
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error while writing the properties: " + e.getMessage());
+            return false;
         }
     }
 
@@ -49,7 +150,6 @@ public class SHA256withRSAAuthentication implements Authentication {
     @Override
     public String sign (final String message) {
         try {
-            checkFolder();
             Signature signature = Signature.getInstance("SHA256withRSA");
             // get PrivateKey object from File
             PrivateKey privateKey = getPrivateKeyFromFile();
@@ -128,7 +228,7 @@ public class SHA256withRSAAuthentication implements Authentication {
      */
     private PrivateKey getPrivateKeyFromFile () {
         try {
-            checkFolder();
+            checkSignatureFolderExists();
             if(!Files.exists(Path.of(KEY_PATH + KEY_FILE_NAME + ".key"))) {
                 System.err.println("Error while creating a private key from the signature key file: "
                         + "no signature key file found");
@@ -157,7 +257,7 @@ public class SHA256withRSAAuthentication implements Authentication {
      */
     public static String readPublicKeyStringFromFile (String fileName) {
         try {
-            checkFolder();
+            checkSignatureFolderExists();
             String key = new String (Files.readAllBytes
                     (Path.of(KEY_PATH + fileName + ".pub")));
             return key
@@ -178,7 +278,6 @@ public class SHA256withRSAAuthentication implements Authentication {
      */
     public static boolean deleteSignatureKeys() {
         try {
-            checkFolder();
             Files.delete(Path.of(KEY_PATH + KEY_FILE_NAME + ".key"));
             Files.delete(Path.of(KEY_PATH + KEY_FILE_NAME + ".pub"));
             return true;
@@ -197,7 +296,7 @@ public class SHA256withRSAAuthentication implements Authentication {
      */
     public static boolean generateSignatureKeyPair () {
         try {
-            checkFolder();
+            checkSignatureFolderExists();
             if (Files.exists(Path.of(KEY_PATH + KEY_FILE_NAME + ".key"))) {
                 deleteSignatureKeys();
             }
