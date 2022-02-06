@@ -53,7 +53,7 @@ public class SHA256withRSAAuthentication implements Authentication {
         checkSignatureFolderExists();
         Properties properties = getStringProperties();
         PRIVATE_KEY_FILE = properties.getProperty(PRIVATE_KEY_PROP_NAME);
-        PUBLIC_KEY_FILE = properties.getProperty(PUBLIC_KEY_FILE);
+        PUBLIC_KEY_FILE = properties.getProperty(PUBLIC_KEY_PROP_NAME);
     }
 
     /**
@@ -86,8 +86,7 @@ public class SHA256withRSAAuthentication implements Authentication {
                 Files.createDirectory(Path.of(PROPERTIES_PATH));
             }
             if (!Files.exists(Path.of(PROPERTIES_PATH + STRINGS_FILE_NAME))) {
-                // create the file
-                Files.createFile(Path.of(PROPERTIES_PATH + STRINGS_FILE_NAME));
+                // create the file by using the method with null parameter
                 return setKeyProperties(null);
             }
             return true;
@@ -302,7 +301,8 @@ public class SHA256withRSAAuthentication implements Authentication {
      */
     public static boolean deleteSignatureKey(String keyFileName) {
         try {
-            if(!keyFileName.equals("")) {
+            if(!keyFileName.equals("") &&
+                    Files.exists(Path.of(KEY_PATH + keyFileName))) {
                 Files.delete(Path.of(KEY_PATH + keyFileName));
             }
             return true;
@@ -367,7 +367,7 @@ public class SHA256withRSAAuthentication implements Authentication {
             // set as new standard keys if setAsKeyFile is true
             if (setAsKeyFile) {
                 PRIVATE_KEY_FILE = keyFileName + ".key";
-                PUBLIC_KEY_FILE = keyFileName + ".key";
+                PUBLIC_KEY_FILE = keyFileName + ".pub";
                 setKeyProperties(getStringProperties());
             }
             return true;

@@ -36,6 +36,24 @@ class AuthenticationTests {
     }
 
     @Test
+    void propertiesUsage () throws IOException {
+        // Test works because of the setup, otherwise needs to call constructor of SHA256withRSAAuthentication
+        boolean result1 = Files.exists(Path.of(System.getProperty("user.dir") + File.separator + "properties" + File.separator + "strings.xml"));
+        Assertions.assertTrue(result1);
+
+        String result2 = Files.readString(Path.of(System.getProperty("user.dir") + File.separator + "properties" + File.separator + "strings.xml"));
+        Assertions.assertNotNull(result2);
+        boolean result3 = result2.startsWith("<?xml");
+        Assertions.assertTrue(result3);
+
+        boolean result4 = SHA256withRSAAuthentication.deleteSignatureKey("");
+        Assertions.assertTrue(result4);
+
+        boolean result5 = SHA256withRSAAuthentication.deleteSignatureKeys();
+        Assertions.assertTrue(result5);
+    }
+
+    @Test
     void testSignatureKeyGeneration () {
         boolean result1 = SHA256withRSAAuthentication.generateSignatureKeyPair();
         Assertions.assertTrue(result1);
