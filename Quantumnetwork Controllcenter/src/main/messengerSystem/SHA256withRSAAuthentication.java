@@ -34,13 +34,16 @@ public class SHA256withRSAAuthentication implements Authentication {
 
     private static final String STRINGS_FILE_NAME = "strings.xml";
 
-    private static final String KEY_FILE_NAME = "signature";
+    private static final String DEFAULT_KEY_FILE_NAME = "signature";
 
     private static final String PRIVATE_KEY_PROP_NAME = "privateKeyFile";
     private static String PRIVATE_KEY_FILE = "";
 
     private static final String PUBLIC_KEY_PROP_NAME = "publicKeyFile";
     private static String PUBLIC_KEY_FILE = "";
+
+    // TODO: maybe sort properties checks better to not possibly use one method twice
+    //  (though that should normally not happen, unless the file is deleted during runtime)
 
     /**
      * Constructor of the class, calls the methods to check
@@ -229,13 +232,13 @@ public class SHA256withRSAAuthentication implements Authentication {
     private PrivateKey getPrivateKeyFromFile () {
         try {
             checkSignatureFolderExists();
-            if(!Files.exists(Path.of(KEY_PATH + KEY_FILE_NAME + ".key"))) {
+            if(!Files.exists(Path.of(KEY_PATH + DEFAULT_KEY_FILE_NAME + ".key"))) {
                 System.err.println("Error while creating a private key from the signature key file: "
                         + "no signature key file found");
                 return null;
             }
             String key = new String (Files.readAllBytes
-                    (Path.of(KEY_PATH + KEY_FILE_NAME + ".key")));
+                    (Path.of(KEY_PATH + DEFAULT_KEY_FILE_NAME + ".key")));
             String keyString = key
                     .replace("-----BEGIN PRIVATE KEY-----", "")
                     .replace(System.lineSeparator(), "")
@@ -272,43 +275,101 @@ public class SHA256withRSAAuthentication implements Authentication {
 
     /**
      * Method to delete the key pair currently set as default key file
-     * (private key should be a .key, public key a .pub)
-     * (static for now)
-     * @return true if the deleting worked, false if no default or error
+     * @return true if the deleting worked or already no default file set, false if error
      */
     public static boolean deleteSignatureKeys() {
         try {
-            Files.delete(Path.of(KEY_PATH + KEY_FILE_NAME + ".key"));
-            Files.delete(Path.of(KEY_PATH + KEY_FILE_NAME + ".pub"));
-            return true;
+            boolean res1 = deleteSignatureKey(PRIVATE_KEY_FILE);
+            if (res1) {
+                PRIVATE_KEY_FILE = "";
+            }
+            boolean res2 = deleteSignatureKey(PUBLIC_KEY_FILE);
+            if(res2) {
+                PUBLIC_KEY_FILE = "";
+            }
+            setKeyProperties(getStringProperties());
+            return (res1 && res2);
         } catch (Exception e) {
-            System.err.println("Problem deleting the signature keys: " + e.getMessage());
+            System.err.println("Problem deleting the current signature keys: " + e.getMessage());
             return false;
         }
     }
 
     /**
-     * generates a key pair for signing messages
-     * (both name "signature", private key as .key, public key as .pub)
-     * deletes the current key files if there are any with the default name
-     * (static for now)
-     * @return true if it worked, false is name already used or error
+     * Method to delete the key file with the given file
+     * @param keyFileName the name of the key file to be deleted
+     * @return true if the deleting worked or the file didn't exist, false if error
+     */
+    public static boolean deleteSignatureKey(String keyFileName) {
+        try {
+            if(!keyFileName.equals("")) {
+                Files.delete(Path.of(KEY_PATH + keyFileName));
+            }
+            return true;
+        } catch (Exception e) {
+            System.err.println("Problem deleting the signature key: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * generates a key pair for signing messages, using the default file name
+     * deletes the key files if there are any with the same name
+     * sets the created Key Pair as new standard keys
+     * deletes the current standard keys
+     * @return true if it worked, false if error
      */
     public static boolean generateSignatureKeyPair () {
+        return generateSignatureKeyPair(true, true);
+    }
+
+    /**
+     * generates a key pair for signing messages, using the default file name
+     * deletes the key files if there are any with the same name
+     * @param setAsKeyFile if true, sets the created Key Pair as new standard keys
+     * @param deleteCurrent if true, deletes the currently set standard keys
+     * @return true if it worked, false if error
+     */
+    public static boolean generateSignatureKeyPair (boolean setAsKeyFile, boolean deleteCurrent) {
+        return generateSignatureKeyPair(setAsKeyFile, deleteCurrent, DEFAULT_KEY_FILE_NAME);
+    }
+
+    /**
+     * generates a key pair for signing messages with the chosen file name
+     * (public key with .pub, private key with .key)
+     * deletes the key files if there are any with the same name
+     * @param setAsKeyFile if true, sets the created Key Pair as new standard keys
+     * @param deleteCurrent if true, deletes the currently set standard keys
+     * @param keyFileName name for the created Key Pair
+     * @return true if it worked, false if error
+     */
+    public static boolean generateSignatureKeyPair (boolean setAsKeyFile, boolean deleteCurrent,
+                                                    String keyFileName) {
         try {
             checkSignatureFolderExists();
-            if (Files.exists(Path.of(KEY_PATH + KEY_FILE_NAME + ".key"))) {
+            // delete current standard keys if deleteCurrent is true
+            if(deleteCurrent) {
                 deleteSignatureKeys();
             }
+            // delete keys with the same name as the new ones if they exist
+            deleteSignatureKey(keyFileName + ".key");
+            deleteSignatureKey(keyFileName + ".pub");
+            // generate the new keys
             KeyPairGenerator kpGenerator = KeyPairGenerator.getInstance("RSA");
             kpGenerator.initialize(2048);
             KeyPair keyPair = kpGenerator.generateKeyPair();
             PublicKey pub = keyPair.getPublic();
             PrivateKey pvt = keyPair.getPrivate();
-            Files.write(Path.of(KEY_PATH + KEY_FILE_NAME + ".key"),
+            Files.write(Path.of(KEY_PATH + keyFileName + ".key"),
                     Base64.getEncoder().encode(pvt.getEncoded()));
-            Files.write(Path.of(KEY_PATH + KEY_FILE_NAME + ".pub"),
+            Files.write(Path.of(KEY_PATH + keyFileName + ".pub"),
                     Base64.getEncoder().encode(pub.getEncoded()));
+            // set as new standard keys if setAsKeyFile is true
+            if (setAsKeyFile) {
+                PRIVATE_KEY_FILE = keyFileName + ".key";
+                PUBLIC_KEY_FILE = keyFileName + ".key";
+                setKeyProperties(getStringProperties());
+            }
             return true;
         } catch (Exception e) {
             System.err.println("Error while creating a key pair: " + e.getMessage());
