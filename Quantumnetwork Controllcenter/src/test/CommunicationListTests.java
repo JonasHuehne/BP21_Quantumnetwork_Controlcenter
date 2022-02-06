@@ -1,6 +1,6 @@
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
-import communicationList.DbObject;
+import communicationList.Contact;
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.AfterEach;
@@ -20,8 +20,8 @@ class CommunicationListTests {
     // only works if no problem with delete and queryAll
     void setup() {
         db = new SQLiteCommunicationList();
-        ArrayList<DbObject> entries = db.queryAll();
-        for (DbObject e : entries) {
+        ArrayList<Contact> entries = db.queryAll();
+        for (Contact e : entries) {
             db.delete(e.getName());
         }
     }
@@ -29,8 +29,8 @@ class CommunicationListTests {
     @AfterEach
     // only works if no problem with delete and queryAll
     void cleanUp() {
-        ArrayList<DbObject> entries = db.queryAll();
-        for (DbObject e : entries) {
+        ArrayList<Contact> entries = db.queryAll();
+        for (Contact e : entries) {
             db.delete(e.getName());
         }
     }
@@ -45,12 +45,12 @@ class CommunicationListTests {
 
         boolean result3 = db.delete("Name1");
         Assertions.assertTrue(result3);
-        DbObject result4 = db.query("Name2");
+        Contact result4 = db.query("Name2");
         Assertions.assertNotNull(result4);
 
         boolean result5 = db.delete("Name3");
         Assertions.assertTrue(result5);
-        DbObject result6 = db.query("Name2");
+        Contact result6 = db.query("Name2");
         Assertions.assertNotNull(result6);
 
         Assertions.assertThrows(IllegalArgumentException.class,
@@ -64,12 +64,12 @@ class CommunicationListTests {
 
         boolean result9 = db.insert("Name4", null, 5, "");
         Assertions.assertFalse(result9);
-        DbObject result10 = db.query("Name4");
+        Contact result10 = db.query("Name4");
         Assertions.assertNull(result10);
 
         boolean result11 = db.insert("Name5", "2.2.2.2", 6, null);
         Assertions.assertTrue(result11);
-        DbObject result12 = db.query("Name5");
+        Contact result12 = db.query("Name5");
         Assertions.assertNull(result12.getSignatureKey());
     }
 
@@ -80,9 +80,9 @@ class CommunicationListTests {
 
         boolean result2 = db.updateName("Name1", "Name2");
         Assertions.assertTrue(result2);
-        DbObject result3 = db.query("Name1");
+        Contact result3 = db.query("Name1");
         Assertions.assertNull(result3);
-        DbObject result4 = db.query("Name2");
+        Contact result4 = db.query("Name2");
         Assertions.assertNotNull(result4);
 
         boolean result5 = db.updateIP("Name2", "144.144.144.144");
@@ -102,7 +102,7 @@ class CommunicationListTests {
 
         boolean result11 = db.updateName("Name2", null);
         Assertions.assertFalse(result11);
-        DbObject result12 = db.query("Name2");
+        Contact result12 = db.query("Name2");
         Assertions.assertNotNull(result12);
 
         boolean result13 = db.updateIP("Name2", null);
@@ -117,13 +117,13 @@ class CommunicationListTests {
         db.insert("Name2", "154.154.154.154", 7, "DEF");
         db.insert("Name3", "133.133.133.133", 2, "GHI");
 
-        DbObject testObject1 = db.query("Name2");
+        Contact testObject1 = db.query("Name2");
         Assertions.assertEquals("Name2", testObject1.getName());
         Assertions.assertEquals("154.154.154.154", testObject1.getIpAddress());
         Assertions.assertEquals(7, testObject1.getPort());
         Assertions.assertEquals("DEF", testObject1.getSignatureKey());
 
-        DbObject testObject2 = db.query("Name1");
+        Contact testObject2 = db.query("Name1");
         Assertions.assertEquals("Name1", testObject2.getName());
         Assertions.assertEquals("155.155.155.155", testObject2.getIpAddress());
         Assertions.assertEquals(5, testObject2.getPort());
@@ -136,7 +136,7 @@ class CommunicationListTests {
         db.insert("Name2", "154.154.154.154", 7, "DEF");
         db.insert("Name3", "133.133.133.133", 2, "GHI");
 
-        ArrayList<DbObject> testList = db.queryAll();
+        ArrayList<Contact> testList = db.queryAll();
         Assertions.assertEquals("Name1", testList.get(0).getName());
         Assertions.assertEquals(7, testList.get(1).getPort());
         Assertions.assertEquals("133.133.133.133", testList.get(2).getIpAddress());
@@ -147,27 +147,27 @@ class CommunicationListTests {
     void testFalseIP() {
         boolean result1 = db.insert("Name1", "abc", 5, "ABC");
         Assertions.assertFalse(result1);
-        DbObject result2 = db.query("Name1");
+        Contact result2 = db.query("Name1");
         Assertions.assertNull(result2);
 
         boolean result3 = db.insert("Name2", "1555.155.155.155", 5, "");
         Assertions.assertFalse(result3);
-        DbObject result4 = db.query("Name2");
+        Contact result4 = db.query("Name2");
         Assertions.assertNull(result4);
 
         boolean result5 = db.insert("Name3", "155.155.555.155", 5, "");
         Assertions.assertFalse(result5);
-        DbObject result6 = db.query("Name3");
+        Contact result6 = db.query("Name3");
         Assertions.assertNull(result6);
 
         boolean result7 = db.insert("Name4", "299.299.299.299", 5, "");
         Assertions.assertFalse(result7);
-        DbObject result8 = db.query("Name4");
+        Contact result8 = db.query("Name4");
         Assertions.assertNull(result8);
 
         boolean result9 = db.insert("Name5", "1.1.256.1", 5, "");
         Assertions.assertFalse(result9);
-        DbObject result10 = db.query("Name5");
+        Contact result10 = db.query("Name5");
         Assertions.assertNull(result10);
 
         db.insert("Name6", "155.155.155.155", 5, "");
@@ -181,17 +181,17 @@ class CommunicationListTests {
     void testCorrectIP() {
         boolean result1 = db.insert("Name1", "5.5.5.5", 5, "");
         Assertions.assertTrue(result1);
-        DbObject result2 = db.query("Name1");
+        Contact result2 = db.query("Name1");
         Assertions.assertNotNull(result2);
 
         boolean result3 = db.insert("Name2", "255.255.255.255", 5, "");
         Assertions.assertTrue(result3);
-        DbObject result4 = db.query("Name2");
+        Contact result4 = db.query("Name2");
         Assertions.assertNotNull(result4);
 
         boolean result5 = db.insert("Name3", "0.0.0.0", 8, "");
         Assertions.assertTrue(result5);
-        DbObject result6 = db.query("Name3");
+        Contact result6 = db.query("Name3");
         Assertions.assertNotNull(result6);
     }
 
@@ -199,30 +199,30 @@ class CommunicationListTests {
     void testFalseName() {
         boolean result1 = db.insert("Näme", "5.5.5.5", 5, "");
         Assertions.assertFalse(result1);
-        DbObject result2 = db.query("Näme");
+        Contact result2 = db.query("Näme");
         Assertions.assertNull(result2);
 
         db.insert("Name1", "5.5.5.5", 5, "");
         boolean result3 = db.updateName("Name1", "Nöme");
         Assertions.assertFalse(result3);
-        DbObject result4 = db.query("Nöme");
-        DbObject result5 = db.query("Name1");
+        Contact result4 = db.query("Nöme");
+        Contact result5 = db.query("Name1");
         Assertions.assertNull(result4);
         Assertions.assertNotNull(result5);
 
         boolean result6 = db.insert("Nameß", "5.5.5.5", 5, "");
         Assertions.assertFalse(result6);
-        DbObject result7 = db.query("Nameß");
+        Contact result7 = db.query("Nameß");
         Assertions.assertNull(result7);
 
         boolean result8 = db.insert("Name\\", "5.5.5.5", 5, "");
         Assertions.assertFalse(result8);
-        DbObject result9 = db.query("Name\\");
+        Contact result9 = db.query("Name\\");
         Assertions.assertNull(result9);
 
         boolean result10 = db.insert("Name 2", "5.5.5.5", 5, "");
         Assertions.assertFalse(result10);
-        DbObject result11 = db.query("Name 2");
+        Contact result11 = db.query("Name 2");
         Assertions.assertNull(result11);
     }
 
@@ -230,12 +230,12 @@ class CommunicationListTests {
     void testCorrectName() {
         boolean result1 = db.insert("Name_1", "5.5.5.5", 5, "");
         Assertions.assertTrue(result1);
-        DbObject result2 = db.query("Name_1");
+        Contact result2 = db.query("Name_1");
         Assertions.assertNotNull(result2);
 
         boolean result3 = db.insert("Name-2", "6.6.6.6", 6, "");
         Assertions.assertTrue(result3);
-        DbObject result4 = db.query("Name-2");
+        Contact result4 = db.query("Name-2");
         Assertions.assertNotNull(result4);
     }
 
@@ -243,17 +243,17 @@ class CommunicationListTests {
     void testFalsePort() {
         boolean result1 = db.insert("Name1", "5.5.5.5", -20, "");
         Assertions.assertFalse(result1);
-        DbObject result2 = db.query("Name1");
+        Contact result2 = db.query("Name1");
         Assertions.assertNull(result2);
 
         boolean result3 = db.insert("Name2", "5.5.5.5", -1, "");
         Assertions.assertFalse(result3);
-        DbObject result4 = db.query("Name2");
+        Contact result4 = db.query("Name2");
         Assertions.assertNull(result4);
 
         boolean result5 = db.insert("Name3", "5.5.5.5", 65536, "");
         Assertions.assertFalse(result5);
-        DbObject result6 = db.query("Name3");
+        Contact result6 = db.query("Name3");
         Assertions.assertNull(result6);
 
         db.insert("Name4", "5.5.5.5", 4, "");
@@ -281,7 +281,7 @@ class CommunicationListTests {
         db.insert("Name1", "5.5.5.5", 0, "");
         boolean result1 = db.insert("Name2", "5.5.5.5", 0, "");
         Assertions.assertFalse(result1);
-        DbObject result2 = db.query("Name2");
+        Contact result2 = db.query("Name2");
         Assertions.assertNull(result2);
 
         db.insert("Name3", "5.5.5.5", 3, "");

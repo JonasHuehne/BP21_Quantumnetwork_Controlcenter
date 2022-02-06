@@ -277,7 +277,7 @@ public class SQLiteCommunicationList implements CommunicationList {
      * @return a DbObject with the date of the entry, null if error
      */
     @Override
-    public DbObject query (final String name) {
+    public Contact query (final String name) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -289,7 +289,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             if(rs == null) {
                 return null;
             }
-            DbObject result = new DbObject(rs.getString("Name"), rs.getString("IPAddress"),
+            Contact result = new Contact(rs.getString("Name"), rs.getString("IPAddress"),
                     rs.getInt("Port"), rs.getString("SignatureKey"));
             rs.close();
             stmt.close();
@@ -305,7 +305,7 @@ public class SQLiteCommunicationList implements CommunicationList {
      * @return ArrayList of DbObjects for all entries in the database, null if error
      */
     @Override
-    public ArrayList<DbObject> queryAll () {
+    public ArrayList<Contact> queryAll () {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -313,9 +313,9 @@ public class SQLiteCommunicationList implements CommunicationList {
             String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + TABLE_NAME;
             PreparedStatement stmt = connection.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
-            ArrayList<DbObject> result = new ArrayList<>();
+            ArrayList<Contact> result = new ArrayList<>();
             while(rs.next()) {
-                DbObject res = new DbObject(rs.getString("Name"), rs.getString("IPAddress"),
+                Contact res = new Contact(rs.getString("Name"), rs.getString("IPAddress"),
                         rs.getInt("Port"), rs.getString("SignatureKey"));
                 result.add(res);
             }

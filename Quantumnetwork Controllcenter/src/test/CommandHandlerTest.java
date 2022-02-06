@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import communicationList.CommunicationList;
-import communicationList.DbObject;
+import communicationList.Contact;
 import frame.QuantumnetworkControllcenter;
 import ui.Command;
 import ui.CommandHandler;
@@ -103,9 +103,9 @@ class CommandHandlerTest {
 			QuantumnetworkControllcenter.initialize();
 
 			// Ensure that the Database is clear of all entries
-			ArrayList<DbObject> entries = QuantumnetworkControllcenter.communicationList.queryAll();
+			ArrayList<Contact> entries = QuantumnetworkControllcenter.communicationList.queryAll();
 			if(entries != null) {
-				for (DbObject entry : entries) {
+				for (Contact entry : entries) {
 					QuantumnetworkControllcenter.communicationList.delete(entry.getName());
 				}
 			}
@@ -114,9 +114,9 @@ class CommandHandlerTest {
 		@AfterEach 
 		void after_each() {
 			// Do not leave any entries in the Database
-			ArrayList<DbObject> entries = QuantumnetworkControllcenter.communicationList.queryAll();
+			ArrayList<Contact> entries = QuantumnetworkControllcenter.communicationList.queryAll();
 			if(entries != null) {
-				for (DbObject entry : entries) {
+				for (Contact entry : entries) {
 					QuantumnetworkControllcenter.communicationList.delete(entry.getName());
 				}
 			}
@@ -129,9 +129,9 @@ class CommandHandlerTest {
 			CommandHandler.processCommand("contacts add Billie 138.0.0.5 9999");
 			CommandHandler.processCommand("contacts add Charlie 168.0.1.7 26665");
 			
-			DbObject Alexa = QuantumnetworkControllcenter.communicationList.query("Alexa");
-			DbObject Billie = QuantumnetworkControllcenter.communicationList.query("Billie");
-			DbObject Charlie = QuantumnetworkControllcenter.communicationList.query("Charlie");
+			Contact Alexa = QuantumnetworkControllcenter.communicationList.query("Alexa");
+			Contact Billie = QuantumnetworkControllcenter.communicationList.query("Billie");
+			Contact Charlie = QuantumnetworkControllcenter.communicationList.query("Charlie");
 			
 			assertTrue(QuantumnetworkControllcenter.communicationList.queryAll().size() == 3);
 			
@@ -226,7 +226,7 @@ class CommandHandlerTest {
 			helper_Alicia_did_not_change();
 
 			// Assert that pk was properly set
-			DbObject Alicia = QuantumnetworkControllcenter.communicationList.query("Alicia");
+			Contact Alicia = QuantumnetworkControllcenter.communicationList.query("Alicia");
 			assertEquals(SHA256withRSAAuthentication.readPublicKeyStringFromFile("pkForTesting_1"), Alicia.getSignatureKey());
 
 			// Now check if pk can be deleted
@@ -316,7 +316,7 @@ class CommandHandlerTest {
 		 */
 		private void helper_Alicia_did_not_change() {
 			assertTrue(QuantumnetworkControllcenter.communicationList.queryAll().size() == 1);
-			DbObject Alicia = QuantumnetworkControllcenter.communicationList.query("Alicia");
+			Contact Alicia = QuantumnetworkControllcenter.communicationList.query("Alicia");
 			assertNotNull(Alicia);
 			assertEquals("127.0.0.1", Alicia.getIpAddress());
 			assertEquals(1111, Alicia.getPort());
