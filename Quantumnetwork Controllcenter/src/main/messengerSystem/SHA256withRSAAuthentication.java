@@ -280,13 +280,12 @@ public class SHA256withRSAAuthentication implements Authentication {
         try {
             boolean res1 = deleteSignatureKey(PRIVATE_KEY_FILE);
             if (res1) {
-                PRIVATE_KEY_FILE = "";
+                setPrivateKey("");
             }
             boolean res2 = deleteSignatureKey(PUBLIC_KEY_FILE);
             if(res2) {
-                PUBLIC_KEY_FILE = "";
+                setPublicKey("");
             }
-            setKeyProperties(getStringProperties());
             return (res1 && res2);
         } catch (Exception e) {
             System.err.println("Problem deleting the current signature keys: " + e.getMessage());
@@ -308,6 +307,24 @@ public class SHA256withRSAAuthentication implements Authentication {
             return true;
         } catch (Exception e) {
             System.err.println("Problem deleting the signature key: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public static boolean setPrivateKey (String keyFileName) {
+        if (keyFileName.equals("") || Files.exists(Path.of(KEY_PATH + keyFileName))) {
+            PRIVATE_KEY_FILE = keyFileName;
+            return setKeyProperties(getStringProperties());
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean setPublicKey (String keyFileName) {
+        if (keyFileName.equals("") || Files.exists(Path.of(KEY_PATH + keyFileName))) {
+            PUBLIC_KEY_FILE = keyFileName;
+            return setKeyProperties(getStringProperties());
+        } else {
             return false;
         }
     }
@@ -366,9 +383,8 @@ public class SHA256withRSAAuthentication implements Authentication {
                     Base64.getEncoder().encode(pub.getEncoded()));
             // set as new standard keys if setAsKeyFile is true
             if (setAsKeyFile) {
-                PRIVATE_KEY_FILE = keyFileName + ".key";
-                PUBLIC_KEY_FILE = keyFileName + ".pub";
-                setKeyProperties(getStringProperties());
+                setPrivateKey(keyFileName + ".key");
+                setPublicKey(keyFileName + ".pub");
             }
             return true;
         } catch (Exception e) {
