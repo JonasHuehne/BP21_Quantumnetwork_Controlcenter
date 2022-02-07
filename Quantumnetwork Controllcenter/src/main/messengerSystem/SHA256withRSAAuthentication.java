@@ -311,8 +311,15 @@ public class SHA256withRSAAuthentication implements Authentication {
         }
     }
 
+    /**
+     * method to set a standard private key
+     * @param keyFileName the name of the key file to set as standard private key
+     *                    including the file name extension
+     * @return true if it worked, false otherwise
+     */
     public static boolean setPrivateKey (String keyFileName) {
-        if (keyFileName.equals("") || Files.exists(Path.of(KEY_PATH + keyFileName))) {
+        if (keyFileName.equals("")
+                || Files.exists(Path.of(KEY_PATH + keyFileName))) {
             PRIVATE_KEY_FILE = keyFileName;
             return setKeyProperties(getStringProperties());
         } else {
@@ -320,8 +327,15 @@ public class SHA256withRSAAuthentication implements Authentication {
         }
     }
 
+    /**
+     * method to set a standard public key
+     * @param keyFileName the name of the key file to set as standard public key
+     *                    including the file name extension
+     * @return true if it worked, false otherwise
+     */
     public static boolean setPublicKey (String keyFileName) {
-        if (keyFileName.equals("") || Files.exists(Path.of(KEY_PATH + keyFileName))) {
+        if (keyFileName.equals("")
+                || Files.exists(Path.of(KEY_PATH + keyFileName))) {
             PUBLIC_KEY_FILE = keyFileName;
             return setKeyProperties(getStringProperties());
         } else {
@@ -334,43 +348,42 @@ public class SHA256withRSAAuthentication implements Authentication {
      * deletes the key files if there are any with the same name
      * sets the created Key Pair as new standard keys
      * deletes the current standard keys
+     * deletes any key files with the default file name
      * @return true if it worked, false if error
      */
     public static boolean generateSignatureKeyPair () {
-        return generateSignatureKeyPair(true, true);
-    }
-
-    /**
-     * generates a key pair for signing messages, using the default file name
-     * deletes the key files if there are any with the same name
-     * @param setAsKeyFile if true, sets the created Key Pair as new standard keys
-     * @param deleteCurrent if true, deletes the currently set standard keys
-     * @return true if it worked, false if error
-     */
-    public static boolean generateSignatureKeyPair (boolean setAsKeyFile, boolean deleteCurrent) {
-        return generateSignatureKeyPair(setAsKeyFile, deleteCurrent, DEFAULT_KEY_FILE_NAME);
+        return generateSignatureKeyPair(DEFAULT_KEY_FILE_NAME, true, true, true);
     }
 
     /**
      * generates a key pair for signing messages with the chosen file name
      * (public key with .pub, private key with .key)
      * deletes the key files if there are any with the same name
+     * @param keyFileName name for the created Key Pair
      * @param setAsKeyFile if true, sets the created Key Pair as new standard keys
      * @param deleteCurrent if true, deletes the currently set standard keys
-     * @param keyFileName name for the created Key Pair
+     * @param overwrite if true, any existing file with the same name will be overwritten
      * @return true if it worked, false if error
      */
-    public static boolean generateSignatureKeyPair (boolean setAsKeyFile, boolean deleteCurrent,
-                                                    String keyFileName) {
+    public static boolean generateSignatureKeyPair (String keyFileName, boolean setAsKeyFile,
+                                                    boolean deleteCurrent, boolean overwrite) {
         try {
             checkSignatureFolderExists();
             // delete current standard keys if deleteCurrent is true
             if(deleteCurrent) {
                 deleteSignatureKeys();
             }
-            // delete keys with the same name as the new ones if they exist
-            deleteSignatureKey(keyFileName + ".key");
-            deleteSignatureKey(keyFileName + ".pub");
+            // delete keys with the same name as the new ones if they exist and overwrite is true
+            if(overwrite) {
+                deleteSignatureKey(keyFileName + ".key");
+                deleteSignatureKey(keyFileName + ".pub");
+            } else if (Files.exists(Path.of(KEY_PATH + keyFileName + ".key")) ||
+                    Files.exists(Path.of(KEY_PATH + keyFileName + ".pub"))) {
+                System.err.println("Error while creating a key pair: "
+                        + "file name exists already, but should not be overwritten. "
+                        + "No new key created");
+                return false;
+            }
             // generate the new keys
             KeyPairGenerator kpGenerator = KeyPairGenerator.getInstance("RSA");
             kpGenerator.initialize(2048);
