@@ -1,6 +1,8 @@
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
 import communicationList.Contact;
+import messengerSystem.SHA256withRSAAuthentication;
+
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.AfterEach;
@@ -34,7 +36,6 @@ class CommunicationListTests {
             db.delete(e.getName());
         }
     }
-    
 
     @Test
     void testInsertDelete() {
@@ -141,6 +142,28 @@ class CommunicationListTests {
         Assertions.assertEquals(7, testList.get(1).getPort());
         Assertions.assertEquals("133.133.133.133", testList.get(2).getIpAddress());
         Assertions.assertEquals("DEF", testList.get(1).getSignatureKey());
+    }
+
+    @Test
+    void testToString() {
+        db.insert("test1", "12.12.12.12", 5, null);
+        String result1 = db.query("test1").toString();
+        Assertions.assertEquals("Name: test1, IP Address: 12.12.12.12, Port: 5", result1);
+
+        db.updateSignatureKey("test1", "");
+        String result2 = db.query("test1").toString();
+        Assertions.assertEquals("Name: test1, IP Address: 12.12.12.12, Port: 5", result2);
+
+        db.updateSignatureKey("test1", SHA256withRSAAuthentication.readPublicKeyStringFromFile("pkForTesting_1"));
+        String result3 = db.query("test1").toString();
+        // expects 7 letters of the public key, check needs to be changed if variable in Contact is changed
+        Assertions.assertEquals("Name: test1, IP Address: 12.12.12.12, Port: 5, Public Key: MIIBIjA...", result3);
+
+        db.updateIP("test1", "5.5.5.5");
+        db.updatePort("test1", 900);
+        db.updateName("test1", "test2");
+        String result4 = db.query("test2").toString();
+        Assertions.assertEquals("Name: test2, IP Address: 5.5.5.5, Port: 900, Public Key: MIIBIjA...", result4);
     }
 
     @Test

@@ -67,7 +67,7 @@ public final class Contact {
      * @return a String representation of the specific Contact object
      */
     public String toString () {
-        String representation = " Name: " + name + ", IP Address: "
+        String representation = "Name: " + name + ", IP Address: "
                 + ipAddress + ", Port: " + port;
         if (!(signatureKey == null || signatureKey.equals(""))) {
             representation = representation + ", Public Key: "
