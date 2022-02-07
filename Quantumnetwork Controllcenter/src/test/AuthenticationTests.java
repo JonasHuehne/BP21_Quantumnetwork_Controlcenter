@@ -16,6 +16,8 @@ import java.util.ArrayList;
 
 /**
  * class for automated tests for the authentication
+ * there may be errors thrown during tests while intentionally testing that
+ * if the test runs through regardless there should be no problem
  * @author Sarah Schumann
  */
 class AuthenticationTests {
@@ -36,7 +38,7 @@ class AuthenticationTests {
     }
 
     @Test
-    void propertiesUsage () throws IOException {
+    void testProperties () throws IOException {
         // Test works because of the setup, otherwise needs to call constructor of SHA256withRSAAuthentication
         boolean result1 = Files.exists(Path.of(System.getProperty("user.dir") + File.separator + "properties" + File.separator + "strings.xml"));
         Assertions.assertTrue(result1);
@@ -57,17 +59,52 @@ class AuthenticationTests {
     void testSignatureKeyGeneration () {
         boolean result1 = SHA256withRSAAuthentication.generateSignatureKeyPair();
         Assertions.assertTrue(result1);
-
         boolean result2 = Files.exists(Path.of(System.getProperty("user.dir")
                 + File.separator + "SignatureKeys" + File.separator + "signature.key"));
         Assertions.assertTrue(result2);
-
         boolean result3 = Files.exists(Path.of(System.getProperty("user.dir")
                 + File.separator + "SignatureKeys" + File.separator + "signature.pub"));
         Assertions.assertTrue(result3);
 
-        boolean result4 = SHA256withRSAAuthentication.deleteSignatureKeys();
-        Assertions.assertTrue(result4);
+        boolean result4 = SHA256withRSAAuthentication.generateSignatureKeyPair("signature", true, false, false);
+        Assertions.assertFalse(result4);
+        boolean result5 = SHA256withRSAAuthentication.generateSignatureKeyPair("signature", true, false, true);
+        Assertions.assertTrue(result5);
+
+        boolean result6 = SHA256withRSAAuthentication.generateSignatureKeyPair("signatureTest", false, false, false);
+        Assertions.assertTrue(result6);
+        boolean result7 = Files.exists(Path.of(System.getProperty("user.dir")
+                + File.separator + "SignatureKeys" + File.separator + "signatureTest.key"));
+        Assertions.assertTrue(result7);
+        boolean result8 = Files.exists(Path.of(System.getProperty("user.dir")
+                + File.separator + "SignatureKeys" + File.separator + "signatureTest.pub"));
+        Assertions.assertTrue(result8);
+
+        boolean result9 = SHA256withRSAAuthentication.deleteSignatureKeys();
+        Assertions.assertTrue(result9);
+        boolean result10 = Files.exists(Path.of(System.getProperty("user.dir")
+                + File.separator + "SignatureKeys" + File.separator + "signature.key"));
+        Assertions.assertFalse(result10);
+        boolean result11 = Files.exists(Path.of(System.getProperty("user.dir")
+                + File.separator + "SignatureKeys" + File.separator + "signature.pub"));
+        Assertions.assertFalse(result11);
+
+        boolean result12 = SHA256withRSAAuthentication.setPrivateKey("signatureTest.key");
+        Assertions.assertTrue(result12);
+        boolean result13 = SHA256withRSAAuthentication.deleteSignatureKeys();
+        Assertions.assertTrue(result13);
+        boolean result14 = Files.exists(Path.of(System.getProperty("user.dir")
+                + File.separator + "SignatureKeys" + File.separator + "signatureTest.key"));
+        Assertions.assertFalse(result14);
+        boolean result15 = Files.exists(Path.of(System.getProperty("user.dir")
+                + File.separator + "SignatureKeys" + File.separator + "signatureTest.pub"));
+        Assertions.assertTrue(result15);
+
+        boolean result16 = SHA256withRSAAuthentication.deleteSignatureKey("signatureTest.pub");
+        Assertions.assertTrue(result16);
+        boolean result17 = Files.exists(Path.of(System.getProperty("user.dir")
+                + File.separator + "SignatureKeys" + File.separator + "signatureTest.pub"));
+        Assertions.assertFalse(result17);
     }
 
     @Test
