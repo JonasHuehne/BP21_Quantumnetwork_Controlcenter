@@ -1,5 +1,5 @@
 
-import communicationList.DbObject;
+import communicationList.Contact;
 import messengerSystem.SHA256withRSAAuthentication;
 import messengerSystem.MessageSystem;
 import frame.QuantumnetworkControllcenter;
@@ -27,8 +27,8 @@ class AuthenticationTests {
 
     @AfterEach
     void cleanUp () {
-        ArrayList<DbObject> entries = QuantumnetworkControllcenter.communicationList.queryAll();
-        for (DbObject e : entries) {
+        ArrayList<Contact> entries = QuantumnetworkControllcenter.communicationList.queryAll();
+        for (Contact e : entries) {
             QuantumnetworkControllcenter.communicationList.delete(e.getName());
         }
 

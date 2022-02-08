@@ -1,6 +1,6 @@
 package messengerSystem;
 
-import communicationList.DbObject;
+import communicationList.Contact;
 import frame.QuantumnetworkControllcenter;
 
 import java.io.File;
@@ -81,7 +81,7 @@ public class SHA256withRSAAuthentication implements Authentication {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
             // get public key of sender from the db
-            DbObject senderEntry = QuantumnetworkControllcenter.communicationList.query(sender);
+            Contact senderEntry = QuantumnetworkControllcenter.communicationList.query(sender);
             if (senderEntry == null) {
                 throw new IllegalArgumentException("Sender not found Communication List");
             }
