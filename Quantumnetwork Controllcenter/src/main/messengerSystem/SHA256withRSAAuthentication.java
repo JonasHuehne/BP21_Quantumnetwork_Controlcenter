@@ -225,19 +225,19 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * method to get the private key from the default private key file in the SignatureKeys folder
+     * method to get the private key from the set private key file in the SignatureKeys folder
      * @return a PrivateKey object created from the key in the file, null if error
      */
     private PrivateKey getPrivateKeyFromFile () {
         try {
             checkSignatureFolderExists();
-            if(!Files.exists(Path.of(KEY_PATH + DEFAULT_KEY_FILE_NAME + ".key"))) {
+            if(!Files.exists(Path.of(KEY_PATH + PRIVATE_KEY_FILE))) {
                 System.err.println("Error while creating a private key from the signature key file: "
                         + "no signature key file found");
                 return null;
             }
             String key = new String (Files.readAllBytes
-                    (Path.of(KEY_PATH + DEFAULT_KEY_FILE_NAME + ".key")));
+                    (Path.of(KEY_PATH + PRIVATE_KEY_FILE)));
             String keyString = key
                     .replace("-----BEGIN PRIVATE KEY-----", "")
                     .replace(System.lineSeparator(), "")
@@ -254,6 +254,7 @@ public class SHA256withRSAAuthentication implements Authentication {
     /**
      * method to read a public key from the specified file in the SignatureKeys folder
      * and return it as a string
+     * (expects the file name extension to be included in the parameter)
      * @param fileName the name of the key file
      * @return the public key from the file as a string (without the beginning and end)
      */
@@ -261,7 +262,7 @@ public class SHA256withRSAAuthentication implements Authentication {
         try {
             checkSignatureFolderExists();
             String key = new String (Files.readAllBytes
-                    (Path.of(KEY_PATH + fileName + ".pub")));
+                    (Path.of(KEY_PATH + fileName)));
             return key
                     .replace("-----BEGIN PUBLIC KEY-----", "")
                     .replace(System.lineSeparator(), "")
