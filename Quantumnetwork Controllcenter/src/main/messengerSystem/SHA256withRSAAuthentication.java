@@ -45,9 +45,9 @@ public class SHA256withRSAAuthentication implements Authentication {
     private static String PUBLIC_KEY_FILE = "";
 
     // accepted file name extensions are:
-    // .pub .pem .key .der or no extension
+    // .pub .pem .key .der .txt or no extension
     private static final String KEY_FILE_SYNTAX =
-            "(.+\\.pub)|(.+\\.pem)|(.+\\.key)|(.+\\.der)|(^[^.]+$)";
+            "(.+\\.pub)|(.+\\.pem)|(.+\\.key)|(.+\\.der)|(.+\\.txt)|(^[^.]+$)";
 
     /**
      * Constructor of the class, calls the methods to check
@@ -56,8 +56,8 @@ public class SHA256withRSAAuthentication implements Authentication {
     public SHA256withRSAAuthentication() {
         checkSignatureFolderExists();
         Properties properties = getStringProperties();
-        PRIVATE_KEY_FILE = properties.getProperty(PRIVATE_KEY_PROP_NAME);
-        PUBLIC_KEY_FILE = properties.getProperty(PUBLIC_KEY_PROP_NAME);
+        setPrivateKey(properties.getProperty(PRIVATE_KEY_PROP_NAME), false);
+        setPublicKey(properties.getProperty(PUBLIC_KEY_PROP_NAME), false);
     }
 
     /**
@@ -113,6 +113,7 @@ public class SHA256withRSAAuthentication implements Authentication {
             // read the properties from file
             Properties properties = new Properties();
             properties.loadFromXML(in);
+            in.close();
             return properties;
         } catch (Exception e) {
             System.err.println("Error while reading the properties: " + e.getMessage());
@@ -141,6 +142,7 @@ public class SHA256withRSAAuthentication implements Authentication {
             properties.setProperty(PUBLIC_KEY_PROP_NAME, PUBLIC_KEY_FILE);
             // write the properties to the file
             properties.storeToXML(out, null, StandardCharsets.ISO_8859_1);
+            out.close();
             return true;
         } catch (Exception e) {
             System.err.println("Error while writing the properties: " + e.getMessage());
@@ -284,11 +286,11 @@ public class SHA256withRSAAuthentication implements Authentication {
         try {
             boolean res1 = deleteSignatureKey(PRIVATE_KEY_FILE);
             if (res1) {
-                setPrivateKey("");
+                setPrivateKey("", true);
             }
             boolean res2 = deleteSignatureKey(PUBLIC_KEY_FILE);
             if(res2) {
-                setPublicKey("");
+                setPublicKey("", true);
             }
             return (res1 && res2);
         } catch (Exception e) {
@@ -321,11 +323,15 @@ public class SHA256withRSAAuthentication implements Authentication {
      *                    including the file name extension
      * @return true if it worked, false otherwise
      */
-    public static boolean setPrivateKey (String keyFileName) {
+    public static boolean setPrivateKey (String keyFileName, boolean writeToProperties) {
         if (keyFileName.equals("")
                 || Files.exists(Path.of(KEY_PATH + keyFileName))) {
             PRIVATE_KEY_FILE = keyFileName;
-            return setKeyProperties(getStringProperties());
+            if (writeToProperties) {
+                return setKeyProperties(getStringProperties());
+            } else {
+                return true;
+            }
         } else {
             return false;
         }
@@ -337,11 +343,15 @@ public class SHA256withRSAAuthentication implements Authentication {
      *                    including the file name extension
      * @return true if it worked, false otherwise
      */
-    public static boolean setPublicKey (String keyFileName) {
+    public static boolean setPublicKey (String keyFileName, boolean writeToProperties) {
         if (keyFileName.equals("")
                 || Files.exists(Path.of(KEY_PATH + keyFileName))) {
             PUBLIC_KEY_FILE = keyFileName;
-            return setKeyProperties(getStringProperties());
+            if (writeToProperties) {
+                return setKeyProperties(getStringProperties());
+            } else {
+                return true;
+            }
         } else {
             return false;
         }
@@ -400,8 +410,8 @@ public class SHA256withRSAAuthentication implements Authentication {
                     Base64.getEncoder().encode(pub.getEncoded()));
             // set as new standard keys if setAsKeyFile is true
             if (setAsKeyFile) {
-                setPrivateKey(keyFileName + ".key");
-                setPublicKey(keyFileName + ".pub");
+                setPrivateKey(keyFileName + ".key", true);
+                setPublicKey(keyFileName + ".pub", true);
             }
             return true;
         } catch (Exception e) {

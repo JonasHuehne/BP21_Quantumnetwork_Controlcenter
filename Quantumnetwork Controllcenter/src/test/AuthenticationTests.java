@@ -89,7 +89,7 @@ class AuthenticationTests {
                 + File.separator + "SignatureKeys" + File.separator + "signature.pub"));
         Assertions.assertFalse(result11);
 
-        boolean result12 = SHA256withRSAAuthentication.setPrivateKey("signatureTest.key");
+        boolean result12 = SHA256withRSAAuthentication.setPrivateKey("signatureTest.key", true);
         Assertions.assertTrue(result12);
         boolean result13 = SHA256withRSAAuthentication.deleteSignatureKeys();
         Assertions.assertTrue(result13);
@@ -123,8 +123,10 @@ class AuthenticationTests {
         Assertions.assertTrue(result3.endsWith("HgtinT2wvAMGuyzkAXSZa8Z40KjmX2xyj6PdU9fjwVWkBaGkotMDGZTKbMGVMn3v" +
                 "7GsDvWQxXiWgc7Q7Z3UT0fSLAS8rUqVBt3S2jhy8Fk/v3LrG2ACyHkysZ/Qu89Wq6XSXtbgS25DXTFOCCU6UJPk="));
 
+        // should throw an error with wrong key file format
         String result4 = SHA256withRSAAuthentication.readKeyStringFromFile("nonExistentKeyFile.something");
         Assertions.assertNull(result4);
+        // should throw an error for not finding the file
         String result5 = SHA256withRSAAuthentication.readKeyStringFromFile("nonExistentKeyFile.pub");
         Assertions.assertNull(result5);
 
@@ -143,10 +145,10 @@ class AuthenticationTests {
         Assertions.assertNotNull(result1);
         SHA256withRSAAuthentication.deleteSignatureKeys();
 
-        SHA256withRSAAuthentication.setPrivateKey("test_private_key.pem");
+        SHA256withRSAAuthentication.setPrivateKey("test_private_key.pem", true);
         String result2 = QuantumnetworkControllcenter.authentication.sign("Hello");
         Assertions.assertNotNull(result2);
-        SHA256withRSAAuthentication.setPrivateKey("");
+        SHA256withRSAAuthentication.setPrivateKey("", true);
     }
 
     @Test
@@ -242,7 +244,7 @@ class AuthenticationTests {
         MessageSystem.sendAuthenticatedMessage("Bob", "Hello, how are you?");
 
         String message = MessageSystem.readAuthenticatedMessage("Alice");
-        Assertions.assertEquals(message, "Hello, how are you?");
+        Assertions.assertEquals("Hello, how are you?", message);
     }
 
     @Test
