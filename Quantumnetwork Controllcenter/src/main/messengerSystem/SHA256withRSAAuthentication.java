@@ -19,6 +19,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Properties;
+import java.util.regex.Pattern;
 
 /**
  * class providing the methods necessary for authentication
@@ -43,8 +44,10 @@ public class SHA256withRSAAuthentication implements Authentication {
     private static final String PUBLIC_KEY_PROP_NAME = "publicKeyFile";
     private static String PUBLIC_KEY_FILE = "";
 
-    // TODO: maybe sort properties checks better to not possibly use one method twice
-    //  (though that should normally not happen, unless the file is deleted during runtime)
+    // accepted file name extensions are:
+    // .pub .pem .key .der or no extension
+    private static final String KEY_FILE_SYNTAX =
+            "(.+\\.pub)|(.+\\.pem)|(.+\\.key)|(.+\\.der)|(^[^.]+$)";
 
     /**
      * Constructor of the class, calls the methods to check
@@ -252,10 +255,15 @@ public class SHA256withRSAAuthentication implements Authentication {
      * and return it as a string
      * (expects the file name extension to be included in the parameter)
      * @param fileName the name of the key file
-     * @return the key from the file as a string (without the beginning and end lines like "-----BEGIN-----")
+     * @return the key from the file as a string (without the beginning and end lines like "-----BEGIN-----"), null if error
      */
     public static String readKeyStringFromFile(String fileName) {
         try {
+            if(!Pattern.matches(KEY_FILE_SYNTAX, fileName)) {
+                System.err.println("Error while creating a key string from the input file: "
+                        + "wrong key file format");
+                return null;
+            }
             checkSignatureFolderExists();
             String key = new String (Files.readAllBytes
                     (Path.of(KEY_PATH + fileName)));

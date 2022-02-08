@@ -122,6 +122,16 @@ class AuthenticationTests {
                 "p9WsNz1FsYuY0y1/sjacFDTlOUiw4BxVwc7mp8ZZl4+MynyZ318ioaXshqbRPdKV"));
         Assertions.assertTrue(result3.endsWith("HgtinT2wvAMGuyzkAXSZa8Z40KjmX2xyj6PdU9fjwVWkBaGkotMDGZTKbMGVMn3v" +
                 "7GsDvWQxXiWgc7Q7Z3UT0fSLAS8rUqVBt3S2jhy8Fk/v3LrG2ACyHkysZ/Qu89Wq6XSXtbgS25DXTFOCCU6UJPk="));
+
+        String result4 = SHA256withRSAAuthentication.readKeyStringFromFile("nonExistentKeyFile.something");
+        Assertions.assertNull(result4);
+        String result5 = SHA256withRSAAuthentication.readKeyStringFromFile("nonExistentKeyFile.pub");
+        Assertions.assertNull(result5);
+
+        String result6 = SHA256withRSAAuthentication.readKeyStringFromFile("test_private_key2");
+        Assertions.assertNotNull(result6);
+        String result7 = SHA256withRSAAuthentication.readKeyStringFromFile("test_public_key2.txt");
+        Assertions.assertNotNull(result7);
     }
 
     @Test
