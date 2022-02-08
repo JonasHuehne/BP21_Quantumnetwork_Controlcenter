@@ -227,7 +227,7 @@ class CommandHandlerTest {
 
 			// Assert that pk was properly set
 			Contact Alicia = QuantumnetworkControllcenter.communicationList.query("Alicia");
-			assertEquals(SHA256withRSAAuthentication.readPublicKeyStringFromFile("pkForTesting_1.pub"), Alicia.getSignatureKey());
+			assertEquals(SHA256withRSAAuthentication.readKeyStringFromFile("pkForTesting_1.pub"), Alicia.getSignatureKey());
 
 			// Now check if pk can be deleted
 			System.out.println(CommandHandler.processCommand("contacts update Alicia pk remove"));

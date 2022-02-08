@@ -22,6 +22,7 @@ import java.util.Properties;
 
 /**
  * class providing the methods necessary for authentication
+ * using SHA256 with RSA 2048
  * @author Sarah Schumann
  */
 public class SHA256withRSAAuthentication implements Authentication {
@@ -236,12 +237,7 @@ public class SHA256withRSAAuthentication implements Authentication {
                         + "no signature key file found");
                 return null;
             }
-            String key = new String (Files.readAllBytes
-                    (Path.of(KEY_PATH + PRIVATE_KEY_FILE)));
-            String keyString = key
-                    .replace("-----BEGIN PRIVATE KEY-----", "")
-                    .replace(System.lineSeparator(), "")
-                    .replace("-----END PRIVATE KEY-----", "");
+            String keyString = readKeyStringFromFile(PRIVATE_KEY_FILE);
             KeyFactory kf = KeyFactory.getInstance("RSA");
             PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(keyString));
             return kf.generatePrivate(privateKeySpec);
@@ -252,23 +248,22 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * method to read a public key from the specified file in the SignatureKeys folder
+     * method to read a key from the specified file in the SignatureKeys folder
      * and return it as a string
      * (expects the file name extension to be included in the parameter)
      * @param fileName the name of the key file
-     * @return the public key from the file as a string (without the beginning and end)
+     * @return the key from the file as a string (without the beginning and end lines like "-----BEGIN-----")
      */
-    public static String readPublicKeyStringFromFile (String fileName) {
+    public static String readKeyStringFromFile(String fileName) {
         try {
             checkSignatureFolderExists();
             String key = new String (Files.readAllBytes
                     (Path.of(KEY_PATH + fileName)));
             return key
-                    .replace("-----BEGIN PUBLIC KEY-----", "")
-                    .replace(System.lineSeparator(), "")
-                    .replace("-----END PUBLIC KEY-----", "");
+                    .replaceAll("-----.{5,50}-----", "")
+                    .replace(System.lineSeparator(), "");
         } catch (Exception e) {
-            System.err.println("Error while creating a public key string from the input file: " + e.getMessage());
+            System.err.println("Error while creating a key string from the input file: " + e.getMessage());
             return null;
         }
     }

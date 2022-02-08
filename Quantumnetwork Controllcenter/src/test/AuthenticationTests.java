@@ -108,19 +108,42 @@ class AuthenticationTests {
     }
 
     @Test
+    void testReadFromFiles () {
+        String result1 = SHA256withRSAAuthentication.readKeyStringFromFile("pkForTesting_1.pub");
+        Assertions.assertTrue(result1.startsWith("MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv3OWQBpJ2PS"));
+        Assertions.assertTrue(result1.endsWith("UTjJ2iU25z1TLtiqNTivymVD2tuHiVqcu0aZh4U0BS6H8jwMqCaX+RZJQIDAQAB"));
+
+        String result2 = SHA256withRSAAuthentication.readKeyStringFromFile("test_public_key.pem");
+        Assertions.assertTrue(result2.startsWith("MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt9pZR4JMWTwXY6fVrDc9"));
+        Assertions.assertTrue(result2.endsWith("hbnFxN5BYFNTARaaV8dajLixgWkatdFPy3TkVoe5dpaIYunKqHyqjRAyScxUxj8eAwIDAQAB"));
+
+        String result3 = SHA256withRSAAuthentication.readKeyStringFromFile("test_private_key.pem");
+        Assertions.assertTrue(result3.startsWith("MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC32llHgkxZPBdj" +
+                "p9WsNz1FsYuY0y1/sjacFDTlOUiw4BxVwc7mp8ZZl4+MynyZ318ioaXshqbRPdKV"));
+        Assertions.assertTrue(result3.endsWith("HgtinT2wvAMGuyzkAXSZa8Z40KjmX2xyj6PdU9fjwVWkBaGkotMDGZTKbMGVMn3v" +
+                "7GsDvWQxXiWgc7Q7Z3UT0fSLAS8rUqVBt3S2jhy8Fk/v3LrG2ACyHkysZ/Qu89Wq6XSXtbgS25DXTFOCCU6UJPk="));
+    }
+
+    @Test
     // relies on signature key generation in authentication class
     void testSign () {
         SHA256withRSAAuthentication.generateSignatureKeyPair();
 
-        String result = QuantumnetworkControllcenter.authentication.sign("Hello");
-        Assertions.assertNotNull(result);
+        String result1 = QuantumnetworkControllcenter.authentication.sign("Hello");
+        Assertions.assertNotNull(result1);
+        SHA256withRSAAuthentication.deleteSignatureKeys();
+
+        SHA256withRSAAuthentication.setPrivateKey("test_private_key.pem");
+        String result2 = QuantumnetworkControllcenter.authentication.sign("Hello");
+        Assertions.assertNotNull(result2);
+        SHA256withRSAAuthentication.setPrivateKey("");
     }
 
     @Test
     // only testable, if signing and signature key generation work
     void testVerifyTrue () {
         SHA256withRSAAuthentication.generateSignatureKeyPair();
-        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature.pub"));
+        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
 
         String signature = QuantumnetworkControllcenter.authentication.sign("Hello");
         boolean result = QuantumnetworkControllcenter.authentication.verify("Hello", signature, "self");
@@ -132,7 +155,7 @@ class AuthenticationTests {
     void testVerifyFalse () {
         SHA256withRSAAuthentication.generateSignatureKeyPair();
 
-        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature.pub"));
+        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
         String signature = QuantumnetworkControllcenter.authentication.sign("Hello");
         boolean result = QuantumnetworkControllcenter.authentication.verify("Hallo", signature, "self");
         Assertions.assertFalse(result);
@@ -150,7 +173,7 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature.pub"));
+        QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
         QuantumnetworkControllcenter.communicationList.insert("other", "128.0.0.1", 2505, otherPublicKeyString);
 
         String signature = QuantumnetworkControllcenter.authentication.sign("Hello");
@@ -170,7 +193,7 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 6603, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature.pub"));
+        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 6603, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
         QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 6604, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
@@ -196,7 +219,7 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 9303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature.pub"));
+        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 9303, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
         QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 8303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
@@ -224,7 +247,7 @@ class AuthenticationTests {
                         "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                         "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                         "1QIDAQAB";
-        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 2303, SHA256withRSAAuthentication.readPublicKeyStringFromFile("signature.pub"));
+        QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 2303, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
         QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
 
         QuantumnetworkControllcenter.initialize();
