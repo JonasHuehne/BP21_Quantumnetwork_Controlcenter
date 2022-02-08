@@ -220,7 +220,7 @@ class CommandHandlerTest {
 		void contacts_update_works_for_pks() {
 			QuantumnetworkControllcenter.communicationList.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
 
-			CommandHandler.processCommand("contacts update Alicia pk \"pkForTesting_1\"");
+			CommandHandler.processCommand("contacts update Alicia pk \"pkForTesting_1.pub\"");
 
 			// Assert that # of entries, Name, IP and Port remain unchanged
 			helper_Alicia_did_not_change();
