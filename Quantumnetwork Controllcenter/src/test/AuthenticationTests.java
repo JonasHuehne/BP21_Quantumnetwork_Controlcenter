@@ -16,7 +16,8 @@ import java.util.ArrayList;
 
 /**
  * class for automated tests for the authentication
- * there may be errors thrown during tests while intentionally testing that
+ * there may be errors thrown during tests
+ * this is due to intentionally false input
  * if the test runs through regardless there should be no problem
  * @author Sarah Schumann
  */
@@ -38,7 +39,7 @@ class AuthenticationTests {
     }
 
     @Test
-    void testProperties () throws IOException {
+    void testPropertiesInteraction() throws IOException {
         // Test works because of the setup, otherwise needs to call constructor of SHA256withRSAAuthentication
         boolean result1 = Files.exists(Path.of(System.getProperty("user.dir") + File.separator + "properties" + File.separator + "strings.xml"));
         Assertions.assertTrue(result1);
@@ -57,6 +58,7 @@ class AuthenticationTests {
 
     @Test
     void testSignatureKeyGeneration () {
+        // test generation
         boolean result1 = SHA256withRSAAuthentication.generateSignatureKeyPair();
         Assertions.assertTrue(result1);
         boolean result2 = Files.exists(Path.of(System.getProperty("user.dir")
@@ -66,11 +68,13 @@ class AuthenticationTests {
                 + File.separator + "SignatureKeys" + File.separator + "signature.pub"));
         Assertions.assertTrue(result3);
 
+        // test method behaviour while file name exists already depending on overwrite
         boolean result4 = SHA256withRSAAuthentication.generateSignatureKeyPair("signature", true, false, false);
         Assertions.assertFalse(result4);
         boolean result5 = SHA256withRSAAuthentication.generateSignatureKeyPair("signature", true, false, true);
         Assertions.assertTrue(result5);
 
+        // test creation with all params as false
         boolean result6 = SHA256withRSAAuthentication.generateSignatureKeyPair("signatureTest", false, false, false);
         Assertions.assertTrue(result6);
         boolean result7 = Files.exists(Path.of(System.getProperty("user.dir")
@@ -80,6 +84,7 @@ class AuthenticationTests {
                 + File.separator + "SignatureKeys" + File.separator + "signatureTest.pub"));
         Assertions.assertTrue(result8);
 
+        // test correct deletion of current signature keys (meaning correct ones stayed as set in block above
         boolean result9 = SHA256withRSAAuthentication.deleteSignatureKeys();
         Assertions.assertTrue(result9);
         boolean result10 = Files.exists(Path.of(System.getProperty("user.dir")
@@ -89,6 +94,7 @@ class AuthenticationTests {
                 + File.separator + "SignatureKeys" + File.separator + "signature.pub"));
         Assertions.assertFalse(result11);
 
+        // set the other key as private key, test that only this one gets deleted and the other with the same name but different extension stays
         boolean result12 = SHA256withRSAAuthentication.setPrivateKey("signatureTest.key", true);
         Assertions.assertTrue(result12);
         boolean result13 = SHA256withRSAAuthentication.deleteSignatureKeys();
@@ -100,6 +106,7 @@ class AuthenticationTests {
                 + File.separator + "SignatureKeys" + File.separator + "signatureTest.pub"));
         Assertions.assertTrue(result15);
 
+        // test deletion of just one specific signature key
         boolean result16 = SHA256withRSAAuthentication.deleteSignatureKey("signatureTest.pub");
         Assertions.assertTrue(result16);
         boolean result17 = Files.exists(Path.of(System.getProperty("user.dir")

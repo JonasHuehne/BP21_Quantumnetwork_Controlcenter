@@ -22,31 +22,57 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 
 /**
- * class providing the methods necessary for authentication
+ * Class providing the methods necessary for authentication
  * using SHA256 with RSA 2048
  * @author Sarah Schumann
  */
 public class SHA256withRSAAuthentication implements Authentication {
 
+    /**
+     * The path to the folder for the signature keys, incl a file separator at the end
+     */
     private static final String KEY_PATH = System.getProperty("user.dir")
             + File.separator + "SignatureKeys" + File.separator;
 
+    /**
+     * The path to the folder for the property files, incl a file separator at the end
+     */
     private static final String PROPERTIES_PATH = System.getProperty("user.dir")
             + File.separator + "properties" + File.separator;
 
+    /**
+     * Name of the properties file for Strings
+     */
     private static final String STRINGS_FILE_NAME = "strings.xml";
 
+    /**
+     * Default name for generating signature key files, without file name extension
+     */
     private static final String DEFAULT_KEY_FILE_NAME = "signature";
 
+    /**
+     * Name of the field for the private key file name in the properties file
+     */
     private static final String PRIVATE_KEY_PROP_NAME = "privateKeyFile";
-    private static String PRIVATE_KEY_FILE = "";
+    /**
+     * File name of the currently used own private key file
+     * should include the file name extension
+     */
+    private static String privateKeyFile = "";
 
+    /**
+     * Name of the field for the public key file name in the properties file
+     */
     private static final String PUBLIC_KEY_PROP_NAME = "publicKeyFile";
-    private static String PUBLIC_KEY_FILE = "";
+    /**
+     * File name of the currently used own public key file
+     * should include the file name extension
+     */
+    private static String publicKeyFile = "";
 
     // accepted file name extensions are:
     // .pub .pem .key .der .txt or no extension
-    private static final String KEY_FILE_SYNTAX =
+    private static final String KEY_FILENAME_SYNTAX =
             "(.+\\.pub)|(.+\\.pem)|(.+\\.key)|(.+\\.der)|(.+\\.txt)|(^[^.]+$)";
 
     /**
@@ -61,7 +87,7 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * a method to check, whether the folder for the signature keys already exists
+     * Method to check, whether the folder for the signature keys already exists
      * creates it, if not
      * @return true if already there or created, false if error
      */
@@ -78,7 +104,7 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * a method to check, whether the folder for the properties already exists,
+     * Method to check, whether the folder for the properties already exists,
      * as well as if the xml file for the strings is there or not;
      * sets the properties for the key files to the current status
      * if it was newly created (using {@link #setKeyProperties(Properties)})
@@ -101,7 +127,7 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * a method to get the current key properties,
+     * Method to get the current key properties,
      * will check if the file exists by calling {@link #checkPropertiesExist()}
      * @return the properties as a Properties object, null if error
      */
@@ -122,7 +148,7 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * a method to set the Key Properties to the current status
+     * Method to set the Key Properties to the current status
      * @param prop the current properties in the file,
      *             !can be set to null, if nothing in the file yet
      * @return true if it worked, false if error
@@ -138,8 +164,8 @@ public class SHA256withRSAAuthentication implements Authentication {
             } else {
                 properties = prop;
             }
-            properties.setProperty(PRIVATE_KEY_PROP_NAME, PRIVATE_KEY_FILE);
-            properties.setProperty(PUBLIC_KEY_PROP_NAME, PUBLIC_KEY_FILE);
+            properties.setProperty(PRIVATE_KEY_PROP_NAME, privateKeyFile);
+            properties.setProperty(PUBLIC_KEY_PROP_NAME, publicKeyFile);
             // write the properties to the file
             properties.storeToXML(out, null, StandardCharsets.ISO_8859_1);
             out.close();
@@ -151,7 +177,7 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * method to create a signature for a message using the designated private key
+     * Method to create a signature for a message using the designated private key
      * @param message the message to be signed with the private key
      * @return the signed message as a String; null if Error
      */
@@ -175,7 +201,7 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * method to verify a message with a signature, given a message, the signature and the sender name
+     * Method to verify a message with a signature, given a message, the signature and the sender name
      * (takes the public key from the corresponding entry in the communication list)
      * @param message the received signed message (only text without the signature)
      * @param receivedSignature the received signature as String
@@ -215,7 +241,7 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * method to generate a PublicKey object from a matching String
+     * Method to generate a PublicKey object from a matching String
      * @param key the key as a string
      * @return the key as a PublicKey object, null if error
      */
@@ -231,18 +257,18 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * method to get the private key from the set private key file in the SignatureKeys folder
+     * Method to get the private key from the {@link #privateKeyFile} in the SignatureKeys folder
      * @return a PrivateKey object created from the key in the file, null if error
      */
     private PrivateKey getPrivateKeyFromFile () {
         try {
             checkSignatureFolderExists();
-            if(!Files.exists(Path.of(KEY_PATH + PRIVATE_KEY_FILE))) {
+            if(!Files.exists(Path.of(KEY_PATH + privateKeyFile))) {
                 System.err.println("Error while creating a private key from the signature key file: "
                         + "no signature key file found");
                 return null;
             }
-            String keyString = readKeyStringFromFile(PRIVATE_KEY_FILE);
+            String keyString = readKeyStringFromFile(privateKeyFile);
             KeyFactory kf = KeyFactory.getInstance("RSA");
             PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(keyString));
             return kf.generatePrivate(privateKeySpec);
@@ -253,15 +279,16 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * method to read a key from the specified file in the SignatureKeys folder
+     * Method to read a key from the specified file in the SignatureKeys folder
      * and return it as a string
-     * (expects the file name extension to be included in the parameter)
+     * (expects the file name extension to be included in the parameter,
+     * accepts the ones included in {@link #KEY_FILENAME_SYNTAX} )
      * @param fileName the name of the key file
      * @return the key from the file as a string (without the beginning and end lines like "-----BEGIN-----"), null if error
      */
     public static String readKeyStringFromFile(String fileName) {
         try {
-            if(!Pattern.matches(KEY_FILE_SYNTAX, fileName)) {
+            if(!Pattern.matches(KEY_FILENAME_SYNTAX, fileName)) {
                 System.err.println("Error while creating a key string from the input file: "
                         + "wrong key file format");
                 return null;
@@ -284,11 +311,11 @@ public class SHA256withRSAAuthentication implements Authentication {
      */
     public static boolean deleteSignatureKeys() {
         try {
-            boolean res1 = deleteSignatureKey(PRIVATE_KEY_FILE);
+            boolean res1 = deleteSignatureKey(privateKeyFile);
             if (res1) {
                 setPrivateKey("", true);
             }
-            boolean res2 = deleteSignatureKey(PUBLIC_KEY_FILE);
+            boolean res2 = deleteSignatureKey(publicKeyFile);
             if(res2) {
                 setPublicKey("", true);
             }
@@ -318,15 +345,16 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * method to set a standard private key
+     * Method to set {@link #privateKeyFile}
      * @param keyFileName the name of the key file to set as standard private key
-     *                    including the file name extension
+     *                    including the file name extension;
+     *                    accepts "" (an empty string) as input for setting it to no key
      * @return true if it worked, false otherwise
      */
     public static boolean setPrivateKey (String keyFileName, boolean writeToProperties) {
         if (keyFileName.equals("")
                 || Files.exists(Path.of(KEY_PATH + keyFileName))) {
-            PRIVATE_KEY_FILE = keyFileName;
+            privateKeyFile = keyFileName;
             if (writeToProperties) {
                 return setKeyProperties(getStringProperties());
             } else {
@@ -338,15 +366,16 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * method to set a standard public key
+     * Method to set {@link #publicKeyFile}
      * @param keyFileName the name of the key file to set as standard public key
      *                    including the file name extension
+     *                    accepts "" (an empty string) as input for setting it to no key
      * @return true if it worked, false otherwise
      */
     public static boolean setPublicKey (String keyFileName, boolean writeToProperties) {
         if (keyFileName.equals("")
                 || Files.exists(Path.of(KEY_PATH + keyFileName))) {
-            PUBLIC_KEY_FILE = keyFileName;
+            publicKeyFile = keyFileName;
             if (writeToProperties) {
                 return setKeyProperties(getStringProperties());
             } else {
@@ -358,11 +387,12 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * generates a key pair for signing messages, using the default file name
-     * deletes the key files if there are any with the same name
+     * Generates a key pair for signing messages
+     * (calls the other generateSignatureKeyPair Method with default parameters)
+     * uses the default file name, specified in {@link #DEFAULT_KEY_FILE_NAME}
+     * deletes the key files if there are any with the same name (the default file name)
      * sets the created Key Pair as new standard keys
      * deletes the current standard keys
-     * deletes any key files with the default file name
      * @return true if it worked, false if error
      */
     public static boolean generateSignatureKeyPair () {
@@ -370,11 +400,11 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * generates a key pair for signing messages with the chosen file name
-     * (public key with .pub, private key with .key)
-     * deletes the key files if there are any with the same name
+     * Generates a key pair for signing messages with the chosen file name
+     * (public key as .pub file, private key as .key file)
      * @param keyFileName name for the created Key Pair
      * @param setAsKeyFile if true, sets the created Key Pair as new standard keys
+     *                     ({@link #privateKeyFile} and {@link #publicKeyFile})
      * @param deleteCurrent if true, deletes the currently set standard keys
      * @param overwrite if true, any existing file with the same name will be overwritten
      * @return true if it worked, false if error
