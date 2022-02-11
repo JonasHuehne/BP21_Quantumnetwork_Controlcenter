@@ -12,6 +12,8 @@ import java.awt.Font;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.LinkedList;
+import javax.swing.JScrollPane;
+import javax.swing.border.EmptyBorder;
 
 /**
  * The ConsoleUI class provides a GUI which appears and acts similar to a console / terminal application.
@@ -34,13 +36,13 @@ public class ConsoleUI {
 	
 	/** The text area for the user input (commands) */
 	private JTextField consoleInArea;
-	/** The text area for the application output (command feedback, error codes, ...)*/
-	private JTextArea consoleOutArea;
 	
 	/** For convenience purposes we save the last entered commands in a list, which the user can cycle through by pressing UP and DOWN */
 	private LinkedList<String> enteredCommands = new LinkedList<>();
 	/** This index is used to cycle through the list of entered commands {@link #enteredCommands} */
 	private int commandIndex = 0;
+	private JScrollPane scrollPane;
+	private JTextArea consoleOutArea;
 	
 	/**
 	 * Create the application.
@@ -67,23 +69,26 @@ public class ConsoleUI {
 		consoleInArea.setBorder(javax.swing.BorderFactory.createEmptyBorder());
 		frmQuantumNetworkControl.getContentPane().add(consoleInArea, BorderLayout.SOUTH);
 		
-		// Output area containing result of computing the command
+		// To allow scrolling the text area, for overly long outputs (e.g. output of some help commands)
+		scrollPane = new JScrollPane();
+		scrollPane.setBorder(new EmptyBorder(0, 0, 0, 0));
+		scrollPane.getHorizontalScrollBar().setBackground(Color.BLACK);
+		scrollPane.getVerticalScrollBar().setBackground(Color.BLACK);
+		scrollPane.setBackground(Color.BLACK);
+		frmQuantumNetworkControl.getContentPane().add(scrollPane, BorderLayout.CENTER);
+		
 		consoleOutArea = new JTextArea();
-		consoleOutArea.setLineWrap(true);
+		consoleOutArea.setRequestFocusEnabled(false);
+		consoleOutArea.setAutoscrolls(false);
+		consoleOutArea.setBorder(new EmptyBorder(0, 0, 0, 0));
 		consoleOutArea.setWrapStyleWord(true);
-		consoleOutArea.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mouseClicked(MouseEvent e) {
-				consoleInArea.requestFocusInWindow();
-			}
-		});
+		consoleOutArea.setText("Welcome to the Quantum Network Control Center. What would you like to do?\r\nEnter \"help\" for a list of commands.");
+		consoleOutArea.setLineWrap(true);
+		consoleOutArea.setForeground(Color.GREEN);
 		consoleOutArea.setFont(new Font("Arial", Font.PLAIN, 14));
 		consoleOutArea.setEditable(false);
-		consoleOutArea.setText(INITIAL_TEXT);
-		consoleOutArea.setForeground(Color.GREEN);
 		consoleOutArea.setBackground(Color.BLACK);
-		
-		frmQuantumNetworkControl.getContentPane().add(consoleOutArea, BorderLayout.CENTER);
+		scrollPane.setViewportView(consoleOutArea);
 
 		
 		consoleInArea.addKeyListener(new KeyAdapter() {

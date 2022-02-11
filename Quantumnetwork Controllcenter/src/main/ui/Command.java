@@ -2,6 +2,8 @@ package ui;
 
 import java.io.File;
 
+import networkConnection.ConnectionState;
+
 /**
  * This enum contains the list of available console commands.
  * Each command has three attributes:
@@ -80,13 +82,82 @@ public enum Command {
 		+ "If you wish to remove a public key of a contact, enter: \"contacts update <name> pk remove\""),
 	CONTACTS_SHOWPK ("( \\S+)", "Shows the public key of specified user." + System.lineSeparator() + "Syntax: contacts showpk <user>"),
 	
+	// Connection Commands
+	CONNECTIONS_ADD("( \\S+)( \\d{1,5})?", 
+			"Creates a new connection endpoint, which through the use of the "
+			+ "\"connect to\" and \"wait for\" commands can be connected to another (remote) connection endpoint. "
+			+ "This then establishes a connection that can be used to transfer messages and generate keys together with the other party. "
+			+ System.lineSeparator() + System.lineSeparator()
+			+ "Syntax: connections add <name> [port]" + System.lineSeparator()
+			+ "Name is the name of any contact in the communication list, and will then be the name of the connection endpoint (the connection id). "
+			+ "Port may be any TCP port, or be left empty to use the default port " + ConnectionCommandHandler.DEFAULT_PORT + ". "
+			+ "The specified port is the port that this connection endpoint will be listening for messages on, once active. "
+			+ "Outgoing messages will be sent to whichever IP and port is associated with the given contact."),
+	CONNECTIONS_REMOVE("( \\S+)", 
+			"Removes a connection endpoint. If it is part of a currently active connection, that connection is closed. "
+			+ System.lineSeparator() + System.lineSeparator()
+			+ "Syntax: connections remove <name> "
+			+ "Name may be the name of any connection endpoint."),
+	CONNECTIONS_SHOW("", 
+			"Shows a list of all connections, as well as their current status."
+			+ System.lineSeparator() + System.lineSeparator()
+			+ "Syntax: connections show"),
+	CONNECT_TO("( \\S+)", 
+			"Attempts to open the specified connection for the exchange of messages. "
+			+ "Specifically, this works by sending a request to this connection's specified IP and Port. "
+			+ "If the machine with that IP currently has a local connection endpoint waiting for a request on that port, "
+			+ "then the connection will be established. Otherwise, this command will fail to establish a connection."
+			+ System.lineSeparator()
+			+ "Example: If you want to connect to IP 125.55.55.235 on port 2222, "
+			+ "the contact with that IP will need a connection endpoint with the local port 2222."
+			+ System.lineSeparator() + System.lineSeparator()
+			+ "Syntax: connect to <name> " + System.lineSeparator()
+			+ ""),
+	WAIT_FOR("( \\S+)", 
+			"Makes the specified connection endpoint wait for an incoming connection request. "
+			+ System.lineSeparator() + System.lineSeparator()
+			+ "Syntax: wait for <name>" + System.lineSeparator()
+			+ "Name may be the name of any connection that currently has the status " + ConnectionState.CLOSED),
+	CONNECTIONS_CLOSE("( \\S+)", 
+			"Closes the specified connection, stopping further network traffic. " 
+			+ System.lineSeparator() + System.lineSeparator()
+			+ "Syntax: connections close <name>" + System.lineSeparator()
+			+ "Name may be the name of any connection."),
+	HELLO_WORLD("( \\S+)",
+			"Sends a simple hello world message along the specified connection. Used for debugging & sanity testing. "
+			+ System.lineSeparator() + System.lineSeparator()
+			+ "Syntax: hello world <name>" + System.lineSeparator()
+			+ "Name may be the name of any connection with status " + ConnectionState.CONNECTED.toString()),
+	
+	/*
+	 * TODO: Write a guide on Connections in the Readme, for Max
+	 * Will also need to be reworked if Connection system is ever simplified / improved
+	 * (e.g. automatically waiting endpoints, multiple endpoints on one port, ...)
+	 */
+	
 	// DEBUG COMMANDS, NOT INTENDED AS PART OF THE FINAL PRODUCT - DEVELOPER USE ONLY
 	// FUNCTIONALITY NOT GUARANTEED
 	DEBUG_GENSIGPAIR ("", "Generates a new public and private key pair for this machine."),
 	DEBUG_SETPK ("( .+) (.+)", 
 			"Manually sets the public key of a contact to whatever the user entered. "
 			+ "This is done directly, no file is loaded." 
-			+ System.lineSeparator() + " Syntax: debug setpk <user> <newpk>")
+			+ System.lineSeparator() + " Syntax: debug setpk <user> <newpk>"),
+	DEBUG_SETUP_LOCAL_CONNECTIONS ("", "Clears the communication list, then runs a few connection commands to set up two local connection endpoints connected to each other."),
+	DEBUG_CLEAR_COMMLIST("", "Deletes all entries in the communication list."),
+	SPAM("", "Does nothing. Used solely for testing how the console reacts to very long outputs."
+						+ System.lineSeparator() + "The alphabet goes:" 
+						+ System.lineSeparator() + "A" + System.lineSeparator() + "B"
+						+ System.lineSeparator() + "C" + System.lineSeparator() + "D" + System.lineSeparator() + "E"
+						+ System.lineSeparator() + "F" + System.lineSeparator() + "G" + System.lineSeparator() + "H"
+						+ System.lineSeparator() + "I" + System.lineSeparator() + "J" + System.lineSeparator() + "K"
+						+ System.lineSeparator() + "L" + System.lineSeparator() + "M" + System.lineSeparator() + "N"
+						+ System.lineSeparator() + "O" + System.lineSeparator() + "P" + System.lineSeparator() + "Q"
+						+ System.lineSeparator() + "R" + System.lineSeparator() + "S" + System.lineSeparator() + "T"
+						+ System.lineSeparator() + "U" + System.lineSeparator() + "V" + System.lineSeparator() + "W"
+						+ System.lineSeparator() + "X" + System.lineSeparator() + "Y" + System.lineSeparator() + "Z"
+						+ System.lineSeparator() + "I would also like to introduce you to the numbers 1 through 20, 20 times" + System.lineSeparator()
+						+ ("1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20" + System.lineSeparator()).repeat(20))
+	
 	
 	;
 	

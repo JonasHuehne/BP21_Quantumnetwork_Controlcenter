@@ -8,6 +8,8 @@ import networkConnection.ConnectionManager;
 import ui.ConsoleUI;
 import java.awt.EventQueue;
 
+import javax.swing.UIManager;
+
 import messengerSystem.MessageSystem;
 
 /**
@@ -53,6 +55,17 @@ public class QuantumnetworkControllcenter {
 		System.out.println("Run QuantumnetworkControllCenter initialisation");
 		
 		initialize();
+		
+		// Look and Feel for Console UI
+		try {
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		} catch (Exception e) {
+			System.err.println(
+					"ERROR - Something went wrong while trying to set the look and feel for the Console UI. "
+					+ "The program may appear visually different, however, functionality should not be affected. "
+					+ "The following error occured " + System.lineSeparator()
+					+ e.getClass().getCanonicalName() + ": " + e.getMessage());
+		}
 		
 		// Launch Console UI
 		
