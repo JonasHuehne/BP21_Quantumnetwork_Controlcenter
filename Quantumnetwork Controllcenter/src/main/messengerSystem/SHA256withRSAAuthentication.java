@@ -81,7 +81,7 @@ public class SHA256withRSAAuthentication implements Authentication {
      */
     public SHA256withRSAAuthentication() {
         checkSignatureFolderExists();
-        Properties properties = getStringProperties();
+        Properties properties = getProperties();
         setPrivateKey(properties.getProperty(PRIVATE_KEY_PROP_NAME), false);
         setPublicKey(properties.getProperty(PUBLIC_KEY_PROP_NAME), false);
     }
@@ -131,7 +131,7 @@ public class SHA256withRSAAuthentication implements Authentication {
      * will check if the file exists by calling {@link #checkPropertiesExist()}
      * @return the properties as a Properties object, null if error
      */
-    private static Properties getStringProperties () {
+    private static Properties getProperties() {
         try {
             checkPropertiesExist();
             // create an input stream
@@ -345,7 +345,7 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * Method to set {@link #privateKeyFile}
+     * Method to set the private key file to be used in {@link #sign(String)}
      * @param keyFileName the name of the key file to set as standard private key
      *                    including the file name extension;
      *                    accepts "" (an empty string) as input for setting it to no key
@@ -356,17 +356,19 @@ public class SHA256withRSAAuthentication implements Authentication {
                 || Files.exists(Path.of(KEY_PATH + keyFileName))) {
             privateKeyFile = keyFileName;
             if (writeToProperties) {
-                return setKeyProperties(getStringProperties());
+                return setKeyProperties(getProperties());
             } else {
                 return true;
             }
         } else {
+            System.err.println("Error while setting the private key: "
+                    + "File does not exist.");
             return false;
         }
     }
 
     /**
-     * Method to set {@link #publicKeyFile}
+     * Method to set the public key to be used by the communication partner in {@link #verify(String, String, String)}
      * @param keyFileName the name of the key file to set as standard public key
      *                    including the file name extension
      *                    accepts "" (an empty string) as input for setting it to no key
@@ -377,11 +379,13 @@ public class SHA256withRSAAuthentication implements Authentication {
                 || Files.exists(Path.of(KEY_PATH + keyFileName))) {
             publicKeyFile = keyFileName;
             if (writeToProperties) {
-                return setKeyProperties(getStringProperties());
+                return setKeyProperties(getProperties());
             } else {
                 return true;
             }
         } else {
+            System.err.println("Error while setting the public key: "
+                    + "File does not exist.");
             return false;
         }
     }
@@ -389,10 +393,10 @@ public class SHA256withRSAAuthentication implements Authentication {
     /**
      * Generates a key pair for signing messages
      * (calls the other generateSignatureKeyPair Method with default parameters)
-     * uses the default file name, specified in {@link #DEFAULT_KEY_FILE_NAME}
+     * uses the default file name, specified by the class
      * deletes the key files if there are any with the same name (the default file name)
      * sets the created Key Pair as new standard keys
-     * deletes the current standard keys
+     * deletes the currently set standard keys (even if they don't have the default file name)
      * @return true if it worked, false if error
      */
     public static boolean generateSignatureKeyPair () {
@@ -400,11 +404,11 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * Generates a key pair for signing messages with the chosen file name
+     * Generates a key pair for signing messages, using the chosen name for the key files
      * (public key as .pub file, private key as .key file)
      * @param keyFileName name for the created Key Pair
-     * @param setAsKeyFile if true, sets the created Key Pair as new standard keys
-     *                     ({@link #privateKeyFile} and {@link #publicKeyFile})
+     * @param setAsKeyFile if true, sets the created Key Pair as new standard keys,
+     *                     using {@link #setPrivateKey(String, boolean)} and {@link #setPublicKey(String, boolean)}
      * @param deleteCurrent if true, deletes the currently set standard keys
      * @param overwrite if true, any existing file with the same name will be overwritten
      * @return true if it worked, false if error
@@ -424,8 +428,8 @@ public class SHA256withRSAAuthentication implements Authentication {
             } else if (Files.exists(Path.of(KEY_PATH + keyFileName + ".key")) ||
                     Files.exists(Path.of(KEY_PATH + keyFileName + ".pub"))) {
                 System.err.println("Error while creating a key pair: "
-                        + "file name exists already, but should not be overwritten. "
-                        + "No new key created");
+                        + "File name exists already, but should not be overwritten. "
+                        + "No new key created.");
                 return false;
             }
             // generate the new keys
