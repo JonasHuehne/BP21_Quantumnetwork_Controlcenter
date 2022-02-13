@@ -43,7 +43,7 @@ public class ConnectionManager {
 	 * @param portNumber the port to be checked for availability.
 	 * @return returns true if the port is being used already by any ConnectionEndpoint, false if the port is free.
 	 */
-	private boolean isPortInUse(int portNumber) {
+	public boolean isPortInUse(int portNumber) {
 		boolean isInUse = false;
 		for (ConnectionEndpoint v : connections.values()) {
 			if(v.getServerPort() == portNumber) {

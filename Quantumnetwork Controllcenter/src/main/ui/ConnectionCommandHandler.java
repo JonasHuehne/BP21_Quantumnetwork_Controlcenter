@@ -1,15 +1,19 @@
 package ui;
 
 import java.io.IOException;
-import java.util.Formatter;
-import java.util.Locale;
+import java.util.ArrayList;
+import java.util.Collections;import java.util.Comparator;
+
 import java.util.Map;
+import java.util.Map.Entry;
 
 import communicationList.CommunicationList;
 import communicationList.Contact;
 import frame.QuantumnetworkControllcenter;
+import messengerSystem.MessageSystem;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionState;
+import networkConnection.TransmissionTypeEnum;
 
 public class ConnectionCommandHandler {
 	
@@ -23,7 +27,7 @@ public class ConnectionCommandHandler {
 	 * For this implementation I have chosen to name them after the contact they are connecting to.
 	 */
 	
-	protected static String handle_connectionsAdd(String[] commandArgs) {
+	protected static String handleConnectionsAdd(String[] commandArgs) {
 		
 		String contactName = "";
 		int localPort;
@@ -44,6 +48,8 @@ public class ConnectionCommandHandler {
 			return "ERROR - Could not create a connection where the local Endpoint is listening on port " + localPort + ". "
 					+ "TCP Ports must be between 0 and 65535.";
 			// Not throwing an illegal argument exception here because this is more likely caused by bad input than progammatic mistakes
+		} else if (QuantumnetworkControllcenter.conMan.isPortInUse(localPort)) {
+			return "ERROR - Can not create a connection listening on port " + localPort + " only one connection may listen on a port at a time.";
 		}
 		
 		// Make sure given contact exists
@@ -59,30 +65,26 @@ public class ConnectionCommandHandler {
 		 *  or if there is already a CE in the CM listening on the given local port. Just by receiving null
 		 *  the caller can't tell which case it is though, so we check seperately here to give clear error messages.
 		 */
+		
 		ConnectionEndpoint previousCE = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(contactName);
 		if (previousCE != null) {
 			return "ERROR - Can not create a connection to contact \"" + contactName + "\" - such a connection already exists.";
 		} 
 		
-		// If contact exists, and there is no connection, add the new connection
-		
-		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(contactName, localPort);
-		
-		// (27.01.2022, see previous TODO) localPoint will only be null if port is in use
+		// If contact exists, and there is no connection, add the new connection	
+		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(contactName, localPort);	
 		
 		if (localPoint == null) {
-			return "ERROR - Could not create the specified connection. The port " + localPort + " is already being listened on by another connection.";
-			/* 
-			 * TODO: Currently, even two inactive connections can't have the same local port.
-			 * This could be improved 
-			 */
+			return "ERROR - Could not create the specified connection. Something went wrong, please see the system console in case there is an error log. ";
+		} else {
+			return "Successfully created connection to contact \"" + contactName + "\", listening on port " + localPort + ". "
+					+ "The connection is still inactive. Use the command \"" + Command.CONNECT_TO + "\" to open the connection."; 
 		}
 		
-		return "Successfully created connection to contact \"" + contactName + "\", listening on port " + localPort + ". "
-				+ "The connection is still inactive. Use ... to open the connection."; // TODO
+
 	}
 	
-	protected static String handle_ConnectionShow() {
+	protected static String handleConnectionShow() {
 		
 		Map<String, ConnectionEndpoint> endpoints = QuantumnetworkControllcenter.conMan.returnAllConnections();
 		
@@ -92,12 +94,25 @@ public class ConnectionCommandHandler {
 		
 		StringBuilder output = new StringBuilder();
 		
-		// Used to build a table (TODO: Make this prettier)
-		String format = "[ %s , %s , %s , %s , %s ]";
-		String header = String.format(format, "Connection ID", "IP", "Port (Remote)", "Port (Local)", "Connection Status");
+		// Used to build a table
+		String format = 
+				"| %-24s | %-20s | %-10s | %-20s | %-22s | %-20s | %-22s |";	
+		String header = String.format(format, 
+				"ID", "STATUS", "Local Port", "Remote IP (Contact)", "Remote Port (Contact)", "Remote IP (Latest)", "Remote Port (Latest)");
 		
 		output.append(header);
 		output.append(System.lineSeparator());
+		
+		ArrayList<Map.Entry<String, ConnectionEndpoint>> endpointsList = new ArrayList<>();
+		
+		// Sort the list alphabetically for prettier presentation 
+		Collections.sort(endpointsList, 
+				new Comparator<Map.Entry<String, ConnectionEndpoint>>() {
+					@Override
+					public int compare(Entry<String, ConnectionEndpoint> entryA, Entry<String, ConnectionEndpoint> entryB) {
+						return entryA.getKey().compareTo(entryB.getKey());
+				}
+		});
 		
 		// For each Endpoint add an entry to the table
 		for (Map.Entry<String, ConnectionEndpoint> endpoint : endpoints.entrySet()) {
@@ -105,44 +120,56 @@ public class ConnectionCommandHandler {
 			String connectionState = endpoint.getValue().reportState().toString();
 			int localPort = endpoint.getValue().getServerPort();
 			
-			/* 
-			 * Intuitively, one might try endpoint.getValue.getRemoteAddress() and endpoint.getValue.getRemoteIP() here,
-			 * however, currently (28.01.2022) these values are only set by the method ConnectionEndpoint.establishConnection(..),
-			 * that is, they are only set if the CE tries to be the party that opens a connection.
-			 * So, instead we get the contact associated with this connection* 
-			 * and get the remote IP and port from there, since that is also what we (will) do in handleConnectTo(..).
-			 * 
-			 * *(no connection exists without a contact, contact name == connection ID)
-			 * TODO / See Issue #39
-			 */
+			
 			Contact contact = communicationList.query(connectionID);
 			
 			if (contact == null) throw new NullPointerException(
 					"Attempted to access contact named " + connectionID + " however, no such contact was found. "
 					+ "Each connection ID must correspond to the name of a contact in the communication list, because that contacts IP and Port will be used for the connection.");
 			
-			String remoteIP = contact.getIpAddress();
-			int remotePort = contact.getPort();		
+			String contactRemoteIP = contact.getIpAddress(); // ip of the contact associated with this connection ID
+			int contactRemotePort = contact.getPort();	// port the contact would like to receive messages on
+			String latestRemoteIP = endpoint.getValue().getRemoteAddress(); // latest IP this connection has connected to
+			int latestRemotePort = endpoint.getValue().getRemotePort(); // remote port (port messages are sent to) of the latest connection made
 			
-			output.append(String.format(format, connectionID, remoteIP, remotePort, localPort, connectionState));
+			// the two "latest" values may be "" and 0 if no connection has been established yet
+			
+			output.append(
+					String.format(format, 
+					connectionID, connectionState, localPort, contactRemoteIP, contactRemotePort, latestRemoteIP, latestRemotePort)
+					);
 			// TODO: TEMPORARY - FOR DEBUGGING ONLY:
 			output.append("Message Stack Size: " + endpoint.getValue().sizeOfMessageStack());
 			output.append(System.lineSeparator());
 		}
 		
-		// Temporary?
-		String info = 
-					"Connection ID: The name of this connection endpoint. This is also the name of the contact this will be a connection to, once established. " + System.lineSeparator()
-				+ 	"IP: The IP that outgoing messages will be sent to" + System.lineSeparator()
-				+	"Port (Remote): The port that outgoing messages and connection requests will be sent to. " + System.lineSeparator()
-				+ 	"Port (Local): The port that this connection will wait for messages or connection requests on, depending on state. " + System.lineSeparator()
-				+	"Connection Status: Information on the status of this connection, such as whether it is currently active or not.";
+		// Give the user some info about what the columns mean
+		String info;		
+		info = 		System.lineSeparator()
+					+	"ID: Identifies this connection / connection endpoint. This should be the same as the name of the contact to which this is a connection." 
+					+ 	System.lineSeparator()
+					+	"STATUS: Status of this connection (e.g. CONNECTED, CLOSED, ...)." 
+					+ 	System.lineSeparator()
+					+	"Local Port: Port that this endpoint expects incoming messages on. " 
+					+ 	System.lineSeparator()
+					+	"Remote IP (Contact): IP of the contact associated with this connection. "
+					+ 	"Messages, including connection requests for this connection, will be sent to this IP." 
+					+ 	System.lineSeparator()
+					+	"Remote Port (Contact): Port entry of the contact associated with this connection. "
+					+ 	"Messages, including connection requests for this connection, will be sent to this port." 
+					+ 	System.lineSeparator()
+					+	"Remote IP (Latest): Latest IP that this connection endpoint has connected to. "
+					+ 	"May be unset if this connection was never active."
+					+ 	System.lineSeparator()
+					+	"Remote Port (Latest): Remote port associated with the last connection made on this connection endpoint. "
+					+ 	"If there has been no connection, it will be 0.";
+		
 		output.append(info);
 		
 		return output.toString();
 	}
 	
-	protected static String handle_connectTo(String contactName) {
+	protected static String handleConnectTo(String contactName) {
 		
 		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(contactName);
 		
@@ -171,7 +198,7 @@ public class ConnectionCommandHandler {
 		
 	}
 	
-	protected static String handle_waitFor(String contactName) {
+	protected static String handleWaitFor(String contactName) {
 		
 		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(contactName);
 		
@@ -196,9 +223,39 @@ public class ConnectionCommandHandler {
 		}
 		
 	}
+
+	public static String handleConnectionsClose(String connectionID) {
+		
+		ConnectionEndpoint localEndpoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID);
+		
+		if (localEndpoint == null) {
+			return "ERROR - There is no connection with the ID \"" + connectionID + "\", so it could not be closed.";
+		} else {
+			if (QuantumnetworkControllcenter.conMan.getConnectionState(connectionID) == ConnectionState.CLOSED) {
+				return "ERROR - Connection with ID \"" + connectionID + "\" is already closed.";
+			} else {
+				QuantumnetworkControllcenter.conMan.closeConnection(connectionID);
+				return "Attempted to close connection with ID \"" + connectionID  +"\". If any errors occured, they will be printed to the system console. ";
+			}
+		}
+		
+	}
+
+	public static String handleConnectionsRemove(String connectionID) {
+		
+		ConnectionEndpoint localEndpoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID);
+		
+		if (localEndpoint == null) {
+			return "ERROR - There is no connection with the ID \"" + connectionID + "\", so it could not be removed.";
+		} else {
+			QuantumnetworkControllcenter.conMan.destroyConnectionEndpoint(connectionID);
+			return "Closed and removed connection with the ID \"" + connectionID + "\".";
+		}
+		
+	}
 	
-	protected static String handle_helloWorld(String contactName) {
-	
+	protected static String handleHelloWorld(String contactName) {
+		
 		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(contactName);
 		
 		if (localPoint == null) {
@@ -209,8 +266,7 @@ public class ConnectionCommandHandler {
 			return "ERROR - Can only send messages on connections in state " + ConnectionState.CONNECTED;
 		}
 		
-		// TODO adjust this
-		// localPoint.pushMessage("msg", "Hello World!");
+		MessageSystem.sendMessage(contactName, TransmissionTypeEnum.TRANSMISSION, "", "Hello World!", "");
 		
 		return "An attempt has been made to send a hello world message.";
 	}

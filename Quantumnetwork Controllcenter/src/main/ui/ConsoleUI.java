@@ -63,7 +63,7 @@ public class ConsoleUI {
 		// The area in which the user enters the commands
 		consoleInArea = new JTextField();
 		consoleInArea.setCaretColor(Color.GREEN);
-		consoleInArea.setFont(new Font("Arial", Font.PLAIN, 14));
+		consoleInArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
 		consoleInArea.setForeground(Color.GREEN);
 		consoleInArea.setBackground(Color.BLACK);
 		consoleInArea.setBorder(javax.swing.BorderFactory.createEmptyBorder());
@@ -85,7 +85,7 @@ public class ConsoleUI {
 		consoleOutArea.setText("Welcome to the Quantum Network Control Center. What would you like to do?\r\nEnter \"help\" for a list of commands.");
 		consoleOutArea.setLineWrap(true);
 		consoleOutArea.setForeground(Color.GREEN);
-		consoleOutArea.setFont(new Font("Arial", Font.PLAIN, 14));
+		consoleOutArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
 		consoleOutArea.setEditable(false);
 		consoleOutArea.setBackground(Color.BLACK);
 		scrollPane.setViewportView(consoleOutArea);

@@ -52,7 +52,6 @@ public final class CommandHandler {
 				return handleHelp(commandArgs);
 				
 			// Communication List Commands
-				
 			case CONTACTS_ADD:
 				return CommunicationListCommandHandler.handleContactsAdd(commandArgs);
 			case CONTACTS_REMOVE:
@@ -65,20 +64,22 @@ public final class CommandHandler {
 				return CommunicationListCommandHandler.handleContactsUpdate(commandArgs);
 			case CONTACTS_SHOWPK:
 				return CommunicationListCommandHandler.handleShowPk(commandArgs[0]);
-				
-				
-			// Connection Commands
-			
+						
+			// Connection Commands	
 			case CONNECTIONS_ADD:
-				return ConnectionCommandHandler.handle_connectionsAdd(commandArgs);
+				return ConnectionCommandHandler.handleConnectionsAdd(commandArgs);
 			case CONNECTIONS_SHOW:
-				return ConnectionCommandHandler.handle_ConnectionShow();
+				return ConnectionCommandHandler.handleConnectionShow();
 			case CONNECT_TO:
-				return ConnectionCommandHandler.handle_connectTo(commandArgs[0]);
+				return ConnectionCommandHandler.handleConnectTo(commandArgs[0]);
 			case WAIT_FOR:
-				return ConnectionCommandHandler.handle_waitFor(commandArgs[0]);
+				return ConnectionCommandHandler.handleWaitFor(commandArgs[0]);
 			case HELLO_WORLD:
-				return ConnectionCommandHandler.handle_helloWorld(commandArgs[0]);
+				return ConnectionCommandHandler.handleHelloWorld(commandArgs[0]);
+			case CONNECTIONS_CLOSE:
+				return ConnectionCommandHandler.handleConnectionsClose(commandArgs[0]);
+			case CONNECTIONS_REMOVE:
+				return ConnectionCommandHandler.handleConnectionsRemove(commandArgs[0]);
 			
 			// Debug Commands, not intended to be part of the final product, but useful for manual testing
 			case DEBUG_GENSIGPAIR:
@@ -89,6 +90,7 @@ public final class CommandHandler {
 				return DebugCommandHandler.handleSetUpLocalConnections();
 			case DEBUG_CLEAR_COMMLIST:
 				return DebugCommandHandler.handleClearCommList();
+				
 			default:
 				return "Not implemented yet.";
 		}

@@ -97,6 +97,18 @@ public class DebugCommandHandler {
 			out.append(System.lineSeparator());
 		}
 		
+		out.append("EXPLANATION: " + System.lineSeparator()
+				+ "Interpreting this local, cyclical connection might initially be a bit confusing. "
+				+ "To explain: This simulates Alice and Bob establishing a connection. "
+				+ "Each has one connection endpoint, named after the other person. " + System.lineSeparator()
+				+ "So, the connection Endpoint \"Alice\" is the connection Endpoint that Bob has, which is connected to Alice. "
+				+ "Bob will receive messages from Alice on it. " + System.lineSeparator()
+				+ "Vice versa, Alice will receive her messages from Bob on connection endpoint \"Bob\". " + System.lineSeparator()
+				+ "This means if you were to enter \"" + Command.HELLO_WORLD.getCommandName() + " Bob\" (which sends a hello world to the contact named Bob)"
+				+ ", it would cause a message to appear on the CE named \"Alice\" because in this simulation, that is where Bob receives messages (from Alice)." + System.lineSeparator()
+				+ "In this setting, this might be a bit of a mind-bend, but if we are actually establishing connections "
+				+ "to other users of the network, the connection being named after the user / contact will be intuitive." + System.lineSeparator());
+		
 		return out.toString();
 	}
 
