@@ -1,7 +1,5 @@
 import static org.junit.jupiter.api.Assertions.*;
 
-import java.util.Random;
-
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -14,47 +12,6 @@ import ui.CommandParser;
  * @author Sasha Petri
  */
 class CommandParserTests {
-	
-	/**
-	 * Used to randomize the whitespace in a string.
-	 * @param input
-	 * 		any string
-	 * @return
-	 * 		the same string, but each whitespace will be replaced by 1 to 5 whitespaces (this means that through randomness, there may be no change some times)
-	 */
-	private String helper_randomizeWhiteSpace(String input) {
-		char[] inputArray = input.toCharArray();
-		String output = "";
-		Random r = new Random();
-		for (char c : inputArray) {
-			if(Character.isWhitespace(c)) {
-				int randomWhiteSpaceAmount = r.nextInt(5) + 1; // random number between 1 and 5
-				output += " ".repeat(randomWhiteSpaceAmount);
-			} else {
-				output += c;
-			}
-		}
-		return output;
-	}
-	
-	private String helper_randomizeCapitalization(String input) {
-		char[] inputArray = input.toCharArray();
-		String output = "";
-		Random r = new Random();
-		for (char c : inputArray) {
-			if(Character.isAlphabetic(c)) {
-				boolean uppercase = r.nextBoolean();
-				if(uppercase) {
-					output += Character.toUpperCase(c);
-				} else {
-					output += Character.toLowerCase(c);
-				}
-			} else {
-				output += c;
-			}
-		}
-		return output;
-	}
 	
 	@Test
 	void test_norm_input() {
@@ -91,7 +48,7 @@ class CommandParserTests {
 		 * With varying whitespaces in front and in the middle of the command
 		 */
 		void test_GetCommandOfName_varying_whitespaces(Command c) {
-			String commandNameWithRandomWhitespaces = helper_randomizeWhiteSpace(c.getCommandName());
+			String commandNameWithRandomWhitespaces = HelperMethods.helper_randomizeWhiteSpace(c.getCommandName());
 			assertEquals(c, CommandParser.getCommandOfName(commandNameWithRandomWhitespaces, true));
 		}
 		
@@ -102,7 +59,7 @@ class CommandParserTests {
 		 * With varying whitespaces in front and in the middle of the command
 		 */
 		void test_GetCommandOfName_varying_whitespaces_nonstrict(Command c) {
-			String commandNameWithRandomWhitespaces = helper_randomizeWhiteSpace(c.getCommandName());
+			String commandNameWithRandomWhitespaces = HelperMethods.helper_randomizeWhiteSpace(c.getCommandName());
 			assertEquals(c, CommandParser.getCommandOfName(commandNameWithRandomWhitespaces, false));
 		}
 		
@@ -113,7 +70,7 @@ class CommandParserTests {
 		 * With the command name not being typed solely in lower case
 		 */
 		void test_GetCommandOfName_case_sensitivity(Command c) {
-			String randomCapitalizedCommandName = helper_randomizeCapitalization(c.getCommandName());
+			String randomCapitalizedCommandName = HelperMethods.helper_randomizeCapitalization(c.getCommandName());
 			assertEquals(c, CommandParser.getCommandOfName(randomCapitalizedCommandName, true));
 		}
 		
@@ -124,7 +81,7 @@ class CommandParserTests {
 		 * With the command name not being typed solely in lower case
 		 */
 		void test_GetCommandOfName_case_sensitivity_nonstrict(Command c) {
-			String randomCapitalizedCommandName = helper_randomizeCapitalization(c.getCommandName());
+			String randomCapitalizedCommandName = HelperMethods.helper_randomizeCapitalization(c.getCommandName());
 			assertEquals(c, CommandParser.getCommandOfName(randomCapitalizedCommandName, false));
 		}
 		
@@ -336,8 +293,8 @@ class CommandParserTests {
 			assertArrayEquals(new String[] {"Alexa"}, CommandParser.extractArguments("contacts showpk Alexa"));
 			assertArrayEquals(new String[] {"Bobbie"}, CommandParser.extractArguments("contacts showpk Bobbie"));
 			
-			assertArrayEquals(new String[] {"Alexa"}, CommandParser.extractArguments(helper_randomizeWhiteSpace("contacts showpk Alexa")));
-			assertArrayEquals(new String[] {"Bobbie"}, CommandParser.extractArguments(helper_randomizeWhiteSpace("contacts showpk Bobbie")));
+			assertArrayEquals(new String[] {"Alexa"}, CommandParser.extractArguments(HelperMethods.helper_randomizeWhiteSpace("contacts showpk Alexa")));
+			assertArrayEquals(new String[] {"Bobbie"}, CommandParser.extractArguments(HelperMethods.helper_randomizeWhiteSpace("contacts showpk Bobbie")));
 		}
 	}
 	
