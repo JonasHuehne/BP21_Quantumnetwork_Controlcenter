@@ -1,7 +1,9 @@
 package encryptionDecryption;
 
 
+import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.util.Base64;
 import javax.crypto.BadPaddingException;
@@ -123,6 +125,57 @@ public class AES256 {
 	}
 	
 	/**
+	 * Encrypts the given file using the AES-256 CBC algorithm and a suitable key
+	 * Saves the encrypted file in the given file directory
+	 * 
+	 * @param inputFile file to be encrypted
+	 * @param byteKey a byte array with 256 bit (32 byte)
+	 * @param outputFile file directory to save the encrypted file
+	 */
+	public static void encryptFile(File inputFile, byte[] byteKey, File outputFile) {
+		
+		//checking that key has the right length
+		if(byteKey.length != KEY_LENGTH_BYTE) {
+			System.err.println(KEY_WRONG_SIZE);
+			return;
+		}
+				
+		//generating SecretKey from byte array
+		SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
+		
+		try {
+			//get Cipher Instance
+			Cipher cipher = Cipher.getInstance(ALGORITHM_WITH_PADDING);
+			
+			//initialize Cipher for encryption
+			cipher.init(Cipher.ENCRYPT_MODE, key, IV);
+			
+			//get byte array from file
+	        byte[] inputBytes = Files.readAllBytes(inputFile.toPath());	  
+	        
+	        //encrypt byte array containing data from file
+	        byte[] outputBytes = cipher.doFinal(inputBytes);
+	        
+	        //create file with encrypted data
+	        Files.write(outputFile.toPath(), outputBytes);
+	        
+	        return;
+		}
+		//printing exceptions
+		catch (InvalidKeyException e) {
+			System.err.println("An invalid Key was used. \n" + e.toString());
+		}
+		catch (IllegalBlockSizeException e) {
+			System.err.println("The plaintext has the wrong length. \n" + e.toString());
+		}
+		catch (Exception e) {
+			//TODO later printing exception to UI
+			System.err.println("An ERROR occured during encryption:\n" + e.toString());
+		}		
+		return;
+	}
+	
+	/**
 	 * Decrypts the given cipher text String using the AES-256 CBC algorithm and the corresponding key used to encrypt the cipher text
 	 * 
 	 * @param strCiphertext the cipher text that should be decrypted as a Base64 encoded String
@@ -160,7 +213,7 @@ public class AES256 {
 			return null;
 		}
 		
-		//generating SecretKey from String
+		//generating SecretKey from byte array
 		SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
 		
 		//calling decrypt with key as arg
@@ -168,6 +221,7 @@ public class AES256 {
 	}
 	
 	/**
+	 * Decrypts the given cipher text String using the AES-256 CBC algorithm and the corresponding key used to encrypt the cipher text
 	 * 
 	 * @param strCiphertext the cipher text that should be decrypted as a Base64 encoded String
 	 * @param key SecretKey object for AES256 that was used to encrypt the cipher text
@@ -214,5 +268,56 @@ public class AES256 {
 			System.err.println("An ERROR occured during decryption:\n" + e.toString());
 		}
 		return null;
+	}
+	
+	/**
+	 * Decrypts the given file using the AES-256 CBC algorithm and the corresponding key used to encrypt the file
+	 * Saves the decrypted file in the given file directory
+	 * 
+	 * @param inputFile file to be decrypted
+	 * @param byteKey a byte array with 256 bit (32 byte)
+	 * @param outputFile file directory to save the decrypted file
+	 */
+public static void decryptFile(File inputFile, byte[] byteKey, File outputFile) {
+		
+		//checking that key has the right length
+		if(byteKey.length != KEY_LENGTH_BYTE) {
+			System.err.println(KEY_WRONG_SIZE);
+			return;
+		}
+				
+		//generating SecretKey from byte array
+		SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
+		
+		try {
+			//get Cipher Instance
+			Cipher cipher = Cipher.getInstance(ALGORITHM_WITH_PADDING);
+			
+			//initialize Cipher for decryption
+			cipher.init(Cipher.DECRYPT_MODE, key, IV);
+			
+			//get byte array from file
+	        byte[] inputBytes = Files.readAllBytes(inputFile.toPath());
+	        
+	        //decrypt byte array containing file data
+	        byte[] outputBytes = cipher.doFinal(inputBytes);	  
+	        
+	        //create file with decrypted data
+	        Files.write(outputFile.toPath(), outputBytes);
+            
+	        return;
+		}
+		//printing exceptions
+		catch (InvalidKeyException e) {
+			System.err.println("An invalid Key was used. \n" + e.toString());
+		}
+		catch (IllegalBlockSizeException e) {
+			System.err.println("The plaintext has the wrong length. \n" + e.toString());
+		}
+		catch (Exception e) {
+			//TODO later printing exception to UI
+			System.err.println("An ERROR occured during encryption:\n" + e.toString());
+		}		
+		return;
 	}
 }
