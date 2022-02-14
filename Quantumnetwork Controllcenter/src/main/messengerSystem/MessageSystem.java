@@ -280,6 +280,7 @@ public class MessageSystem {
 	/**
 	 * receives a signed message with encrypted text
 	 * 
+	 * @param connectionID the ID of the sender
 	 * @return the received and decrypted message as string, null if error none or if result of verify was false
 	 */
 	public static String readEncryptedMessage(String connectionID) {

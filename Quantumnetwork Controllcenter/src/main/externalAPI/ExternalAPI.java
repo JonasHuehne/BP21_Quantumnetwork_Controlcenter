@@ -1,11 +1,15 @@
 package externalAPI;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import javax.crypto.SecretKey;
 import keyStore.KeyStoreDbManager;
+import messengerSystem.MessageSystem;
 
 /**
  * An API class for external use to get keys and use the encryption/decryption with or without sending the file.
@@ -126,9 +130,59 @@ public class ExternalAPI {
 		 */
 	}
 	
+	/**
+	 * sends a signed message with encrypted text from given .txt file
+	 * 
+	 * @param communicationPartner the ID of the receiver as listed in communicationList
+	 * @param fileName Name of the .txt file containing the suffix ".txt"
+	 */
+	public static void sendEncryptedTxtFile(String communicationPartner, String fileName) {
+		Path externalPath = getExternalAPIPath();
+		Path toRead = externalPath.resolve(fileName);
+		
+		String message = "";
+		
+		try {
+		message = Files.readString(toRead);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			System.err.println(e.toString());
+		}
+		
+		MessageSystem.sendEncryptedMessage(communicationPartner, message);
+	}
+	
+	/**
+	 * receives a signed message with encrypted text, sent from an external source.
+	 * Saves the text decrypted in a .txt file in externalAPI directory, named with the ID of the sender and current Timestamp.
+	 * 
+	 * @param communicationPartner the ID of the sender
+	 */
+	public static void receiveEncryptedTxtFile(String communicationPartner) {
+		Path externalPath = getExternalAPIPath();
+		
+		DateTimeFormatter dateTimeFormater = DateTimeFormatter.ofPattern("uuuu_MM_dd_HH_mm_ss");
+        LocalDateTime now = LocalDateTime.now();
+        String currentDateTime = dateTimeFormater.format(now);
+		System.out.println(currentDateTime);
+        
+		Path toWrite = externalPath.resolve(currentDateTime + " " + communicationPartner + ".txt");
+		
+		File decrypted = new File(toWrite.toString());
+		
+		String received = MessageSystem.readAuthenticatedMessage(communicationPartner);
+		
+		try {
+			Files.writeString(decrypted.toPath(), received);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			System.err.println(e.toString());
+		}
+	}
+	
 	/*
 	 * uncomment for manual testing
-	 */
+	 *
 	public static void main(String[] args) {
 		encryptFile("42debugging42", "jpgTest.jpg");
 		decryptFile("42debugging42", "encrypted_jpgTest.jpg");
@@ -148,5 +202,5 @@ public class ExternalAPI {
 		encryptFile("42debugging42", "zipTest.zip");
 		decryptFile("42debugging42", "encrypted_zipTest.zip");
 	}
-	//*/
+	*/
 }
