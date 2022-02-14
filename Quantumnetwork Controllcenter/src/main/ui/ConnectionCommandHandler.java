@@ -274,6 +274,7 @@ public class ConnectionCommandHandler {
 	 * @param connectionID
 	 * 		the ID of the connection to close, must be the ID of a ConnectionEndpoint in the ConnectionManager
 	 * @return
+	 * 		a message describing whether or not execution of the command was successful
 	 */
 	public static String handleConnectionsClose(String connectionID) {
 		
@@ -293,9 +294,12 @@ public class ConnectionCommandHandler {
 	}
 
 	/**
-	 * Handles {@link Command#CONNECTIONS_REMOVE}
+	 * Handles execution of {@link Command#CONNECTIONS_REMOVE}.
+	 * Attempts to remove the specified connection.
 	 * @param connectionID
+	 * 		the ID of the connection to remove, must be the ID of a ConnectionEndpoint in the ConnectionManager
 	 * @return
+	 * 		a message describing whether or not execution of the command was successful
 	 */
 	public static String handleConnectionsRemove(String connectionID) {
 		
@@ -311,23 +315,27 @@ public class ConnectionCommandHandler {
 	}
 	
 	/**
-	 * Handles {@link Command#HELLO_WORLD}
-	 * @param contactName
+	 * Handles {@link Command#HELLO_WORLD}.
+	 * Attempts to send a simple (14.02.2022: currently unauthenticated) hello world message along the specified connection.
+	 * @param connectionID
+	 * 		the ID of the connection to send a hello world along, must be the ID of a ConnectionEndpoint in the ConnectionManager <br>
+	 * 		connection must be active (connected) for a message to be sent
 	 * @return
+	 * 		a message describing whether or not execution of the command was successful
 	 */
-	protected static String handleHelloWorld(String contactName) {
+	protected static String handleHelloWorld(String connectionID) {
 		
-		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(contactName);
+		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID);
 		
 		if (localPoint == null) {
-			return "ERROR - There is no connection with the ID \"" + contactName + "\", so no hello world could be sent.";
+			return "ERROR - There is no connection with the ID \"" + connectionID + "\", so no hello world could be sent.";
 		}
 			
 		if (localPoint.reportState() != ConnectionState.CONNECTED) {
 			return "ERROR - Can only send messages on connections in state " + ConnectionState.CONNECTED;
 		}
 		
-		MessageSystem.sendMessage(contactName, TransmissionTypeEnum.TRANSMISSION, "", "Hello World!", "");
+		MessageSystem.sendMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", "Hello World!", "");
 		
 		return "An attempt has been made to send a hello world message.";
 	}

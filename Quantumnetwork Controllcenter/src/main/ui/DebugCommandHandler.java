@@ -8,6 +8,11 @@ import messengerSystem.SHA256withRSAAuthentication;
 
 public class DebugCommandHandler {
 
+	/**
+	 * Handles {@link Command#DEBUG_GENSIGPAIR}.
+	 * @return
+	 * 		a message whether or not the execution was successful
+	 */
 	static String handleGenSigPair() {
 		boolean b = SHA256withRSAAuthentication.generateSignatureKeyPair();
 		String out;
@@ -112,6 +117,11 @@ public class DebugCommandHandler {
 		return out.toString();
 	}
 
+	/**
+	 * Handles execution of {@link Command#DEBUG_CLEAR_COMMLIST}
+	 * @return
+	 * 		the new communication list
+	 */
 	public static String handleClearCommList() {
 		
 		ArrayList<String> names = new ArrayList<String>();
