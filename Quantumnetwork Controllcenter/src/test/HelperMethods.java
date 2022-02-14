@@ -10,7 +10,7 @@ public final class HelperMethods {
 	 * @return
 	 * 		the same string, but each whitespace will be replaced by 1 to 5 whitespaces (this means that through randomness, there may be no change some times)
 	 */
-	public static String helper_randomizeWhiteSpace(String input) {
+	public static String randomizeWhiteSpace(String input) {
 		char[] inputArray = input.toCharArray();
 		String output = "";
 		Random r = new Random();
@@ -25,7 +25,7 @@ public final class HelperMethods {
 		return output;
 	}
 	
-	public static String helper_randomizeCapitalization(String input) {
+	public static String randomizeCapitalization(String input) {
 		char[] inputArray = input.toCharArray();
 		String output = "";
 		Random r = new Random();
@@ -63,7 +63,7 @@ public final class HelperMethods {
 	 * @return
 	 * 		a String as described above
 	 */
-	public static String helper_somewhatRandomString(int bonusLength, boolean alphabeticals, boolean numerics, boolean seperators) {
+	public static String somewhatRandomString(int bonusLength, boolean alphabeticals, boolean numerics, boolean seperators) {
 		
 		if(bonusLength == 0) return SEMI_RANDOM_STRING_BASE;
 		
