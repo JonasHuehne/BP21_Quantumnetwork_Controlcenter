@@ -27,6 +27,22 @@ public class ConnectionCommandHandler {
 	 * For this implementation I have chosen to name them after the contact they are connecting to.
 	 */
 	
+	/**
+	 * Handles execution of {@link Command#CONNECTIONS_ADD}. <br>
+	 * Adds a new connection / connection endpoint to the list, as determined by the arguments given in commandArgs. <br>
+	 * New connection endpoint will be inactive after creation.
+	 * @param commandArgs
+	 * 		may be of length 1 or 2 <br>
+	 * 		
+	 * 		commandArgs[0] must be the name of a contact in the {@link CommunicationList}.
+	 * 		Connection ID will be the contact name, remote IP and remote port will determined by 
+	 * 		the contact's IP and port. No two connections to one contact will be created. <br>
+	 * 		
+	 * 		commandArgs[1] is optional. If it exists, it decides which port this 
+	 * 		new connection will be listening for messages on. Must be a valid TCP port.
+	 * @return
+	 * 		a message describing whether or not execution of the command was successful
+	 */
 	protected static String handleConnectionsAdd(String[] commandArgs) {
 		
 		String contactName = "";
@@ -84,6 +100,12 @@ public class ConnectionCommandHandler {
 
 	}
 	
+	/**
+	 * Handles execution of {@link Command#CONNECTIONS_SHOW}.
+	 * @return
+	 * 		a string formated to be a table of all connections <br>
+	 * 		if no connections exists, a string stating there are no connections
+	 */
 	protected static String handleConnectionShow() {
 		
 		Map<String, ConnectionEndpoint> endpoints = QuantumnetworkControllcenter.conMan.returnAllConnections();
@@ -139,7 +161,7 @@ public class ConnectionCommandHandler {
 					connectionID, connectionState, localPort, contactRemoteIP, contactRemotePort, latestRemoteIP, latestRemotePort)
 					);
 			// TODO: TEMPORARY - FOR DEBUGGING ONLY:
-			output.append("Message Stack Size: " + endpoint.getValue().sizeOfMessageStack());
+			output.append(" Message Stack Size: " + endpoint.getValue().sizeOfMessageStack());
 			output.append(System.lineSeparator());
 		}
 		
@@ -169,41 +191,59 @@ public class ConnectionCommandHandler {
 		return output.toString();
 	}
 	
-	protected static String handleConnectTo(String contactName) {
+	/**
+	 * Handles execution of {@link Command#CONNECT_TO}.
+	 * Attempts to open the specified connection by sending a connection request.
+	 * @param connectionID
+	 * 		the ID of the connection to open, must be the ID of a ConnectionEndpoint in the ConnectionManager
+	 * @return
+	 * 		a message describing whether or not execution of the command was successful <br>
+	 * 		currently (14.02.2022), it does not describe whether the connection was actually established, just if an attempt was succesfully made
+	 */
+	protected static String handleConnectTo(String connectionID) {
 		
-		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(contactName);
+		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID);
 		
 		if (localPoint == null) {
-			return "ERROR - There is no connection with the ID \"" + contactName + "\", so no connection could be started.";
+			return "ERROR - There is no connection with the ID \"" + connectionID + "\", so no connection could be started.";
 		} else {
 			
-			Contact contact = QuantumnetworkControllcenter.communicationList.query(contactName);
+			Contact contact = QuantumnetworkControllcenter.communicationList.query(connectionID);
 			
 			if (contact == null) throw new NullPointerException(
-					"Attempted to access contact named " + contactName + " however, no such contact was found. "
+					"Attempted to access contact named " + connectionID + " however, no such contact was found. "
 					+ "Each connection ID must correspond to the name of a contact in the communication list, because that contacts IP and Port will be used for the connection.");
 			
 			try {
 				localPoint.establishConnection(contact.getIpAddress(), contact.getPort());
-				
 				/*
 				 * TODO: Really need the better error handling US done some time soon, this is getting ugly...
 				 */
 				return "Attempted to establish a connection. For now, please look to the system console for feedback.";
 				
 			} catch (IOException e) {
-				return "An I/O Exception occured while trying to establish the connection with ID \"" + contactName + "\". Message: " + e.getMessage();
+				return "An I/O Exception occured while trying to establish the connection with ID \"" + connectionID + "\". Message: " + e.getMessage();
 			}
 		}
 		
 	}
 	
-	protected static String handleWaitFor(String contactName) {
+	/**
+	 * Handles execution of {@link Command#WAIT_FOR}.
+	 * Causes the specified connection to wait for a connection request.
+	 * @param connectionID
+	 * 		the ID of the connection to wait on, must be the ID of a ConnectionEndpoint in the ConnectionManager
+	 * @return
+	 * 		a message describing whether or not execution of the command was successful <br>
+	 * 		currently (14.02.2022) does not give feedback when a connection is actually established, 
+	 * 		just that the specified connection (endpoint) was switched to be waiting for a connection request
+	 */
+	protected static String handleWaitFor(String connectionID) {
 		
-		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(contactName);
+		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID);
 		
 		if (localPoint == null) {
-			return "ERROR - Could not start waiting for a connection request on \"" + contactName + "\" - no such connection endpoint exists.";
+			return "ERROR - Could not start waiting for a connection request on \"" + connectionID + "\" - no such connection endpoint exists.";
 		} else {
 			/*
 			 * TODO: What happens if waitForConnection() is called in a state that is not == CLOSED?
@@ -211,10 +251,14 @@ public class ConnectionCommandHandler {
 			 * Is it safe? If not, maybe it should give some kind of feedback? 
 			 */
 			if (localPoint.reportState() != ConnectionState.CLOSED) {
-				return "ERROR - The connection endpoint \"" + contactName + "\" must be in state " + ConnectionState.CLOSED.toString() + " for this command to be safely executed.";
+				return "ERROR - The connection endpoint \"" + connectionID + "\" must be in state " + ConnectionState.CLOSED.toString() + " for this command to be safely executed.";
 			} else {
-				localPoint.waitForConnection();
-				return "Endpoint \"" + contactName + "\" is now waiting for a connection request.";
+				if (localPoint.reportState() == ConnectionState.WAITINGFORCONNECTION) {
+					return "ERROR - Endpoint \"" + connectionID + "\" is already waiting for a connection request.";
+				} else {
+					localPoint.waitForConnection();
+					return "Endpoint \"" + connectionID + "\" is now waiting for a connection request.";
+				}
 				/*
 				 * TODO: If possible, give some kind of feedback once a connection has been gotten. 
 				 * This would be a bit complicated though, would likely require an EventListener or something similar.
@@ -224,6 +268,13 @@ public class ConnectionCommandHandler {
 		
 	}
 
+	/**
+	 * Handles execution of {@link Command#CONNECTIONS_CLOSE}.
+	 * Attempts to close the specified connection.
+	 * @param connectionID
+	 * 		the ID of the connection to close, must be the ID of a ConnectionEndpoint in the ConnectionManager
+	 * @return
+	 */
 	public static String handleConnectionsClose(String connectionID) {
 		
 		ConnectionEndpoint localEndpoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID);
@@ -241,6 +292,11 @@ public class ConnectionCommandHandler {
 		
 	}
 
+	/**
+	 * Handles {@link Command#CONNECTIONS_REMOVE}
+	 * @param connectionID
+	 * @return
+	 */
 	public static String handleConnectionsRemove(String connectionID) {
 		
 		ConnectionEndpoint localEndpoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID);
@@ -254,6 +310,11 @@ public class ConnectionCommandHandler {
 		
 	}
 	
+	/**
+	 * Handles {@link Command#HELLO_WORLD}
+	 * @param contactName
+	 * @return
+	 */
 	protected static String handleHelloWorld(String contactName) {
 		
 		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(contactName);
