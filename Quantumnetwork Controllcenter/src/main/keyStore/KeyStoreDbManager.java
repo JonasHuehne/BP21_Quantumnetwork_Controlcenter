@@ -28,6 +28,8 @@ public class KeyStoreDbManager {
      */
     private static Connection connect() {
         Connection con = null;
+        //TODO
+        // File.seperator statt / benutzen
         try {
             Class.forName("org.sqlite.JDBC");
 
@@ -35,7 +37,7 @@ public class KeyStoreDbManager {
             String currentPath = System.getProperty("user.dir");
 
             con = DriverManager.getConnection("jdbc:sqlite:" + currentPath + "\\" + dataBaseName); // connect to our db
-            System.out.println("Connection to database was succesfull!");
+            //System.out.println("Connection to database was succesfull!");
 
         } catch (ClassNotFoundException | SQLException e) {
 
@@ -52,7 +54,7 @@ public class KeyStoreDbManager {
      *
      * @returns True if Database and table were created successfully, False otherwise
      */
-    protected static boolean createNewKeyStoreAndTable() {
+    public static boolean createNewKeyStoreAndTable() {
 
         try {
             Connection conn = KeyStoreDbManager.connect();
@@ -63,12 +65,12 @@ public class KeyStoreDbManager {
             // create Table
             String keyInformationSQL = "CREATE TABLE IF NOT EXISTS " + tableName +
                     " (KeyStreamId CHAR(128) UNIQUE ," +
-                    " KeyBuffer INTEGER UNIQUE , " + // Index muss definitiv noch angepasst werden, Frage im Treffen heute nach
+                    " KeyBuffer INTEGER UNIQUE , " +
                     " Index_ INTEGER NOT NULL , " +
                     " Source_ TEXT NOT NULL, " +
                     " Destination TEXT NOT NULL, " +
                     " Used BOOLEAN NOT NULL, " +
-                    "PRIMARY KEY (KeyStreamId, Index_))";
+                    "PRIMARY KEY (KeyStreamId))";
 
             stmnt.executeUpdate(keyInformationSQL);
             System.out.println("Table creation successful!");
@@ -86,27 +88,21 @@ public class KeyStoreDbManager {
         }
     }
 
-     /*
-      * TODO: <Sasha> What's going on with keyBuffer here? Is it supposed to be an int or a byte array?
-      * Why is the javadoc incomplete, and why does it call it an array of char bytes? Char is 2 bytes, not 1 byte.
-      */
-
-
-    /**Following the Etsi paper there should be 2 Tables. #1 which holds all the information about a key
-     * and #2 which stores the real keys.
+    /**
      *
-     * ---> Method inserts a new Entry in table #1 (KeyInformation)
+     * ---> Method inserts a new Entry in the keystore
      *
      * @param keyStreamID reference ID to locate a key
-     * @param keyBuffer array of char bytes ()
-     * @param index index for the new Key
+     * @param keyBuffer byte[] containing the key
      * @param source identifier for the source application
      * @param destination identifier for the destination application
      * @param used boolean parameter signaling whether a key has been used already
      */
 
-    public static boolean insertToKeyStore(String keyStreamID, byte[] keyBuffer, int index, String source, String destination, boolean used ){
+    public static boolean insertToKeyStore(String keyStreamID, byte[] keyBuffer, String source, String destination, boolean used ){
 
+        // set index to 0 because no part of the key has been used
+        int index = 0;
         try{
             Connection conn = connect();
 
@@ -122,7 +118,7 @@ public class KeyStoreDbManager {
             prepStmnt.setBoolean(6, used);
 
             prepStmnt.executeUpdate();
-            System.out.println("Insertion to KeyInformation table was successful");
+            System.out.println("Insertion to KeyInformation table was successful.");
 
             prepStmnt.close();
             conn.close();
@@ -144,15 +140,14 @@ public class KeyStoreDbManager {
      * @param key the new Key as a byte[]
      * @return True if operation was successful, false otherwise.
      */
-    protected static boolean addKeyBuffer(String keyStreamID, byte[] key){
+    public static boolean changeKeyBuffer(String keyStreamID, byte[] key){
 
         if (!doesKeyStreamIdExist(keyStreamID)){
-            System.err.println("There is no Entry with this KeyStreamID" + "\n");
+            System.err.println("Unable to add key as there is no Entry with this KeyStreamID!" + "\n");
             return false;
         }
         KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
 
-        if (obj.getKeyBuffer() == null) {
             try {
                 Connection conn = connect();
                 String sql = "UPDATE " + tableName + " SET KeyBuffer = ? WHERE KeyStreamID = ?";
@@ -163,7 +158,7 @@ public class KeyStoreDbManager {
 
                 pstmnt.close();
                 conn.close();
-                System.out.println("Renaming entry in KeyInformation table succeeded!\" + \"\\n\"");
+                System.out.println("Renaming entry in KeyInformation table succeeded.\" + \"\\n\"");
                 return true;
 
             } catch (SQLException e) {
@@ -172,12 +167,99 @@ public class KeyStoreDbManager {
 
                 return false;
             }
+
+    }
+
+    /** checks if there is enough key material left, so it can be used (at least 256 Bits or 32 Byte).
+     * If there is not enough key material left, the entry shall be marked as used:
+     *
+     *
+     * @param keyStreamID reference ID to locate a key
+     * @return True if there still is key material that can be used, False otherwise
+     */
+    public static boolean enoughKeyMaterialLeft(String keyStreamID, int keyLength){
+        if (!doesKeyStreamIdExist(keyStreamID)){
+            System.err.println("Unable to change the Index as there is no Entry with this KeyStreamID!" + "\n");
+            return false;
         }
-        else {
-            System.err.println("This Entry already has a dedicated keyBuffer." + "\n");
+
+        KeyStoreObject currentObject = getEntryFromKeyStore(keyStreamID);
+        int index = currentObject.getIndex();
+        if(index == 0){
+            index = keyLength;
+        }
+
+        int totalBits = currentObject.getKeyBuffer().length;
+        //System.out.println("total bytes = " + totalBits );
+
+        int bitsLeft = totalBits - index  ;
+        //System.out.println("bitsLeft = " + bitsLeft);
+
+        if (bitsLeft >= keyLength){
+            return true;
+        }
+        else{
+            System.err.println("key will be set to used as there is not enough key material left!" + "\n");
+            changeKeyToUsed(keyStreamID);
+
+            //TODO
+            // in der US steht keys die nicht genügend ungenutzte Werte haben sollen verworfen werden....
+            // Was ist wenn man den Key dann nochmal für überprüfungswecke o.ä braucht
+            // ---> Wäre es nicht besser ihn
             return false;
         }
     }
+
+    /** method for updating/changing the Index parameter of a Keystore entry.
+     *
+     * @param keyStreamID reference ID to locate a key
+     * @param keyLength integer value indicating length of key in bits
+     * @return True if index was changed successfully, False otherwise
+     */
+    public static boolean changeIndex(String keyStreamID, int keyLength){
+        if (!doesKeyStreamIdExist(keyStreamID)){
+            System.err.println("Unable to change the Index as there is no Entry with this KeyStreamID!" + "\n");
+            return false;
+        }
+        KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
+        int currentIndex = obj.getIndex();
+        //if(currentIndex == 0){
+          //  currentIndex = keyLength;
+        //}
+        int newIndex = currentIndex + keyLength;
+
+        if(!enoughKeyMaterialLeft(keyStreamID, keyLength)){
+            //error message will be displayed through enoughKeyMaterialLeft method
+            // key will be set to used
+            return false;
+        }
+
+        try {
+            Connection conn = connect();
+
+            String sql = "UPDATE " + tableName + " SET Index_ = ? WHERE KeyStreamID = ?";
+            PreparedStatement pstmnt = conn.prepareStatement(sql);
+
+            pstmnt.setInt(1, newIndex);
+            pstmnt.setString(2, keyStreamID);
+            pstmnt.executeUpdate();
+
+            pstmnt.close();
+            conn.close();
+
+            int index = KeyStoreDbManager.getEntryFromKeyStore(keyStreamID).getIndex();
+            System.out.println("Successfully updated the Index to " + index);
+
+            return true;
+
+        } catch (SQLException e) {
+            System.err.println("Changing the Index of Entry failed! " + "\n");
+            System.err.println(e.toString());
+            return false;
+        }
+    }
+
+
 
     /** Displays all entries on the console
      *
@@ -214,7 +296,7 @@ public class KeyStoreDbManager {
      * @param keyStreamID the ID of the key that needs to be deleted from the DB
      * @return True if operation was successful, False otherwise
      */
-    protected static boolean deleteKeyInformationByID(String keyStreamID){
+    public static boolean deleteKeyInformationByID(String keyStreamID){
         if (!KeyStoreDbManager.doesKeyStreamIdExist(keyStreamID)){
             System.err.println("Deleting Key entry from DB failed because the given keyStreamID does not exist!"  + "\n");
             return false;
@@ -248,7 +330,11 @@ public class KeyStoreDbManager {
      * @param keyStreamID reference ID for a Key
      * @return true if operation succeeded, false otherwise
      */
-    protected static boolean changeKeyToUsed(String keyStreamID){
+    public static boolean changeKeyToUsed(String keyStreamID){
+        if (!doesKeyStreamIdExist(keyStreamID)){
+            System.err.println("Unable to update used parameter as there is no Entry with this KeyStreamID" + "\n");
+            return false;
+        }
         try {
             Connection conn = connect();
 
@@ -275,7 +361,7 @@ public class KeyStoreDbManager {
      * @param keyStreamID identifier of the key that needs to be wrapped in a KeyStoreObject
      * @return a new KeyInformationObject containing all the KeyInformation from the Entry with corresponding KeyStreamId
      */
-     protected static KeyStoreObject getEntryFromKeyStore(String keyStreamID) {
+     public static KeyStoreObject getEntryFromKeyStore(String keyStreamID) {
          if (!doesKeyStreamIdExist(keyStreamID)){
              System.err.println("There is no Entry with this KeyStreamID!"  + "\n");
              return null;
@@ -297,6 +383,11 @@ public class KeyStoreDbManager {
             stmnt.close();
             conn.close();
             System.out.println("Selecting entry from KeyInformation table was successful!" + "\n");
+
+            //TODO
+            // soll wirklich nach jedem getten des keys überprüft werden ob noch genug key material da ist?
+            // kann doch auch mal sein, dass man sich einen eintrag mit wenigen verfügbaren bits nur ansehen möchte ohne ihn direkt zu löschen
+
             return object;
 
 
@@ -311,7 +402,7 @@ public class KeyStoreDbManager {
      *
      * @return a ArrayList of KeyInformationObject which contain information about the keys currently in storage
      */
-     protected static ArrayList<KeyStoreObject> getKeyStoreAsList() {
+     public static ArrayList<KeyStoreObject> getKeyStoreAsList() {
         try {
             Connection conn = connect();
 
@@ -341,11 +432,10 @@ public class KeyStoreDbManager {
      * @param keyStreamID reference ID to locate a key
      * @return true if the keyStreamID exists, false otherwise
      */
-   protected static boolean doesKeyStreamIdExist(String keyStreamID){
+   public static boolean doesKeyStreamIdExist(String keyStreamID){
         List<String> keyIdList = KeyStoreDbManager.getKeyStoreAsList().stream().map(obj -> new String(obj.getID())).collect(Collectors.toList());
 
         return keyIdList.contains(keyStreamID);
-
     }
 
     /*
@@ -363,17 +453,14 @@ public class KeyStoreDbManager {
      * @param keyStreamID reference ID to locate a key
      * @return number of status
      */
-    static int open_Connect(String source, String destination, QoS qosParameters, String keyStreamID, boolean peerConnected){
-
-        int timeout = qosParameters.getTimeout();
-        int exceeded = 10;// bin mir nicht sicher ob das überhaupt in die methode gehört oder ob das von woanders angesteuert wird
+    public static int open_Connect(String source, String destination, QoS qosParameters, String keyStreamID, boolean peerConnected){
 
         //return 5 -----> if KeyStramID already exists
         if(!doesKeyStreamIdExist(keyStreamID)){
             return 5;
         }
 
-        boolean insertbool = insertToKeyStore(keyStreamID, null, 0, source, destination, false);
+        boolean insertbool = insertToKeyStore(keyStreamID, null, source, destination, false);
 
         if(insertbool) {
             //return 0 -----> if everything was succesfull
@@ -424,7 +511,7 @@ public class KeyStoreDbManager {
      * @param keyStreamID reference ID to locate a key
      * @return number of status + the key
      */
-    static Map.Entry<byte[], Integer> get_Key(String keyStreamID) {
+    public static Map.Entry<byte[], Integer> get_Key(String keyStreamID) {
         AbstractMap.SimpleEntry<byte[], Integer> pair;
 
         if(doesKeyStreamIdExist(keyStreamID)){
@@ -435,6 +522,7 @@ public class KeyStoreDbManager {
             return new AbstractMap.SimpleEntry<byte[], Integer>(key, index);
         }
 
+        System.err.println("There is no Entry with this keyStreamID!");
         return null;
 
 
