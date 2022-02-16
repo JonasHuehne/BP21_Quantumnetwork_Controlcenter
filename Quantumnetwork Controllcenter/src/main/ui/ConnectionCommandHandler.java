@@ -145,7 +145,7 @@ public class ConnectionCommandHandler {
 			
 			Contact contact = communicationList.query(connectionID);
 			
-			if (contact == null) throw new NullPointerException(
+			if (contact == null) throw new IllegalArgumentException(
 					"Attempted to access contact named " + connectionID + " however, no such contact was found. "
 					+ "Each connection ID must correspond to the name of a contact in the communication list, because that contacts IP and Port will be used for the connection.");
 			
@@ -210,7 +210,7 @@ public class ConnectionCommandHandler {
 			
 			Contact contact = QuantumnetworkControllcenter.communicationList.query(connectionID);
 			
-			if (contact == null) throw new NullPointerException(
+			if (contact == null) throw new IllegalArgumentException(
 					"Attempted to access contact named " + connectionID + " however, no such contact was found. "
 					+ "Each connection ID must correspond to the name of a contact in the communication list, because that contacts IP and Port will be used for the connection.");
 			
