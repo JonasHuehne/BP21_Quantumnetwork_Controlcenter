@@ -1,7 +1,9 @@
 import static org.junit.jupiter.api.Assertions.*;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import messengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionEndpoint;
@@ -560,10 +562,100 @@ class CommandHandlerTest {
 		}
 		
 		@Test
-		void cyclical_connection_online_testing() {
-			// Creating cyclical connections might be removed later
-			// However, this allows us some "online" testing
-			assertTrue(false, "Not implemented yet.");
+		void cyclical_hello_world_works() throws InterruptedException {
+			int NETWORK_DELAY_MS = 500;
+			
+			helper_clear_commList(commList);
+			// "Alice" Side:
+			 // Alice knows Bob wants to receive messages on Port 55020
+			 commList.insert("Bob", "127.0.0.1", 55020, NO_KEY);
+			 // Alice wants to receive messages from Bob on port 55010
+			 conMan.createNewConnectionEndpoint("Bob", 55010);
+			 // Alice will wait for Bob
+			 conMan.getConnectionEndpoint("Bob").waitForConnection();
+			
+			// "Bob" Side:
+			 // Bob knows Alice wants to receive messages on Port 55010
+			 commList.insert("Alice", "127.0.0.1", 55010, NO_KEY);
+			 // Bob wants to receive messages from Alice on port 55020
+			 conMan.createNewConnectionEndpoint("Alice", 55020);
+			 // Bob sends a request for connection
+			 try {
+				conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 55010);
+			 } catch (IOException e) {	
+				assertTrue(false, "Something went wrong trying to connect. " + e.getMessage());
+			 }
+			 
+			TimeUnit.MILLISECONDS.sleep(NETWORK_DELAY_MS);
+			 
+			// Make sure they are connected
+			assertEquals(ConnectionState.CONNECTED, conMan.getConnectionState("Alice"));
+			assertEquals(ConnectionState.CONNECTED, conMan.getConnectionState("Bob"));
+			 
+			// Now both send each other a hello world
+			
+			// Alice sends a hello world to Bob
+			CommandHandler.processCommand(hello_world + " Bob");
+			TimeUnit.MILLISECONDS.sleep(NETWORK_DELAY_MS);
+			// Bob should have received a message on his CE to Alice
+			assertEquals(1, conMan.getConnectionEndpoint("Alice").sizeOfMessageStack(), "Bob should have received a message from Alice.");
+			// Alice should not have gotten any messages from Bob yet
+			assertEquals(0, conMan.getConnectionEndpoint("Bob").sizeOfMessageStack(), "Alice should not have received a message from Bob.");
+
+			
+			// Bob sends a hello world back to Alice
+			CommandHandler.processCommand(hello_world + " Alice");
+			TimeUnit.MILLISECONDS.sleep(NETWORK_DELAY_MS);
+			// Now both should have exactly one message waiting
+			assertEquals(1, conMan.getConnectionEndpoint("Alice").sizeOfMessageStack(), "Bob should have received a message from Alice.");
+			assertEquals(1, conMan.getConnectionEndpoint("Bob").sizeOfMessageStack(), "Alice should have received a message from Bob.");
+			
+		}
+		
+		@Test
+		void can_create_cyclical_connection_with_commands_only() throws InterruptedException {
+			int NETWORK_DELAY_MS = 500;
+			
+			helper_clear_commList(commList);
+			// "Alice" Side:
+			 // Alice knows Bob wants to receive messages on Port 55020
+			 CommandHandler.processCommand(contacts_add + " Bob 127.0.0.1 55020");
+			 // Alice wants to receive messages from Bob on port 55010
+			 CommandHandler.processCommand(connections_add + " Bob 55010");
+			 // Alice will wait for Bob
+			 CommandHandler.processCommand(wait_for + " Bob");
+			
+			// "Bob" Side:
+			 // Bob knows Alice wants to receive messages on Port 55010
+			 CommandHandler.processCommand(contacts_add + " Alice 127.0.0.1 55010");
+			 // Bob wants to receive messages from Alice on port 55020
+			 CommandHandler.processCommand(connections_add + " Alice 55020");
+			 // Bob sends a request for connection
+			 CommandHandler.processCommand(connect_to + " Alice");
+			 
+			TimeUnit.MILLISECONDS.sleep(NETWORK_DELAY_MS);
+			 
+			// Make sure they are connected
+			assertEquals(ConnectionState.CONNECTED, conMan.getConnectionState("Alice"));
+			assertEquals(ConnectionState.CONNECTED, conMan.getConnectionState("Bob"));
+			 
+			// Now both send each other a hello world
+			
+			// Alice sends a hello world to Bob
+			CommandHandler.processCommand(hello_world + " Bob");
+			TimeUnit.MILLISECONDS.sleep(NETWORK_DELAY_MS);
+			// Bob should have received a message on his CE to Alice
+			assertEquals(1, conMan.getConnectionEndpoint("Alice").sizeOfMessageStack(), "Bob should have received a message from Alice.");
+			// Alice should not have gotten any messages from Bob yet
+			assertEquals(0, conMan.getConnectionEndpoint("Bob").sizeOfMessageStack(), "Alice should not have received a message from Bob.");
+
+			
+			// Bob sends a hello world back to Alice
+			CommandHandler.processCommand(hello_world + " Alice");
+			TimeUnit.MILLISECONDS.sleep(NETWORK_DELAY_MS);
+			// Now both should have exactly one message waiting
+			assertEquals(1, conMan.getConnectionEndpoint("Alice").sizeOfMessageStack(), "Bob should have received a message from Alice.");
+			assertEquals(1, conMan.getConnectionEndpoint("Bob").sizeOfMessageStack(), "Alice should have received a message from Bob.");			
 		}
 		
 		/*
@@ -633,7 +725,15 @@ class CommandHandlerTest {
 		
 		@Test
 		void hello_world_with_invalid_input_behaves_well() {
-			assertTrue(false, "Not implemented yet.");
+			conMan.createNewConnectionEndpoint("Alice", 55500);
+			
+			CommandHandler.processCommand(hello_world);
+			assertEquals(0, conMan.getConnectionEndpoint("Alice").sizeOfMessageStack());
+			CommandHandler.processCommand(hello_world + " Bob");
+			assertEquals(0, conMan.getConnectionEndpoint("Alice").sizeOfMessageStack());
+			CommandHandler.processCommand(hello_world + " Alice"); 
+			assertEquals(0, conMan.getConnectionEndpoint("Alice").sizeOfMessageStack());
+		
 		}
 		
 	}

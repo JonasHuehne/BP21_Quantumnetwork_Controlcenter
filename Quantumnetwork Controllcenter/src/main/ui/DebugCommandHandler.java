@@ -61,7 +61,7 @@ public class DebugCommandHandler {
 		
 		String[] commandsToRun 
 			= new String[] {
-					// Simulate "Bob" adding "Bob" as a contact - Bob knows Alice wants to receive messages on 17141
+					// Simulate "Bob" adding "Alice" as a contact - Bob knows Alice wants to receive messages on 17141
 					"contacts add Alice 127.0.0.1 17141",	
 					
 					// Simulate "Bob" creating a connection endpoint which he wishes to use for communication with Alice
