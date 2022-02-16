@@ -159,7 +159,6 @@ public class AES256 {
 	        //create file with encrypted data
 	        Files.write(outputFile.toPath(), outputBytes);
 	        
-	        return;
 		}
 		//printing exceptions
 		catch (InvalidKeyException e) {
@@ -172,7 +171,6 @@ public class AES256 {
 			//TODO later printing exception to UI
 			System.err.println("An ERROR occured during encryption:\n" + e.toString());
 		}		
-		return;
 	}
 	
 	/**
@@ -305,7 +303,6 @@ public static void decryptFile(File inputFile, byte[] byteKey, File outputFile) 
 	        //create file with decrypted data
 	        Files.write(outputFile.toPath(), outputBytes);
             
-	        return;
 		}
 		//printing exceptions
 		catch (InvalidKeyException e) {
@@ -318,6 +315,5 @@ public static void decryptFile(File inputFile, byte[] byteKey, File outputFile) 
 			//TODO later printing exception to UI
 			System.err.println("An ERROR occured during encryption:\n" + e.toString());
 		}		
-		return;
 	}
 }
