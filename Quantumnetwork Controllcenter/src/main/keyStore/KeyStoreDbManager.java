@@ -1,5 +1,6 @@
 package keyStore;
 
+import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -28,15 +29,14 @@ public class KeyStoreDbManager {
      */
     private static Connection connect() {
         Connection con = null;
-        //TODO
-        // File.seperator statt / benutzen
+
         try {
             Class.forName("org.sqlite.JDBC");
 
             // find project directory to store new Database correctly
             String currentPath = System.getProperty("user.dir");
 
-            con = DriverManager.getConnection("jdbc:sqlite:" + currentPath + "\\" + dataBaseName); // connect to our db
+            con = DriverManager.getConnection("jdbc:sqlite:" + currentPath + File.separator + dataBaseName); // connect to our db
             //System.out.println("Connection to database was succesfull!");
 
         } catch (ClassNotFoundException | SQLException e) {
@@ -223,9 +223,7 @@ public class KeyStoreDbManager {
         }
         KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
         int currentIndex = obj.getIndex();
-        //if(currentIndex == 0){
-          //  currentIndex = keyLength;
-        //}
+
         int newIndex = currentIndex + keyLength;
 
         if(!enoughKeyMaterialLeft(keyStreamID, keyLength)){
@@ -418,7 +416,7 @@ public class KeyStoreDbManager {
             }
             stmnt.close();
             conn.close();
-            System.out.println("Generating list of KeyInformation table entries was successful" + "\n");
+            //System.out.println("Generating list of KeyInformation table entries was successful" + "\n");
             return result;
         } catch (SQLException e) {
             System.err.println("Generating list of all entries from KeyInformation table failed!" + "\n");

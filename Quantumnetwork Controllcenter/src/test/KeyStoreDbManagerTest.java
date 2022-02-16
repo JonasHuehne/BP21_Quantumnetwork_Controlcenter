@@ -83,13 +83,11 @@ class KeyStoreDbManagerTest {
         assertEquals(32, obj.getKeyFromStartingIndex(64).length);
     }
 
-    /**
-     *
 
     @Test
     void changeIndexWithNotEnoughMaterialLeft(){
 
-        // there is not enough keymaterial left to add 128 bit to the index as it is already at 64 (byte[] of length 128)
+        // there is not enough keymaterial left to add 128 bit to the index as it is already at 96 (byte[] of length 128)
         boolean indexChange = KeyStoreDbManager.changeIndex("nurEineTestID_03", 128);
         assertFalse(indexChange);
 
@@ -98,8 +96,6 @@ class KeyStoreDbManagerTest {
         assertEquals(true, obj.getUsed());
 
     }
-     */
-
 
     @Test
     void doesKSIdExistTest(){

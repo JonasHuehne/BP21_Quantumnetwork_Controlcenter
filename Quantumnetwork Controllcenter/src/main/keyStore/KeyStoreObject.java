@@ -38,14 +38,17 @@ public final class KeyStoreObject {
     /**
      *
      * @return byte[] keyBuffer (=key) of the entry
+     * This method returns t
      */
         public byte[] getKeyBuffer() {
             return keyBuffer;
         }
 
-    /** USE THIS METHOD if a "ready to be used" key needs to be displayed
+
+    /** USE THIS METHOD if a "ready to be used" key needs to be used
      *
-     * @return a new byte[] that starts at the correct Index.
+     * @param keyLength
+     * @return a new byte[] that starts at the correct Index and has size of the desired keyLength.
      */
     public byte[] getKeyFromStartingIndex(int keyLength){
             int startIndex = index;
@@ -53,10 +56,10 @@ public final class KeyStoreObject {
 
             // return byte[] of keyLength which contains a usable key
             if(KeyStoreDbManager.enoughKeyMaterialLeft(keyStreamID, keyLength)){
-                byte[] correctIndex = Arrays.copyOfRange(keyBuffer, startIndex, startIndex+ keyLength);
+                byte[] keyArray = Arrays.copyOfRange(keyBuffer, startIndex, startIndex+ keyLength);
                 //update index parameter
                 KeyStoreDbManager.changeIndex(keyStreamID, keyLength);
-                return correctIndex;
+                return keyArray;
             }
 
             // if not enough  keyMaterial is left we'll just return a new byte[] from the index (which will be < keyLength)
@@ -68,7 +71,6 @@ public final class KeyStoreObject {
                 return result;
             }
     }
-
 
     /**
      *
