@@ -2,6 +2,7 @@ package frame;
 
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
+import graphicalUserInterface.GUIMainWindow;
 import messengerSystem.Authentication;
 import messengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionManager;
@@ -23,6 +24,7 @@ public class QuantumnetworkControllcenter {
 	public static ConnectionManager conMan;
 	public static CommunicationList communicationList;
 	public static Authentication authentication;
+	public static GUIMainWindow guiWindow;
 
 	/**
 	 * Method to initialize a Quantumnetwork Controllcenter
@@ -81,12 +83,22 @@ public class QuantumnetworkControllcenter {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					ConsoleUI window = new ConsoleUI();
+					ConsoleUI consoleWindow = new ConsoleUI();
+					guiWindow = new GUIMainWindow();
+					guiWindow.getFrame().setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
 		});
+		/*
+		communicationList.insert("TestNameAlice", "127.0.0.1", 2300, "testSig01");
+		communicationList.insert("TestNameBob", "127.0.0.2", 3300, "testSig02");
+		communicationList.insert("TestNameCharlie", "127.0.0.3", 4300, "testSig03");
+		*/
+
+		
 	}
-	
+
+
 }

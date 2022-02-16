@@ -38,7 +38,7 @@ public class ConnectionManager {
 		return null;
 	}
 	
-	/**This can be used if the supplied port is being used by any lokal ConnectionEndpoint.
+	/**This can be used if the supplied port is being used by any local ConnectionEndpoint.
 	 * 
 	 * @param portNumber the port to be checked for availability.
 	 * @return returns true if the port is being used already by any ConnectionEndpoint, false if the port is free.

@@ -7,6 +7,8 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -191,6 +193,8 @@ public class ConnectionEndpoint implements Runnable{
 			System.out.println("[" + connectionID + "]: " + connectionID + " is sending a greeting.");
 			pushMessage(TransmissionTypeEnum.CONNECTION_REQUEST, localAddress + ":::" + localServerPort, "", "");
 			System.out.println("[" + connectionID + "]: waiting for response");
+			
+			localServerSocket.setSoTimeout(3000);
 			remoteClientSocket = localServerSocket.accept();
 			serverIn = new ObjectInputStream(remoteClientSocket.getInputStream());
 			System.out.println("[" + connectionID + "]: Connected " + connectionID + " to external ID and Port: " + remoteID + ", " + String.valueOf(remotePort) + "!");
@@ -200,10 +204,18 @@ public class ConnectionEndpoint implements Runnable{
 		//Error Messages
 		} catch (UnknownHostException e) {
 			isConnected = false;
+			isBuildingConnection = false;
+			if(!(localClientSocket==null)) {
+				localClientSocket.close();
+			}
 			System.err.println("[" + connectionID + "]: Connection could not be established! An Error occured while trying to reach the other party via " + remoteID + ":" + String.valueOf(remotePort));
 			e.printStackTrace();
 		} catch (IOException e) {
 			isConnected = false;
+			isBuildingConnection = false;
+			if(!(localClientSocket==null)) {
+				localClientSocket.close();
+			}
 			System.err.println("[" + connectionID + "]: Connection could not be established! An Error occured while connecting to the other Client!");
 			throw e;
 		}
