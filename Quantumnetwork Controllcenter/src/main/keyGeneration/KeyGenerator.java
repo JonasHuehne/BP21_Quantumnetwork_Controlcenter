@@ -15,6 +15,7 @@ import java.time.Instant;
 
 import frame.Configuration;
 import messengerSystem.MessageSystem;
+import messengerSystem.SHA256withRSAAuthentication;
 import frame.QuantumnetworkControllcenter;
 import keyStore.KeyStoreDbManager;
 import networkConnection.ConnectionState;
@@ -117,6 +118,11 @@ public class KeyGenerator implements Runnable{
 		check = check && MessageSystem.conMan.getConnectionState(connectionID).equals(ConnectionState.CONNECTED);
 		
 		check = check && MessageSystem.getNumberOfPendingMessages(connectionID) == 0;
+		
+		if(!Files.exists(Path.of(SHA256withRSAAuthentication.KEY_PATH + SHA256withRSAAuthentication.KEY_FILE_NAME + ".key"))) {
+			check = check && SHA256withRSAAuthentication.generateSignatureKeyPair();
+
+		}
 		
 		return check;
 		

@@ -276,7 +276,30 @@ public class GUIMainWindow implements Runnable{
 		JPanel panel_7 = new JPanel();
 		verticalBox_1.add(panel_7);
 		
-		JButton GenerateKeyButton = new JButton("Start key generation");
+		JButton GenerateKeyButton = new JButton("Encrypt Connection");
+		GenerateKeyButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				if(activeConnection == null) {
+					System.out.println("Warning: No Connection selected as active.");
+					return;
+				}
+				
+				if(QuantumnetworkControllcenter.conMan.getConnectionState(activeConnection) == ConnectionState.CONNECTED) {
+					
+					
+					
+					
+					QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).getKeyGen().generateKey();
+					
+				}else {
+					System.out.println("Warning: Active Connection is not connected to anything!");
+					return;
+				}
+				
+			}
+		});
+		GenerateKeyButton.setToolTipText("This will start using encryption on the active connection or generate a key if one does not yet exist.");
 		panel_7.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 		panel_7.add(GenerateKeyButton);
 		
