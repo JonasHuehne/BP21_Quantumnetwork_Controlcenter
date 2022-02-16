@@ -154,7 +154,7 @@ class KeyStoreDbManagerTest {
         KeyStoreDbManager.insertToKeyStore("NewEntryID", keyBufferArray, "nirgendwo", "TuDarmstadt", false);
         ArrayList<KeyStoreObject> testList = KeyStoreDbManager.getKeyStoreAsList();
 
-        byte[] newEntryBuffer = testList.get(1).getKeyBuffer(); // only 2 Entrys in DB
+        byte[] newEntryBuffer = testList.get(2).getKeyBuffer(); // only 3 Entrys in DB
         assertEquals(new String(keyBufferArray), new String(newEntryBuffer));
     }
 
@@ -173,13 +173,18 @@ class KeyStoreDbManagerTest {
 
     }
 
+    //TODO
+    // unter welchen umständen soll ein keybuffer nicht geändert werden können?
+    /**
+     *
+
     @Test
     void failedAddKeyBufferTest(){
         byte[] testKey = "28736432".getBytes();
         boolean failedKeyAddition = KeyStoreDbManager.changeKeyBuffer("KSID_Ohne_Key", testKey);
         assertEquals(false, failedKeyAddition);
     }
-
+    */
 
 
 

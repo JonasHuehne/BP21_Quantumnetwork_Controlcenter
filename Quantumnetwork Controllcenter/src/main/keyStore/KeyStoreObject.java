@@ -67,7 +67,7 @@ public final class KeyStoreObject {
             else{
                 // error message should be displayed through method "enoughKeyMaterialLeft
                 byte[] result = Arrays.copyOfRange(keyBuffer, startIndex, lastindex);
-                KeyStoreDbManager.changeIndex(keyStreamID, keyBuffer.length);
+                KeyStoreDbManager.changeIndex(keyStreamID, lastindex);
                 return result;
             }
     }
