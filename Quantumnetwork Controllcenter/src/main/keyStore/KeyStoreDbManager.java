@@ -70,6 +70,7 @@ public class KeyStoreDbManager {
                     " Source_ TEXT NOT NULL, " +
                     " Destination TEXT NOT NULL, " +
                     " Used BOOLEAN NOT NULL, " +
+                    " Initiative BOOLEAN NOT NULL, " +
                     "PRIMARY KEY (KeyStreamId))";
 
             stmnt.executeUpdate(keyInformationSQL);
@@ -97,16 +98,17 @@ public class KeyStoreDbManager {
      * @param source identifier for the source application
      * @param destination identifier for the destination application
      * @param used boolean parameter signaling whether a key has been used already
+     * @param initiative boolean parameter signaling whether this Entry/Person has the initiative
      */
 
-    public static boolean insertToKeyStore(String keyStreamID, byte[] keyBuffer, String source, String destination, boolean used ){
+    public static boolean insertToKeyStore(String keyStreamID, byte[] keyBuffer, String source, String destination, boolean used, boolean initiative){
 
         // set index to 0 because no part of the key has been used
         int index = 0;
         try{
             Connection conn = connect();
 
-            String sql = "INSERT INTO " + tableName + "(KeyStreamID, KeyBuffer, Index_, Source_, Destination, Used)  VALUES(?,?,?,?,?,?)";
+            String sql = "INSERT INTO " + tableName + "(KeyStreamID, KeyBuffer, Index_, Source_, Destination, Used, Initiative)  VALUES(?,?,?,?,?,?,?)";
 
             PreparedStatement prepStmnt = conn.prepareStatement(sql);
 
@@ -116,6 +118,7 @@ public class KeyStoreDbManager {
             prepStmnt.setString(4, source);
             prepStmnt.setString(5, destination);
             prepStmnt.setBoolean(6, used);
+            prepStmnt.setBoolean(7, initiative);
 
             prepStmnt.executeUpdate();
             System.out.println("Insertion to KeyInformation table was successful.");
@@ -189,7 +192,7 @@ public class KeyStoreDbManager {
             index = keyLength;
         }
 
-        int totalBits = currentObject.getKeyBuffer().length;
+        int totalBits = currentObject.getCompleteKeyBuffer().length;
         //System.out.println("total bytes = " + totalBits );
 
         int bitsLeft = totalBits - index  ;
@@ -199,13 +202,7 @@ public class KeyStoreDbManager {
             return true;
         }
         else{
-            System.err.println("key will be set to used as there is not enough key material left!" + "\n");
-            changeKeyToUsed(keyStreamID);
 
-            //TODO
-            // in der US steht keys die nicht genügend ungenutzte Werte haben sollen verworfen werden....
-            // Was ist wenn man den Key dann nochmal für überprüfungswecke o.ä braucht
-            // ---> Wäre es nicht besser ihn
             return false;
         }
     }
@@ -227,8 +224,10 @@ public class KeyStoreDbManager {
         int newIndex = currentIndex + keyLength;
 
         if(!enoughKeyMaterialLeft(keyStreamID, keyLength)){
-            //error message will be displayed through enoughKeyMaterialLeft method
+
             // key will be set to used
+            System.err.println("key will be set to used as there is not enough key material left!" + "\n");
+            changeKeyToUsed(keyStreamID);
             return false;
         }
 
@@ -323,6 +322,31 @@ public class KeyStoreDbManager {
 
     }
 
+    /** Method for deleting all used keys in one go
+     *
+     * @return True if all the used entries are deleted, False if there are non to be deleted
+     */
+    public static boolean deleteUsedKeys(){
+
+        List<String> keyIdList = KeyStoreDbManager.getKeyStoreAsList().stream().filter(obj -> obj.getUsed() == true).map(obj -> new String(obj.getID())).collect(Collectors.toList());
+
+        if(keyIdList.size() == 0 ){
+            System.err.println("There are no used keys that could be deleted");
+            return  false;
+        }
+
+        for(String str: keyIdList){
+            // try/catch block hier überhaupt nötig?
+            try {
+                deleteKeyInformationByID(str);
+            } catch (Exception e) {
+                System.err.println(e.toString());
+            }
+        }
+        return true;
+
+    }
+
     /** Change the "Used" parameter of a KeyStore Entry from unused(=0) to used(=1)
      *
      * @param keyStreamID reference ID for a Key
@@ -376,15 +400,12 @@ public class KeyStoreDbManager {
 
             KeyStoreObject object = new KeyStoreObject(rs.getString("KeyStreamId"),
                     rs.getBytes("KeyBuffer"), rs.getInt("Index_"),
-                    rs.getString("Source_"), rs.getString("Destination"), rs.getBoolean("Used"));
+                    rs.getString("Source_"), rs.getString("Destination"),
+                    rs.getBoolean("Used"),  rs.getBoolean("Initiative"));
 
             stmnt.close();
             conn.close();
-            System.out.println("Selecting entry from KeyInformation table was successful!" + "\n");
-
-            //TODO
-            // soll wirklich nach jedem getten des keys überprüft werden ob noch genug key material da ist?
-            // kann doch auch mal sein, dass man sich einen eintrag mit wenigen verfügbaren bits nur ansehen möchte ohne ihn direkt zu löschen
+            //System.out.println("Selecting entry from KeyInformation table was successful!" + "\n");
 
             return object;
 
@@ -411,7 +432,8 @@ public class KeyStoreDbManager {
             while(rs.next()) {
                 KeyStoreObject res = new KeyStoreObject(rs.getString("KeyStreamID"),
                         rs.getBytes("KeyBuffer"), rs.getInt("Index_"),
-                        rs.getString("Source_"), rs.getString("Destination"), rs.getBoolean("Used"));
+                        rs.getString("Source_"), rs.getString("Destination"),
+                        rs.getBoolean("Used"),  rs.getBoolean("Initiative"));
                 result.add(res);
             }
             stmnt.close();
@@ -451,14 +473,14 @@ public class KeyStoreDbManager {
      * @param keyStreamID reference ID to locate a key
      * @return number of status
      */
-    public static int open_Connect(String source, String destination, QoS qosParameters, String keyStreamID, boolean peerConnected){
+    public static int open_Connect(String source, String destination, QoS qosParameters, String keyStreamID, boolean peerConnected, boolean initiative){
 
         //return 5 -----> if KeyStramID already exists
         if(!doesKeyStreamIdExist(keyStreamID)){
             return 5;
         }
 
-        boolean insertbool = insertToKeyStore(keyStreamID, null, source, destination, false);
+        boolean insertbool = insertToKeyStore(keyStreamID, null, source, destination, false, initiative);
 
         if(insertbool) {
             //return 0 -----> if everything was succesfull
@@ -515,7 +537,7 @@ public class KeyStoreDbManager {
         if(doesKeyStreamIdExist(keyStreamID)){
             KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
             int index = obj.getIndex();
-            byte[] key = obj.getKeyBuffer();
+            byte[] key = obj.getCompleteKeyBuffer();
 
             return new AbstractMap.SimpleEntry<byte[], Integer>(key, index);
         }

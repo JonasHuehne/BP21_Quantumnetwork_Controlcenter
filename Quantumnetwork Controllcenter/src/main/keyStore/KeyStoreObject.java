@@ -16,14 +16,16 @@ public final class KeyStoreObject {
         private final String source;
         private final String destination;
         private final boolean used;
+        private boolean initiative;
 
-        public KeyStoreObject(final String keyStreamID, final byte[] keyBuffer, final  int index, final  String source, final String destination, boolean used) {
+        public KeyStoreObject(final String keyStreamID, final byte[] keyBuffer, final  int index, final  String source, final String destination, boolean used, boolean iniative) {
             this.keyStreamID = keyStreamID;
             this.keyBuffer = keyBuffer;
             this.index = index;
             this.source = source;
             this.destination = destination;
             this.used = used;
+            this.initiative = iniative;
 
         }
 
@@ -40,17 +42,18 @@ public final class KeyStoreObject {
      * @return byte[] keyBuffer (=key) of the entry
      * This method returns t
      */
-        public byte[] getKeyBuffer() {
+        public byte[] getCompleteKeyBuffer() {
             return keyBuffer;
         }
 
 
     /** USE THIS METHOD if a "ready to be used" key needs to be used
+     * Index will be updated automatically within this function
      *
      * @param keyLength
      * @return a new byte[] that starts at the correct Index and has size of the desired keyLength.
      */
-    public byte[] getKeyFromStartingIndex(int keyLength){
+    public byte[] getKey(int keyLength){
             int startIndex = index;
             int lastindex = keyBuffer.length;
 
@@ -59,16 +62,19 @@ public final class KeyStoreObject {
                 byte[] keyArray = Arrays.copyOfRange(keyBuffer, startIndex, startIndex+ keyLength);
                 //update index parameter
                 KeyStoreDbManager.changeIndex(keyStreamID, keyLength);
+                //update index for the object that the method is called on
+                this.index = startIndex + keyLength;
                 return keyArray;
             }
 
-            // if not enough  keyMaterial is left we'll just return a new byte[] from the index (which will be < keyLength)
-            // --> key will be set to used!
+            // if not enough keyMaterial is left we'll just return null
             else{
-                // error message should be displayed through method "enoughKeyMaterialLeft
-                byte[] result = Arrays.copyOfRange(keyBuffer, startIndex, lastindex);
+
+                // Error message will be displayed through changeIndex method + it will be set to used
                 KeyStoreDbManager.changeIndex(keyStreamID, lastindex);
-                return result;
+                //update index for the object that the method is called on
+                this.index = lastindex;
+                return null;
             }
     }
 
@@ -79,6 +85,14 @@ public final class KeyStoreObject {
         public int getIndex(){
             return index;
         }
+
+    /**
+     *
+     * @return boolean initiative parameter
+     */
+    public boolean getInitiative() {
+        return initiative;
+    }
 
     /**
      *
