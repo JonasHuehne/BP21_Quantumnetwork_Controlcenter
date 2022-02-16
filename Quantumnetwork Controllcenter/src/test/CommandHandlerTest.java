@@ -9,7 +9,6 @@ import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
 
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -80,7 +79,7 @@ class CommandHandlerTest {
 	 */
 	
 	@BeforeAll
-	void initialize() {
+	static void initialize() {
 		QuantumnetworkControllcenter.initialize();
 		commList = QuantumnetworkControllcenter.communicationList;
 		conMan	 = QuantumnetworkControllcenter.conMan;
@@ -175,7 +174,7 @@ class CommandHandlerTest {
 		}
 		
 		@AfterAll
-		void after_each() {
+		static void after_each() {
 			// Do not leave any entries in the Database
 			helper_clear_commList(commList);
 		}
@@ -445,9 +444,6 @@ class CommandHandlerTest {
 		final int 	ALICE_REMOTE_PORT 	= 10501,
 					BOB_REMOTE_PORT		= 10502;
 		
-		ConnectionManager conMan;
-		CommunicationList commList;
-		
 		/*
 		 * Currently (14.02.2022) only connections to partners in the CommunicationList are allowed.
 		 * So, we again need a clear list between each test case to not have any issues.
@@ -462,7 +458,7 @@ class CommandHandlerTest {
 		}
 		
 		@AfterAll
-		void afterAll() {
+		static void afterAll() {
 			helper_clear_commList(commList);
 		}
 		
@@ -483,13 +479,13 @@ class CommandHandlerTest {
 			assertEquals(ConnectionCommandHandler.DEFAULT_PORT, endpoint.getServerPort(), "Expected newly created CE to listen on default port.");	
 		}
 		
-		@Test
+		@ParameterizedTest
 		@CsvSource({
 			"Alice, 12345",
 			"Bob, 5678"
 		})
 		void can_add_connection_with_custom_port(String contactName, int localPort) {
-			CommandHandler.processCommand(connections_add + " " + contactName);
+			CommandHandler.processCommand(connections_add + " " + contactName + " " + localPort);
 			
 			Map<String, ConnectionEndpoint> allEndpoints = conMan.returnAllConnections();
 			ConnectionEndpoint endpoint = conMan.getConnectionEndpoint(contactName);
@@ -500,7 +496,7 @@ class CommandHandlerTest {
 		}
 		
 		@Test
-		void can_remove_connection(String contactName) {			
+		void can_remove_connection() {			
 			conMan.createNewConnectionEndpoint("Alice", 12345);
 			conMan.createNewConnectionEndpoint("Bob", 44400);
 			
@@ -513,7 +509,7 @@ class CommandHandlerTest {
 			
 			CommandHandler.processCommand(connections_remove + " Bob");
 
-			assertEquals(1, conMan.returnAllConnections().size(), "All connections should have been removed.");
+			assertEquals(0, conMan.returnAllConnections().size(), "All connections should have been removed.");
 			assertNull(conMan.getConnectionEndpoint("Bob"), "There should be no connection with ID Bob anymore.");
 		}
 		
@@ -536,13 +532,31 @@ class CommandHandlerTest {
 		@Test
 		void can_make_connection_wait() {
 			conMan.createNewConnectionEndpoint("Alice", 12345);
+			conMan.createNewConnectionEndpoint("Bob", 23123);
+			
 			CommandHandler.processCommand(wait_for + " Alice");	
 			assertEquals(ConnectionState.WAITINGFORCONNECTION, conMan.getConnectionState("Alice"));
+			assertEquals(ConnectionState.CLOSED, conMan.getConnectionState("Bob"));
+			
+			
+			CommandHandler.processCommand(wait_for + " Bob");	
+			assertEquals(ConnectionState.WAITINGFORCONNECTION, conMan.getConnectionState("Alice"));
+			assertEquals(ConnectionState.WAITINGFORCONNECTION, conMan.getConnectionState("Bob"));
 		}
 		
 		@Test
 		void can_make_connection_send_request() {
-			assertTrue(false, "Not implemented yet.");
+			conMan.createNewConnectionEndpoint("Alice", 12345);
+			conMan.createNewConnectionEndpoint("Bob", 23123);
+			
+			CommandHandler.processCommand(connect_to + " Alice");	
+			assertEquals(ConnectionState.CONNECTING, conMan.getConnectionState("Alice"));
+			assertEquals(ConnectionState.CLOSED, conMan.getConnectionState("Bob"));
+			
+			
+			CommandHandler.processCommand(connect_to + " Bob");	
+			assertEquals(ConnectionState.CONNECTING, conMan.getConnectionState("Alice"));
+			assertEquals(ConnectionState.CONNECTING, conMan.getConnectionState("Bob"));
 		}
 		
 		@Test
@@ -558,27 +572,63 @@ class CommandHandlerTest {
 		
 		@Test
 		void add_connection_adds_nothing_for_invalid_inputs() {
-			assertTrue(false, "Not implemented yet.");
+			CommandHandler.processCommand(connections_add + " ");
+			assertEquals(0, conMan.returnAllConnections().size(), "No contact name / connection ID was specified, so no connection should have been added. ");
+			CommandHandler.processCommand(connections_add + " Clarence");
+			assertEquals(0, conMan.returnAllConnections().size(), "There is no contact named Clarence in the list, so no connection should have been added. ");
+			CommandHandler.processCommand(connections_add + " Alice 65536");
+			assertEquals(0, conMan.returnAllConnections().size(), "Port 65536 is not a valid TCP Port, so no connection should have been added. ");
+			CommandHandler.processCommand(connections_add + " Alice -100");
+			assertEquals(0, conMan.returnAllConnections().size(), "Port -100 is not a valid TCP Port, so no connection should have been added. ");			
+			CommandHandler.processCommand(connections_add + " Alice 127.0.0.1 55555");
+			assertEquals(0, conMan.returnAllConnections().size(), "Adding a connection requires only the name of a contact and optionally a port. ");
+		}
+		
+		@Test
+		void add_connections_does_not_work_for_same_contact_twice() {
+			// Can't add two connections for one contact
+			CommandHandler.processCommand(connections_add + " Alice 55010");
+			CommandHandler.processCommand(connections_add + " Alice 55020");
+			assertEquals(1, conMan.returnAllConnections().size(), "Shouldn't have been able to add two connections for contact Alice. ");
 		}
 		
 		@Test
 		void add_connection_does_not_work_if_port_is_in_use() {
-			assertTrue(false, "Not implemented yet.");
+			// Can't add two connections listening on the same port
+			CommandHandler.processCommand(connections_add + " Alice 55040");
+			CommandHandler.processCommand(connections_add + " Bob 55040");
+			assertEquals(1, conMan.returnAllConnections().size(), "Shouldn't have been able to add two connections listening on the same port. ");
 		}
 		
 		@Test
 		void remove_connection_removes_nothing_for_invalid_inputs() {
-			assertTrue(false, "Not implemented yet.");
+			conMan.createNewConnectionEndpoint("Alice", 55500);
+			CommandHandler.processCommand(connections_remove);
+			assertEquals(1, conMan.returnAllConnections().size(), "Should not have removed any connections. ");
+			CommandHandler.processCommand(connections_remove + " Bob");
+			assertEquals(1, conMan.returnAllConnections().size(), "There is no connection for Bob - should not have removed any connections. ");
+			CommandHandler.processCommand(connections_remove + " Alice 55500");
+			assertEquals(1, conMan.returnAllConnections().size(), "Removing a connection only requires the name. ");
 		}
 		
 		@Test
 		void wait_for_connection_behaves_well_for_invalid_inputs() {
-			assertTrue(false, "Not implemented yet.");
+			conMan.createNewConnectionEndpoint("Alice", 55500);
+			CommandHandler.processCommand(wait_for);
+			assertEquals(ConnectionState.CLOSED, conMan.getConnectionEndpoint("Alice").reportState(), "CE Alice state should only change if it is specified to wait for CE Alice.");
+			CommandHandler.processCommand(wait_for + " Bob");
+			assertEquals(ConnectionState.CLOSED, conMan.getConnectionEndpoint("Alice").reportState(), "CE Alice state should only change if it is specified to wait for CE Alice.");
 		}
 		
 		@Test
 		void can_not_close_connection_that_is_not_open() {
-			assertTrue(false, "Not implemented yet.");
+			conMan.createNewConnectionEndpoint("Alice", 55500);
+			conMan.getConnectionEndpoint("Alice").waitForConnection();
+			
+			CommandHandler.processCommand(connections_close);
+			assertEquals(ConnectionState.WAITINGFORCONNECTION, conMan.getConnectionEndpoint("Alice").reportState(), "Alice was closed even though no CE was specified.");
+			CommandHandler.processCommand(connections_close + " Bob");
+			assertEquals(ConnectionState.WAITINGFORCONNECTION, conMan.getConnectionEndpoint("Alice").reportState(), "Alice was closed even though Bob was specified as the connection to close.");
 		}
 		
 		@Test
