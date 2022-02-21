@@ -2,6 +2,12 @@ package ui;
 
 import java.io.File;
 
+/**
+ * This class contains constants and enums used by the {@link Command} class.
+ * Its purpose is to make the Command class more readable by outsourcing strings that are only
+ * rarely changed when updating the program, and also reduces the use of literals.
+ * @author Sasha Petri
+ */
 final class CommandConstants {
 
 	enum Category {
