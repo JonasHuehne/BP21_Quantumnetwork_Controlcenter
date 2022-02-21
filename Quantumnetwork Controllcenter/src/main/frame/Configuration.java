@@ -27,13 +27,18 @@ public class Configuration {
      */
     private static final String PROPERTIES_PATH = "properties" + File.separator;
 
+    /**
+     * The name of the file with the base path,
+     * which is always in placed in relation to System.getProperty("user.dir")
+     */
     private static final String PATH_FILE = ".basePath";
 
     /**
-     *
-     * @param absolutePath
-     * @param moveProperties
-     * @return
+     * Method to change the base path, where all the folders and other data should be placed
+     * @param absolutePath the new base path as a String of the absolute path
+     * @param moveProperties if true, takes the properties from the current place
+     *                       and puts them at the new location
+     * @return true if it worked, false if not or error
      */
     public static boolean changeBasePath (String absolutePath, Boolean moveProperties) {
         Properties properties;
@@ -59,8 +64,16 @@ public class Configuration {
     }
 
     /**
-     *
-     * @return
+     * Method to get the base path
+     * @return the base path as String
+     */
+    public static String getBasePath() {
+        return basePath;
+    }
+
+    /**
+     * Utility method to write the current base path to the .basePath file
+     * @return true if it worked, false if error
      */
     private static boolean setPathInFile () {
         try {
@@ -74,8 +87,8 @@ public class Configuration {
     }
 
     /**
-     *
-     * @return
+     * Utility method to check whether the properties file is at the expected place
+     * @return true if the file exist, false if not or error
      */
     public static boolean findProperties () {
         if(Files.exists(Path.of(System.getProperty("user.dir") + File.separator
@@ -96,17 +109,17 @@ public class Configuration {
     }
 
     /**
-     *
-     * @return
+     * Method to create the properties file if non exists, without previous input
+     * @return true if it worked, false if already there or error
      */
     public static boolean createProperties () {
         return createProperties(null);
     }
 
     /**
-     *
-     * @param prop
-     * @return
+     * Method to create a new properties file if non exists, with the given properties
+     * @param prop the properties to write in the new properties file
+     * @return true if it worked, false if already there or error
      */
     private static boolean createProperties(Properties prop) {
         try {
@@ -126,8 +139,9 @@ public class Configuration {
                 }
                 properties.storeToXML(out, null, StandardCharsets.ISO_8859_1);
                 out.close();
+                return true;
             }
-            return true;
+            return false;
         } catch (Exception e) {
             System.err.println("Error while creating a properties file: " + e.getMessage());
             return false;
@@ -135,9 +149,9 @@ public class Configuration {
     }
 
     /**
-     *
-     * @param propertyKey
-     * @return
+     * Method to get the property value for the given property key
+     * @param propertyKey the key for the desired value as String
+     * @return the property for the key as String
      */
     public static String getProperty (String propertyKey) {
         if (Files.exists(Path.of(basePath + PROPERTIES_PATH + PROPERTIES_FILE_NAME))) {
@@ -161,10 +175,11 @@ public class Configuration {
     }
 
     /**
-     *
-     * @param propertyKey
-     * @param propertyValue
-     * @return
+     * Method to set a property key-value pair
+     * Overwrites any previous values for this key, if there were any
+     * @param propertyKey the key for the property as String
+     * @param propertyValue the value for the property as String
+     * @return true if it worked, false if error
      */
     public static boolean setProperty (String propertyKey, String propertyValue) {
         try {
