@@ -159,7 +159,7 @@ public class KeyGenerator implements Runnable{
 				return false;
 			}
 		}
-		String msg = MessageSystem.readReceivedMessage(connectionID).getContent();
+		String msg = MessageSystem.byteArrayToString(MessageSystem.readReceivedMessage(connectionID).getContent());
 		System.out.println("[" + connectionID + "]: Received Sync-Response: " + msg + "!");
 		if(msg.equals("syncConfirm")) {
 			return true;
@@ -422,7 +422,7 @@ public class KeyGenerator implements Runnable{
 			//Part 2
 			//Writing Incoming Files
 			if(!Files.exists(inFilePath) && QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getMessageStack().size() > 0) {
-				String inFileContent = null;
+				byte[] inFileContent = null;
 				
 				//Receive Message
 				inFileContent = MessageSystem.readReceivedMessage(connectionID).getContent();    
@@ -438,7 +438,7 @@ public class KeyGenerator implements Runnable{
 				//Write to file
 				try		
 				(Writer inWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(inFilePath.toString()), "ISO-8859-1"))) {
-					inWriter.write(inFileContent);
+					inWriter.write(MessageSystem.byteArrayToString(inFileContent));
 				} catch (UnsupportedEncodingException e) {
 
 					e.printStackTrace();

@@ -1,5 +1,6 @@
 package messengerSystem;
 
+import java.io.UnsupportedEncodingException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedList;
@@ -21,6 +22,8 @@ import networkConnection.TransmissionTypeEnum;
  */
 public class MessageSystem {
 	
+	private static final String ENCODING_STANDARD = "ISO-8859-1";
+	
 	public static ConnectionManager conMan;
 	private static final byte[] debuggingKey = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
 
@@ -30,7 +33,7 @@ public class MessageSystem {
 	 * @param message the message to be sent.
 	 * @param sig the signature of an authenticated message.
 	 */
-	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, String message, String sig) {
+	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, byte[] message, String sig) {
 
 		//Check if connectionManager exists
 		if(conMan == null) {
@@ -48,6 +51,11 @@ public class MessageSystem {
 		else {
 			System.err.println("[" + connectionID + "]: Sending of Message: " + message + " aborted, because the ConnectionEndpoint was not connected to anything!");
 		}
+	}
+	
+	
+	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, String message, String sig) {
+		sendMessage(connectionID, type, argument, stringToByteArray(message), sig);
 	}
 
 	/**Similar to sendMessage but allows for custom prefix. Used for internal system calls via the net.
@@ -69,7 +77,7 @@ public class MessageSystem {
 		if(state == ConnectionState.CONNECTED) {
 			
 			//Send the signal
-			conMan.sendMessage(connectionID, signal, signalTypeArgument, "", "");
+			sendMessage(connectionID, signal, signalTypeArgument, (byte[])null, "");
 		}
 		else {
 			System.err.println("[" + connectionID + "]: Sending of message: " + signal + " aborted, because the ConnectionEndpoint was not connected to anything!");
@@ -84,7 +92,7 @@ public class MessageSystem {
 	 * @param sig optional signature used by authenticated messages.
 	 * @return returns True if the confirmation of the message has been received, False if it times out.
 	 */
-	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) {
+	public static boolean sendConfirmedMessage(String connectionID, byte[] message, String sig) {
 		
 		ConnectionState state = QuantumnetworkControllcenter.conMan.getConnectionState(connectionID);
 		
@@ -100,7 +108,7 @@ public class MessageSystem {
 			}
 
 			//Send the actual message with type RECEPTION_CONFIRMATION_REQUEST asking for an answer confirming the messages reception.
-			conMan.sendMessage(connectionID, TransmissionTypeEnum.RECEPTION_CONFIRMATION_REQUEST, msgID, message, sig);
+			sendMessage(connectionID, TransmissionTypeEnum.RECEPTION_CONFIRMATION_REQUEST, msgID, message, sig);
 			
 			//Start Timeout-Wait for the confirmation
 			boolean waitForConfirmation = true;
@@ -135,6 +143,11 @@ public class MessageSystem {
 		return false;
 
 	}
+	
+	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) {
+		return sendConfirmedMessage(connectionID, stringToByteArray(message), sig);
+	}
+	
 	
 	/**This generates a random MessageID that can be used to identify a message reception confirmation when using sendConfirmedMessage().
 	 * The ID is a 16 alpha-numerical characters long String. (a-z,A-Z,0-9)
@@ -195,14 +208,25 @@ public class MessageSystem {
 	 * It is intended to be used for signals to the program at the other end of the connection, i.e. anything other than transmissionType TRANSMISSION
 	 * 
 	 * @param connectionID the name of the ConnectionEndpoint
-	 * @param message the message to be sent
+	 * @param message the message to be sent, can be generic byte[] or String
 	 * @return true if the sending of both messages worked, false otherwise
 	 */
-	public static boolean sendAuthenticatedMessage(String connectionID, final String message) {
-		String signature = QuantumnetworkControllcenter.authentication.sign(message);
+	public static boolean sendAuthenticatedMessage(String connectionID, final byte[] message) {
+		String signature;
+		signature = QuantumnetworkControllcenter.authentication.sign(byteArrayToString(message));
 		return sendConfirmedMessage(connectionID, message, signature);
-
 	}
+	
+	/**
+	 * this is a version of sendAuthenticatedMessage() that takes a String instead of a byte[] as a message to sent.
+	 * @param connectionID the name of the connection that this should be sent on.
+	 * @param message the message as a String
+	 * @return returns true if sending was successful, false and potentially logs an UnsupportedEncodingException if it failed.
+	 */
+	public static boolean sendAuthenticatedMessage(String connectionID, final String message) {
+		return sendAuthenticatedMessage(connectionID, stringToByteArray(message));
+	}
+	
 	
 	/**
 	 * sends a signed message, it is the second variant of sendAuthenticatedMessage()
@@ -213,15 +237,28 @@ public class MessageSystem {
 	 * It is intended to be used for signals to the program at the other end of the connection, i.e. anything other than transmissionType TRANSMISSION
 	 * 
 	 * @param connectionID the name of the ConnectionEndpoint
-	 * @param type	the type of the transmission. For TransmissionType == TRANSMISSION, i.e. content transmissions, use the first variant instead.
-	 * @param argument	the optional argument, use depends on the chosen TransmissionType. Refer to ConnectionEndpoint.processMessage() for more information.
-	 * @param message	the actual message to be transmitted. Can be empty. Most transmissions with content will use the first variant of this method.
-	 * @return Always returns true, because it does not expect a confirmation.
+	 * @param type the type of the transmission. For TransmissionType == TRANSMISSION, i.e. content transmissions, use the first variant instead.
+	 * @param argument the optional argument, use depends on the chosen TransmissionType. Refer to ConnectionEndpoint.processMessage() for more information.
+	 * @param message the actual message to be transmitted. Can be empty. Most transmissions with content will use the first variant of this method.
+	 * @return Returns true unless the Encoding from byte[] to String used for the authentication fails. Then it returns false.
 	 */
-	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final String message) {
-		String signature = QuantumnetworkControllcenter.authentication.sign(message);
+	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final byte[] message) {
+		String signature;
+		signature = QuantumnetworkControllcenter.authentication.sign(byteArrayToString(message));
 		sendMessage(connectionID, type, argument, message, signature);
 		return true;
+	}
+	
+	/**This is the same as the regular version of sendAuthenticatedMessage() with a custom TransmissionType, but allows for the message to be a String instead of a byte[].
+	 * 
+	 * @param connectionID the name of the ConnectionEndpoint
+	 * @param type the type of the transmission. For TransmissionType == TRANSMISSION, i.e. content transmissions, use the first variant instead.
+	 * @param argument the optional argument, use depends on the chosen TransmissionType. Refer to ConnectionEndpoint.processMessage() for more information.
+	 * @param message the actual message to be transmitted. Can be empty. Most transmissions with content will use the first variant of this method.
+	 * @return
+	 */
+	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final String message) {
+		return sendAuthenticatedMessage(connectionID, type, argument, stringToByteArray(message));
 	}
 
 	/**
@@ -265,9 +302,9 @@ public class MessageSystem {
 	 * receives a signed message
 	 * 
 	 * @param connectionID the name of the ConnectionEndpoint
-	 * @return the received message as string, null if error none, on time-out or if result of verify was false
+	 * @return the received message as byte[], null if error none, on time-out, if the decoding failed or if result of verify was false
 	 */
-	public static String readAuthenticatedMessage(String connectionID) {
+	public static byte[] readAuthenticatedMessage(String connectionID) {
 		Instant startWait = Instant.now();
 		while(getNumberOfPendingMessages(connectionID) < 1) {
 			Instant current = Instant.now();
@@ -276,9 +313,10 @@ public class MessageSystem {
 			}
 		}
 		NetworkPackage msg = readReceivedMessage(connectionID);
-		String message = msg.getContent();
+		byte[] message;
+		message = msg.getContent();
 		String signature = msg.getSignature();
-		if(QuantumnetworkControllcenter.authentication.verify(message, signature, connectionID)) {
+		if(QuantumnetworkControllcenter.authentication.verify(byteArrayToString(message), signature, connectionID)) {
 			return message;
 		}
 		return null;
@@ -291,7 +329,7 @@ public class MessageSystem {
 	 * @return the received and decrypted message as string, null if error none or if result of verify was false
 	 */
 	public static String readEncryptedMessage(String connectionID) {
-		String encrypted = readAuthenticatedMessage(connectionID);
+		byte[] encrypted = readAuthenticatedMessage(connectionID);
 		
 		byte[] byteKey;
 		if(connectionID.equals("42debugging42") || connectionID.equals("41debugging41") ) {
@@ -319,7 +357,41 @@ public class MessageSystem {
 		 */
 		
 		//decrypting the message and then returning it
-		return AES256.decrypt(encrypted, byteKey);
+		return AES256.decrypt(MessageSystem.byteArrayToString(encrypted), byteKey);
+	}
+	
+	
+	/**Utility for converting a byte[] to a String.
+	 * The Network sends messagesPackages with byte[]s as content. This Method is used 
+	 * to convert a byte[] to a String.
+	 * @param arr the byte[] that should be converted to a String.
+	 * @return	the resulting String, may be null if the encoding failed.
+	 */
+	public static String byteArrayToString(byte[] arr) {
+		try {
+			return new String(arr, ENCODING_STANDARD);
+		} catch (UnsupportedEncodingException e) {
+			System.err.println("Error: unsupportet Encoding: " + ENCODING_STANDARD + "!");
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
+	
+	/**Utility for converting a String to a byte[].
+	 * The Network sends messagesPackages with byte[]s as content. This Method is used 
+	 * to convert a String to a byte[].
+	 * @param str the String that should be converted to a byte[].
+	 * @return	the resulting byte[], may be null if the encoding failed.
+	 */
+	public static byte[] stringToByteArray(String str) {
+		try {
+			return str.getBytes(ENCODING_STANDARD);
+		} catch (UnsupportedEncodingException e) {
+			System.err.println("Error: unsupportet Encoding: " + ENCODING_STANDARD + "!");
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 }
