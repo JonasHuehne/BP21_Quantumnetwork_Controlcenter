@@ -39,7 +39,6 @@ public final class CommandHandler {
 	 * 		if the entered command is null
 	 */
 	public static String processCommand(String textCommand) throws IllegalArgumentException {
-		
 		/*
 		 *  We could just return INVALID_COMMAND here, however, if the input is null, 
 		 *  something likely went wrong enough to warrant an exception, whereas INVALID_COMMAND
@@ -121,10 +120,12 @@ public final class CommandHandler {
 		
 			ArrayList<Command> allCommands = new ArrayList<Command>(Arrays.asList(Command.values()));
 			
+			// For each category
 			for (Category cat : CommandConstants.Category.values()) {
-				availableCommands.append(cat.getCategoryName() + ": ");
+				availableCommands.append(cat.getCategoryName() + ": "); // Display the name of the category
 				availableCommands.append(System.lineSeparator());
 				
+				// Display each command with its name and short helptext
 				ListIterator<Command> iterator = allCommands.listIterator();
 				while(iterator.hasNext()) {
 					Command nextCommand = iterator.next();
