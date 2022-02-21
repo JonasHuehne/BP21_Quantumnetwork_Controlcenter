@@ -27,6 +27,8 @@ public class Configuration {
      */
     private static final String PROPERTIES_PATH = "properties" + File.separator;
 
+    private static final String PATH_FILE = ".basePath";
+
     /**
      *
      * @param absolutePath
@@ -52,7 +54,45 @@ public class Configuration {
             properties = null;
         }
         basePath = absolutePath;
+        setPathInFile();
         return createProperties(properties);
+    }
+
+    /**
+     *
+     * @return
+     */
+    private static boolean setPathInFile () {
+        try {
+            Files.writeString(Path.of(System.getProperty("user.dir") + File.separator
+                    + PATH_FILE), basePath);
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error while setting the path in the .basePath file: " + e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     *
+     * @return
+     */
+    public static boolean findProperties () {
+        if(Files.exists(Path.of(System.getProperty("user.dir") + File.separator
+                + PATH_FILE))) {
+            try {
+                basePath = Files.readString(Path.of(System.getProperty("user.dir")
+                        + File.separator + PATH_FILE));
+                return Files.exists(Path.of(basePath + PROPERTIES_PATH + PROPERTIES_FILE_NAME));
+            } catch (Exception e) {
+                System.err.println("Error while trying to find the properties file: " + e.getMessage());
+                return false;
+            }
+        } else {
+            // TODO: workout whether this is necessary or what to do
+            setPathInFile();
+            return false;
+        }
     }
 
     /**
