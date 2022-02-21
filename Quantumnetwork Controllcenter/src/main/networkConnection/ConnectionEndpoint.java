@@ -13,6 +13,7 @@ import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import keyGeneration.KeyGenerator;
+import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
 
 
@@ -152,7 +153,7 @@ public class ConnectionEndpoint implements Runnable{
 	}
 	
 	/**Works just like getRemoteAddress() but returns the port this ConnectionEndpoint is currently connected to.
-	 * Note: this is the port of the OTHER ConnectionEndpoint, that this one is connected to, not this onews own serverPort.
+	 * Note: this is the port of the OTHER ConnectionEndpoint, that this one is connected to, not this owns own serverPort.
 	 * 
 	 * @return the port we are sending messages to
 	 */
@@ -191,7 +192,7 @@ public class ConnectionEndpoint implements Runnable{
 			
 			//Send Message to allow foreign Endpoint to connect with us.
 			System.out.println("[" + connectionID + "]: " + connectionID + " is sending a greeting.");
-			pushMessage(TransmissionTypeEnum.CONNECTION_REQUEST, localAddress + ":::" + localServerPort, "", "");
+			pushMessage(TransmissionTypeEnum.CONNECTION_REQUEST, localAddress + ":::" + localServerPort, null, "");
 			System.out.println("[" + connectionID + "]: waiting for response");
 			
 			localServerSocket.setSoTimeout(3000);
@@ -231,7 +232,7 @@ public class ConnectionEndpoint implements Runnable{
 	public void closeConnection(boolean localRequest) {
 		if(isConnected && localRequest) {
 			//If close-request has local origin, message other connectionEndpoint about closing the connection.
-			pushMessage(TransmissionTypeEnum.CONNECTION_TERMINATION, "", "", "");
+			pushMessage(TransmissionTypeEnum.CONNECTION_TERMINATION, "", null, "");
 		}
 		System.out.println("[" + connectionID + "]: Local Shutdown of ConnectionEndpoint " + connectionID);
 		isConnected = false;
@@ -276,7 +277,7 @@ public class ConnectionEndpoint implements Runnable{
 	 * @param typeArgument an additional argument used by some TransmissionTypes to pass on important information. Can be "" if not needed.
 	 * @param message the String Message that should be send to the connected ConnectionEndpoints Server.
 	 */
-	public void pushMessage(TransmissionTypeEnum type, String typeArgument, String message, String sig) {
+	public void pushMessage(TransmissionTypeEnum type, String typeArgument, byte[] message, String sig) {
 		//Check for existence of connection before attempting so send.
 		if(!isConnected) {
 			System.err.println("[" + connectionID + "]: Warning: Attempted to push a message to another Endpoint while not beeing connected to anything!");
@@ -486,7 +487,7 @@ public class ConnectionEndpoint implements Runnable{
 			case RECEPTION_CONFIRMATION_REQUEST:	//This works similar to the regular Transmission but it indicates the sender is waiting for a reception confirmation. This sends this confirmation back.
 				//System.out.println("[" + connectionID + "]: Received Confirm-Message: " + transmission.getHead() + "!");
 				addMessageToStack( transmission);
-				pushMessage(TransmissionTypeEnum.RECEPTION_CONFIRMATION_RESPONSE, transmission.getTypeArg(), "", "");
+				pushMessage(TransmissionTypeEnum.RECEPTION_CONFIRMATION_RESPONSE, transmission.getTypeArg(), null, "");
 				return;
 				
 			case RECEPTION_CONFIRMATION_RESPONSE:	//This is received if the local CE has sent a confirmedMessage and is waiting for the confirmation. Once received the confirmation in the form of the messageID is added to the pendingConfirmations.
@@ -497,7 +498,7 @@ public class ConnectionEndpoint implements Runnable{
 			case KEYGEN_SYNC_REQUEST:	//This is received if another ConnectionEndpoint that is connected to this one is intending to start a KeyGeneration Process and is asking for a response(accept/reject).
 				//System.out.println("[" + connectionID + "]: Received KeyGenSync-Message: " + transmission.getHead() + "!");
 				SHA256withRSAAuthentication authenticator = new SHA256withRSAAuthentication();
-				if (authenticator.verify(transmission.getContent(), transmission.getSignature(), connectionID)) {
+				if (authenticator.verify(MessageSystem.byteArrayToString(transmission.getContent()), transmission.getSignature(), connectionID)) {
 					keyGen.keyGenSyncResponse();
 				}
 				return;

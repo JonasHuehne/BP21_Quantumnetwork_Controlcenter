@@ -418,9 +418,7 @@ public class GUIMainWindow implements Runnable{
 	
 	public void startUpdateService() {
 		ceUpdateThread = new Thread(this, "_ceUpdateThread");
-		System.out.println("avccc");
 		ceUpdateThread.start();
-		System.out.println("bvccc");
 	}
 	
 	@Override
