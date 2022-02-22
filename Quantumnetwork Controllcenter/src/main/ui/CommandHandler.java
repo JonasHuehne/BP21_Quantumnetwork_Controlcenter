@@ -90,6 +90,8 @@ public final class CommandHandler {
 				return DebugCommandHandler.handleSetUpLocalConnections();
 			case DEBUG_CLEAR_COMMLIST:
 				return DebugCommandHandler.handleClearCommList();
+			case SPAM:
+				return DebugCommandHandler.handleSpam();
 				
 			default:
 				return "Not implemented yet.";

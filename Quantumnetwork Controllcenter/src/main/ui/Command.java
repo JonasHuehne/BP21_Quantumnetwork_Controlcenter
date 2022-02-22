@@ -144,19 +144,7 @@ public enum Command {
 			+ System.lineSeparator() + " Syntax: debug setpk <user> <newpk>"),
 	DEBUG_SETUP_LOCAL_CONNECTIONS ("", "Clears the communication list, then runs a few connection commands to set up two local connection endpoints connected to each other."),
 	DEBUG_CLEAR_COMMLIST("", "Deletes all entries in the communication list."),
-	SPAM("", "Does nothing. Used solely for testing how the console reacts to very long outputs."
-						+ System.lineSeparator() + "The alphabet goes:" 
-						+ System.lineSeparator() + "A" + System.lineSeparator() + "B"
-						+ System.lineSeparator() + "C" + System.lineSeparator() + "D" + System.lineSeparator() + "E"
-						+ System.lineSeparator() + "F" + System.lineSeparator() + "G" + System.lineSeparator() + "H"
-						+ System.lineSeparator() + "I" + System.lineSeparator() + "J" + System.lineSeparator() + "K"
-						+ System.lineSeparator() + "L" + System.lineSeparator() + "M" + System.lineSeparator() + "N"
-						+ System.lineSeparator() + "O" + System.lineSeparator() + "P" + System.lineSeparator() + "Q"
-						+ System.lineSeparator() + "R" + System.lineSeparator() + "S" + System.lineSeparator() + "T"
-						+ System.lineSeparator() + "U" + System.lineSeparator() + "V" + System.lineSeparator() + "W"
-						+ System.lineSeparator() + "X" + System.lineSeparator() + "Y" + System.lineSeparator() + "Z"
-						+ System.lineSeparator() + "I would also like to introduce you to the numbers 1 through 20, 20 times" + System.lineSeparator()
-						+ ("1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20" + System.lineSeparator()).repeat(20))
+	SPAM("", "Outputs a many lines long output to the console.");
 	
 	
 	;

@@ -59,8 +59,12 @@ public class DebugCommandHandler {
 		// Clear Communication List before running this command.
 		handleClearCommList();
 		
+		// Clears connection manager to avoid issues if there are already connections bob and alice
+		QuantumnetworkControllcenter.conMan.destroyAllConnectionEndpoints();
+		
 		String[] commandsToRun 
 			= new String[] {
+					
 					// Simulate "Bob" adding "Alice" as a contact - Bob knows Alice wants to receive messages on 17141
 					"contacts add Alice 127.0.0.1 17141",	
 					
@@ -132,8 +136,24 @@ public class DebugCommandHandler {
 		
 		names.forEach((s) -> cl.delete(s));
 		
-		String out = "Communication List now looks like this: " + System.lineSeparator() + CommandHandler.processCommand(Command.CONTACTS_SHOW.getCommandName());
+		String out = "Communication List now looks like this (should be empty): " + System.lineSeparator() + CommandHandler.processCommand(Command.CONTACTS_SHOW.getCommandName());
 		
 		return out;
+	}
+	
+	/**
+	 * Handles execution of the {@link Command#SPAM}
+	 * @return
+	 * 		a spammy long string
+	 */
+	public static String handleSpam() {
+		char[] abc = "abcdefghijklmnopqrstuvxyzABCDEFGHIJKLMNOPQRSTUVXYZ".toCharArray();
+		char[] nums = "123456789".toCharArray();
+		StringBuilder out = new StringBuilder();
+		for (char c : abc) {
+			out.append(c + System.lineSeparator());
+			out.append(new String(nums) + System.lineSeparator());
+		}
+		return out.toString();
 	}
 }

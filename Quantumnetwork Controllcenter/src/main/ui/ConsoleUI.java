@@ -3,12 +3,15 @@ package ui;
 
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
+
+import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import javax.swing.JTextField;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Robot;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.LinkedList;
@@ -57,7 +60,7 @@ public class ConsoleUI {
 	private void initialize() {
 		frmQuantumNetworkControl = new JFrame();
 		frmQuantumNetworkControl.setTitle(APPLICATION_TITLE);
-		frmQuantumNetworkControl.setBounds(100, 100, 677, 403);
+		frmQuantumNetworkControl.setBounds(100, 100, 1440, 720);
 		frmQuantumNetworkControl.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		// The area in which the user enters the commands
@@ -78,7 +81,22 @@ public class ConsoleUI {
 		frmQuantumNetworkControl.getContentPane().add(scrollPane, BorderLayout.CENTER);
 		
 		consoleOutArea = new JTextArea();
-		consoleOutArea.setRequestFocusEnabled(false);
+		consoleOutArea.addKeyListener(new KeyAdapter() {
+			@Override
+			public void keyPressed(KeyEvent e) { 
+				// If the user has clicked on the output (e.g. to select some text)
+				// and then types again, put their focus back on the consoleInArea
+				consoleInArea.requestFocusInWindow();
+				// transfer the key press into the console in area (hacky, not sure if this is proper)
+				try {
+					Robot r = new Robot();
+					r.keyPress(e.getKeyCode());
+				} catch (AWTException e1) {
+					// If the key press can't be faked, do nothing for now.
+					// TODO if an error logger is implemented, log this
+				}
+			}
+		});
 		consoleOutArea.setAutoscrolls(false);
 		consoleOutArea.setBorder(new EmptyBorder(0, 0, 0, 0));
 		consoleOutArea.setWrapStyleWord(true);

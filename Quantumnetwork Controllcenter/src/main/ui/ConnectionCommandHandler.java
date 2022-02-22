@@ -94,7 +94,7 @@ public class ConnectionCommandHandler {
 			return "ERROR - Could not create the specified connection. Something went wrong, please see the system console in case there is an error log. ";
 		} else {
 			return "Successfully created connection to contact \"" + contactName + "\", listening on port " + localPort + ". "
-					+ "The connection is still inactive. Use the command \"" + Command.CONNECT_TO + "\" to open the connection."; 
+					+ "The connection is still inactive. Use the command \"" + Command.CONNECT_TO.getCommandName() + "\" to open the connection."; 
 		}
 		
 
@@ -118,7 +118,7 @@ public class ConnectionCommandHandler {
 		
 		// Used to build a table
 		String format = 
-				"| %-24s | %-20s | %-10s | %-20s | %-22s | %-20s | %-22s |";	
+				"| %-24s | %-20s | %-10s | %-20s | %-22s | %-18s | %-20s |";	
 		String header = String.format(format, 
 				"ID", "STATUS", "Local Port", "Remote IP (Contact)", "Remote Port (Contact)", "Remote IP (Latest)", "Remote Port (Latest)");
 		
@@ -161,7 +161,7 @@ public class ConnectionCommandHandler {
 					connectionID, connectionState, localPort, contactRemoteIP, contactRemotePort, latestRemoteIP, latestRemotePort)
 					);
 			// TODO: TEMPORARY - FOR DEBUGGING ONLY:
-			output.append(" Message Stack Size: " + endpoint.getValue().sizeOfMessageStack());
+			output.append(" Messages: " + endpoint.getValue().sizeOfMessageStack());
 			output.append(System.lineSeparator());
 		}
 		
