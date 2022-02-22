@@ -89,6 +89,18 @@ public class ConnectionManager {
 		return null;
 	}
 	
+	/**
+	 * Checks whether the ConnectionManager contains a {@link ConnectionEndpoint} of the given name.
+	 * @param connectionName
+	 * 		name of the {@link ConnectionEndpoint} to check for
+	 * @return
+	 * 		true, if the ConnectionManager contains an endpoint of that name <br>
+	 * 		false otherwise
+	 */
+	public boolean hasConnectionEndpoint(String connectionName) {
+		return connections.containsKey(connectionName);
+	}
+	
 	/**Returns the ConnectionState of a ConnectionEndpoint given by name.
 	 * May Return ConnectionState.ERROR if no CE by the given connectionName was found.
 	 * @param connectionName	the Identifier of the intended connectionEndpoint.

@@ -8,7 +8,8 @@ public final class HelperMethods {
 	 * @param input
 	 * 		any string
 	 * @return
-	 * 		the same string, but each whitespace will be replaced by 1 to 5 whitespaces (this means that through randomness, there may be no change some times)
+	 * 		the same string, but each whitespace will be replaced by 1 to 5 whitespaces 
+	 * 		(this means that through randomness, there may be no change sometimes)
 	 */
 	public static String randomizeWhiteSpace(String input) {
 		char[] inputArray = input.toCharArray();
@@ -58,18 +59,18 @@ public final class HelperMethods {
 	 * 		whether the additional characters may include alphabetical characters
 	 * @param numerics
 	 * 		whether the additional characters may include numbers
-	 * @param seperators
+	 * @param separators
 	 * 		whether the additional characters may include the symbols "-" and "_"
 	 * @return
 	 * 		a String as described above
 	 */
-	public static String somewhatRandomString(int bonusLength, boolean alphabeticals, boolean numerics, boolean seperators) {
+	public static String somewhatRandomString(int bonusLength, boolean alphabeticals, boolean numerics, boolean separators) {
 		
 		if(bonusLength == 0) return SEMI_RANDOM_STRING_BASE;
 		
 		if (bonusLength < 0)
 			throw new IllegalArgumentException("Invalid value for the # of additional characters to append. Must not be below 0 but was " + bonusLength);
-		if (!(alphabeticals || numerics || seperators)) 
+		if (!(alphabeticals || numerics || separators)) 
 			throw new IllegalArgumentException("Can not extend the base string if no characters are allowed to be used.");
 		
 		char[] alphabet 	= "ABCDEFGHIJKLMNOPQRSTUVXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
@@ -90,7 +91,7 @@ public final class HelperMethods {
 			}
 		}
 		
-		if (seperators) {
+		if (separators) {
 			for (char c : sepChars) {
 				availableChars.add(c);
 			}

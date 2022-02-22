@@ -370,7 +370,7 @@ class CommandHandlerTest {
 		
 		/**
 		 * Helper Method for testing that update does not change the communication list when it is not supposed to.
-		 * Checks that the communicationlist has exactly one entry, with the name "Alicia", ip "127.0.0.1" and Port 1111
+		 * Checks that the communication list has exactly one entry, with the name "Alicia", ip "127.0.0.1" and Port 1111
 		 * Does not check the pk associated with that entry in any way
 		 */
 		private void helper_Alicia_did_not_change() {
@@ -462,6 +462,7 @@ class CommandHandlerTest {
 		@AfterAll
 		static void afterAll() {
 			helper_clear_commList(commList);
+			conMan.destroyAllConnectionEndpoints();
 		}
 		
 		/*

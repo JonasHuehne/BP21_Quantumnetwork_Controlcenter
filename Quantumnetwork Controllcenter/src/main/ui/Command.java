@@ -127,7 +127,7 @@ public enum Command {
 			"Sends a simple hello world message along the specified connection. Used for debugging & sanity testing. "
 			+ System.lineSeparator() + System.lineSeparator()
 			+ "Syntax: hello world <name>" + System.lineSeparator()
-			+ "Name may be the name of any connection with status " + ConnectionState.CONNECTED.toString()),
+			+ "Name may be the name of any connection with status " + ConnectionState.CONNECTED),
 	
 	/*
 	 * TODO: Write a guide on Connections in the Readme, for Max
@@ -198,7 +198,7 @@ public enum Command {
 	}
 	
 	/**
-	 * Intended to be used for debug / testing purposes, for pattern matching use {@link #match(String)} if possible.
+	 * Intended to be used for debug / testing purposes, for pattern matching use {@link CommandParser#match(String)} if possible.
 	 * @return The regular expression describing this commands accepted syntax.
 	 */
 	public String getCommandPattern() {

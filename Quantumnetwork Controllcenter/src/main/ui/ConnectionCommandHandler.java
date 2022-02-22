@@ -19,7 +19,7 @@ public class ConnectionCommandHandler {
 	
 	static CommunicationList communicationList = QuantumnetworkControllcenter.communicationList;
 	
-	/** When establishing a new connection, this is the default port this */
+	/** When establishing a new connection, this is the default port */
 	public static final int DEFAULT_PORT = 17144;
 	
 	/*
@@ -35,9 +35,10 @@ public class ConnectionCommandHandler {
 	 * 		may be of length 1 or 2 <br>
 	 * 		
 	 * 		commandArgs[0] must be the name of a contact in the {@link CommunicationList}.
-	 * 		Connection ID will be the contact name, remote IP and remote port will determined by 
-	 * 		the contact's IP and port. No two connections to one contact will be created. <br>
-	 * 		
+	 * 		The connection ID of the new connection will be the equal to the contact name, 
+	 * 		the remote IP and remote port will be determined by the contact's IP and port. 
+	 * 		No two connections to one contact will be created. <br>
+	 * 
 	 * 		commandArgs[1] is optional. If it exists, it decides which port this 
 	 * 		new connection will be listening for messages on. Must be a valid TCP port.
 	 * @return
@@ -45,7 +46,7 @@ public class ConnectionCommandHandler {
 	 */
 	protected static String handleConnectionsAdd(String[] commandArgs) {
 		
-		String contactName = "";
+		String contactName;
 		int localPort;
 		
 		// Command Arguments must either be just one argument (contact name) or two (contact name, local port)
@@ -63,7 +64,7 @@ public class ConnectionCommandHandler {
 		if (localPort < 0 || localPort > 65535) {
 			return "ERROR - Could not create a connection where the local Endpoint is listening on port " + localPort + ". "
 					+ "TCP Ports must be between 0 and 65535.";
-			// Not throwing an illegal argument exception here because this is more likely caused by bad input than progammatic mistakes
+			// Not throwing an illegal argument exception here because this is more likely caused by bad input than programmatic mistakes
 		} else if (QuantumnetworkControllcenter.conMan.isPortInUse(localPort)) {
 			return "ERROR - Can not create a connection listening on port " + localPort + " only one connection may listen on a port at a time.";
 		}
@@ -77,13 +78,12 @@ public class ConnectionCommandHandler {
 		// Don't connect to the same contact twice
 		/*
 		 *  TODO: Theoretically this is already checked in conMan.createNewConnectionEndpoint(...)
-		 *  however, currently (27.01.2022) the method outputs either null if a CE of that name already exists
+		 *  however, currently (27.01.2022) the method outputs null either if a CE of that name already exists
 		 *  or if there is already a CE in the CM listening on the given local port. Just by receiving null
-		 *  the caller can't tell which case it is though, so we check seperately here to give clear error messages.
+		 *  the caller can't tell which case it is though, so we check separately here to give clear error messages.
 		 */
 		
-		ConnectionEndpoint previousCE = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(contactName);
-		if (previousCE != null) {
+		if (QuantumnetworkControllcenter.conMan.hasConnectionEndpoint(contactName)) {
 			return "ERROR - Can not create a connection to contact \"" + contactName + "\" - such a connection already exists.";
 		} 
 		
@@ -103,7 +103,7 @@ public class ConnectionCommandHandler {
 	/**
 	 * Handles execution of {@link Command#CONNECTIONS_SHOW}.
 	 * @return
-	 * 		a string formated to be a table of all connections <br>
+	 * 		a string formatted to be a table of all connections <br>
 	 * 		if no connections exists, a string stating there are no connections
 	 */
 	protected static String handleConnectionShow() {
@@ -198,7 +198,7 @@ public class ConnectionCommandHandler {
 	 * 		the ID of the connection to open, must be the ID of a ConnectionEndpoint in the ConnectionManager
 	 * @return
 	 * 		a message describing whether or not execution of the command was successful <br>
-	 * 		currently (14.02.2022), it does not describe whether the connection was actually established, just if an attempt was succesfully made
+	 * 		currently (14.02.2022), it does not describe whether the connection was actually established, just if an attempt was successfully made
 	 */
 	protected static String handleConnectTo(String connectionID) {
 		
@@ -251,7 +251,7 @@ public class ConnectionCommandHandler {
 			 * Is it safe? If not, maybe it should give some kind of feedback? 
 			 */
 			if (localPoint.reportState() != ConnectionState.CLOSED) {
-				return "ERROR - The connection endpoint \"" + connectionID + "\" must be in state " + ConnectionState.CLOSED.toString() + " for this command to be safely executed.";
+				return "ERROR - The connection endpoint \"" + connectionID + "\" must be in state " + ConnectionState.CLOSED + " for this command to be safely executed.";
 			} else {
 				if (localPoint.reportState() == ConnectionState.WAITINGFORCONNECTION) {
 					return "ERROR - Endpoint \"" + connectionID + "\" is already waiting for a connection request.";

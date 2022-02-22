@@ -22,7 +22,7 @@ class CommunicationListCommandHandler {
 
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_ADD}. 
-	 * Adds the contact described in commandArgs to the {@link Database}
+	 * Adds the contact described in commandArgs to the currently used {@link CommunicationList}
 	 * @param commandArgs
 	 * 		commandArgs[0] is the name of the contact to add <br>
 	 * 		commandArgs[1] is the IP of the contact to add <br>
@@ -44,7 +44,7 @@ class CommunicationListCommandHandler {
 	
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_REMOVE}.
-	 * Removes the contact with the given name from the {@link Database}.
+	 * Removes the contact with the given name from the currently used {@link CommunicationList}
 	 * @param name
 	 * 		the name of the contact to remove
 	 * @return
@@ -61,7 +61,7 @@ class CommunicationListCommandHandler {
 	
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_SEARCH}.
-	 * Searches for the contact with the given name in the {@link Database}.
+	 * Searches for the contact with the given name in the currently used {@link CommunicationList}
 	 * @param name
 	 * 		the name of the contact to search
 	 * @return
@@ -79,7 +79,7 @@ class CommunicationListCommandHandler {
 	
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_SHOW}.
-	 * @return a String containing a list of all contacts in the {@link Database}
+	 * @return a String containing a list of all contacts in the currently used {@link CommunicationList}
 	 */
 	protected static String handleContactsShow() {
 		ArrayList<Contact> entries = communicationList.queryAll();
@@ -101,7 +101,7 @@ class CommunicationListCommandHandler {
 	
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_UPDATE}.
-	 * Updates an entry in the {@link Database}, as specified in commandArgs.
+	 * Updates an entry in the currently used {@link CommunicationList}, as specified in commandArgs.
 	 * @param commandArgs
 	 * 		commandArgs[0] is the name of the contact to update <br>
 	 * 		commandArgs[1] is one of the following Strings: "name","ip","port","pk" (not case sensitive)
@@ -124,7 +124,7 @@ class CommunicationListCommandHandler {
 		String oldName = commandArgs[0];
 		Contact entryToChange = communicationList.query(oldName);
 		if (entryToChange == null) {
-			output = "ERROR - Could not find a contact with the name \"" + commandArgs[0] + "\" in the contact list. " + SEE_CONSOLE;
+			return "ERROR - Could not find a contact with the name \"" + commandArgs[0] + "\" in the contact list. " + SEE_CONSOLE;
 		}
 		
 		String attributeToUpdate = commandArgs[1].toLowerCase();
@@ -175,7 +175,7 @@ class CommunicationListCommandHandler {
 					if (pkDeleteSuccess) {
 						output = "Successfully updated the communication list. Contact \"" + oldName + "\" no longer has a public key associated with them.";
 					} else {
-						output = "ERROR - Could not update the contact \"" + oldName + "\" to no longer have a public key assosciated with them. " + SEE_CONSOLE;
+						output = "ERROR - Could not update the contact \"" + oldName + "\" to no longer have a public key associated with them. " + SEE_CONSOLE;
 					}
 				}
 			} else { // User wishes to update the pk associated with this contact / add a pk if not present
