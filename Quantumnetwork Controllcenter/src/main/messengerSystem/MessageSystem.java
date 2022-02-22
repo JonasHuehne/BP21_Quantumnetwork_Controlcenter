@@ -22,6 +22,7 @@ import networkConnection.TransmissionTypeEnum;
 public class MessageSystem {
 	
 	public static ConnectionManager conMan;
+	private static final byte[] debuggingKey = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
 
 	/**This simply sends a message on the given ConnectionEndpoint. No confirmation is expected from the recipient.
 	 *
@@ -232,13 +233,19 @@ public class MessageSystem {
 	 */
 	public static boolean sendEncryptedMessage(String connectionID, final String message) {
 		
+		byte[] byteKey;
+		if(connectionID.equals("42debugging42") || connectionID.equals("41debugging41") ) {
+			byteKey = debuggingKey; 
+		}
+		else {
 		//getting key
 		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
-		byte[] byteKey = keyObject.getKeyBuffer();
+		byteKey = keyObject.getKeyBuffer();
 		
 		//TODO wird sp�ter vermutlich nicht mehr ben�tigt
 		//marking key as used
 		KeyStoreDbManager.changeKeyToUsed(connectionID);
+		}
 		
 		/*
 		 * TODO 
@@ -286,13 +293,19 @@ public class MessageSystem {
 	public static String readEncryptedMessage(String connectionID) {
 		String encrypted = readAuthenticatedMessage(connectionID);
 		
+		byte[] byteKey;
+		if(connectionID.equals("42debugging42") || connectionID.equals("41debugging41") ) {
+			byteKey = debuggingKey;
+		}
+		else {
 		//getting key
 		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
-		byte[] byteKey = keyObject.getKeyBuffer();
-				
+		byteKey = keyObject.getKeyBuffer();
+		
 		//TODO wird sp�ter vermutlich nicht mehr ben�tigt
 		//marking key as used
 		KeyStoreDbManager.changeKeyToUsed(connectionID);
+		}
 		
 		/*
 		 * TODO

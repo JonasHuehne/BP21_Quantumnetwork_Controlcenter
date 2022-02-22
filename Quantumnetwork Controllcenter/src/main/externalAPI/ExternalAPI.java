@@ -58,7 +58,7 @@ public class ExternalAPI {
 	 * @return a key as SecretKey object
 	 */
 	public static SecretKey exportKeySecretKey(String communicationPartner) {
-		return encryptionDecryption.CryptoUtility.stringToSecretKeyAES256(exportKeyString(communicationPartner));
+		return encryptionDecryption.CryptoUtility.byteArrayToSecretKeyAES256(exportKeyByteArray(communicationPartner));
 	}
 	
 	/**
@@ -131,7 +131,7 @@ public class ExternalAPI {
 	 * @param communicationPartner the ID of the receiver as listed in communicationList
 	 * @param fileName Name of the .txt file containing the suffix ".txt"
 	 */
-	public static void sendEncryptedTxtFile(String communicationPartner, String fileName) {
+	public static boolean sendEncryptedTxtFile(String communicationPartner, String fileName) {
 		Path externalPath = getExternalAPIPath();
 		Path toRead = externalPath.resolve(fileName);
 		
@@ -142,10 +142,10 @@ public class ExternalAPI {
 		} catch (IOException e) {
 			
 			System.err.println("Error, could not read the given File \n" + e.toString());
-			return;
+			return false;
 		}
 		
-		MessageSystem.sendEncryptedMessage(communicationPartner, message);
+		return MessageSystem.sendEncryptedMessage(communicationPartner, message);
 	}
 	
 	/**
@@ -157,7 +157,7 @@ public class ExternalAPI {
 	public static void receiveEncryptedTxtFile(String communicationPartner) {
 		Path externalPath = getExternalAPIPath();
 		
-		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu_MM_dd_HH_mm_ss");
+		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu_MM_dd_HH_mm");
         LocalDateTime now = LocalDateTime.now();
         String currentDateTime = dateTimeFormatter.format(now);
 		System.out.println(currentDateTime);
@@ -166,7 +166,7 @@ public class ExternalAPI {
 		
 		File decrypted = new File(toWrite.toString());
 		
-		String received = MessageSystem.readAuthenticatedMessage(communicationPartner);
+		String received = MessageSystem.readEncryptedMessage(communicationPartner);
 		
 		try {
 			Files.writeString(decrypted.toPath(), received);
