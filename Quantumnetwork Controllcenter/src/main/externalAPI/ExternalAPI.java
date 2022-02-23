@@ -171,7 +171,6 @@ public class ExternalAPI {
 		try {
 			Files.writeString(decrypted.toPath(), received);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			System.err.println("Error, could not write to the outputfile \n" + e.toString());
 		}
 	}
