@@ -45,7 +45,7 @@ public class Configuration {
      * The list of the needed directories for the program
      */
     private static final String[] DIRECTORY_LIST =
-            {"SignatureKeys", "python", "connections"};
+            {"SignatureKeys", "python", "connections", "external API"};
 
     /**
      * Utility method to check whether the properties file is at the expected place
