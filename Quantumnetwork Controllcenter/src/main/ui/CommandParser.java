@@ -5,6 +5,12 @@ import java.util.Arrays;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+/**
+ * Used for matching / parsing Commands. <br>
+ * This class implements methods that can be used to match a text String to a fitting {@link Command},
+ * extract a Commands arguments as an array of Strings etc.
+ * @author Sasha Petri
+ */
 public class CommandParser {
 
 	/**
