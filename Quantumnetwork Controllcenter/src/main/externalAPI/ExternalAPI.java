@@ -8,6 +8,8 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import javax.crypto.SecretKey;
+
+import encryptionDecryption.AES256;
 import keyStore.KeyStoreDbManager;
 import messengerSystem.MessageSystem;
 
@@ -91,7 +93,7 @@ public class ExternalAPI {
 		if(Files.exists(toEncrypt)) {
 			File encrypt = toEncrypt.toFile();
 			File encrypted = new File(externalPath.resolve("encrypted_" + fileName).toString());
-			encryptionDecryption.AES256.encryptFile(encrypt, key, encrypted);
+			AES256.encryptFile(encrypt, key, encrypted);
 		}
 		else {
 			System.err.println("Error, could not find the file to encrypt, expected" + toEncrypt.normalize());
@@ -113,7 +115,7 @@ public class ExternalAPI {
 		if(Files.exists(toDecrypt)) {
 			File decrypt = toDecrypt.toFile();
 			File decrypted = new File(externalPath.resolve("decrypted_" + fileName).toString());
-			encryptionDecryption.AES256.decryptFile(decrypt, key, decrypted);
+			AES256.decryptFile(decrypt, key, decrypted);
 		}
 		else {
 			System.err.println("Error, could not find the file to decrypt, expected" + toDecrypt.normalize());
@@ -160,7 +162,6 @@ public class ExternalAPI {
 		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu_MM_dd_HH_mm");
         LocalDateTime now = LocalDateTime.now();
         String currentDateTime = dateTimeFormatter.format(now);
-		System.out.println(currentDateTime);
         
 		Path toWrite = externalPath.resolve(currentDateTime + "_" + communicationPartner + ".txt");
 		
@@ -173,6 +174,32 @@ public class ExternalAPI {
 		} catch (IOException e) {
 			System.err.println("Error, could not write to the outputfile \n" + e.toString());
 		}
+	}
+	
+	
+	/**
+	 * encrypts and sends a given file from externalAPI directory 
+	 * 
+	 * @param communicationPartner the ID of the receiver
+	 * @param fileName Name of the file to be sent
+	 * @return true if the file has been sent successfully, false otherwise
+	 */
+	public static boolean sendEncryptedFile(String communicationPartner, String fileName) {
+		Path externalPath = getExternalAPIPath();
+		Path toSend = externalPath.resolve(fileName);
+		
+		return MessageSystem.sendEncryptedFile(fileName, toSend);
+	}
+	
+	/**
+	 * receives and decrypts a file sent by the specified communicationPartner and saves it in the externalAPI directory
+	 * 
+	 * @param communicationPartner the ID of the sender
+	 */
+	public static void receiveEncryptedFile(String communicationPartner) {
+		Path externalPath = getExternalAPIPath();
+		
+		MessageSystem.receiveEncryptedFileToPath(communicationPartner, externalPath);
 	}
 	
 	/*

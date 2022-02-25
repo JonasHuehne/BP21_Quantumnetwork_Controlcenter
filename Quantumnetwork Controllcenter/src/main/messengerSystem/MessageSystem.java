@@ -1,5 +1,10 @@
 package messengerSystem;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedList;
@@ -16,7 +21,7 @@ import networkConnection.TransmissionTypeEnum;
 /**High Level Message System. Contains methods for sending and receiving messages without dealing with low-level things, like signals and prefixes.
  * Send and receiving messages via these methods, the connectionID determines which connectionEndpoint to interact with.
  *
- * @author Jonas Huehne, Sarah Schumann
+ * @author Jonas Huehne, Sarah Schumann, Lukas Dentler
  *
  */
 public class MessageSystem {
@@ -320,6 +325,133 @@ public class MessageSystem {
 		
 		//decrypting the message and then returning it
 		return AES256.decrypt(encrypted, byteKey);
+	}
+	
+	public static boolean sendFile(String connectionID, byte[] fileData) {
+		//dummy method until real one is finished
+		return true;
+	}
+	
+	public static byte[] receiveFile(String connectionID) {
+		//dummy method until real one is finished#
+		return null;
+	}
+	
+	/**
+	 * helper method to identify the current path to the messageSystem directory
+	 * 
+	 * @return Path of the messageSystem directory, returns null if messageSystem directory does not exist
+	 */
+	private static Path getMessageSystemPath() {
+		Path currentWorkingDir = Paths.get("").toAbsolutePath();
+		Path messageSystemPath = currentWorkingDir.resolve("messageSystem");
+		if(!Files.isDirectory(messageSystemPath)) {
+			System.err.println("Error, could not find the externalAPI folder, expected: " + messageSystemPath.normalize());
+			return null;
+		}
+		return messageSystemPath;
+	}
+	
+	/**
+	 * encrypts and sends the given file to the specified receiver
+	 * 
+	 * @param connectionID the ID of the receiver
+	 * @param filePath the precise Path to the File that should be sent
+	 * @return true if the file was encrypted and sent successfully, false otherwise
+	 */
+	public static boolean sendEncryptedFile(String connectionID, Path filePath) {
+		//getting directory of connection partner
+		Path messageSystemDir = getMessageSystemPath();
+		Path connectionDir = messageSystemDir.resolve(connectionID);
+		//creating directory if it does not exist
+		if(!Files.isDirectory(connectionDir)) {
+			try {
+				Files.createDirectory(connectionDir);
+			} catch (IOException e) {
+				System.err.println(e.toString());
+				return false;
+			}
+		}
+		
+		//getting key for encryption
+		byte[] byteKey;
+		if(connectionID.equals("42debugging42") || connectionID.equals("41debugging41") ) {
+			byteKey = debuggingKey;
+		}
+		else {
+		//getting key
+		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
+		byteKey = keyObject.getKeyBuffer();
+		
+		//TODO wird später vermutlich nicht mehr benötigt
+		//marking key as used
+		KeyStoreDbManager.changeKeyToUsed(connectionID);
+		}
+
+		byte[] byteArrayFile = AES256.encryptFileToByteArray(filePath.toFile(), byteKey);
+		
+		if(byteArrayFile == null) {
+			return false;
+		}
+		
+		String fileName = filePath.toFile().getName();
+		
+		boolean sentFileName = sendAuthenticatedMessage(connectionID, fileName);
+		boolean sentFile = sendFile(connectionID, byteArrayFile);
+		
+		return sentFileName && sentFile;
+	}
+	
+	/**
+	 * receives and decrypts a file sent by the specified connectionID and saves it to the given directory path
+	 * 
+	 * @param connectionID the ID of the sender
+	 * @param pathName the path to the directory where the file should be saved
+	 */
+	public static void receiveEncryptedFileToPath(String connectionID, Path pathName) {
+		//getting key for encryption
+		byte[] byteKey;
+		if(connectionID.equals("42debugging42") || connectionID.equals("41debugging41") ) {
+			byteKey = debuggingKey;
+		}
+		else {
+		//getting key
+		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
+		byteKey = keyObject.getKeyBuffer();
+		
+		//TODO wird später vermutlich nicht mehr benötigt
+		//marking key as used
+		KeyStoreDbManager.changeKeyToUsed(connectionID);
+		}
+		
+		String fileName = readAuthenticatedMessage(connectionID);
+		File decrypted = pathName.resolve("decrypted_" + connectionID + "_" + fileName).toFile();
+		
+		byte[] encrypted = receiveFile(connectionID);
+		
+		AES256.decryptByteArrayToFile(encrypted, byteKey, decrypted);
+	}
+	
+	/**
+	 * receives and decrypts a file sent by the specified connectionID and saves it to the directory corresponding with the connectionID
+	 * 
+	 * @param connectionID the ID of the sender
+	 */
+	public static void receiveEncryptedFile(String connectionID) {
+		//getting directory of connection partner
+		Path messageSystemDir = getMessageSystemPath();
+		Path connectionDir = messageSystemDir.resolve(connectionID);
+		
+		//creating directory if it does not exist
+		if(!Files.isDirectory(connectionDir)) {
+			try {
+				Files.createDirectory(connectionDir);
+			} catch (IOException e) {
+				System.err.println(e.toString());
+			}
+		}
+		
+		receiveEncryptedFileToPath(connectionID, connectionDir);
 	}
 
 }

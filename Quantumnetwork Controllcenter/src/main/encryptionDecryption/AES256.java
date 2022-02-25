@@ -174,6 +174,50 @@ public class AES256 {
 	}
 	
 	/**
+	 * Encrypts the given file using the AES-256 CBC algorithm and a suitable key
+	 * 
+	 * @param inputFile file to be encrypted
+	 * @param byteKey a byte array with 256 bit (32 byte)
+	 * @return a byte array containing the encrypted data of inputFile 
+	 */
+	public static byte[] encryptFileToByteArray(File inputFile, byte[] byteKey) {
+		//checking that key has the right length
+				if(byteKey.length != KEY_LENGTH_BYTE) {
+					System.err.println(KEY_WRONG_SIZE);
+					return null;
+				}
+						
+				//generating SecretKey from byte array
+				SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
+				
+				try {
+					//get Cipher Instance
+					Cipher cipher = Cipher.getInstance(ALGORITHM_WITH_PADDING);
+					
+					//initialize Cipher for encryption
+					cipher.init(Cipher.ENCRYPT_MODE, key, IV);
+					
+					//get byte array from file
+			        byte[] inputBytes = Files.readAllBytes(inputFile.toPath());	 
+			        
+			      //encrypt byte array containing data from file
+			        return cipher.doFinal(inputBytes);
+				}
+				//printing exceptions
+				catch (InvalidKeyException e) {
+					System.err.println("An invalid Key was used. \n" + e.toString());
+				}
+				catch (IllegalBlockSizeException e) {
+					System.err.println("The plaintext has the wrong length. \n" + e.toString());
+				}
+				catch (Exception e) {
+					//TODO later printing exception to UI
+					System.err.println("An ERROR occured during encryption:\n" + e.toString());
+				}
+				return null;
+	}
+	
+	/**
 	 * Decrypts the given cipher text String using the AES-256 CBC algorithm and the corresponding key used to encrypt the cipher text
 	 * 
 	 * @param strCiphertext the cipher text that should be decrypted as a Base64 encoded String
@@ -276,7 +320,7 @@ public class AES256 {
 	 * @param byteKey a byte array with 256 bit (32 byte)
 	 * @param outputFile file directory to save the decrypted file
 	 */
-public static void decryptFile(File inputFile, byte[] byteKey, File outputFile) {
+	public static void decryptFile(File inputFile, byte[] byteKey, File outputFile) {
 		
 		//checking that key has the right length
 		if(byteKey.length != KEY_LENGTH_BYTE) {
@@ -315,5 +359,49 @@ public static void decryptFile(File inputFile, byte[] byteKey, File outputFile) 
 			//TODO later printing exception to UI
 			System.err.println("An ERROR occured during encryption:\n" + e.toString());
 		}		
+	}
+
+	/**
+	 * Decrypt the given byte array using the AES-256 CBC algorithm and the corresponding key used to encrypt it
+	 * Saves the decrypted data in the given file directory
+	 * 
+	 * @param inputBytes byte array to decrypt
+	 * @param byteKey the key used to encrypt the cipher text as byte array
+	 * @param outputFile file directory to save the decrypted file
+	 */
+	public static void decryptByteArrayToFile(byte[] inputBytes, byte[] byteKey, File outputFile) {
+		//checking that key has the right length
+			if(byteKey.length != KEY_LENGTH_BYTE) {
+				System.err.println(KEY_WRONG_SIZE);
+				return;
+			}
+					
+			//generating SecretKey from byte array
+			SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
+			
+			try {
+				//get Cipher Instance
+				Cipher cipher = Cipher.getInstance(ALGORITHM_WITH_PADDING);
+				
+				//initialize Cipher for decryption
+				cipher.init(Cipher.DECRYPT_MODE, key, IV);
+
+			    //decrypt byte array containing file data
+		        byte[] outputBytes = cipher.doFinal(inputBytes);	  
+			       
+		        //create file with decrypted data
+		        Files.write(outputFile.toPath(), outputBytes);      
+				}
+				//printing exceptions
+				catch (InvalidKeyException e) {
+					System.err.println("An invalid Key was used. \n" + e.toString());
+				}
+				catch (IllegalBlockSizeException e) {
+					System.err.println("The plaintext has the wrong length. \n" + e.toString());
+				}
+				catch (Exception e) {
+					//TODO later printing exception to UI
+					System.err.println("An ERROR occured during encryption:\n" + e.toString());
+				}		
 	}
 }
