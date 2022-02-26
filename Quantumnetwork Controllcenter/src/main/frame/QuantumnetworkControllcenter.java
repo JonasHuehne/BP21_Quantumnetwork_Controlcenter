@@ -5,12 +5,14 @@ import communicationList.SQLiteCommunicationList;
 import graphicalUserInterface.GUIMainWindow;
 import messengerSystem.Authentication;
 import messengerSystem.SHA256withRSAAuthentication;
+import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
 import ui.ConsoleUI;
 import java.awt.EventQueue;
 import java.io.IOException;
 
 import javax.swing.UIManager;
+import java.util.concurrent.TimeUnit;
 
 import messengerSystem.MessageSystem;
 
@@ -42,8 +44,9 @@ public class QuantumnetworkControllcenter {
 		}
 		
 		//Network Connection Init
-		String localIP = "127.0.0.1";//Must be changed manually as of right now. Use IP depending on intended communication Range (local Machine, local Network or Internet)
-		conMan = new ConnectionManager(localIP);
+		String localIP = "127.0.0.1";//Will be part of the Settings/Properties
+		int localPort = 5000;//Will be part of the Settings/Properties
+		conMan = new ConnectionManager(localIP, localPort);
 		MessageSystem.conMan = conMan;
 
 		// Communication List Init
@@ -96,7 +99,15 @@ public class QuantumnetworkControllcenter {
 		communicationList.insert("TestNameBob", "127.0.0.2", 3300, "testSig02");
 		communicationList.insert("TestNameCharlie", "127.0.0.3", 4300, "testSig03");
 		*/
-
+		try {
+			TimeUnit.SECONDS.sleep(2);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("--------------------------------------------------------------------------------------------");
+		System.out.println("---Creating new connection Endpoint. It will try to connect to a target Server directly.---");
+		ConnectionEndpoint ce1 = conMan.createNewConnectionEndpoint("ce1", "127.0.0.1", 5000);
 		
 	}
 

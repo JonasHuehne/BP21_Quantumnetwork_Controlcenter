@@ -12,6 +12,8 @@ import java.time.Instant;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import frame.QuantumnetworkControllcenter;
 import keyGeneration.KeyGenerator;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
@@ -35,7 +37,7 @@ public class ConnectionEndpoint implements Runnable{
 	private String localAddress;	//the own IP
 	private ServerSocket localServerSocket; // our own Endpoint that listens on a port and waits for a connection Request from another Endpoints ClientSocket.
 	private int localServerPort;	//the Port of the local Server that other Endpoints can send Messages to.
-	private Socket localClientSocket;	// connects to another Endpoints Serversocket.
+	public Socket localClientSocket;	// connects to another Endpoints Serversocket.
 	private Socket remoteClientSocket;	// another Endpoints ClientSocket that messaged out local Server Socket	
 	private String remoteID;	//the IP of the connected Endpoint
 	private int remotePort;		//the Port of the connected Endpoint
@@ -43,6 +45,7 @@ public class ConnectionEndpoint implements Runnable{
 	//Communication Channels
 	private ObjectInputStream serverIn;	//the incoming channel that information from other ConnectionEndpoints is received on.
 	private ObjectOutputStream clientOut;	//the outgoing channel that information from this ConnectionEndpoint is sent to another.
+	private ObjectInputStream clientIn;
 	
 	//State
 	private boolean listenForMessages = false;
@@ -64,18 +67,69 @@ public class ConnectionEndpoint implements Runnable{
 	 * @param localAddress	the ip that the ConnectionEndpoint is working on. Is sent to the other ConnectionEndpoint when creating a connection.
 	 * @param serverPort	the port this ConnectionEndpoints server is listening on for messages.
 	 */
-	public ConnectionEndpoint(String connectionName, String localAddress, int serverPort) {
+	
+	//Use for conResp
+	public ConnectionEndpoint(String connectionName, String localAddress, Socket localSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn) {
 		connectionID = connectionName;
 		keyGen = new KeyGenerator(connectionID);
 		this.localAddress = localAddress;
-		localServerPort = serverPort;
+		localServerPort = QuantumnetworkControllcenter.conMan.getConnectionSwitchbox().getMasterServerPort();
+		System.out.println("Initialised local ServerSocket in Endpoint of " + connectionID + " at Port " + String.valueOf(localServerPort));
+		
+		
+		localClientSocket = localSocket;
+		clientOut = streamOut;
+		clientIn = streamIn;
+		System.out.println("+++CE "+ connectionID +" received Socket and Streams!+++");
+		
+		waitingForConnection = false;
+		isConnected = true;
+		
+		System.out.println("+++CE "+ connectionID +" is sending a message back!+++");
+		pushMessage(TransmissionTypeEnum.TRANSMISSION, "", MessageSystem.stringToByteArray("Hallo, dies ist eine Nachricht von dem automatisch generierten CE zurück zu dem CE der die Verbindung aufgebaut hat!"), "");
+		
+		//Wait for greeting
+		//System.out.println("[" + connectionID + "]: Waiting for Greeting from connecting Party");
+		//listenForMessage();
+	}
+	
+	//Used for conEst
+	public ConnectionEndpoint(String connectionName, String localAddress, String targetIP, int targetPort) {
+		System.out.println("---A new CE has been created! I am named: "+ connectionName +" and my own IP is: "+ localAddress +" and I am going to connect to :"+ targetIP+":"+targetPort +".--");
+		connectionID = connectionName;
+		keyGen = new KeyGenerator(connectionID);
+		this.localAddress = localAddress;
+		localServerSocket = QuantumnetworkControllcenter.conMan.getConnectionSwitchbox().getMasterServerSocket();
+		localServerPort = QuantumnetworkControllcenter.conMan.getConnectionSwitchbox().getMasterServerPort();
+		System.out.println("---Synced localServerSocket in Endpoint of " + connectionID + " to MasterServerSocket at Port " + String.valueOf(localServerPort)+"---");
+		
+		remoteID = targetIP;
+		remotePort = targetPort;
+
 		try {
-			localServerSocket = new ServerSocket(localServerPort);
-			System.out.println("Initialised local ServerSocket in Endpoint of " + connectionID + " at Port " + String.valueOf(localServerPort));
+
+			establishConnection(targetIP, targetPort);
 		} catch (IOException e) {
-			System.err.println("[" + connectionID + "]: Local Connection Endpoint could not be established! An Error occured while creating the local Client and Server Sockets!");
+			System.err.println("Error occured while establishing a connection from " + connectionID + " to target ServerSocket @ " + remoteID + ":" + remotePort + ".");
 			e.printStackTrace();
 		}
+		/**
+		try {
+			
+			System.out.println("[" + connectionID + "]: Starting to initialize connections ClientSocket by connecting it to target ServerSocket @ " + remoteID + ":" + remotePort + ".");
+			localClientSocket = new Socket(remoteID,remotePort);
+			System.out.println("[" + connectionID + "]: Created ClientOutStream.");
+			clientOut = new ObjectOutputStream(localClientSocket.getOutputStream());
+			
+			
+			
+			
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	**/
+		
 	}
 	
 	/**Reports the current State of this Endpoints Connection.
@@ -161,6 +215,10 @@ public class ConnectionEndpoint implements Runnable{
 		return remotePort;
 	}
 	
+	public ServerSocket getServerSocket() {
+		return localServerSocket;
+	}
+	
 	
 	//-------------//
 	// Client Side //
@@ -188,6 +246,7 @@ public class ConnectionEndpoint implements Runnable{
 			//Connecting own Client Socket to foreign Server Socket
 			localClientSocket = new Socket(remoteID,remotePort);
 			clientOut = new ObjectOutputStream(localClientSocket.getOutputStream());
+			clientIn = new ObjectInputStream(localClientSocket.getInputStream());
 			isConnected = true;
 			
 			//Send Message to allow foreign Endpoint to connect with us.
@@ -195,13 +254,16 @@ public class ConnectionEndpoint implements Runnable{
 			pushMessage(TransmissionTypeEnum.CONNECTION_REQUEST, localAddress + ":::" + localServerPort, null, "");
 			System.out.println("[" + connectionID + "]: waiting for response");
 			
+			listenForMessage();
+			
+			/**
 			localServerSocket.setSoTimeout(3000);
 			remoteClientSocket = localServerSocket.accept();
 			serverIn = new ObjectInputStream(remoteClientSocket.getInputStream());
 			System.out.println("[" + connectionID + "]: Connected " + connectionID + " to external ID and Port: " + remoteID + ", " + String.valueOf(remotePort) + "!");
 			isBuildingConnection = false;
 			listenForMessage();
-			
+			**/
 		//Error Messages
 		} catch (UnknownHostException e) {
 			isConnected = false;
@@ -480,7 +542,7 @@ public class ConnectionEndpoint implements Runnable{
 				return;
 				
 			case TRANSMISSION:	//This is received if the connected connectionEndpoint wants to send this CE a transmission containing actual data in the NetworkPackages content field. The transmission is added to the MessageStack.
-				//System.out.println("[" + connectionID + "]: Received Message: " + transmission.getContent() + "!");
+				System.out.println("[" + connectionID + "]: Received Message: " + MessageSystem.byteArrayToString(transmission.getContent()) + "!");
 				addMessageToStack( transmission);
 				return;
 				
@@ -542,11 +604,13 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	@Override
 	public void run() {
+		System.out.println( "[" + connectionID + "]:Starting to wait for response Message...");
 		waitingForMessage = true;
 		NetworkPackage receivedMessage;
 		while(waitingForMessage) {
 			try {
-				if(waitingForMessage && serverIn != null && isConnected && !waitingForConnection && (receivedMessage = (NetworkPackage) serverIn.readObject()) != null) {
+				if(waitingForMessage && clientIn != null && isConnected && !waitingForConnection && (receivedMessage = (NetworkPackage) clientIn.readObject()) != null) {
+					System.out.println( "[" + connectionID + "]:Starting to process Message...");
 					processMessage(receivedMessage);
 
 				}
