@@ -1,5 +1,9 @@
 package networkConnection;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.*;
 
 /**A class that holds any number of ConnectionEndpoints. These represent connections from one local port to one other port at a give Address. 
@@ -12,14 +16,24 @@ public class ConnectionManager {
 	
 	private Map<String,ConnectionEndpoint> connections = new HashMap<String,ConnectionEndpoint>();
 	private String localAddress;
+	private int localPort;
+	private ConnectionSwitchbox connectionSwitchbox;
 	
 	
 	/**A ConnectionManager needs to be supplied with the ip under which the local ConnectionEndpoints should be accessible. 
 	 * 
 	 * @param localAddress the ip address that is being passed on to any local ConnectionEndpoints.
 	 */
-	public ConnectionManager(String localAddress){
+	public ConnectionManager(String localAddress, int localPort){
 		this.localAddress = localAddress;
+		this.localPort = localPort;
+		connectionSwitchbox = new ConnectionSwitchbox(this.localPort);
+		
+	}
+	
+	
+	public ConnectionSwitchbox getConnectionSwitchbox() {
+		return connectionSwitchbox;
 	}
 	
 	
@@ -29,14 +43,26 @@ public class ConnectionManager {
 	*@param serverPort 		the local serverPort, this is the port a remote client needs to connect to, since this is where the connectionEndpoint will be listening on.
 	*@return ConnectionEndpoint		a representation of a connection line to a different ConnectionEndpoint. Will be stored and accessed from the "Connections" Mapping.
 	*/
-	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, int serverPort) {
-		if(!connections.containsKey(endpointName) && !isPortInUse(serverPort)) {
-			connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, serverPort));
+	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort) {
+		if(!connections.containsKey(endpointName)) {
+			System.out.println("---Received new request for a CE. Creating it now. It will connect to the Server at "+ targetIP +":"+ targetPort +".---");
+			connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, targetIP, targetPort));
 			return connections.get(endpointName);
 		}
 		System.err.println("[" + endpointName + "]: Could not create a new ConnectionEndpoint because of the Name- and Portuniqueness constraints.");
 		return null;
 	}
+	
+	//ResponceCE
+	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, Socket clientSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn) {
+		if(!connections.containsKey(endpointName)) {
+			connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, clientSocket, streamOut, streamIn));
+			return connections.get(endpointName);
+		}
+		System.err.println("[" + endpointName + "]: Could not create a new ConnectionEndpoint because of the Name- and Portuniqueness constraints.");
+		return null;
+	}
+	
 	
 	/**This can be used if the supplied port is being used by any local ConnectionEndpoint.
 	 * 
