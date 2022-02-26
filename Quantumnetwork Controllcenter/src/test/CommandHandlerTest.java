@@ -72,13 +72,7 @@ class CommandHandlerTest {
 	/** The ConnectionManager, used for some tests, specifically regarding the connection commands */
 	private static ConnectionManager conMan;
 	
-	/*
-	 * NOTE / TODO:
-	 * Currently, these tests use the same CommunicationList that
-	 * the actual user of the program accesses. This is not optimal,
-	 * because they clear the list. Should either automatically back up the
-	 * list before peforming the tests, or implement a way to have multiple lists.
-	 */
+	private static ArrayList<Contact> backups;
 	
 	@BeforeAll
 	static void initialize() {
@@ -86,7 +80,17 @@ class CommandHandlerTest {
 		commList = QuantumnetworkControllcenter.communicationList;
 		conMan	 = QuantumnetworkControllcenter.conMan;
 		
+		// back up the entries of the communication list, so that these tests don't destroy them
+		backups = commList.queryAll();
+		
 		helper_clear_commList(commList);
+	}
+	
+	@AfterAll
+	static void restoreOldList() {
+		for (Contact c : backups) {
+			commList.insert(c.getName(), c.getIpAddress(), c.getPort(), c.getSignatureKey());
+		}
 	}
 	
 	/**

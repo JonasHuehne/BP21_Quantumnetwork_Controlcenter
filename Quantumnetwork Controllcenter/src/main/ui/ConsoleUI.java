@@ -81,26 +81,10 @@ public class ConsoleUI {
 		frmQuantumNetworkControl.getContentPane().add(scrollPane, BorderLayout.CENTER);
 		
 		consoleOutArea = new JTextArea();
-		consoleOutArea.addKeyListener(new KeyAdapter() {
-			@Override
-			public void keyPressed(KeyEvent e) { 
-				// If the user has clicked on the output (e.g. to select some text)
-				// and then types again, put their focus back on the consoleInArea
-				consoleInArea.requestFocusInWindow();
-				// transfer the key press into the console in area (hacky, not sure if this is proper)
-				try {
-					Robot r = new Robot();
-					r.keyPress(e.getKeyCode());
-				} catch (AWTException e1) {
-					// If the key press can't be faked, do nothing for now.
-					// TODO if an error logger is implemented, log this
-				}
-			}
-		});
 		consoleOutArea.setAutoscrolls(false);
 		consoleOutArea.setBorder(new EmptyBorder(0, 0, 0, 0));
 		consoleOutArea.setWrapStyleWord(true);
-		consoleOutArea.setText("Welcome to the Quantum Network Control Center. What would you like to do?\r\nEnter \"help\" for a list of commands.");
+		consoleOutArea.setText(INITIAL_TEXT);
 		consoleOutArea.setLineWrap(true);
 		consoleOutArea.setForeground(Color.GREEN);
 		consoleOutArea.setFont(new Font("Monospaced", Font.PLAIN, 14));

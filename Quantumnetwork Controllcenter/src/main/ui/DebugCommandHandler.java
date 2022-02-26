@@ -3,6 +3,7 @@ package ui;
 import java.util.ArrayList;
 
 import communicationList.CommunicationList;
+import communicationList.Contact;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.SHA256withRSAAuthentication;
 
@@ -127,17 +128,9 @@ public class DebugCommandHandler {
 	 * 		the new communication list
 	 */
 	public static String handleClearCommList() {
-		
-		ArrayList<String> names = new ArrayList<String>();
-		
-		CommunicationList cl = QuantumnetworkControllcenter.communicationList;
-		
-		cl.queryAll().forEach((entry) -> {names.add(entry.getName());});;
-		
-		names.forEach((s) -> cl.delete(s));
-		
+		ArrayList<Contact> contacts = QuantumnetworkControllcenter.communicationList.queryAll();
+		for (Contact c : contacts) QuantumnetworkControllcenter.communicationList.delete(c.getName());
 		String out = "Communication List now looks like this (should be empty): " + System.lineSeparator() + CommandHandler.processCommand(Command.CONTACTS_SHOW.getCommandName());
-		
 		return out;
 	}
 	

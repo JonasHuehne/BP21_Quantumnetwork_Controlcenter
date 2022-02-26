@@ -28,7 +28,7 @@ class CommunicationListCommandHandler {
 	 * 		commandArgs[1] is the IP of the contact to add <br>
 	 * 		commandArgs[2] is the port of the contact to add
 	 * @return
-	 * 		a String describing whether or not the contact was successfully added to the {@link Database}
+	 * 		a String describing whether or not the contact was successfully added to the currently used {@link CommunicationList}
 	 */
 	protected static String handleContactsAdd(String[] commandArgs) {
 		String name = commandArgs[0];
@@ -86,7 +86,7 @@ class CommunicationListCommandHandler {
 		if (entries == null) {
 			return "ERROR - There was a problem with querying the database. " + SEE_CONSOLE;
 		} else {
-			String out = "";
+			String out = "The Communication List currently looks like this: " + System.lineSeparator();
 			for (Contact entry : entries) {
 				out += entry.toString() + System.lineSeparator();
 			}
