@@ -47,6 +47,7 @@ public class Configuration {
     private static final String[] DIRECTORY_LIST =
             {"SignatureKeys", "python", "connections", "external API"};
 
+    // TODO: correct handling of potentially corrupt file?
     /**
      * Utility method to check whether the properties file is at the expected place
      * Creates an empty properties file if not existent
@@ -71,18 +72,10 @@ public class Configuration {
             }
         } else {
             createConfigFile();
+            basePath = LOCAL_PATH;
+            setProperty(PATH_CONFIG_NAME, basePath);
             return false;
         }
-    }
-
-    /**
-     * Method to change the base path, where all the folders and other data should be placed
-     * @param absolutePath the new base path as a String of the absolute path
-     * @return true if it worked, false if not or error
-     */
-    public static boolean changeBasePath (String absolutePath) {
-        basePath = absolutePath;
-        return setProperty(PATH_CONFIG_NAME, basePath);
     }
 
     /**
@@ -97,7 +90,32 @@ public class Configuration {
     }
 
     /**
-     * Creates all the program folders listed in the class variable
+     * Method to change the base path, where all the folders and other data should be placed
+     * Calls the createFolders method for creating the folders in the new location
+     * @param absolutePath the new base path as a String of the absolute path
+     * @return true if it worked, false if not or error
+     */
+    public static boolean changeBasePath (String absolutePath) {
+        if (!Files.exists(Path.of(absolutePath))) {
+            System.err.println("Error while changing the base path: directory/file does not exist.");
+            return false;
+        } else if (!Files.isDirectory(Path.of(absolutePath))) {
+            System.err.println("Error while changing the base path: path is not a directory.");
+            return false;
+        } else {
+            if (absolutePath.endsWith(File.separator)) {
+                basePath = absolutePath;
+            } else {
+                basePath = absolutePath + File.separator;
+            }
+            createFolders();
+            return setProperty(PATH_CONFIG_NAME, basePath);
+        }
+    }
+
+    /**
+     * Creates all the program folders listed in the class variable,
+     * if they do not exist already
      * @return true if it worked or the folders existed already, false if error
      */
     public static boolean createFolders () {
@@ -141,7 +159,8 @@ public class Configuration {
     /**
      * Method to get the property value for the given property key
      * @param propertyKey the key for the desired value as String
-     * @return the property for the key as String
+     * @return the property for the key as String,
+     *         null if not there or error
      */
     public static String getProperty (String propertyKey) {
         try {
