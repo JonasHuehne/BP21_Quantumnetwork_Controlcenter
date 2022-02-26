@@ -44,7 +44,7 @@ public class QuantumnetworkControllcenter {
 		}
 		
 		//Network Connection Init
-		String localIP = "127.0.0.1";//Will be part of the Settings/Properties
+		String localIP = "192.168.0.73";//Will be part of the Settings/Properties
 		int localPort = 5000;//Will be part of the Settings/Properties
 		conMan = new ConnectionManager(localIP, localPort);
 		MessageSystem.conMan = conMan;
@@ -107,7 +107,17 @@ public class QuantumnetworkControllcenter {
 		}
 		System.out.println("--------------------------------------------------------------------------------------------");
 		System.out.println("---Creating new connection Endpoint. It will try to connect to a target Server directly.---");
-		ConnectionEndpoint ce1 = conMan.createNewConnectionEndpoint("ce1", "127.0.0.1", 5000);
+		ConnectionEndpoint ce1 = conMan.createNewConnectionEndpoint("ce1", "192.168.0.52", 4000);
+		
+		try {
+			TimeUnit.SECONDS.sleep(8);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		System.out.println("--------------------------------------------------------------------------------------------");
+		System.out.println("---Creating 2nd new connection Endpoint. It will try to connect to a target Server directly.---");
+		ConnectionEndpoint ce2 = conMan.createNewConnectionEndpoint("ce2", "192.168.0.52", 4000);
 		
 	}
 

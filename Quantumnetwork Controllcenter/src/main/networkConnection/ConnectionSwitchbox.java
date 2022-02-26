@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import frame.QuantumnetworkControllcenter;
+import messengerSystem.MessageSystem;
 
 public class ConnectionSwitchbox implements Runnable{
 	
@@ -56,7 +57,7 @@ public class ConnectionSwitchbox implements Runnable{
 					System.out.println("Waiting to accept incoming Connections on Port "+ port +"...");
 					ConnectionEndpointServerHandler cESH = new ConnectionEndpointServerHandler(newClientSocket = masterServerSocket.accept());
 					cESH.start();
-					serverThreads.put("tmpName", cESH);
+					serverThreads.put("tmpName" + MessageSystem.generateRandomMessageID(), cESH);
 					System.out.println("---MasterServer has received a connection attempt!---");
 					System.out.println("---MasterServer is adding new InputStream.---");
 				
