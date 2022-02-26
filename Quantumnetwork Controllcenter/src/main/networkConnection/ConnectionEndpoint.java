@@ -90,7 +90,7 @@ public class ConnectionEndpoint implements Runnable{
 		
 		//Wait for greeting
 		//System.out.println("[" + connectionID + "]: Waiting for Greeting from connecting Party");
-		//listenForMessage();
+		listenForMessage();
 	}
 	
 	//Used for conEst

@@ -153,7 +153,7 @@ public class MessageSystem {
 	 * The ID is a 16 alpha-numerical characters long String. (a-z,A-Z,0-9)
 	 * @return the new random MessageID
 	 */
-	private static String generateRandomMessageID() {
+	public static String generateRandomMessageID() {
 		Random randomGen = new Random();
 	    return randomGen.ints(48, 123).filter(i -> (i<=57||i>=65) && (i<=90||i>=97)).limit(16).collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
 	}
