@@ -7,6 +7,7 @@ import messengerSystem.Authentication;
 import messengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
+import networkConnection.TransmissionTypeEnum;
 import ui.ConsoleUI;
 import java.awt.EventQueue;
 import java.io.IOException;
@@ -44,7 +45,7 @@ public class QuantumnetworkControllcenter {
 		}
 		
 		//Network Connection Init
-		String localIP = "192.168.0.73";//Will be part of the Settings/Properties
+		String localIP = "127.0.0.1";//Will be part of the Settings/Properties
 		int localPort = 5000;//Will be part of the Settings/Properties
 		conMan = new ConnectionManager(localIP, localPort);
 		MessageSystem.conMan = conMan;
@@ -98,7 +99,6 @@ public class QuantumnetworkControllcenter {
 		communicationList.insert("TestNameAlice", "127.0.0.1", 2300, "testSig01");
 		communicationList.insert("TestNameBob", "127.0.0.2", 3300, "testSig02");
 		communicationList.insert("TestNameCharlie", "127.0.0.3", 4300, "testSig03");
-		*/
 		try {
 			TimeUnit.SECONDS.sleep(2);
 		} catch (InterruptedException e) {
@@ -108,6 +108,16 @@ public class QuantumnetworkControllcenter {
 		System.out.println("--------------------------------------------------------------------------------------------");
 		System.out.println("---Creating new connection Endpoint. It will try to connect to a target Server directly.---");
 		ConnectionEndpoint ce1 = conMan.createNewConnectionEndpoint("ce1", "192.168.0.52", 4000);
+
+		try {
+			TimeUnit.SECONDS.sleep(4);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		ce1.pushMessage(TransmissionTypeEnum.TRANSMISSION, "", MessageSystem.stringToByteArray("123 Testnachricht über neue Verbindung"), "");
+		
 		
 		try {
 			TimeUnit.SECONDS.sleep(8);
@@ -119,6 +129,24 @@ public class QuantumnetworkControllcenter {
 		System.out.println("---Creating 2nd new connection Endpoint. It will try to connect to a target Server directly.---");
 		ConnectionEndpoint ce2 = conMan.createNewConnectionEndpoint("ce2", "192.168.0.52", 4000);
 		
+		try {
+			TimeUnit.SECONDS.sleep(4);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		ce1.pushMessage(TransmissionTypeEnum.TRANSMISSION, "", MessageSystem.stringToByteArray("ABC Testnachricht über alte Verbindung"), "");
+		
+		try {
+			TimeUnit.SECONDS.sleep(4);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		ce2.pushMessage(TransmissionTypeEnum.TRANSMISSION, "", MessageSystem.stringToByteArray("1212 Letzte Testnachricht über das Netzwerk."), "");
+		*/
 	}
 
 

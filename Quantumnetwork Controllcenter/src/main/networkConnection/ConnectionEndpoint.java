@@ -39,11 +39,10 @@ public class ConnectionEndpoint implements Runnable{
 	private int localServerPort;	//the Port of the local Server that other Endpoints can send Messages to.
 	public Socket localClientSocket;	// connects to another Endpoints Serversocket.
 	private Socket remoteClientSocket;	// another Endpoints ClientSocket that messaged out local Server Socket	
-	private String remoteID;	//the IP of the connected Endpoint
+	private String remoteIP;	//the IP of the connected Endpoint
 	private int remotePort;		//the Port of the connected Endpoint
 	
 	//Communication Channels
-	private ObjectInputStream serverIn;	//the incoming channel that information from other ConnectionEndpoints is received on.
 	private ObjectOutputStream clientOut;	//the outgoing channel that information from this ConnectionEndpoint is sent to another.
 	private ObjectInputStream clientIn;
 	
@@ -54,7 +53,6 @@ public class ConnectionEndpoint implements Runnable{
 	private boolean waitingForConnection = false;
 	private boolean waitingForMessage = false;
 	
-	private ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();	//executor used to run waitForConnection() in parallel.
 	private Thread messageThread = new Thread(this, connectionID + "_messageThread");	//a parallel thread used to listen for incoming messages while connected to another ConnectionEndpoint.
 	
 	private LinkedList<NetworkPackage> messageStack = new LinkedList<NetworkPackage>();	//this is where received messages are stored in order of reception and are read from via MessageSystems.readReceivedMessage
@@ -69,7 +67,7 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	
 	//Use for conResp
-	public ConnectionEndpoint(String connectionName, String localAddress, Socket localSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn) {
+	public ConnectionEndpoint(String connectionName, String localAddress, Socket localSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, int targetPort) {
 		connectionID = connectionName;
 		keyGen = new KeyGenerator(connectionID);
 		this.localAddress = localAddress;
@@ -80,6 +78,8 @@ public class ConnectionEndpoint implements Runnable{
 		localClientSocket = localSocket;
 		clientOut = streamOut;
 		clientIn = streamIn;
+		remoteIP = targetIP;
+		remotePort = targetPort;
 		System.out.println("+++CE "+ connectionID +" received Socket and Streams!+++");
 		
 		waitingForConnection = false;
@@ -87,30 +87,30 @@ public class ConnectionEndpoint implements Runnable{
 		
 		System.out.println("+++CE "+ connectionID +" is sending a message back!+++");
 		pushMessage(TransmissionTypeEnum.TRANSMISSION, "", MessageSystem.stringToByteArray("Hallo, dies ist eine Nachricht von dem automatisch generierten CE zurück zu dem CE der die Verbindung aufgebaut hat!"), "");
-		
+		QuantumnetworkControllcenter.guiWindow.createConnectionRepresentation(connectionName, remoteIP, remotePort);
 		//Wait for greeting
 		//System.out.println("[" + connectionID + "]: Waiting for Greeting from connecting Party");
 		listenForMessage();
 	}
 	
 	//Used for conEst
-	public ConnectionEndpoint(String connectionName, String localAddress, String targetIP, int targetPort) {
+	public ConnectionEndpoint(String connectionName, String targetIP, int targetPort) {
 		System.out.println("---A new CE has been created! I am named: "+ connectionName +" and my own IP is: "+ localAddress +" and I am going to connect to :"+ targetIP+":"+targetPort +".--");
 		connectionID = connectionName;
 		keyGen = new KeyGenerator(connectionID);
-		this.localAddress = localAddress;
+
 		localServerSocket = QuantumnetworkControllcenter.conMan.getConnectionSwitchbox().getMasterServerSocket();
 		localServerPort = QuantumnetworkControllcenter.conMan.getConnectionSwitchbox().getMasterServerPort();
 		System.out.println("---Synced localServerSocket in Endpoint of " + connectionID + " to MasterServerSocket at Port " + String.valueOf(localServerPort)+"---");
 		
-		remoteID = targetIP;
+		remoteIP = targetIP;
 		remotePort = targetPort;
 
 		try {
 
 			establishConnection(targetIP, targetPort);
 		} catch (IOException e) {
-			System.err.println("Error occured while establishing a connection from " + connectionID + " to target ServerSocket @ " + remoteID + ":" + remotePort + ".");
+			System.err.println("Error occured while establishing a connection from " + connectionID + " to target ServerSocket @ " + remoteIP + ":" + remotePort + ".");
 			e.printStackTrace();
 		}
 		/**
@@ -203,7 +203,7 @@ public class ConnectionEndpoint implements Runnable{
 	 * @return the ip this ConnectionEndpoint is connected to.
 	 */
 	public String getRemoteAddress() {
-		return remoteID;
+		return remoteIP;
 	}
 	
 	/**Works just like getRemoteAddress() but returns the port this ConnectionEndpoint is currently connected to.
@@ -232,23 +232,23 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public void establishConnection(String targetServerIP, int targetServerPort) throws IOException {
 		if(isConnected) {
-			System.out.println("Warning: " + connectionID + " is already connected to " + remoteID + " at Port " + String.valueOf(remotePort) + "! Connection creation aborted!");
+			System.out.println("Warning: " + connectionID + " is already connected to " + remoteIP + " at Port " + String.valueOf(remotePort) + "! Connection creation aborted!");
 			return;
 		}
 		System.out.println("[" + connectionID + "]: Attempting to connect " + connectionID + " to: " + targetServerIP + " on port " + String.valueOf(targetServerPort) + "!");
 
 		isBuildingConnection = true;
-		remoteID = targetServerIP;
+		remoteIP = targetServerIP;
 		remotePort = targetServerPort;
 		
 		//Try to connect to other Server
 		try {
 			//Connecting own Client Socket to foreign Server Socket
-			localClientSocket = new Socket(remoteID,remotePort);
+			localClientSocket = new Socket(remoteIP,remotePort);
 			clientOut = new ObjectOutputStream(localClientSocket.getOutputStream());
 			clientIn = new ObjectInputStream(localClientSocket.getInputStream());
 			isConnected = true;
-			
+			isBuildingConnection = false;
 			//Send Message to allow foreign Endpoint to connect with us.
 			System.out.println("[" + connectionID + "]: " + connectionID + " is sending a greeting.");
 			pushMessage(TransmissionTypeEnum.CONNECTION_REQUEST, localAddress + ":::" + localServerPort, null, "");
@@ -271,7 +271,7 @@ public class ConnectionEndpoint implements Runnable{
 			if(!(localClientSocket==null)) {
 				localClientSocket.close();
 			}
-			System.err.println("[" + connectionID + "]: Connection could not be established! An Error occured while trying to reach the other party via " + remoteID + ":" + String.valueOf(remotePort));
+			System.err.println("[" + connectionID + "]: Connection could not be established! An Error occured while trying to reach the other party via " + remoteIP + ":" + String.valueOf(remotePort));
 			e.printStackTrace();
 		} catch (IOException e) {
 			isConnected = false;
@@ -309,8 +309,9 @@ public class ConnectionEndpoint implements Runnable{
 				System.err.println("[" + connectionID + "]: Shutdown of localServerSocket failed!");
 				e.printStackTrace();
 			}
-			serverIn = null;
-			localServerSocket = null;
+			
+			
+		localServerSocket = null;
 		}
 		if(localClientSocket != null) {
 			try {
@@ -450,51 +451,6 @@ public class ConnectionEndpoint implements Runnable{
 	//-------------//
 	// Server Side //
 	//-------------//	
-	
-	/**Loops non-blocking until a connection has been attempted from the outside.
-	 * Then it helps establish a two-way connection to the outside party.
-	 */
-	public void waitForConnection() {
-		//Checking if State is invalid for starting a new waiting process.
-		if(reportState() == ConnectionState.CONNECTED || reportState() == ConnectionState.CONNECTING || reportState() == ConnectionState.WAITINGFORCONNECTION) {
-			System.err.println("[" + connectionID + "]: Attempted to start a new waitForConnection-process while in invalid state: " + reportState());
-			return;
-		}
-		
-		if(waitingForConnection) {
-			System.err.println("[" + connectionID + "]: Attempted to start a new waitForConnection-process while one was still running!");
-			return;
-		}
-		waitingForConnection = true;
-		connectionExecutor.submit(() -> {
-			System.out.println("[" + connectionID + "]: " + connectionID + " is beginning to wait for a ConnectionAttempt from the outside on Port " + localServerPort + "!");
-			waitingForConnection = true;
-			while(waitingForConnection && !isConnected && !isBuildingConnection) {	
-			
-				//Try accepting ConnectionRequest;
-				try {
-					//Listen for connection attempt
-					remoteClientSocket = localServerSocket.accept();
-					System.out.println("[" + connectionID + "]: A ConnectionRequest has been received at " + connectionID + "s ServerSocket on Port " + localServerPort + "!");
-					
-					//Set ServerCommmChannels
-					serverIn = new ObjectInputStream(remoteClientSocket.getInputStream());
-					waitingForConnection = false;
-					isConnected = true;
-					
-					//Wait for greeting
-					System.out.println("[" + connectionID + "]: Waiting for Greeting from connecting Party");
-					listenForMessage();
-					
-				
-				} catch (IOException e) {
-					System.err.println("Server of ConnectionEndpoint " + connectionID + " failed to accept connection attempt!");
-					e.printStackTrace();
-				}
-			}
-			waitingForConnection = false;
-		});
-	}
 		
 	/**Waits until a message was received and then returns the message. Blocking.
 	 * 
@@ -525,13 +481,13 @@ public class ConnectionEndpoint implements Runnable{
 			case CONNECTION_REQUEST:	//This is received if another ConnectionEndpoint intents to create a connection to this one. The Greeting contains the other CEs IP and PORT to connect back to it.
 				//Parse Greeting
 				String greetingMessage = transmission.getTypeArg();
-				remoteID = greetingMessage.split(":::")[0];
+				remoteIP = greetingMessage.split(":::")[0];
 				remotePort = Integer.parseInt(greetingMessage.split(":::")[1]);
 				//System.out.println("[" + connectionID + "]: Received initial Message: " + greetingMessage);
 			
 				//Use greeting(ip:port) to establish back-connection to the ConnectionAttempt-Sources ServerSocket
-				System.out.println("[" + connectionID + "]: Connecting back to " + remoteID + " at Port: " + remotePort);
-				localClientSocket = new Socket(remoteID, remotePort);
+				System.out.println("[" + connectionID + "]: Connecting back to " + remoteIP + " at Port: " + remotePort);
+				localClientSocket = new Socket(remoteIP, remotePort);
 				clientOut = new ObjectOutputStream(localClientSocket.getOutputStream());
 				System.out.println("[" + connectionID + "]: Connection Completed!");
 				return;
@@ -604,7 +560,6 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	@Override
 	public void run() {
-		System.out.println( "[" + connectionID + "]:Starting to wait for response Message...");
 		waitingForMessage = true;
 		NetworkPackage receivedMessage;
 		while(waitingForMessage) {

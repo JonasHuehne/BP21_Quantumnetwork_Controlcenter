@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 import frame.QuantumnetworkControllcenter;
+import messengerSystem.MessageSystem;
 
 public class ConnectionEndpointServerHandler extends Thread{
 
@@ -13,9 +14,13 @@ public class ConnectionEndpointServerHandler extends Thread{
 	private ObjectOutputStream serverOut;
 	private ObjectInputStream serverIn;
 	private NetworkPackage receivedMessage;
+	private String remoteIP;
+	private int remotePort;
 	
-	ConnectionEndpointServerHandler(Socket newClientSocket) {
+	ConnectionEndpointServerHandler(Socket newClientSocket, String targetIP, int targetPort) {
 		clientSocket = newClientSocket;
+		remoteIP = targetIP;
+		remotePort = targetPort;
 	}
 	
 	public void run() {
@@ -34,7 +39,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 					if(receivedMessage.getHead() == TransmissionTypeEnum.CONNECTION_REQUEST) {
 						System.out.println("-.-Creating new CE in responce to the ConnectionRequest");
 						
-						QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ResponceCE", clientSocket, serverOut, serverIn);
+						QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ResponceCE" + MessageSystem.generateRandomMessageID(), clientSocket, serverOut, serverIn, remoteIP, remotePort);
 					}
 					
 					

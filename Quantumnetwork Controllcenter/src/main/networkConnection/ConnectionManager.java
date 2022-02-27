@@ -46,7 +46,7 @@ public class ConnectionManager {
 	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort) {
 		if(!connections.containsKey(endpointName)) {
 			System.out.println("---Received new request for a CE. Creating it now. It will connect to the Server at "+ targetIP +":"+ targetPort +".---");
-			connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, targetIP, targetPort));
+			connections.put(endpointName, new ConnectionEndpoint(endpointName, targetIP, targetPort));
 			return connections.get(endpointName);
 		}
 		System.err.println("[" + endpointName + "]: Could not create a new ConnectionEndpoint because of the Name- and Portuniqueness constraints.");
@@ -54,9 +54,9 @@ public class ConnectionManager {
 	}
 	
 	//ResponceCE
-	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, Socket clientSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn) {
+	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, Socket clientSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, int targetPort) {
 		if(!connections.containsKey(endpointName)) {
-			connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, clientSocket, streamOut, streamIn));
+			connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, clientSocket, streamOut, streamIn, targetIP, targetPort));
 			return connections.get(endpointName);
 		}
 		System.err.println("[" + endpointName + "]: Could not create a new ConnectionEndpoint because of the Name- and Portuniqueness constraints.");
@@ -159,6 +159,10 @@ public class ConnectionManager {
 	 */
 	public String getLocalAddress() {
 		return localAddress;
+	}
+	
+	public int getLocalPort() {
+		return localPort;
 	}
 
 	/**Closes a named connection if existing and open. Does not destroy the connectionEndpoint, use destroyConnectionEndpoint for that.
