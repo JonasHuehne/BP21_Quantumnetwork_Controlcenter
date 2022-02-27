@@ -34,7 +34,7 @@ import ui.ConnectionCommandHandler;
  * and if the application behaves as expected on regular inputs
  * (e.g. it is possible to send a message between two nodes with the correct command).
  * 
- * Please keep in mind that errors of the tests performed here may not neccessarily mean that 
+ * Please keep in mind that errors of the tests performed here may not necessarily mean that 
  * the {@link CommandHandler} class is broken, it could be that the methods the {@link CommandHandler} is calling are broken.
  * 
  * @author Sasha Petri
