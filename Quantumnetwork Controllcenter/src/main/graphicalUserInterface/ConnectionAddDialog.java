@@ -196,16 +196,10 @@ public class ConnectionAddDialog extends JDialog {
 							return;
 						}
 						
-						//Check if Port is taken
-						if(QuantumnetworkControllcenter.conMan.isPortInUse(Integer.valueOf(localPortTextField.getText()))) {
-							System.out.println("Warning: Port is already in use!");
-							return;
-						}
-						
 						
 						if(useManualInputRadioButton.isSelected()) {
-							System.out.println("Created new CE: " + QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(textField.getText(), Integer.valueOf(localPortTextField.getText())));
-							QuantumnetworkControllcenter.guiWindow.createConnectionRepresentation(textField.getText(), Integer.valueOf(localPortTextField.getText()), textField_2.getText(), Integer.valueOf(textField_3.getText()));
+							System.out.println("Created new CE: " + QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(textField.getText(), textField_1.getText(), Integer.valueOf(textField_2.getText())));
+							QuantumnetworkControllcenter.guiWindow.createConnectionRepresentation(textField.getText(), textField_1.getText(), Integer.valueOf(textField_2.getText()));
 						}else {
 							selectedTableRowIndex = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
 							if(selectedTableRowIndex == -1) {
@@ -218,8 +212,8 @@ public class ConnectionAddDialog extends JDialog {
 							int port = Integer.valueOf((QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedTableRowIndex, QuantumnetworkControllcenter.guiWindow.getContactDBPortIndex()).toString()));
 							String sig = QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedTableRowIndex, QuantumnetworkControllcenter.guiWindow.getContactDBSigIndex()).toString();
 							
-							System.out.println("Created new CE: " + QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(name, Integer.valueOf(localPortTextField.getText())));
-							QuantumnetworkControllcenter.guiWindow.createConnectionRepresentation(name, Integer.valueOf(localPortTextField.getText()), ip, port);
+							System.out.println("Created new CE: " + QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(name, ip, port));
+							QuantumnetworkControllcenter.guiWindow.createConnectionRepresentation(name, ip, port);
 							
 						}
 						

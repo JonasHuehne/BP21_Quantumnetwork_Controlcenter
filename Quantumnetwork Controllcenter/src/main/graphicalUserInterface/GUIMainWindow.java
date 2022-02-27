@@ -367,8 +367,11 @@ public class GUIMainWindow implements Runnable{
 	}
 	
 	
-	public void createConnectionRepresentation(String connectionName, int localPortNumber, String targetIP, int targetPort) {
+	public void createConnectionRepresentation(String connectionName, String targetIP, int targetPort) {
 		//ConnectionEndpointTemplate
+		
+		int localPortNumber = QuantumnetworkControllcenter.conMan.getLocalPort();
+		
 				JPanel ceInteractionPanel = new JPanel();
 				ceInteractionPanel.setBorder(new LineBorder(new Color(0, 0, 0)));
 				connectionEndpointVerticalBox.add(ceInteractionPanel);
