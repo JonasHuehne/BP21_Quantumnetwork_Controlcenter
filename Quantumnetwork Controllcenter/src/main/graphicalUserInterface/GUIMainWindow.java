@@ -192,8 +192,8 @@ public class GUIMainWindow implements Runnable{
 		JPanel panel_6 = new JPanel();
 		panel_2.add(panel_6, BorderLayout.NORTH);
 		
-		JButton createConnectionButton = new JButton("Prepare Connection");
-		createConnectionButton.setToolTipText("Creates a new Connection-Endpoint, but does not yet establish an actual Connection to another Endpoint.");
+		JButton createConnectionButton = new JButton("Establish Connection");
+		createConnectionButton.setToolTipText("Creates a new Connection-Endpoint, and immediately attempts to create a connection to the target.");
 		panel_6.add(createConnectionButton);
 		createConnectionButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -221,62 +221,8 @@ public class GUIMainWindow implements Runnable{
 		});
 		panel_6.add(closeConnectionButton);
 		
-		JButton establishConnectionButton = new JButton("Establish Connection");
-		establishConnectionButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				
-				//Abort if nothing is selected.
-				if(activeConnection == null) {
-					System.out.println("Warning: No Connection is selected as Active!");
-					return;
-				}
-				
-				String targetIP = ((JLabel)representedConnectionEndpoints.get(activeConnection).getComponent(4)).getText();
-				int targetPort = Integer.valueOf(((JLabel)representedConnectionEndpoints.get(activeConnection).getComponent(5)).getText());
-				
-				try {
-					QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).establishConnection(targetIP, targetPort);
-				} catch (IOException e1) {
-					System.err.println("Error: Could not establish a connection for " + activeConnection + " to " + targetIP + ":" + targetPort);
-					e1.printStackTrace();
-				}
-				
-				
-			}
-		});
-		establishConnectionButton.setToolTipText("Establishes a Connection between the local Endpoint of a Connection and a remote Endpoint of another Connection.");
-		panel_6.add(establishConnectionButton);
-		
-		JButton waitForConButton = new JButton("Wait for Con-Attempt");
-		waitForConButton.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				if(activeConnection == null) {
-					System.out.println("Warning: No Connection selected as active.");
-					return;
-				}
-				QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).waitForConnection();
-			}
-		});
-		waitForConButton.setToolTipText("This opens the active Connection for Connection-Requests from the outside.");
-		panel_6.add(waitForConButton);
-		
-		JPanel panel_3 = new JPanel();
-		panel_2.add(panel_3, BorderLayout.CENTER);
-		panel_3.setLayout(new BoxLayout(panel_3, BoxLayout.X_AXIS));
-		
-		Box verticalBox_1 = Box.createVerticalBox();
-		panel_3.add(verticalBox_1);
-		
-		JScrollPane scrollPane = new JScrollPane();
-		verticalBox_1.add(scrollPane);
-		
-		connectionEndpointVerticalBox = Box.createVerticalBox();
-		scrollPane.setViewportView(connectionEndpointVerticalBox);
-		
-		JPanel panel_7 = new JPanel();
-		verticalBox_1.add(panel_7);
-		
 		JButton GenerateKeyButton = new JButton("Encrypt Connection");
+		panel_6.add(GenerateKeyButton);
 		GenerateKeyButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
@@ -300,8 +246,19 @@ public class GUIMainWindow implements Runnable{
 			}
 		});
 		GenerateKeyButton.setToolTipText("This will start using encryption on the active connection or generate a key if one does not yet exist.");
-		panel_7.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-		panel_7.add(GenerateKeyButton);
+		
+		JPanel panel_3 = new JPanel();
+		panel_2.add(panel_3, BorderLayout.CENTER);
+		panel_3.setLayout(new BoxLayout(panel_3, BoxLayout.X_AXIS));
+		
+		Box verticalBox_1 = Box.createVerticalBox();
+		panel_3.add(verticalBox_1);
+		
+		JScrollPane scrollPane = new JScrollPane();
+		verticalBox_1.add(scrollPane);
+		
+		connectionEndpointVerticalBox = Box.createVerticalBox();
+		scrollPane.setViewportView(connectionEndpointVerticalBox);
 		
 		JPanel panel_4 = new JPanel();
 		panel_2.add(panel_4, BorderLayout.SOUTH);
