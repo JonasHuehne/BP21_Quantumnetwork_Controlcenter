@@ -2,7 +2,7 @@ package ui;
 
 import java.util.ArrayList;
 
-import communicationList.DbObject;
+import communicationList.Contact;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.SHA256withRSAAuthentication;
 
@@ -18,13 +18,13 @@ class CommunicationListCommandHandler {
 
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_ADD}.
-	 * Adds the contact described in commandArgs to the {@link main.communicationList.CommunicationList}
+	 * Adds the contact described in commandArgs to the {@link communicationList.CommunicationList}
 	 * @param commandArgs
 	 * 		commandArgs[0] is the name of the contact to add <br>
 	 * 		commandArgs[1] is the IP of the contact to add <br>
 	 * 		commandArgs[2] is the port of the contact to add
 	 * @return
-	 * 		a String describing whether or not the contact was successfully added to the {@link main.communicationList.CommunicationList}
+	 * 		a String describing whether or not the contact was successfully added to the {@link communicationList.CommunicationList}
 	 */
 	static String handleContactsAdd(String[] commandArgs) {
 		String name = commandArgs[0];
@@ -40,11 +40,11 @@ class CommunicationListCommandHandler {
 
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_REMOVE}.
-	 * Removes the contact with the given name from the {@link main.communicationList.CommunicationList}.
+	 * Removes the contact with the given name from the {@link communicationList.CommunicationList}.
 	 * @param name
 	 * 		the name of the contact to remove
 	 * @return
-	 * 		a String describing whether or not the contact was successfully remove from the {@link main.communicationList.CommunicationList}
+	 * 		a String describing whether or not the contact was successfully remove from the {@link communicationList.CommunicationList}
 	 */
 	static String handleContactsRemove(String name) {
 		boolean success = QuantumnetworkControllcenter.communicationList.delete(name);
@@ -57,7 +57,7 @@ class CommunicationListCommandHandler {
 
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_SEARCH}.
-	 * Searches for the contact with the given name in the {@link main.communicationList.CommunicationList}.
+	 * Searches for the contact with the given name in the {@link communicationList.CommunicationList}.
 	 * @param name
 	 * 		the name of the contact to search
 	 * @return
@@ -65,7 +65,7 @@ class CommunicationListCommandHandler {
 	 * 		otherwise returns a String saying that the contact could not be found
 	 */
 	static String handleContactsSearch(String name) {
-		DbObject query = QuantumnetworkControllcenter.communicationList.query(name);
+		Contact query = QuantumnetworkControllcenter.communicationList.query(name);
 		if (query == null) {
 			return "ERROR - Could not find a contact with the name \"" + name + "\" in the contact list. "+ SEE_CONSOLE;
 		} else {
@@ -75,15 +75,15 @@ class CommunicationListCommandHandler {
 	
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_SHOW}.
-	 * @return a String containing a list of all contacts in the {@link main.communicationList.CommunicationList}
+	 * @return a String containing a list of all contacts in the {@link communicationList.CommunicationList}
 	 */
 	static String handleContactsShow() {
-		ArrayList<DbObject> entries = QuantumnetworkControllcenter.communicationList.queryAll();
+		ArrayList<Contact> entries = QuantumnetworkControllcenter.communicationList.queryAll();
 		if (entries == null) {
 			return "ERROR - There was a problem with querying the database. " + SEE_CONSOLE;
 		} else {
 			String out = "";
-			for (DbObject entry : entries) {
+			for (Contact entry : entries) {
 				out += dbObjectToString(entry) + System.lineSeparator();
 			}
 			return out;
@@ -92,7 +92,7 @@ class CommunicationListCommandHandler {
 	
 	/**
 	 * Handles the execution of the command {@link Command#CONTACTS_UPDATE}.
-	 * Updates an entry in the {@link main.communicationList.CommunicationList}, as specified in commandArgs.
+	 * Updates an entry in the {@link communicationList.CommunicationList}, as specified in commandArgs.
 	 * @param commandArgs
 	 * 		commandArgs[0] is the name of the contact to update <br>
 	 * 		commandArgs[1] is one of the following Strings: "name","ip","port","pk" (not case sensitive)
@@ -113,7 +113,7 @@ class CommunicationListCommandHandler {
 		String output;
 		
 		String oldName = commandArgs[0];
-		DbObject entryToChange = QuantumnetworkControllcenter.communicationList.query(oldName);
+		Contact entryToChange = QuantumnetworkControllcenter.communicationList.query(oldName);
 		if (entryToChange == null) {
 			output = "ERROR - Could not find a contact with the name \"" + commandArgs[0] + "\" in the contact list. " + SEE_CONSOLE;
 		}
@@ -171,7 +171,7 @@ class CommunicationListCommandHandler {
 				}
 			} else { // User wishes to update the pk associated with this contact / add a pk if not present
 				String pkLocation = commandArgs[2].substring(1, commandArgs[2].length() - 1); // get the location without the "" around it
-				String pkString = SHA256withRSAAuthentication.readPublicKeyStringFromFile(pkLocation); // load the pk itself
+				String pkString = SHA256withRSAAuthentication.readKeyStringFromFile(pkLocation); // load the pk itself
 				if(pkString == null) { // If there was an error loading the pk from the file
 					output = "ERROR - Could not load the public key at location: \"" + pkLocation + "\". " + SEE_CONSOLE;
 				} else { // If the pk could be loaded, try to insert it into the database
@@ -205,7 +205,7 @@ class CommunicationListCommandHandler {
 	 */
 	static String handleShowPk(String contactName) {
 		String out;
-		DbObject contact  = QuantumnetworkControllcenter.communicationList.query(contactName);
+		Contact contact  = QuantumnetworkControllcenter.communicationList.query(contactName);
 		
 		if(contact == null) {
 			out =  "ERROR - Could not show public key of contact \"" + contactName + "\" - no such contact could be found in the communication list.";
@@ -221,10 +221,10 @@ class CommunicationListCommandHandler {
 	}
 	
 	/**
-	 * @param dbo any {@link DbObject}
+	 * @param dbo any {@link Contact}
 	 * @return a simple string representation of it, containing name, ip, port and the first few symbols of its pk if set
 	 */
-	private static String dbObjectToString(DbObject dbo) {
+	private static String dbObjectToString(Contact dbo) {
 		String out = "[Name: " + dbo.getName() + " | IP: " + dbo.getIpAddress() + " | Port: " + dbo.getPort();
 		if (dbo.getSignatureKey() == null || dbo.getSignatureKey().isBlank()) {
 			out += " | no public key set ]";

@@ -29,11 +29,22 @@ public class SQLiteCommunicationList implements CommunicationList {
      * Regex for checking the validity of the ip
      * only accepts the pattern x.x.x.x with x between 0 and 255
      */
-    private static final String CONTACT_IP_SYNTAX =
-            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
-                    "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
-                    "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\." +
-                    "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))";
+
+    private static final String CONTACT_IPV4_SYNTAX =
+            "(((([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\.){3})" +
+            "(([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))";
+
+    private static final String CONTACT_IPV6_SYNTAX =
+            "(((((\\d|[a-f]){0,4}:){0,6})" +
+            "[^.*::.*::.*])" +
+            "((((\\d|[a-f]){0,4}:)?(\\d|[a-f]){0,4})|" +
+            CONTACT_IPV4_SYNTAX + "))";
+
+    private static final String CONTACT_IPV6_WRONG_SYNTAX =
+            "((((((\\d|[a-f]){0,4}:){0,5})" +
+            "(((\\d|[a-f]){0,4}:)?(\\d|[a-f]){0,4}))[^(.*::.*)])|" +
+            "(((((\\d|[a-f]){0,4}:){0,5})[^(.*::.*)])" +
+            CONTACT_IPV4_SYNTAX + "))";
 
     private static final int MIN_PORT_NUMBER = 0;
     private static final int MAX_PORT_NUMBER = 65535;
@@ -88,7 +99,9 @@ public class SQLiteCommunicationList implements CommunicationList {
                 System.err.println("Problem with inserting data in the CommunicationList Database: \""
                         + name + "\" violates the constraints");
                 return false;
-            } else if (!Pattern.matches(CONTACT_IP_SYNTAX, ipAddress)) {
+            } else if (!Pattern.matches(CONTACT_IPV4_SYNTAX, ipAddress)
+                    && (!Pattern.matches(CONTACT_IPV6_SYNTAX, ipAddress)
+                        || Pattern.matches(CONTACT_IPV6_WRONG_SYNTAX, ipAddress))) {
                 System.err.println("Problem with inserting data in the CommunicationList Database: "
                         + "IP Address " + ipAddress + " violates the constraints");
                 return false;
@@ -182,7 +195,9 @@ public class SQLiteCommunicationList implements CommunicationList {
                 connectToDb();
             }
             // check for illegal input
-            if (!Pattern.matches(CONTACT_IP_SYNTAX, ipAddress)) {
+            if (!Pattern.matches(CONTACT_IPV4_SYNTAX, ipAddress)
+                && (!Pattern.matches(CONTACT_IPV6_SYNTAX, ipAddress)
+                    || Pattern.matches(CONTACT_IPV6_WRONG_SYNTAX, ipAddress))) {
                 System.err.println("Problem with updating data in the CommunicationList Database: "
                         + "IP Address " + ipAddress + " violates the constraints");
                 return false;
@@ -262,7 +277,7 @@ public class SQLiteCommunicationList implements CommunicationList {
      * @return a DbObject with the date of the entry, null if error
      */
     @Override
-    public DbObject query (final String name) {
+    public Contact query (final String name) {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -271,10 +286,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
-            if(rs == null) {
-                return null;
-            }
-            DbObject result = new DbObject(rs.getString("Name"), rs.getString("IPAddress"),
+            Contact result = new Contact(rs.getString("Name"), rs.getString("IPAddress"),
                     rs.getInt("Port"), rs.getString("SignatureKey"));
             rs.close();
             stmt.close();
@@ -290,7 +302,7 @@ public class SQLiteCommunicationList implements CommunicationList {
      * @return ArrayList of DbObjects for all entries in the database, null if error
      */
     @Override
-    public ArrayList<DbObject> queryAll () {
+    public ArrayList<Contact> queryAll () {
         try {
             if (connection == null || connection.isClosed()) {
                 connectToDb();
@@ -298,9 +310,9 @@ public class SQLiteCommunicationList implements CommunicationList {
             String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + TABLE_NAME;
             PreparedStatement stmt = connection.prepareStatement(sql);
             ResultSet rs = stmt.executeQuery();
-            ArrayList<DbObject> result = new ArrayList<>();
+            ArrayList<Contact> result = new ArrayList<>();
             while(rs.next()) {
-                DbObject res = new DbObject(rs.getString("Name"), rs.getString("IPAddress"),
+                Contact res = new Contact(rs.getString("Name"), rs.getString("IPAddress"),
                         rs.getInt("Port"), rs.getString("SignatureKey"));
                 result.add(res);
             }

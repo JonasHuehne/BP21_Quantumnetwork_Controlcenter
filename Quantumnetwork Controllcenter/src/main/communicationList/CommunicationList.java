@@ -63,12 +63,12 @@ public interface CommunicationList {
      * @param name the name of the entry to be returned as String
      * @return the entry as a DbObject
      */
-    DbObject query (final String name);
+    Contact query (final String name);
 
     /**
      * Method to all entries from the communication list
      * @return an ArrayList of DbObjects for the entries
      */
-    ArrayList<DbObject> queryAll ();
+    ArrayList<Contact> queryAll ();
 
 }

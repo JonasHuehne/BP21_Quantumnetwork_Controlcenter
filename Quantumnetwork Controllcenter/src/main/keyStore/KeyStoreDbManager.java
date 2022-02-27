@@ -143,6 +143,7 @@ public class KeyStoreDbManager {
      * @param key the new Key as a byte[]
      * @return True if operation was successful, false otherwise.
      */
+
     public static boolean changeKeyBuffer(String keyStreamID, byte[] key){
 
         if (!doesKeyStreamIdExist(keyStreamID)){
@@ -262,7 +263,7 @@ public class KeyStoreDbManager {
      *
      * @return True if output was displayed correctly, False otherwise
      */
-    protected static boolean selectAll(){
+    public static boolean selectAll(){
 
         try {
             String sql = "SELECT * FROM " + tableName;
@@ -353,10 +354,12 @@ public class KeyStoreDbManager {
      * @return true if operation succeeded, false otherwise
      */
     public static boolean changeKeyToUsed(String keyStreamID){
+
         if (!doesKeyStreamIdExist(keyStreamID)){
             System.err.println("Unable to update used parameter as there is no Entry with this KeyStreamID" + "\n");
             return false;
         }
+
         try {
             Connection conn = connect();
 
@@ -438,10 +441,12 @@ public class KeyStoreDbManager {
             }
             stmnt.close();
             conn.close();
+
             //System.out.println("Generating list of KeyInformation table entries was successful" + "\n");
+  
             return result;
         } catch (SQLException e) {
-            System.err.println("Generating list of all entries from KeyInformation table failed!" + "\n");
+            System.err.println("Generating list of all entries from KeyInformation table failed!");
             System.err.println(e.toString());
             return null;
         }

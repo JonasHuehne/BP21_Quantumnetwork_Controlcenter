@@ -1,12 +1,13 @@
-/.metadata/
+#Eclipse
+.classpath
+.project
+.metadata
+.settings
 
+#IntelliJ
+.idea
 
-*.project
-
-*.classpath
-
-/bin/
-
-*.class
-
-
+#Other
+bin/
+*.db
+*.pmd

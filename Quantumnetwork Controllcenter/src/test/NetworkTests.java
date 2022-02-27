@@ -1,15 +1,16 @@
+
+import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
 import org.junit.jupiter.api.Test;
-
 import messengerSystem.MessageSystem;
 import frame.QuantumnetworkControllcenter;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionState;
+import networkConnection.TransmissionTypeEnum;
 
-/**Run all tests together, do not exclude testConnectionEndpoint as it creates the conMan needed in later tests.
+/**Attention: Some tests may cause a red error message to appear in the log. Unless an exception is thrown, this is an intended byproduct of the tests
  * 
  * @author Jonas Huehne
  *
@@ -17,7 +18,7 @@ import networkConnection.ConnectionState;
 public class NetworkTests {
 	
 	QuantumnetworkControllcenter QCC = new QuantumnetworkControllcenter();
-
+	
 	
 	@Test
 	public void testConnectionEndpoints() {
@@ -57,7 +58,6 @@ public class NetworkTests {
 		
 		//Start waiting for connection
 		ce1.waitForConnection();
-		System.out.println(ce1.reportState() );
 		
 		//delay
 		try {
@@ -78,31 +78,41 @@ public class NetworkTests {
 		}
 		//Check State
 		assert(ce1.reportState() == ConnectionState.CONNECTED);		
+		
+		//test connection termination
+		QuantumnetworkControllcenter.conMan.destroyAllConnectionEndpoints();
+		assert(QuantumnetworkControllcenter.conMan.returnAllConnections().size() == 0);
 	}
 	
 	@Test
 	public void testMessageLowLevel() {
+		QuantumnetworkControllcenter.initialize();
+		QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ceTest1", 2300);
 		ConnectionEndpoint ce1 = QuantumnetworkControllcenter.conMan.getConnectionEndpoint("ceTest1");
+		QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ceTest2", 3300);
 		ConnectionEndpoint ce2 = QuantumnetworkControllcenter.conMan.getConnectionEndpoint("ceTest2");
-		//Start checking for a Message
-		ce2.listenForMessage();
-		//Send a Message
-		ce1.pushMessage("msg", "test Message 1");
+
+		ce1.waitForConnection();
+		
+		try {
+			ce2.establishConnection(QuantumnetworkControllcenter.conMan.getLocalAddress() , 2300);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+		//Send a Message directly via CE
+		ce1.pushMessage(TransmissionTypeEnum.TRANSMISSION, "", "test Message 1", "");
+		
+		//Send a Message via the connectionManager
+		QuantumnetworkControllcenter.conMan.sendMessage("ceTest1", TransmissionTypeEnum.TRANSMISSION, "", "test Message 2", "");
 		
 		//Wait
 		try {
-			TimeUnit.MILLISECONDS.sleep(250);
+			TimeUnit.MILLISECONDS.sleep(25);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		
-		//Check if Message was stored in Queue
-		assert(ce2.sizeOfMessageStack() == 1);
-		assert(ce2.sizeOfMessageStack() == 1);
-		
-		//Test against unintended access to original data.
-		ce2.getMessageStack().clear();
-		assert(ce2.sizeOfMessageStack() == 1);
 		
 		//Do the same for the ConnectionEndpointMap
 		Map<String, ConnectionEndpoint> i = QuantumnetworkControllcenter.conMan.returnAllConnections();
@@ -116,7 +126,7 @@ public class NetworkTests {
 		
 		//Wait
 		try {
-			TimeUnit.MILLISECONDS.sleep(250);
+			TimeUnit.MILLISECONDS.sleep(25);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -125,10 +135,14 @@ public class NetworkTests {
 		//Check that both connectionEndpoints are closed down.
 		assert(ce1.reportState() == ConnectionState.CLOSED);
 		assert(ce2.reportState() == ConnectionState.CLOSED);
+		
+		QuantumnetworkControllcenter.conMan.destroyAllConnectionEndpoints();
+		assert(QuantumnetworkControllcenter.conMan.returnAllConnections().size() == 0);
 	}
 	
 	@Test
 	public void testMessageHighLevel() {
+		QuantumnetworkControllcenter.initialize();
 		QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ceTest8", 4300);
 		QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ceTest9", 5300);
 		ConnectionEndpoint ce3 = QuantumnetworkControllcenter.conMan.getConnectionEndpoint("ceTest8");
@@ -142,42 +156,40 @@ public class NetworkTests {
 			e.printStackTrace();
 		}
 
-		//Test regular Messages
-		ce4.listenForMessage();
+
 		
-		MessageSystem.sendMessage("ceTest8", "Test Message 3");
-		MessageSystem.sendMessage("ceTest8", "Test Message 4");
-		MessageSystem.sendMessage("ceTest8", "Test Message 5");
+		MessageSystem.sendMessage("ceTest8", TransmissionTypeEnum.TRANSMISSION, "", "Test Message 3", "");
+		MessageSystem.sendMessage("ceTest8", TransmissionTypeEnum.TRANSMISSION, "", "Test Message 4", "");
+		MessageSystem.sendMessage("ceTest8", TransmissionTypeEnum.TRANSMISSION, "", "Test Message 5", "");
 		
 		//Wait
 		try {
-			TimeUnit.MILLISECONDS.sleep(250);
+			TimeUnit.MILLISECONDS.sleep(25);
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		assert(MessageSystem.getNumberOfPendingMessages("ceTest9") == 3);
 		//Test Message Content
 		assert(MessageSystem.previewReceivedMessage("ceTest9").getContent().equals("Test Message 3"));
 		//Test non-removing preview
 		assert(MessageSystem.previewReceivedMessage("ceTest9").getContent().equals("Test Message 3"));
 		//Test non-removing preview of latest message
-		assert(MessageSystem.previewLastReceivedMessage("ceTest9").equals("Test Message 5"));
+		assert(MessageSystem.previewLastReceivedMessage("ceTest9").getContent().equals("Test Message 5"));
 		//Test Message Read
-		assert(MessageSystem.readReceivedMessage("ceTest9").equals("Test Message 3"));
+		assert(MessageSystem.readReceivedMessage("ceTest9").getContent().equals("Test Message 3"));
 		//Test removing-reading
-		assert(MessageSystem.readReceivedMessage("ceTest9").equals("Test Message 4"));
+		assert(MessageSystem.readReceivedMessage("ceTest9").getContent().equals("Test Message 4"));
 		//Try sending confirmed Messages
-		MessageSystem.sendConfirmedMessage("ceTest8", "Confirmed Test Message 1");
-		
+		assertTrue(MessageSystem.sendConfirmedMessage("ceTest8", "Confirmed Test Message 1", ""));
 		//Check for no unintended confirmations on message stack
 		assert(MessageSystem.getNumberOfPendingMessages("ceTest8") == 0);
 		
 		//Check Message Order after confirmed Message
 		assert(MessageSystem.getNumberOfPendingMessages("ceTest9") == 2);
-		assert(MessageSystem.readReceivedMessage("ceTest9").equals("Test Message 5"));
-		assert(MessageSystem.readReceivedMessage("ceTest9").equals("Confirmed Test Message 1"));
+		assert(MessageSystem.readReceivedMessage("ceTest9").getContent().equals("Test Message 5"));
+		assert(MessageSystem.readReceivedMessage("ceTest9").getContent().equals("Confirmed Test Message 1"));
 		
 		QuantumnetworkControllcenter.conMan.destroyAllConnectionEndpoints();
 		assert(QuantumnetworkControllcenter.conMan.returnAllConnections().size() == 0);

@@ -42,6 +42,7 @@ public final class KeyStoreObject {
      * @return byte[] keyBuffer (=key) of the entry
      * This method returns t
      */
+
         public byte[] getCompleteKeyBuffer() {
             return keyBuffer;
         }
