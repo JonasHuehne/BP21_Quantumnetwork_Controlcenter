@@ -33,6 +33,17 @@ public class SHA256withRSAAuthentication implements Authentication {
     private static final String KEY_PATH = "SignatureKeys" + File.separator;
 
     /**
+     * The path to the folder for the property files, incl a file separator at the end
+     */
+    private static final String PROPERTIES_PATH = System.getProperty("user.dir")
+            + File.separator + "properties" + File.separator;
+
+    /**
+     * Name of the properties file for Strings
+     */
+    private static final String STRINGS_FILE_NAME = "strings.xml";
+
+    /**
      * Default name for generating signature key files, without file name extension
      */
     private static final String DEFAULT_KEY_FILE_NAME = "signature";
