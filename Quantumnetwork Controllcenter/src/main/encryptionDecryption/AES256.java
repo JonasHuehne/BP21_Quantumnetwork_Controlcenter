@@ -16,9 +16,16 @@ import javax.crypto.spec.IvParameterSpec;
 /**
  * Class for AES-256 encryption and decryption of Strings using the CBC Mode with a constant IV
  * 
- * @author Lukas Dentler
+ * @author Lukas Dentler, Sasha Petri
  */
 public class AES256 {
+	
+	/*
+	 * TODO: Consider throwing Exceptions instead of just returning null, e.g. when an invalid key is given as a parameter.
+	 * This makes the methods more "friendly" to handle by a caller in case an error occurs, because it allows different cases to be handled individually.
+	 * (Example Scenario: Attempt encryption with a user selected key, encryption fails and caller sees it was an InvalidKeyException.
+	 *  Caller can then tell the user what went wrong, instead of just "something went wrong".)
+	 */
 	
 	//generating constant IV
 	private static final byte[] BYTE_IV = {42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42};
@@ -26,73 +33,18 @@ public class AES256 {
 	
 	//constants
 	private static final String ALGORITHM_WITH_PADDING = "AES/CBC/PKCS5Padding";
-	private static final int KEY_LENGTH_BYTE = 32;
-	private static final int KEY_LENGTH_BIT = 256;
-	private static final String KEY_WRONG_SIZE = "An invalid key was used. Please use a key of length 256";
 	
 	/**
-	 * Encrypts the given plain text String using the AES-256 CBC algorithm and a suitable key
+	 * Encrypts the given plain text bytes using the AES-256 CBC algorithm and a suitable key
 	 * 
-	 * @param strPlaintext the plain text that should be encrypted (only UTF-8 chars are guaranteed to work)
-	 * @param strKey a bit string with 256 bits
-	 * @return A String containing the encrypted plain text, In case of an Error returns null
-	 * @throws NumberFormatException if strKey contains any other char besides 0 or 1
+	 * @param plaintext the plain text to be encrypted, may not be null
+	 * @param key SecretKey object for AES256, may not be null
+	 * @return the result of encrypting the plaintext with the given key, or null if an error occured <br>
+	 * 		   information on the error will be printed to the standard error output
 	 */
-	public static String encrypt(String strPlaintext, String strKey) {
-		
-		//checking that key has the right length
-		if(strKey.length() != KEY_LENGTH_BIT) {
-			System.err.println(KEY_WRONG_SIZE);
-			return null;
-		}
-		
-		//generating SecretKey from String
-		SecretKey key = CryptoUtility.stringToSecretKeyAES256(strKey);
-		
-		//calling encrypt with key as arg
-		return encrypt(strPlaintext, key);
-		
-	}
-	
-	/**
-	 * Encrypts the given plain text String using the AES-256 CBC algorithm and a suitable key
-	 * 
-	 * @param strPlaintext the plain text that should be encrypted (only UTF-8 chars are guaranteed to work)
-	 * @param byteKey a byte array with 256 bit (32 byte)
-	 * @return A String containing the encrypted plain text, In case of an Error returns null
-	 */
-	public static String encrypt(String strPlaintext, byte[] byteKey) {
-		
-		//checking that key has the right length
-		if(byteKey.length != KEY_LENGTH_BYTE) {
-			System.err.println(KEY_WRONG_SIZE);
-			return null;
-		}
-		
-		//generating SecretKey from byte array
-		SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
-		
-		//calling encrypt with key as arg
-		return encrypt(strPlaintext, key);
-	}
-	
-	/**
-	 * Encrypts the given plain text String using the AES-256 CBC algorithm and a suitable key
-	 * 
-	 * @param strPlaintext the plain text that should be encrypted (only UTF-8 chars are guaranteed to work)
-	 * @param key SecretKey object for AES256
-	 * @return A String containing the encrypted plain text, In case of an Error returns null
-	 */
-	public static String encrypt(String strPlaintext, SecretKey key) {
-		
-		//checking that key has the right length
-		if(key.getEncoded().length != KEY_LENGTH_BYTE) {
-			System.err.println(KEY_WRONG_SIZE);
-			return null;
-		}
-		
-		//converting plain text to byteArray
-		byte[] bytePlaintext = strPlaintext.getBytes(StandardCharsets.UTF_8);
+	public static byte[] encrypt(byte[] plaintext, SecretKey key) {
+		if (plaintext == null) throw new NullPointerException("Plaintext may not be null.");
+		if (key == null) throw new NullPointerException("Key may not be null.");
 		
 		try {
 			//get Cipher Instance
@@ -102,12 +54,8 @@ public class AES256 {
 			cipher.init(Cipher.ENCRYPT_MODE, key, IV);
 			
 			//perform encryption
-			byte[] byteCiphertext = cipher.doFinal(bytePlaintext);
-			
-			//convert cipher text to string
-			String strCiphertext = Base64.getEncoder().encodeToString(byteCiphertext);
-			
-			return strCiphertext;
+			byte[] ciphertext = cipher.doFinal(plaintext);
+			return ciphertext;
 		}
 		//printing exceptions
 		catch (InvalidKeyException e) {
@@ -125,160 +73,61 @@ public class AES256 {
 	}
 	
 	/**
-	 * Encrypts the given file using the AES-256 CBC algorithm and a suitable key
-	 * Saves the encrypted file in the given file directory
+	 * Encrypts the given plain text String using the AES-256 CBC algorithm and a suitable key
 	 * 
-	 * @param inputFile file to be encrypted
-	 * @param byteKey a byte array with 256 bit (32 byte)
-	 * @param outputFile file directory to save the encrypted file
+	 * @param strPlaintext the plain text that should be encrypted (only UTF-8 chars are guaranteed to work), may not be null
+	 * @param strKey the key used to encrypt the cipher text, must be of length 256 and contain only 0s and 1s
+	 * @return A String containing the encrypted plain text, may return null in case of an error
 	 */
-	public static void encryptFile(File inputFile, byte[] byteKey, File outputFile) {
-		
-		//checking that key has the right length
-		if(byteKey.length != KEY_LENGTH_BYTE) {
-			System.err.println(KEY_WRONG_SIZE);
-			return;
-		}
-				
-		//generating SecretKey from byte array
-		SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
-		
-		try {
-			//get Cipher Instance
-			Cipher cipher = Cipher.getInstance(ALGORITHM_WITH_PADDING);
-			
-			//initialize Cipher for encryption
-			cipher.init(Cipher.ENCRYPT_MODE, key, IV);
-			
-			//get byte array from file
-	        byte[] inputBytes = Files.readAllBytes(inputFile.toPath());	  
-	        
-	        //encrypt byte array containing data from file
-	        byte[] outputBytes = cipher.doFinal(inputBytes);
-	        
-	        //create file with encrypted data
-	        Files.write(outputFile.toPath(), outputBytes);
-	        
-		}
-		//printing exceptions
-		catch (InvalidKeyException e) {
-			System.err.println("An invalid Key was used. \n" + e.toString());
-		}
-		catch (IllegalBlockSizeException e) {
-			System.err.println("The plaintext has the wrong length. \n" + e.toString());
-		}
-		catch (Exception e) {
-			//TODO later printing exception to UI
-			System.err.println("An ERROR occured during encryption:\n" + e.toString());
-		}		
-	}
-	
-	/**
-	 * Encrypts the given file using the AES-256 CBC algorithm and a suitable key
-	 * 
-	 * @param inputFile file to be encrypted
-	 * @param byteKey a byte array with 256 bit (32 byte)
-	 * @return a byte array containing the encrypted data of inputFile, in case of an ERROR returns null
-	 */
-	public static byte[] encryptFileToByteArray(File inputFile, byte[] byteKey) {
-		//checking that key has the right length
-				if(byteKey.length != KEY_LENGTH_BYTE) {
-					System.err.println(KEY_WRONG_SIZE);
-					return null;
-				}
-						
-				//generating SecretKey from byte array
-				SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
-				
-				try {
-					//get Cipher Instance
-					Cipher cipher = Cipher.getInstance(ALGORITHM_WITH_PADDING);
-					
-					//initialize Cipher for encryption
-					cipher.init(Cipher.ENCRYPT_MODE, key, IV);
-					
-					//get byte array from file
-			        byte[] inputBytes = Files.readAllBytes(inputFile.toPath());	 
-			        
-			      //encrypt byte array containing data from file
-			        return cipher.doFinal(inputBytes);
-				}
-				//printing exceptions
-				catch (InvalidKeyException e) {
-					System.err.println("An invalid Key was used. \n" + e.toString());
-				}
-				catch (IllegalBlockSizeException e) {
-					System.err.println("The plaintext has the wrong length. \n" + e.toString());
-				}
-				catch (Exception e) {
-					//TODO later printing exception to UI
-					System.err.println("An ERROR occured during encryption:\n" + e.toString());
-				}
-				return null;
-	}
-	
-	/**
-	 * Decrypts the given cipher text String using the AES-256 CBC algorithm and the corresponding key used to encrypt the cipher text
-	 * 
-	 * @param strCiphertext the cipher text that should be decrypted as a Base64 encoded String
-	 * @param strKey the key used to encrypt the cipher text as bit string
-	 * @return A String containing the decrypted cipher text, In case of an Error returns null
-	 * @throws NumberFormatException if strKey contains any other char besides 0 or 1
-	 */
-	public static String decrypt(String strCiphertext, String strKey) {
-	
-		//checking that key has the right length
-		if(strKey.length() != KEY_LENGTH_BIT) {
-			System.err.println(KEY_WRONG_SIZE);
-			return null;
-		}
-		
+	public static String encrypt(String strPlaintext, String strKey) {
 		//generating SecretKey from String
 		SecretKey key = CryptoUtility.stringToSecretKeyAES256(strKey);
-		
-		//calling decrypt with key as arg
-		return decrypt(strCiphertext, key);
+		//calling encrypt with key as arg
+		return encrypt(strPlaintext, key);
 	}
 	
 	/**
-	 * Decrypts the given cipher text String using the AES-256 CBC algorithm and the corresponding key used to encrypt the cipher text
+	 * Encrypts the given plain text String using the AES-256 CBC algorithm and a suitable key
 	 * 
-	 * @param strCiphertext the cipher text that should be decrypted as a Base64 encoded String
-	 * @param byteKey the key used to encrypt the cipher text as byte array
-	 * @return A String containing the decrypted cipher text, In case of an Error returns null
+	 * @param strPlaintext the plain text that should be encrypted (only UTF-8 chars are guaranteed to work), may not be null
+	 * @param byteKey a byte array of size 32, may not be null
+	 * @return A String containing the encrypted plain text, may return null in case of an error
 	 */
-	public static String decrypt(String strCiphertext, byte[] byteKey) {
-		
-		//checking that key has the right length
-		if(byteKey.length != KEY_LENGTH_BYTE) {
-			System.err.println(KEY_WRONG_SIZE);
-			return null;
-		}
-		
+	public static String encrypt(String strPlaintext, byte[] byteKey) {
 		//generating SecretKey from byte array
-		SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
-		
-		//calling decrypt with key as arg
-		return decrypt(strCiphertext, key);
+		SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);	
+		//calling encrypt with key as arg
+		return encrypt(strPlaintext, key);
 	}
 	
 	/**
-	 * Decrypts the given cipher text String using the AES-256 CBC algorithm and the corresponding key used to encrypt the cipher text
+	 * Encrypts the given plain text String using the AES-256 CBC algorithm and a suitable key
 	 * 
-	 * @param strCiphertext the cipher text that should be decrypted as a Base64 encoded String
-	 * @param key SecretKey object for AES256 that was used to encrypt the cipher text
-	 * @return A String containing the decrypted cipher text, In case of an Error returns null
+	 * @param strPlaintext the plain text that should be encrypted (expected to contain only UTF-8 characters), may not be null
+	 * @param key SecretKey object for AES256, may not be null
+	 * @return A String containing the encrypted plain text, In case of an Error returns null <br>
+	 *  	   information on the error will be printed to the standard error output
 	 */
-	public static String decrypt(String strCiphertext, SecretKey key) {
+	public static String encrypt(String strPlaintext, SecretKey key) {
+		if (strPlaintext == null) throw new NullPointerException("Plaintext may not be null.");
+		if (key == null) throw new NullPointerException("Key may not be null.");
+		byte[] plaintextBytes = strPlaintext.getBytes(StandardCharsets.UTF_8);
+		byte[] ciphertextBytes = encrypt(plaintextBytes, key);
+		return Base64.getEncoder().encodeToString(ciphertextBytes);
+	}
+	
+	/**
+	 * Decrypts the given cipher text bytes using the AES-256 CBC algorithm and a suitable key
+	 * @param cipherText the ciphertext to be decrypted, may not be null
+	 * @param key SecretKey object for AES256, may not be null
+	 * @return the result of decrypting the ciphertext with the given key, or null if an error occured <br>
+	 * 		   information on the error will be printed to the standard error output
+	 */
+	public static byte[] decrypt(byte[] cipherText, SecretKey key) {
+		if (key == null) throw new NullPointerException("Key may not be null.");
+		if (cipherText == null) throw new NullPointerException("Ciphertext may not be null.");
+		if (cipherText.length == 0) throw new IllegalArgumentException("Ciphertext may not be empty.");
 		
-		//checking that key has the right length
-		if(key.getEncoded().length != KEY_LENGTH_BYTE) {
-			System.err.println(KEY_WRONG_SIZE);
-			return null;
-		}
-		
-		//converting cipher text to byteArray
-		byte[] byteCiphertext = Base64.getDecoder().decode(strCiphertext);
 		
 		try {
 			//get Cipher Instance
@@ -288,12 +137,9 @@ public class AES256 {
 			cipher.init(Cipher.DECRYPT_MODE, key, IV);		
 			
 			//perform decryption
-			byte[] bytePlaintext = cipher.doFinal(byteCiphertext);
+			byte[] bytePlaintext = cipher.doFinal(cipherText);
 			
-			//convert plain text to string
-			String strPlaintext = new String(bytePlaintext, StandardCharsets.UTF_8);
-			
-			return strPlaintext;
+			return bytePlaintext;
 		}
 		//printing exceptions
 		catch (InvalidKeyException e) {
@@ -313,95 +159,44 @@ public class AES256 {
 	}
 	
 	/**
-	 * Decrypts the given file using the AES-256 CBC algorithm and the corresponding key used to encrypt the file
-	 * Saves the decrypted file in the given file directory
+	 * Decrypts the given cipher text String using the AES-256 CBC algorithm and the corresponding key used to encrypt the cipher text
 	 * 
-	 * @param inputFile file to be decrypted
-	 * @param byteKey a byte array with 256 bit (32 byte)
-	 * @param outputFile file directory to save the decrypted file
+	 * @param strCiphertext the cipher text that should be decrypted as a Base64 encoded String, may not be null
+	 * @param strKey the key used to decrypt the cipher text, must be of length 256 and contain only 0s and 1s
+	 * @return A String containing the decrypted cipher text, In case of an Error returns null
 	 */
-	public static void decryptFile(File inputFile, byte[] byteKey, File outputFile) {
-		
-		//checking that key has the right length
-		if(byteKey.length != KEY_LENGTH_BYTE) {
-			System.err.println(KEY_WRONG_SIZE);
-			return;
-		}
-				
-		//generating SecretKey from byte array
-		SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
-		
-		try {
-			//get Cipher Instance
-			Cipher cipher = Cipher.getInstance(ALGORITHM_WITH_PADDING);
-			
-			//initialize Cipher for decryption
-			cipher.init(Cipher.DECRYPT_MODE, key, IV);
-			
-			//get byte array from file
-	        byte[] inputBytes = Files.readAllBytes(inputFile.toPath());
-	        
-	        //decrypt byte array containing file data
-	        byte[] outputBytes = cipher.doFinal(inputBytes);	  
-	        
-	        //create file with decrypted data
-	        Files.write(outputFile.toPath(), outputBytes);
-            
-		}
-		//printing exceptions
-		catch (InvalidKeyException e) {
-			System.err.println("An invalid Key was used. \n" + e.toString());
-		}
-		catch (IllegalBlockSizeException e) {
-			System.err.println("The plaintext has the wrong length. \n" + e.toString());
-		}
-		catch (Exception e) {
-			//TODO later printing exception to UI
-			System.err.println("An ERROR occured during encryption:\n" + e.toString());
-		}		
+	public static String decrypt(String strCiphertext, String strKey) {
+		// Generating SecretKey from String
+		SecretKey key = CryptoUtility.stringToSecretKeyAES256(strKey);
+		return decrypt(strCiphertext, key);
 	}
-
+	
 	/**
-	 * Decrypt the given byte array using the AES-256 CBC algorithm and the corresponding key used to encrypt it
-	 * Saves the decrypted data in the given file directory
+	 * Decrypts the given cipher text String using the AES-256 CBC algorithm and the corresponding key used to encrypt the cipher text
 	 * 
-	 * @param inputBytes byte array to decrypt
-	 * @param byteKey the key used to encrypt the cipher text as byte array
-	 * @param outputFile file directory to save the decrypted file
+	 * @param strCiphertext the cipher text that should be decrypted as a Base64 encoded String, may not be null
+	 * @param byteKey the key used to encrypt the cipher text as byte array, may not be null
+	 * @return A String containing the decrypted cipher text, In case of an Error returns null
 	 */
-	public static void decryptByteArrayToFile(byte[] inputBytes, byte[] byteKey, File outputFile) {
-		//checking that key has the right length
-			if(byteKey.length != KEY_LENGTH_BYTE) {
-				System.err.println(KEY_WRONG_SIZE);
-				return;
-			}
-					
-			//generating SecretKey from byte array
-			SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
-			
-			try {
-				//get Cipher Instance
-				Cipher cipher = Cipher.getInstance(ALGORITHM_WITH_PADDING);
-				
-				//initialize Cipher for decryption
-				cipher.init(Cipher.DECRYPT_MODE, key, IV);
-
-			    //decrypt byte array containing file data
-		        byte[] outputBytes = cipher.doFinal(inputBytes);	  
-			       
-		        //create file with decrypted data
-		        Files.write(outputFile.toPath(), outputBytes);      
-				}
-				//printing exceptions
-				catch (InvalidKeyException e) {
-					System.err.println("An invalid Key was used. \n" + e.toString());
-				}
-				catch (IllegalBlockSizeException e) {
-					System.err.println("The plaintext has the wrong length. \n" + e.toString());
-				}
-				catch (Exception e) {
-					//TODO later printing exception to UI
-					System.err.println("An ERROR occured during encryption:\n" + e.toString());
-				}		
+	public static String decrypt(String strCiphertext, byte[] byteKey) {
+		// Generating SecretKey from byte array
+		SecretKey key = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
+		return decrypt(strCiphertext, key);
 	}
+	
+	/**
+	 * Decrypts the given cipher text String using the AES-256 CBC algorithm and the corresponding key used to encrypt the cipher text
+	 * 
+	 * @param strCiphertext the cipher text that should be decrypted as a Base64 encoded String, may not be null
+	 * @param key SecretKey object for AES256 that was used to encrypt the cipher text, may not be null
+	 * @return A String containing the decrypted cipher text, In case of an Error returns null
+	 */
+	public static String decrypt(String strCiphertext, SecretKey key) {
+		if (strCiphertext == null) throw new NullPointerException("Ciphertext may not be null.");
+		if (key == null) throw new NullPointerException("Key may not be null.");
+		byte[] ciphertextBytes = Base64.getDecoder().decode(strCiphertext);
+		byte[] plaintextBytes = decrypt(ciphertextBytes, key);
+		return new String(plaintextBytes, StandardCharsets.UTF_8);
+	}
+
 }

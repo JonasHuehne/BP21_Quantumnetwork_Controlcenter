@@ -31,8 +31,7 @@ public class CryptoUtility {
 		
 		//checking that str has the right length
 		if (str.length() != BIT_STRING_LENGTH_AES256) {
-			System.out.println("Please only use 256 char long bit strings");
-			return null;
+			throw new IllegalArgumentException("Bit string must have a length of " + BIT_STRING_LENGTH_AES256 + " but was " + str.length());
 		}
 		
 		//converting bits from bitString into bytes that can be put into a byteArray
@@ -53,17 +52,13 @@ public class CryptoUtility {
 	 * @throws NumberFormatException if str contains any other char besides 0 or 1
 
 	 */
-	public static SecretKey stringToSecretKeyAES256(String str) throws NullPointerException, NumberFormatException {
-
+	public static SecretKey stringToSecretKeyAES256(String str) {
 		//checking that str has the right length
 		if (str.length() != BIT_STRING_LENGTH_AES256) {
-			System.err.println(INVALID_KEY_ERR);
-			return null;
+			throw new IllegalArgumentException("Expected length of string key argument to be " + BIT_STRING_LENGTH_AES256 + " but received a string with length " + str.length());
 		}
-		
 		//converting String to byte array
 		byte [] byteKey = bitString256ToByteArray32(str);
-		
 		//wrapping key information in SecretKey class for AES 
 		return new SecretKeySpec(byteKey, 0, byteKey.length, ALGORITHM_AES);
 	}
@@ -77,10 +72,8 @@ public class CryptoUtility {
 	 */
 	public static SecretKey byteArrayToSecretKeyAES256(byte[] bytes) {
 		if (bytes.length != BYTE_ARRAY_LENGTH_AES256) {
-			System.err.println(INVALID_KEY_ERR);
-			return null;
+			throw new IllegalArgumentException("Expected length of key byte array argument to be " + BYTE_ARRAY_LENGTH_AES256 + " but received an array with length " + bytes.length);
 		}
-		
 		//wrapping key information in SecretKey class for AES
 		return new SecretKeySpec(bytes, 0, bytes.length,ALGORITHM_AES);
 	}
