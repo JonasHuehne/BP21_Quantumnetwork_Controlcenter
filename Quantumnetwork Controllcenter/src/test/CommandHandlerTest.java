@@ -158,12 +158,6 @@ class CommandHandlerTest {
 			assertTrue(CommandHandler.processCommand(help + " " + c.getCommandName()).contains(c.getHelp()));		
 		}
 		
-		@ParameterizedTest
-		@EnumSource(Command.class)
-		void help_for_individual_commands_works(Command c) {
-			assertEquals(c.getHelp(), CommandHandler.processCommand(help + " " + c.getCommandName()));		
-		}
-		
 		@Test
 		void help_for_individual_commands_is_argument_tolerant() {
 			// "help <commandName> <args>" should work the same as "help <commandName>" regardless of <args>
