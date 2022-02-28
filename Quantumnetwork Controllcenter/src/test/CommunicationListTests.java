@@ -129,6 +129,17 @@ class CommunicationListTests {
         Assertions.assertEquals("155.155.155.155", testObject2.getIpAddress());
         Assertions.assertEquals(5, testObject2.getPort());
         Assertions.assertEquals("ABC", testObject2.getSignatureKey());
+
+        Contact testObject3 = db.query("133.133.133.133", 2);
+        Assertions.assertEquals("Name3", testObject3.getName());
+        Assertions.assertEquals("133.133.133.133", testObject3.getIpAddress());
+        Assertions.assertEquals(2, testObject3.getPort());
+        Assertions.assertEquals("GHI", testObject3.getSignatureKey());
+
+        Contact testObject4 = db.query("Namee2");
+        Assertions.assertNull(testObject4);
+        Contact testObject5 = db.query("Name2", 5);
+        Assertions.assertNull(testObject5);
     }
 
     @Test

@@ -15,6 +15,8 @@ import java.util.regex.Pattern;
  */
 public class SQLiteCommunicationList implements CommunicationList {
 
+    public static final String NO_KEY = "";
+
     private Connection connection;
 
     private static final String TABLE_NAME = "CommunicationList";
@@ -25,10 +27,8 @@ public class SQLiteCommunicationList implements CommunicationList {
      */
     private static final String CONTACT_NAME_SYNTAX = "(\\w|_|-)*";
 
-    /**
-     * Regex for checking the validity of the ip
-     * only accepts the pattern x.x.x.x with x between 0 and 255
-     */
+    // Regex for checking the validity of the ip
+    // accepts both correct ipv4 and ipv6 patterns
 
     private static final String CONTACT_IPV4_SYNTAX =
             "(((([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\.){3})" +
@@ -292,7 +292,35 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return result;
         } catch (Exception e) {
-            System.err.println("Problem with query for data in the CommunicationList Database (" + e.getMessage() + ")");
+            System.err.println("Problem with query for data in the CommunicationList Database (" + e + ")");
+            return null;
+        }
+    }
+
+    /**
+     * Method to get an entry from the communication list by IP address and port
+     * @param ipAddress the IP address of the entry to be returned as String
+     * @param port the port of the entry to be returned as int
+     * @return the entry as a DbObject
+     */
+    @Override
+    public Contact query (final String ipAddress, final int port) {
+        try {
+            if (connection == null || connection.isClosed()) {
+                connectToDb();
+            }
+            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + TABLE_NAME + " WHERE IPAddress = ? AND Port = ?";
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setString(1, ipAddress);
+            stmt.setInt(2, port);
+            ResultSet rs = stmt.executeQuery();
+            Contact result = new Contact(rs.getString("Name"), rs.getString("IPAddress"),
+                    rs.getInt("Port"), rs.getString("SignatureKey"));
+            rs.close();
+            stmt.close();
+            return result;
+        } catch (Exception e) {
+            System.err.println("Problem with query for data in the CommunicationList Database (" + e + ")");
             return null;
         }
     }

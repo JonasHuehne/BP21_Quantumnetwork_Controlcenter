@@ -66,6 +66,14 @@ public interface CommunicationList {
     Contact query (final String name);
 
     /**
+     * Method to get an entry from the communication list by IP address and port
+     * @param ipAddress the IP address of the entry to be returned as String
+     * @param port the port of the entry to be returned as int
+     * @return the entry as a DbObject
+     */
+    Contact query (final String ipAddress, final int port);
+
+    /**
      * Method to all entries from the communication list
      * @return an ArrayList of DbObjects for the entries
      */
