@@ -4,6 +4,8 @@ import static ui.CommandConstants.*;
 
 import java.util.ArrayList;
 
+import networkConnection.ConnectionState;
+
 /**
  * This enum contains the list of available console commands.
  * Each command has three attributes:
@@ -147,7 +149,7 @@ public enum Command {
 	}
 	
 	/**
-	 * Intended to be used for debug / testing purposes, for pattern matching use {@link #match(String)} if possible.
+	 * Intended to be used for debug / testing purposes, for pattern matching use {@link CommandParser#match(String)} if possible.
 	 * @return The regular expression describing this commands accepted syntax.
 	 */
 	public String getCommandPattern() {

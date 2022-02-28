@@ -68,12 +68,34 @@ public final class CommandHandler {
 				return CommunicationListCommandHandler.handleContactsUpdate(commandArgs);
 			case CONTACTS_SHOWPK:
 				return CommunicationListCommandHandler.handleShowPk(commandArgs[0]);
+						
+			// Connection Commands	
+			case CONNECTIONS_ADD:
+				return ConnectionCommandHandler.handleConnectionsAdd(commandArgs);
+			case CONNECTIONS_SHOW:
+				return ConnectionCommandHandler.handleConnectionShow();
+			case CONNECT_TO:
+				return ConnectionCommandHandler.handleConnectTo(commandArgs[0]);
+			case WAIT_FOR:
+				return ConnectionCommandHandler.handleWaitFor(commandArgs[0]);
+			case HELLO_WORLD:
+				return ConnectionCommandHandler.handleHelloWorld(commandArgs[0]);
+			case CONNECTIONS_CLOSE:
+				return ConnectionCommandHandler.handleConnectionsClose(commandArgs[0]);
+			case CONNECTIONS_REMOVE:
+				return ConnectionCommandHandler.handleConnectionsRemove(commandArgs[0]);
 			
 			// Debug Commands, not intended to be part of the final product, but useful for manual testing
 			case DEBUG_GENSIGPAIR:
 				return DebugCommandHandler.handleGenSigPair();
 			case DEBUG_SETPK:
 				return DebugCommandHandler.handleSetPk(commandArgs);
+			case DEBUG_SETUP_LOCAL_CONNECTIONS:
+				return DebugCommandHandler.handleSetUpLocalConnections();
+			case DEBUG_CLEAR_COMMLIST:
+				return DebugCommandHandler.handleClearCommList();
+			case SPAM:
+				return DebugCommandHandler.handleSpam();
 				
 			default:
 				return "ERROR - This Command is not implemented yet.";

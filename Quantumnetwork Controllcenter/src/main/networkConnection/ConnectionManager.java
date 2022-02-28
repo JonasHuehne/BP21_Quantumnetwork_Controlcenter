@@ -43,7 +43,7 @@ public class ConnectionManager {
 	 * @param portNumber the port to be checked for availability.
 	 * @return returns true if the port is being used already by any ConnectionEndpoint, false if the port is free.
 	 */
-	private boolean isPortInUse(int portNumber) {
+	public boolean isPortInUse(int portNumber) {
 		boolean isInUse = false;
 		for (ConnectionEndpoint v : connections.values()) {
 			if(v.getServerPort() == portNumber) {
@@ -87,6 +87,18 @@ public class ConnectionManager {
 		}
 		System.err.println("Warning: No Connection by the name of " + connectionName + " was found by the ConnectionManager!");
 		return null;
+	}
+	
+	/**
+	 * Checks whether the ConnectionManager contains a {@link ConnectionEndpoint} of the given name.
+	 * @param connectionName
+	 * 		name of the {@link ConnectionEndpoint} to check for
+	 * @return
+	 * 		true, if the ConnectionManager contains an endpoint of that name <br>
+	 * 		false otherwise
+	 */
+	public boolean hasConnectionEndpoint(String connectionName) {
+		return connections.containsKey(connectionName);
 	}
 	
 	/**Returns the ConnectionState of a ConnectionEndpoint given by name.

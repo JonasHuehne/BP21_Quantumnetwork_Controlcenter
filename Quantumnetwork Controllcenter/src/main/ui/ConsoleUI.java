@@ -3,12 +3,17 @@ package ui;
 
 import javax.swing.JFrame;
 import javax.swing.JTextArea;
+
+import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import javax.swing.JTextField;
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.Robot;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import javax.swing.JScrollPane;
@@ -56,7 +61,7 @@ public class ConsoleUI {
 	private void initialize() {
 		frmQuantumNetworkControl = new JFrame();
 		frmQuantumNetworkControl.setTitle(APPLICATION_TITLE);
-		frmQuantumNetworkControl.setBounds(100, 100, 677, 403);
+		frmQuantumNetworkControl.setBounds(100, 100, 1440, 720);
 		frmQuantumNetworkControl.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		// The area in which the user enters the commands
@@ -81,7 +86,7 @@ public class ConsoleUI {
 		consoleOutArea.setAutoscrolls(false);
 		consoleOutArea.setBorder(new EmptyBorder(0, 0, 0, 0));
 		consoleOutArea.setWrapStyleWord(true);
-		consoleOutArea.setText("Welcome to the Quantum Network Control Center. What would you like to do?\r\nEnter \"help\" for a list of commands.");
+		consoleOutArea.setText(INITIAL_TEXT);
 		consoleOutArea.setLineWrap(true);
 		consoleOutArea.setForeground(Color.GREEN);
 		consoleOutArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
