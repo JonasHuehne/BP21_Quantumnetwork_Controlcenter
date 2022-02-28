@@ -2,8 +2,6 @@ package ui;
 
 import java.util.ArrayList;
 
-import messengerSystem.Authentication;
-import messengerSystem.SHA256withRSAAuthentication;
 import communicationList.CommunicationList;
 import communicationList.Contact;
 import frame.QuantumnetworkControllcenter;
