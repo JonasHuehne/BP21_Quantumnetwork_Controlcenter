@@ -81,7 +81,7 @@ public class ExternalAPI {
 	/**
 	 * method to encrypt a given file in the externalAPI directory
 	 * 
-	 * @param communicationPartner name of the receiver as saved in communicationList 
+	 * @param communicationPartner name of the receiver as saved in communicationList {@link communicationList.Contact#getName()}
 	 * @param fileName name of the file to be encrypted
 	 */
 	public static void encryptFile(String communicationPartner, String fileName) {
@@ -103,7 +103,7 @@ public class ExternalAPI {
 	/**
 	 * method to decrypt a given file in the externalAPI directory
 	 * 
-	 * @param communicationPartner name of the receiver as saved in communicationList
+	 * @param communicationPartner name of the receiver as saved in communicationList {@link communicationList.Contact#getName()}
 	 * @param fileName name of the file to be decrypted
 	 */
 	public static void decryptFile(String communicationPartner, String fileName) {
@@ -130,7 +130,7 @@ public class ExternalAPI {
 	/**
 	 * sends a signed message with encrypted text from given .txt file
 	 * 
-	 * @param communicationPartner the ID of the receiver as listed in communicationList
+	 * @param communicationPartner name of the receiver as saved in communicationList {@link communicationList.Contact#getName()}
 	 * @param fileName Name of the .txt file containing the suffix ".txt"
 	 */
 	public static boolean sendEncryptedTxtFile(String communicationPartner, String fileName) {
@@ -154,7 +154,7 @@ public class ExternalAPI {
 	 * receives a signed message with encrypted text, sent from an external source.
 	 * Saves the text decrypted in a .txt file in externalAPI directory, named with the ID of the sender and current Timestamp.
 	 * 
-	 * @param communicationPartner the ID of the sender
+	 * @param communicationPartner name of the sender as saved in communicationList {@link communicationList.Contact#getName()}
 	 */
 	public static void receiveEncryptedTxtFile(String communicationPartner) {
 		Path externalPath = getExternalAPIPath();
@@ -180,7 +180,7 @@ public class ExternalAPI {
 	/**
 	 * encrypts and sends a given file from externalAPI directory 
 	 * 
-	 * @param communicationPartner the ID of the receiver
+	 * @param communicationPartner name of the receiver as saved in communicationList {@link communicationList.Contact#getName()}
 	 * @param fileName Name of the file to be sent
 	 * @return true if the file has been sent successfully, false otherwise
 	 */
@@ -193,8 +193,9 @@ public class ExternalAPI {
 	
 	/**
 	 * receives and decrypts a file sent by the specified communicationPartner and saves it in the externalAPI directory
+	 * {@link messengerSystem.MessageSystem#receiveEncryptedFileToPath(String, Path)} with externalAPI directory as Path
 	 * 
-	 * @param communicationPartner the ID of the sender
+	 * @param communicationPartner name of the sender as saved in communicationList {@link communicationList.Contact#getName()}
 	 */
 	public static void receiveEncryptedFile(String communicationPartner) {
 		Path externalPath = getExternalAPIPath();

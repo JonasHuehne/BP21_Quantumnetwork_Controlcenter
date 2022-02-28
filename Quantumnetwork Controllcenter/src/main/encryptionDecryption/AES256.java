@@ -178,7 +178,7 @@ public class AES256 {
 	 * 
 	 * @param inputFile file to be encrypted
 	 * @param byteKey a byte array with 256 bit (32 byte)
-	 * @return a byte array containing the encrypted data of inputFile 
+	 * @return a byte array containing the encrypted data of inputFile, in case of an ERROR returns null
 	 */
 	public static byte[] encryptFileToByteArray(File inputFile, byte[] byteKey) {
 		//checking that key has the right length
