@@ -247,7 +247,7 @@ public class MessageSystem {
 		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
 		byteKey = keyObject.getKeyBuffer();
 		
-		//TODO wird sp�ter vermutlich nicht mehr ben�tigt
+		//TODO wird spï¿½ter vermutlich nicht mehr benï¿½tigt
 		//marking key as used
 		KeyStoreDbManager.changeKeyToUsed(connectionID);
 		}
@@ -255,9 +255,9 @@ public class MessageSystem {
 		/*
 		 * TODO 
 		 * hier entsteht noch ziemliches durcheinander!
-		 * M�glichkeiten das sauberer zu l�sen:
-		 * - keys in der DB direct in passender L�nge speichern 
-		 * - dem folgend eine m�glichkeit den entsprechenden key als used zu markieren oder besser:
+		 * Mï¿½glichkeiten das sauberer zu lï¿½sen:
+		 * - keys in der DB direct in passender Lï¿½nge speichern 
+		 * - dem folgend eine mï¿½glichkeit den entsprechenden key als used zu markieren oder besser:
 		 * 	 beim erhalten des Keys diret als used markieren
 		 */
 		
@@ -307,7 +307,7 @@ public class MessageSystem {
 		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
 		byteKey = keyObject.getKeyBuffer();
 		
-		//TODO wird sp�ter vermutlich nicht mehr ben�tigt
+		//TODO wird spï¿½ter vermutlich nicht mehr benï¿½tigt
 		//marking key as used
 		KeyStoreDbManager.changeKeyToUsed(connectionID);
 		}
@@ -317,10 +317,10 @@ public class MessageSystem {
 		 * 
 		 * auch hier herrscht noch Durcheinander und Unklarheiten:
 		 * -wie genau wird sich auf einen key geeinigt?
-		 *  wird das �ber eine vorherige message gel�st 
-		 *  oder wird vom KeyStore eine methode implementiert bei der immer der �lteste unused key zur�ckgegeben wird?
+		 *  wird das ï¿½ber eine vorherige message gelï¿½st 
+		 *  oder wird vom KeyStore eine methode implementiert bei der immer der ï¿½lteste unused key zurï¿½ckgegeben wird?
 		 *  
-		 * Wenn sich vorher auf den key geeinigt wird muss noch ein paramete key hinzugef�gt werden!
+		 * Wenn sich vorher auf den key geeinigt wird muss noch ein paramete key hinzugefï¿½gt werden!
 		 */
 		
 		//decrypting the message and then returning it
@@ -360,19 +360,6 @@ public class MessageSystem {
 	 * @return true if the file was encrypted and sent successfully, false otherwise
 	 */
 	public static boolean sendEncryptedFile(String connectionID, Path filePath) {
-		//getting directory of connection partner
-		Path messageSystemDir = getMessageSystemPath();
-		Path connectionDir = messageSystemDir.resolve(connectionID);
-		//creating directory if it does not exist
-		if(!Files.isDirectory(connectionDir)) {
-			try {
-				Files.createDirectory(connectionDir);
-			} catch (IOException e) {
-				System.err.println(e.toString());
-				return false;
-			}
-		}
-		
 		//getting key for encryption
 		byte[] byteKey;
 		if(connectionID.equals("42debugging42") || connectionID.equals("41debugging41") ) {
@@ -383,7 +370,7 @@ public class MessageSystem {
 		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
 		byteKey = keyObject.getKeyBuffer();
 		
-		//TODO wird sp�ter vermutlich nicht mehr ben�tigt
+		//TODO wird später vermutlich nicht mehr benötigt
 		//marking key as used
 		KeyStoreDbManager.changeKeyToUsed(connectionID);
 		}
@@ -419,7 +406,7 @@ public class MessageSystem {
 		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
 		byteKey = keyObject.getKeyBuffer();
 		
-		//TODO wird sp�ter vermutlich nicht mehr ben�tigt
+		//TODO wird später vermutlich nicht mehr benötigt
 		//marking key as used
 		KeyStoreDbManager.changeKeyToUsed(connectionID);
 		}
