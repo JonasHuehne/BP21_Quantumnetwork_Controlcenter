@@ -7,6 +7,7 @@ import messengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionManager;
 import ui.ConsoleUI;
 import java.awt.EventQueue;
+import java.io.IOException;
 
 import javax.swing.UIManager;
 
@@ -29,6 +30,14 @@ public class QuantumnetworkControllcenter {
 	public static void initialize() {
 		
 		//TODO add initialization of further Classes
+
+		// Configuration Init
+		try {
+			Configuration.findProperties();
+			Configuration.createFolders();
+		} catch (IOException e) {
+			System.err.println("ERROR: Configuration failed: " + e);
+		}
 		
 		//Network Connection Init
 		String localIP = "127.0.0.1";//Must be changed manually as of right now. Use IP depending on intended communication Range (local Machine, local Network or Internet)
@@ -52,7 +61,7 @@ public class QuantumnetworkControllcenter {
 		
 
 		
-		System.out.println("Run QuantumnetworkControllCenter initialisation");
+		System.out.println("Run QuantumnetworkControllcenter initialisation");
 		
 		initialize();
 		

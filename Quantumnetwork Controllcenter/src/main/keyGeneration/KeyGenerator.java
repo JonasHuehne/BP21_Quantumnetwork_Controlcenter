@@ -10,9 +10,10 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.time.Instant;
+
+import frame.Configuration;
 import messengerSystem.MessageSystem;
 import frame.QuantumnetworkControllcenter;
 import keyStore.KeyStoreDbManager;
@@ -229,7 +230,7 @@ public class KeyGenerator implements Runnable{
 	private boolean setUpFolders() {
 		
 		//Get own root folder
-		Path currentWorkingDir = Paths.get("").toAbsolutePath();
+		Path currentWorkingDir = Path.of(Configuration.getBaseDirPath());
         //System.out.println(currentWorkingDir.normalize().toString());
         localPath = currentWorkingDir;
         

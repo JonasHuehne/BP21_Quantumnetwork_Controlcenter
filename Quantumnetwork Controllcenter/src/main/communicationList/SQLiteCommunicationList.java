@@ -1,5 +1,7 @@
 package communicationList;
 
+import frame.Configuration;
+
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -57,7 +59,7 @@ public class SQLiteCommunicationList implements CommunicationList {
         try{
             Class.forName("org.sqlite.JDBC");
 
-            String dirPath = System.getProperty("user.dir");
+            String dirPath = Configuration.getBaseDirPath();
             String dbPath = "jdbc:sqlite:" + dirPath + File.separator + "CommunicationList.db";
             connection = DriverManager.getConnection(dbPath);
 
