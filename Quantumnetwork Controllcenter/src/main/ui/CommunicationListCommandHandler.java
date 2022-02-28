@@ -180,7 +180,7 @@ class CommunicationListCommandHandler {
 				}
 			} else { // User wishes to update the pk associated with this contact / add a pk if not present
 				String pkLocation = commandArgs[2].substring(1, commandArgs[2].length() - 1); // get the location without the "" around it
-				String pkString = SHA256withRSAAuthentication.readPublicKeyStringFromFile(pkLocation); // load the pk itself
+				String pkString = SHA256withRSAAuthentication.readKeyStringFromFile(pkLocation); // load the pk itself
 				if(pkString == null) { // If there was an error loading the pk from the file
 					output = "ERROR - Could not load the public key at location: \"" + pkLocation + "\". " + SEE_CONSOLE;
 				} else { // If the pk could be loaded, try to insert it into the database

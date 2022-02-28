@@ -14,6 +14,7 @@ import java.awt.Font;
 import java.awt.Robot;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
@@ -81,6 +82,7 @@ public class ConsoleUI {
 		frmQuantumNetworkControl.getContentPane().add(scrollPane, BorderLayout.CENTER);
 		
 		consoleOutArea = new JTextArea();
+		consoleOutArea.setRequestFocusEnabled(false);
 		consoleOutArea.setAutoscrolls(false);
 		consoleOutArea.setBorder(new EmptyBorder(0, 0, 0, 0));
 		consoleOutArea.setWrapStyleWord(true);
@@ -94,26 +96,67 @@ public class ConsoleUI {
 
 		
 		consoleInArea.addKeyListener(new KeyAdapter() {
+			
+			// use this to track which keys are being pressed simultanously, allows to detect SHIFT+RIGHT
+			ArrayList<Integer> activeKeys = new ArrayList<Integer>();
+			
+			boolean lastPressWasSuggestionKey = false;
+			ArrayList<Command> suggestedCommands;
+			int suggestedCommandIndex = 0;
+			
 			@Override
 			public void keyPressed(KeyEvent e) {
-				if(e.getKeyCode() == KeyEvent.VK_ENTER) { // Attempt to parse entered command if ENTER key is pressed
-					String enteredCommand = consoleInArea.getText(); 
-					enteredCommands.addFirst(enteredCommand);
-					consoleOutArea.setText(CommandHandler.processCommand(enteredCommand));			
-					consoleInArea.setText("");
-					commandIndex = 0;
-				} else if(e.getKeyCode() == KeyEvent.VK_UP) { // If the user presses UP, replace the input area text with the previously entered command
-					if(enteredCommands.size() > commandIndex) {
-						consoleInArea.setText(enteredCommands.get(commandIndex));
-						if(commandIndex + 1 != enteredCommands.size()) commandIndex++; // If list has n elements, index may at most be (n-1)
-					} 
-				} else if(e.getKeyCode() == KeyEvent.VK_DOWN) {
-					if (commandIndex > 0) {
-						commandIndex--;
-						consoleInArea.setText(enteredCommands.get(commandIndex));
+				// Pressed Key becomes active
+				activeKeys.add(e.getKeyCode());
+				if (e.getKeyCode() != KeyEvent.VK_RIGHT) {
+					// Command Suggestion: If any key other than RIGHT is pressed, reset suggestion list first
+					lastPressWasSuggestionKey = false;
+					suggestedCommands = null;
+					// After reset, process entered key normally
+					if(e.getKeyCode() == KeyEvent.VK_ENTER) { // Attempt to parse entered command if ENTER key is pressed
+						String enteredCommand = consoleInArea.getText(); 
+						enteredCommands.addFirst(enteredCommand);
+						consoleOutArea.setText(CommandHandler.processCommand(enteredCommand));			
+						consoleInArea.setText("");
+						commandIndex = 0;
+					} else if(e.getKeyCode() == KeyEvent.VK_UP) { // If the user presses UP, replace the input area text with the previously entered command
+						if(enteredCommands.size() > commandIndex) {
+							consoleInArea.setText(enteredCommands.get(commandIndex));
+							if(commandIndex + 1 != enteredCommands.size()) commandIndex++; // If list has n elements, index may at most be (n-1)
+						} 
+					} else if(e.getKeyCode() == KeyEvent.VK_DOWN) { // Scroll down through the list of entered commands
+						if (commandIndex > 0) {
+							commandIndex--;
+							consoleInArea.setText(enteredCommands.get(commandIndex));
+						}
+					}
+				} else { // If right is pressed
+					// Start suggesting Commands / Cycle through suggestion only if SHIFT is also pressed
+					// This allow LEFT and RIGHT to still be used to navigate the text box
+					if (activeKeys.contains(KeyEvent.VK_SHIFT)) {
+						if (!lastPressWasSuggestionKey) { // If this is the first time the user presses SHIFT+RIGHT for this prefix
+							lastPressWasSuggestionKey = true;
+							suggestedCommands  = Command.suggestMatchingCommands(consoleInArea.getText());
+							suggestedCommandIndex = 0;
+						}
+						// Pressing RIGHT sets the entered command to the next command in the list 
+						consoleInArea.setText(suggestedCommands.get(suggestedCommandIndex).getCommandName());
+						// change index in a way that makes the list circular
+						if (suggestedCommandIndex == suggestedCommands.size() - 1) {
+							suggestedCommandIndex = 0;
+						} else {
+							suggestedCommandIndex++;
+						}
 					}
 				}
 			}
+			
+			@Override
+			public void keyReleased(KeyEvent e) {
+				// If a key is released, it is no longer active
+				activeKeys.removeIf(k -> k == e.getKeyCode());
+			}
+			
 		});
 		
 		

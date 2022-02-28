@@ -286,9 +286,6 @@ public class SQLiteCommunicationList implements CommunicationList {
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
-            if(rs == null) {
-                return null;
-            }
             Contact result = new Contact(rs.getString("Name"), rs.getString("IPAddress"),
                     rs.getInt("Port"), rs.getString("SignatureKey"));
             rs.close();

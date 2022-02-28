@@ -18,8 +18,8 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import communicationList.CommunicationList;
 import communicationList.Contact;
@@ -74,6 +74,14 @@ class CommandHandlerTest {
 	
 	private static ArrayList<Contact> backups;
 	
+	/*
+	 * NOTE / TODO:
+	 * Currently, these tests use the same CommunicationList that
+	 * the actual user of the program accesses. This is not optimal,
+	 * because they clear the list. Should either automatically back up the
+	 * list before peforming the tests, or implement a way to have multiple lists.
+	 */
+	
 	@BeforeAll
 	static void initialize() {
 		QuantumnetworkControllcenter.initialize();
@@ -82,7 +90,6 @@ class CommandHandlerTest {
 		
 		// back up the entries of the communication list, so that these tests don't destroy them
 		backups = commList.queryAll();
-		
 		helper_clear_commList(commList);
 	}
 	
@@ -141,8 +148,14 @@ class CommandHandlerTest {
 		
 		@Test
 		void help_help_works() {
-			assertEquals(Command.HELP.getHelp(), CommandHandler.processCommand("help help"));
-			assertEquals(Command.HELP.getHelp(), CommandHandler.processCommand("	help 	  help	")); // varying whitespace version
+			assertTrue(CommandHandler.processCommand("help help").contains(Command.HELP.getHelp()));
+			assertTrue(CommandHandler.processCommand("     help   help   ").contains(Command.HELP.getHelp()));; // varying whitespace version
+		}
+		
+		@ParameterizedTest
+		@EnumSource(Command.class)
+		void help_for_individual_commands_works(Command c) {
+			assertTrue(CommandHandler.processCommand(help + " " + c.getCommandName()).contains(c.getHelp()));		
 		}
 		
 		@ParameterizedTest
@@ -155,18 +168,26 @@ class CommandHandlerTest {
 		void help_for_individual_commands_is_argument_tolerant() {
 			// "help <commandName> <args>" should work the same as "help <commandName>" regardless of <args>
 			// This is particularly important because a user may not know the correct syntax
-			assertEquals(Command.CONTACTS_ADD.getHelp(), 	CommandHandler.processCommand(help + " " + contacts_add 	+ " name=Alexa ip=127.0.1.1 port=4444"));
-			assertEquals(Command.CONTACTS_REMOVE.getHelp(), CommandHandler.processCommand(help + " " + contacts_remove 	+ " Jamie"));
-			assertEquals(Command.CONTACTS_SHOW.getHelp(), 	CommandHandler.processCommand(help + " " + contacts_show 	+ " all"));
-			assertEquals(Command.CONTACTS_UPDATE.getHelp(), CommandHandler.processCommand(help + " " + contacts_update 	+ " name=Alexa to name=Bobbie"));
-			assertEquals(Command.CONTACTS_UPDATE.getHelp(), CommandHandler.processCommand(help + " " + contacts_update 	+ " pk Alicia remove"));
-			assertEquals(Command.CONTACTS_SEARCH.getHelp(), CommandHandler.processCommand(help + " " + contacts_search 	+ " ip=102.35.122.49"));
+			assertTrue(CommandHandler.processCommand(help + " " + contacts_add 	+ " name=Alexa ip=127.0.1.1 port=4444").contains(Command.CONTACTS_ADD.getHelp()));
+			assertTrue(CommandHandler.processCommand(help + " " + contacts_remove 	+ " Jamie").contains(Command.CONTACTS_REMOVE.getHelp()));
+			assertTrue(CommandHandler.processCommand(help + " " + contacts_show 	+ " all").contains(Command.CONTACTS_SHOW.getHelp()));
+			assertTrue(CommandHandler.processCommand(help + " " + contacts_update 	+ " name=Alexa to name=Bobbie").contains(Command.CONTACTS_UPDATE.getHelp()));
+			assertTrue(CommandHandler.processCommand(help + " " + contacts_update 	+ " pk Alicia remove").contains(Command.CONTACTS_UPDATE.getHelp()));
+			assertTrue(CommandHandler.processCommand(help + " " + contacts_search 	+ " ip=102.35.122.49").contains(Command.CONTACTS_SEARCH.getHelp()));
 		}
 		
 		@Test
 		void help_for_gibberish_outputs_no_help_can_be_provided() {
 			String out = CommandHandler.processCommand("help udvusdeujfeifeir");
 			assertTrue(out.contains("not a valid command"));
+		}
+		
+		@Test
+		void help_with_all_commands_has_short_help_for_each() {
+			String helpOutput = CommandHandler.processCommand("help");
+			for(Command c : Command.values()) {
+				assertTrue(helpOutput.contains(c.getShortHelp()));
+			}
 		}
 	}
 	
@@ -290,7 +311,7 @@ class CommandHandlerTest {
 
 			// Assert that pk was properly set
 			Contact Alicia = commList.query("Alicia");
-			assertEquals(SHA256withRSAAuthentication.readPublicKeyStringFromFile("pkForTesting_1"), Alicia.getSignatureKey());
+			assertEquals(SHA256withRSAAuthentication.readKeyStringFromFile("pkForTesting_1"), Alicia.getSignatureKey());
 
 			// Now check if pk can be deleted
 			System.out.println(CommandHandler.processCommand(contacts_update + " Alicia pk remove"));
@@ -443,6 +464,7 @@ class CommandHandlerTest {
 		}
 		
 	}
+
 
 	@Nested
 	class Test_Connection_Commands {

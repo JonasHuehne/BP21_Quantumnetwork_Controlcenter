@@ -7,6 +7,11 @@ import communicationList.Contact;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.SHA256withRSAAuthentication;
 
+/**
+ * Handles the execution of Debug Commands.
+ * Not guaranteed to work, these Commands are intended to be used by developers only.
+ * @author Sasha Petri
+ */
 public class DebugCommandHandler {
 
 	/**

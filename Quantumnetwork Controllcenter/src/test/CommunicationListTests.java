@@ -154,7 +154,7 @@ class CommunicationListTests {
         String result2 = db.query("test1").toString();
         Assertions.assertEquals("Name: test1, IP Address: 12.12.12.12, Port: 5", result2);
 
-        db.updateSignatureKey("test1", SHA256withRSAAuthentication.readPublicKeyStringFromFile("pkForTesting_1"));
+        db.updateSignatureKey("test1", SHA256withRSAAuthentication.readKeyStringFromFile("pkForTesting_1.pub"));
         String result3 = db.query("test1").toString();
         // expects 7 letters of the public key, check needs to be changed if variable in Contact is changed
         Assertions.assertEquals("Name: test1, IP Address: 12.12.12.12, Port: 5, Public Key: MIIBIjA...", result3);

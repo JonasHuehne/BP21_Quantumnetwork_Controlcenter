@@ -1,6 +1,11 @@
 package ui;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.ListIterator;
+
+import ui.CommandConstants.Category;
 
 /**
  * The purpose of this class is to process text commands (given as Strings) and execute corresponding program method.
@@ -34,7 +39,6 @@ public final class CommandHandler {
 	 * 		if the entered command is null
 	 */
 	public static String processCommand(String textCommand) throws IllegalArgumentException {
-		
 		/*
 		 *  We could just return INVALID_COMMAND here, however, if the input is null, 
 		 *  something likely went wrong enough to warrant an exception, whereas INVALID_COMMAND
@@ -94,7 +98,7 @@ public final class CommandHandler {
 				return DebugCommandHandler.handleSpam();
 				
 			default:
-				return "Not implemented yet.";
+				return "ERROR - This Command is not implemented yet.";
 		}
 	}
 	
@@ -134,12 +138,31 @@ public final class CommandHandler {
 	 */
 	private static String handleHelp(String[] commandArgs) {
 		if(commandArgs.length == 0) { // User typed just "help"
-			String availableCommands = "Available Commands: " + System.lineSeparator();
-			for (Command c : Arrays.asList(Command.values())) { // TODO Potentially add a "short help text" for each Command, either in Command or a separate enum
-				availableCommands += " " + c.getCommandName() + System.lineSeparator();
+			StringBuilder availableCommands = new StringBuilder();
+		
+			ArrayList<Command> allCommands = new ArrayList<Command>(Arrays.asList(Command.values()));
+			
+			// For each category
+			for (Category cat : CommandConstants.Category.values()) {
+				availableCommands.append(cat.getCategoryName() + ": "); // Display the name of the category
+				availableCommands.append(System.lineSeparator());
+				
+				// Display each command with its name and short helptext
+				ListIterator<Command> iterator = allCommands.listIterator();
+				while(iterator.hasNext()) {
+					Command nextCommand = iterator.next();
+					if (nextCommand.getCategory() == cat) {
+						availableCommands.append(String.format("  %-20s %s", nextCommand.getCommandName(), nextCommand.getShortHelp()));
+						availableCommands.append(System.lineSeparator());
+						iterator.remove();
+					}
+				}
+				
+				availableCommands.append(System.lineSeparator());
 			}
-			availableCommands += "Enter help <commandName> for additional information on a command";
-			return availableCommands;
+			
+			return availableCommands.toString();
+			
 		} else { // User typed "help [command]" - we don't yet know what command is, and if it is for example "contacts add" then commandArgs will be multiple args
 			// from commandArgs, construct just one String (the String representing the command the user wants help with)
 			String commandUserWantsHelpFor = "";
@@ -150,7 +173,11 @@ public final class CommandHandler {
 			if(matchedCommand == null) {
 				return commandUserWantsHelpFor + " is not a valid command, so no help can be provided for it.";
 			} else {
-				return matchedCommand.getHelp();
+				StringBuilder out = new StringBuilder();
+				out.append("Syntax: " + matchedCommand.getCommandName() + " " + matchedCommand.getHumanReadableSyntax());
+				out.append(System.lineSeparator());
+				out.append(matchedCommand.getHelp());
+				return out.toString();
 			}
 		} 
 	}
