@@ -384,7 +384,8 @@ public class MessageSystem {
 		String fileName = filePath.toFile().getName();
 		
 		boolean sentFileName = sendAuthenticatedMessage(connectionID, fileName);
-		boolean sentFile = sendFile(connectionID, byteArrayFile);
+		//TODO adjust name of sendfile
+                boolean sentFile = sendFile(connectionID, byteArrayFile);
 		
 		return sentFileName && sentFile;
 	}
@@ -414,6 +415,7 @@ public class MessageSystem {
 		String fileName = readAuthenticatedMessage(connectionID);
 		File decrypted = pathName.resolve("decrypted_" + connectionID + "_" + fileName).toFile();
 		
+                //TODO adjust name of receivefile
 		byte[] encrypted = receiveFile(connectionID);
 		
 		AES256.decryptByteArrayToFile(encrypted, byteKey, decrypted);
