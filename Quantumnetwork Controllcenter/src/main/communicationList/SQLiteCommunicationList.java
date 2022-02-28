@@ -292,7 +292,35 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return result;
         } catch (Exception e) {
-            System.err.println("Problem with query for data in the CommunicationList Database (" + e.getMessage() + ")");
+            System.err.println("Problem with query for data in the CommunicationList Database (" + e + ")");
+            return null;
+        }
+    }
+
+    /**
+     * Method to get an entry from the communication list by IP address and port
+     * @param ipAddress the IP address of the entry to be returned as String
+     * @param port the port of the entry to be returned as int
+     * @return the entry as a DbObject
+     */
+    @Override
+    public Contact query (final String ipAddress, final int port) {
+        try {
+            if (connection == null || connection.isClosed()) {
+                connectToDb();
+            }
+            String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + TABLE_NAME + " WHERE IPAddress = ? AND Port = ?";
+            PreparedStatement stmt = connection.prepareStatement(sql);
+            stmt.setString(1, ipAddress);
+            stmt.setInt(2, port);
+            ResultSet rs = stmt.executeQuery();
+            Contact result = new Contact(rs.getString("Name"), rs.getString("IPAddress"),
+                    rs.getInt("Port"), rs.getString("SignatureKey"));
+            rs.close();
+            stmt.close();
+            return result;
+        } catch (Exception e) {
+            System.err.println("Problem with query for data in the CommunicationList Database (" + e + ")");
             return null;
         }
     }
