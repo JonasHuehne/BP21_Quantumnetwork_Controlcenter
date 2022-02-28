@@ -15,6 +15,8 @@ import java.util.regex.Pattern;
  */
 public class SQLiteCommunicationList implements CommunicationList {
 
+    public static final String NO_KEY = "";
+
     private Connection connection;
 
     private static final String TABLE_NAME = "CommunicationList";
@@ -25,10 +27,8 @@ public class SQLiteCommunicationList implements CommunicationList {
      */
     private static final String CONTACT_NAME_SYNTAX = "(\\w|_|-)*";
 
-    /**
-     * Regex for checking the validity of the ip
-     * only accepts the pattern x.x.x.x with x between 0 and 255
-     */
+    // Regex for checking the validity of the ip
+    // accepts both correct ipv4 and ipv6 patterns
 
     private static final String CONTACT_IPV4_SYNTAX =
             "(((([0-1]?\\d{1,2})|([2](([0-4]\\d?)|(5[0-5]))))\\.){3})" +
