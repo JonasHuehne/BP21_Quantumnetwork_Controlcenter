@@ -1,8 +1,10 @@
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
 import communicationList.Contact;
+import frame.Configuration;
 import messengerSystem.SHA256withRSAAuthentication;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import org.junit.jupiter.api.AfterEach;
@@ -21,6 +23,12 @@ class CommunicationListTests {
     @BeforeEach
     // only works if no problem with delete and queryAll
     void setup() {
+        try {
+            Configuration.findProperties();
+            Configuration.createFolders();
+        } catch (IOException e) {
+            System.err.println("Error during test setup: " + e);
+        }
         db = new SQLiteCommunicationList();
         ArrayList<Contact> entries = db.queryAll();
         for (Contact e : entries) {

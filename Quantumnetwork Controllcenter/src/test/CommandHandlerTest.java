@@ -304,14 +304,14 @@ class CommandHandlerTest {
 		void contacts_update_works_for_pks() {
 			commList.insert("Alicia", "127.0.0.1", 1111, NO_KEY);
 
-			CommandHandler.processCommand(contacts_update + " Alicia pk \"pkForTesting_1\"");
+			CommandHandler.processCommand(contacts_update + " Alicia pk \"pkForTesting_1.pub\"");
 
 			// Assert that # of entries, Name, IP and Port remain unchanged
 			helper_Alicia_did_not_change();
 
 			// Assert that pk was properly set
 			Contact Alicia = commList.query("Alicia");
-			assertEquals(SHA256withRSAAuthentication.readKeyStringFromFile("pkForTesting_1"), Alicia.getSignatureKey());
+			assertEquals(SHA256withRSAAuthentication.readKeyStringFromFile("pkForTesting_1.pub"), Alicia.getSignatureKey());
 
 			// Now check if pk can be deleted
 			System.out.println(CommandHandler.processCommand(contacts_update + " Alicia pk remove"));
