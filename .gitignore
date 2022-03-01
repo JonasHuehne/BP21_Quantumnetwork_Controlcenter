@@ -11,3 +11,4 @@
 bin/
 *.db
 *.pmd
+config.xml

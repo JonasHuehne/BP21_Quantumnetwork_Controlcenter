@@ -1,5 +1,7 @@
 package keyStore;
 
+import frame.Configuration;
+
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -33,10 +35,10 @@ public class KeyStoreDbManager {
         try {
             Class.forName("org.sqlite.JDBC");
 
-            // find project directory to store new Database correctly
-            String currentPath = System.getProperty("user.dir");
+            // get base directory from the configuration to store new Database correctly
+            String currentPath = Configuration.getBaseDirPath();
 
-            con = DriverManager.getConnection("jdbc:sqlite:" + currentPath + File.separator + dataBaseName); // connect to our db
+            con = DriverManager.getConnection("jdbc:sqlite:" + currentPath + dataBaseName); // connect to our db
             //System.out.println("Connection to database was succesfull!");
 
         } catch (ClassNotFoundException | SQLException e) {

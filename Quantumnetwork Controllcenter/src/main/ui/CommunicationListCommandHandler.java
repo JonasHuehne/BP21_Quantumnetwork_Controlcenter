@@ -48,7 +48,7 @@ class CommunicationListCommandHandler {
 	 * @param name
 	 * 		the name of the contact to remove
 	 * @return
-	 * 		a String describing whether or not the contact was successfully remove from the {@link Database}
+	 * 		a String describing whether or not the contact was successfully remove from the {@link CommunicationList}
 	 */
 	protected static String handleContactsRemove(String name) {
 		boolean success = communicationList.delete(name);

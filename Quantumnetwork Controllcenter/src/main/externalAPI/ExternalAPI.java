@@ -8,6 +8,8 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import javax.crypto.SecretKey;
+
+import frame.Configuration;
 import keyStore.KeyStoreDbManager;
 import messengerSystem.MessageSystem;
 
@@ -67,7 +69,7 @@ public class ExternalAPI {
 	 * @return Path of the externalAPI directory, returns null if externalAPI directory does not exist
 	 */
 	private static Path getExternalAPIPath() {
-		Path currentWorkingDir = Paths.get("").toAbsolutePath();
+		Path currentWorkingDir = Path.of(Configuration.getBaseDirPath());
 		Path externalPath = currentWorkingDir.resolve("externalAPI");
 		if(!Files.isDirectory(externalPath)) {
 			System.err.println("Error, could not find the externalAPI folder, expected: " + externalPath.normalize());

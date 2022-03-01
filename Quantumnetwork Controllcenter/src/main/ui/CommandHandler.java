@@ -90,11 +90,11 @@ public final class CommandHandler {
 				return DebugCommandHandler.handleGenSigPair();
 			case DEBUG_SETPK:
 				return DebugCommandHandler.handleSetPk(commandArgs);
-			case DEBUG_SETUP_LOCAL_CONNECTIONS:
+			case DEBUG_SETUP_LOCAL_CONS:
 				return DebugCommandHandler.handleSetUpLocalConnections();
 			case DEBUG_CLEAR_COMMLIST:
 				return DebugCommandHandler.handleClearCommList();
-			case SPAM:
+			case DEBUG_SPAM:
 				return DebugCommandHandler.handleSpam();
 				
 			default:

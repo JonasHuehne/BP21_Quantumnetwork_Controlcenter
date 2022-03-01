@@ -1,5 +1,6 @@
 
 import communicationList.Contact;
+import frame.Configuration;
 import messengerSystem.SHA256withRSAAuthentication;
 import messengerSystem.MessageSystem;
 import frame.QuantumnetworkControllcenter;
@@ -21,9 +22,12 @@ import java.util.ArrayList;
  */
 class AuthenticationTests {
 
+    private static String currentPath;
+
     @BeforeEach
     void setup () {
         QuantumnetworkControllcenter.initialize();
+        currentPath = Configuration.getBaseDirPath();
     }
 
     @AfterEach
@@ -40,33 +44,13 @@ class AuthenticationTests {
     class testUtilityAndSignatureKeyGeneration {
 
         @Test
-        void testPropertiesInteraction() throws IOException {
-            // Test works because of the setup, otherwise needs to call constructor of SHA256withRSAAuthentication
-            boolean result1 = Files.exists(Path.of(System.getProperty("user.dir") + File.separator + "properties" + File.separator + "strings.xml"));
-            Assertions.assertTrue(result1);
-
-            String result2 = Files.readString(Path.of(System.getProperty("user.dir") + File.separator + "properties" + File.separator + "strings.xml"));
-            Assertions.assertNotNull(result2);
-            boolean result3 = result2.startsWith("<?xml");
-            Assertions.assertTrue(result3);
-
-            boolean result4 = SHA256withRSAAuthentication.deleteSignatureKey("");
-            Assertions.assertTrue(result4);
-
-            boolean result5 = SHA256withRSAAuthentication.deleteSignatureKeys();
-            Assertions.assertTrue(result5);
-        }
-
-        @Test
         void testSignatureKeyGeneration() {
             // test generation
             boolean result1 = SHA256withRSAAuthentication.generateSignatureKeyPair();
             Assertions.assertTrue(result1);
-            boolean result2 = Files.exists(Path.of(System.getProperty("user.dir")
-                    + File.separator + "SignatureKeys" + File.separator + "signature.key"));
+            boolean result2 = Files.exists(Path.of(currentPath + "SignatureKeys" + File.separator + "signature.key"));
             Assertions.assertTrue(result2);
-            boolean result3 = Files.exists(Path.of(System.getProperty("user.dir")
-                    + File.separator + "SignatureKeys" + File.separator + "signature.pub"));
+            boolean result3 = Files.exists(Path.of(currentPath + "SignatureKeys" + File.separator + "signature.pub"));
             Assertions.assertTrue(result3);
 
             // test method behaviour while file name exists already depending on overwrite
@@ -78,46 +62,39 @@ class AuthenticationTests {
             // test creation with all params as false
             boolean result6 = SHA256withRSAAuthentication.generateSignatureKeyPair("signatureTest", false, false, false);
             Assertions.assertTrue(result6);
-            boolean result7 = Files.exists(Path.of(System.getProperty("user.dir")
-                    + File.separator + "SignatureKeys" + File.separator + "signatureTest.key"));
+            boolean result7 = Files.exists(Path.of(currentPath + "SignatureKeys" + File.separator + "signatureTest.key"));
             Assertions.assertTrue(result7);
-            boolean result8 = Files.exists(Path.of(System.getProperty("user.dir")
-                    + File.separator + "SignatureKeys" + File.separator + "signatureTest.pub"));
+            boolean result8 = Files.exists(Path.of(currentPath + "SignatureKeys" + File.separator + "signatureTest.pub"));
             Assertions.assertTrue(result8);
 
             // test correct deletion of current signature keys (meaning correct ones stayed as set in block above
             boolean result9 = SHA256withRSAAuthentication.deleteSignatureKeys();
             Assertions.assertTrue(result9);
-            boolean result10 = Files.exists(Path.of(System.getProperty("user.dir")
-                    + File.separator + "SignatureKeys" + File.separator + "signature.key"));
+            boolean result10 = Files.exists(Path.of(currentPath + "SignatureKeys" + File.separator + "signature.key"));
             Assertions.assertFalse(result10);
-            boolean result11 = Files.exists(Path.of(System.getProperty("user.dir")
-                    + File.separator + "SignatureKeys" + File.separator + "signature.pub"));
+            boolean result11 = Files.exists(Path.of(currentPath + "SignatureKeys" + File.separator + "signature.pub"));
             Assertions.assertFalse(result11);
 
             // set the other key as private key, test that only this one gets deleted and the other with the same name but different extension stays
-            boolean result12 = SHA256withRSAAuthentication.setPrivateKey("signatureTest.key", true);
+            boolean result12 = SHA256withRSAAuthentication.setPrivateKey("signatureTest.key");
             Assertions.assertTrue(result12);
             boolean result13 = SHA256withRSAAuthentication.deleteSignatureKeys();
             Assertions.assertTrue(result13);
-            boolean result14 = Files.exists(Path.of(System.getProperty("user.dir")
-                    + File.separator + "SignatureKeys" + File.separator + "signatureTest.key"));
+            boolean result14 = Files.exists(Path.of(currentPath + "SignatureKeys" + File.separator + "signatureTest.key"));
             Assertions.assertFalse(result14);
-            boolean result15 = Files.exists(Path.of(System.getProperty("user.dir")
-                    + File.separator + "SignatureKeys" + File.separator + "signatureTest.pub"));
+            boolean result15 = Files.exists(Path.of(currentPath + "SignatureKeys" + File.separator + "signatureTest.pub"));
             Assertions.assertTrue(result15);
 
             // test deletion of just one specific signature key
             boolean result16 = SHA256withRSAAuthentication.deleteSignatureKey("signatureTest.pub");
             Assertions.assertTrue(result16);
-            boolean result17 = Files.exists(Path.of(System.getProperty("user.dir")
-                    + File.separator + "SignatureKeys" + File.separator + "signatureTest.pub"));
+            boolean result17 = Files.exists(Path.of(currentPath + "SignatureKeys" + File.separator + "signatureTest.pub"));
             Assertions.assertFalse(result17);
 
             // test setPrivateKey und setPublicKey with a nonexistent file
-            boolean result18 = SHA256withRSAAuthentication.setPrivateKey("somethingThatIsNotThere.key", false);
+            boolean result18 = SHA256withRSAAuthentication.setPrivateKey("somethingThatIsNotThere.key");
             Assertions.assertFalse(result18);
-            boolean result19 = SHA256withRSAAuthentication.setPublicKey("somethingThatIsNotThere.pub", false);
+            boolean result19 = SHA256withRSAAuthentication.setPublicKey("somethingThatIsNotThere.pub");
             Assertions.assertFalse(result19);
         }
 
@@ -163,10 +140,10 @@ class AuthenticationTests {
             Assertions.assertNotNull(result1);
             SHA256withRSAAuthentication.deleteSignatureKeys();
 
-            SHA256withRSAAuthentication.setPrivateKey("test_private_key.pem", true);
+            SHA256withRSAAuthentication.setPrivateKey("test_private_key.pem");
             String result2 = QuantumnetworkControllcenter.authentication.sign("Hello");
             Assertions.assertNotNull(result2);
-            SHA256withRSAAuthentication.setPrivateKey("", true);
+            SHA256withRSAAuthentication.setPrivateKey("");
         }
 
         @Test
