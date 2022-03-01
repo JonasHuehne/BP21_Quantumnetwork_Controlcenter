@@ -7,11 +7,7 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.LinkedList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import frame.QuantumnetworkControllcenter;
 import keyGeneration.KeyGenerator;
@@ -35,7 +31,6 @@ public class ConnectionEndpoint implements Runnable{
 	
 	//Addresses, Sockets and Ports
 	private String localAddress;	//the own IP
-	private ServerSocket localServerSocket; // our own Endpoint that listens on a port and waits for a connection Request from another Endpoints ClientSocket.
 	private int localServerPort;	//the Port of the local Server that other Endpoints can send Messages to.
 	public Socket localClientSocket;	// connects to another Endpoints Serversocket.
 	private Socket remoteClientSocket;	// another Endpoints ClientSocket that messaged out local Server Socket	
@@ -99,9 +94,8 @@ public class ConnectionEndpoint implements Runnable{
 		connectionID = connectionName;
 		keyGen = new KeyGenerator(connectionID);
 
-		localServerSocket = QuantumnetworkControllcenter.conMan.getConnectionSwitchbox().getMasterServerSocket();
-		localServerPort = QuantumnetworkControllcenter.conMan.getConnectionSwitchbox().getMasterServerPort();
-		System.out.println("---Synced localServerSocket in Endpoint of " + connectionID + " to MasterServerSocket at Port " + String.valueOf(localServerPort)+"---");
+		localAddress = QuantumnetworkControllcenter.conMan.getLocalAddress();
+		localServerPort = QuantumnetworkControllcenter.conMan.getLocalPort();
 		
 		remoteIP = targetIP;
 		remotePort = targetPort;
@@ -113,23 +107,6 @@ public class ConnectionEndpoint implements Runnable{
 			System.err.println("Error occured while establishing a connection from " + connectionID + " to target ServerSocket @ " + remoteIP + ":" + remotePort + ".");
 			e.printStackTrace();
 		}
-		/**
-		try {
-			
-			System.out.println("[" + connectionID + "]: Starting to initialize connections ClientSocket by connecting it to target ServerSocket @ " + remoteID + ":" + remotePort + ".");
-			localClientSocket = new Socket(remoteID,remotePort);
-			System.out.println("[" + connectionID + "]: Created ClientOutStream.");
-			clientOut = new ObjectOutputStream(localClientSocket.getOutputStream());
-			
-			
-			
-			
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-	**/
-		
 	}
 	
 	/**Reports the current State of this Endpoints Connection.
@@ -215,10 +192,6 @@ public class ConnectionEndpoint implements Runnable{
 		return remotePort;
 	}
 	
-	public ServerSocket getServerSocket() {
-		return localServerSocket;
-	}
-	
 	
 	//-------------//
 	// Client Side //
@@ -253,17 +226,9 @@ public class ConnectionEndpoint implements Runnable{
 			System.out.println("[" + connectionID + "]: " + connectionID + " is sending a greeting.");
 			pushMessage(TransmissionTypeEnum.CONNECTION_REQUEST, localAddress + ":::" + localServerPort, null, "");
 			System.out.println("[" + connectionID + "]: waiting for response");
-			
+	
 			listenForMessage();
-			
-			/**
-			localServerSocket.setSoTimeout(3000);
-			remoteClientSocket = localServerSocket.accept();
-			serverIn = new ObjectInputStream(remoteClientSocket.getInputStream());
-			System.out.println("[" + connectionID + "]: Connected " + connectionID + " to external ID and Port: " + remoteID + ", " + String.valueOf(remotePort) + "!");
-			isBuildingConnection = false;
-			listenForMessage();
-			**/
+	
 		//Error Messages
 		} catch (UnknownHostException e) {
 			isConnected = false;
@@ -302,17 +267,9 @@ public class ConnectionEndpoint implements Runnable{
 		waitingForConnection = false;
 		waitingForMessage = false;
 		listenForMessages = false;
-		if(localServerSocket != null) {
-			try {
-				localServerSocket.close();
-			} catch (IOException e) {
-				System.err.println("[" + connectionID + "]: Shutdown of localServerSocket failed!");
-				e.printStackTrace();
-			}
-			
-			
-		localServerSocket = null;
-		}
+		
+	
+		
 		if(localClientSocket != null) {
 			try {
 				localClientSocket.close();
