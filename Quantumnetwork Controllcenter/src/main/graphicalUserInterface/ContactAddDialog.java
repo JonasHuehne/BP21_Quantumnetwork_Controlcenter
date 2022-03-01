@@ -33,13 +33,12 @@ public class ContactAddDialog extends JDialog {
 	 * Create the dialog.
 	 */
 	public ContactAddDialog() {
-		setType(Type.POPUP);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 450, 220);
-		getContentPane().setLayout(new MigLayout("", "[434px]", "[80px][80px]"));
+		getContentPane().setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 		{
 			Box horizontalBox = Box.createHorizontalBox();
-			getContentPane().add(horizontalBox, "cell 0 0,grow");
+			getContentPane().add(horizontalBox);
 			{
 				Box verticalBox = Box.createVerticalBox();
 				horizontalBox.add(verticalBox);
@@ -119,7 +118,7 @@ public class ContactAddDialog extends JDialog {
 		}
 		{
 			JPanel buttonPane = new JPanel();
-			getContentPane().add(buttonPane, "cell 0 1,grow");
+			getContentPane().add(buttonPane);
 			FlowLayout fl_buttonPane = new FlowLayout(FlowLayout.CENTER, 5, 5);
 			buttonPane.setLayout(fl_buttonPane);
 			{

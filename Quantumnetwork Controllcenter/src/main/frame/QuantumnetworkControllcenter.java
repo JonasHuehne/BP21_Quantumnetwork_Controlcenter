@@ -32,7 +32,7 @@ public class QuantumnetworkControllcenter {
 	/**
 	 * Method to initialize a Quantumnetwork Controllcenter
 	 */
-	public static void initialize() {
+	public static void initialize(String IP, int Port) {
 		
 		//TODO add initialization of further Classes
 
@@ -45,8 +45,9 @@ public class QuantumnetworkControllcenter {
 		}
 		
 		//Network Connection Init
-		String localIP = "127.0.0.1";//Will be part of the Settings/Properties
-		int localPort = 5000;//Will be part of the Settings/Properties
+		System.out.println("Initialising IP: " + IP + " and Port " + Port);
+		String localIP = IP;//"127.0.0.1";//Will be part of the Settings/Properties
+		int localPort = Port;//5000;//Will be part of the Settings/Properties
 		conMan = new ConnectionManager(localIP, localPort);
 		MessageSystem.conMan = conMan;
 
@@ -69,7 +70,7 @@ public class QuantumnetworkControllcenter {
 		
 		System.out.println("Run QuantumnetworkControllcenter initialisation");
 		
-		initialize();
+		initialize(args[0], Integer.valueOf(args[1]));
 		
 		// Look and Feel for Console UI
 		try {

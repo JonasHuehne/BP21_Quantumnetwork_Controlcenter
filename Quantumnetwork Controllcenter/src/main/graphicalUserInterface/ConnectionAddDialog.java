@@ -32,7 +32,6 @@ public class ConnectionAddDialog extends JDialog {
 	private JTextField textField_3;
 	private JRadioButton useManualInputRadioButton;
 	private JRadioButton useSelectedInputRadioButton;
-	private JTextField localPortTextField;
 	
 
 	/**
@@ -41,7 +40,7 @@ public class ConnectionAddDialog extends JDialog {
 	public ConnectionAddDialog() {
 		setType(Type.POPUP);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		setBounds(100, 100, 450, 258);
+		setBounds(100, 100, 450, 229);
 		getContentPane().setLayout(new MigLayout("", "[434px]", "[80px][80px]"));
 		{
 			Box horizontalBox = Box.createHorizontalBox();
@@ -57,14 +56,6 @@ public class ConnectionAddDialog extends JDialog {
 							toggleRadioButtons(useSelectedInputRadioButton);
 						}
 					});
-					{
-						JPanel panel = new JPanel();
-						verticalBox.add(panel);
-						{
-							JLabel localPortLabel = new JLabel("Local Port:");
-							panel.add(localPortLabel);
-						}
-					}
 					verticalBox.add(useSelectedInputRadioButton);
 				}
 				{
@@ -111,16 +102,6 @@ public class ConnectionAddDialog extends JDialog {
 							toggleRadioButtons(useManualInputRadioButton);
 						}
 					});
-					{
-						JPanel panel = new JPanel();
-						verticalBox.add(panel);
-						{
-							localPortTextField = new JTextField();
-							localPortTextField.setToolTipText("This is the port on your local machine that you want this connection to be listening from. The Port needs to be accessable from the outside for a connection to be established.");
-							localPortTextField.setColumns(10);
-							panel.add(localPortTextField);
-						}
-					}
 					
 					verticalBox.add(useManualInputRadioButton);
 				}
@@ -178,7 +159,7 @@ public class ConnectionAddDialog extends JDialog {
 						String newID;
 						int selectedTableRowIndex = -1;
 						
-						//Determin new ID
+						//Determine new ID
 						if(useManualInputRadioButton.isSelected()) {
 							newID = textField.getText();
 						}else {
@@ -198,7 +179,7 @@ public class ConnectionAddDialog extends JDialog {
 						
 						
 						if(useManualInputRadioButton.isSelected()) {
-							System.out.println("Created new CE: " + QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(textField.getText(), textField_1.getText(), Integer.valueOf(textField_2.getText())));
+							System.out.println("Created new CE: " + textField.getText() + " : "+ QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(textField.getText(), textField_1.getText(), Integer.valueOf(textField_2.getText())));
 							QuantumnetworkControllcenter.guiWindow.createConnectionRepresentation(textField.getText(), textField_1.getText(), Integer.valueOf(textField_2.getText()));
 						}else {
 							selectedTableRowIndex = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
@@ -212,7 +193,7 @@ public class ConnectionAddDialog extends JDialog {
 							int port = Integer.valueOf((QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedTableRowIndex, QuantumnetworkControllcenter.guiWindow.getContactDBPortIndex()).toString()));
 							String sig = QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedTableRowIndex, QuantumnetworkControllcenter.guiWindow.getContactDBSigIndex()).toString();
 							
-							System.out.println("Created new CE: " + QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(name, ip, port));
+							System.out.println("Created new CE: " + name + " : "+ QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(name, ip, port));
 							QuantumnetworkControllcenter.guiWindow.createConnectionRepresentation(name, ip, port);
 							
 						}

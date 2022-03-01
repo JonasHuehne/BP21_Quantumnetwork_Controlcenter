@@ -20,6 +20,7 @@ import javax.swing.JTable;
 import java.awt.Color;
 import javax.swing.border.BevelBorder;
 
+import communicationList.CommunicationList;
 import communicationList.DbObject;
 import frame.QuantumnetworkControllcenter;
 
@@ -59,6 +60,8 @@ import java.awt.CardLayout;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.JComboBox;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 public class GUIMainWindow implements Runnable{
 
@@ -161,10 +164,40 @@ public class GUIMainWindow implements Runnable{
 		contactRefreshButton.setToolTipText("Forces the \"Contacts\"-Table to update. This can be used after modifying the ContactsDatabase.");
 		contactRefreshButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				refreshContactsTable();
+				gatherContacts(false);
 			}
 		});
 		contactControlPanel.add(contactRefreshButton);
+		
+		JButton SaveChangesButton = new JButton("Save Changes to DB");
+		SaveChangesButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+				//Delete all Entries in the DB first.
+				CommunicationList cl = QuantumnetworkControllcenter.communicationList;
+				ArrayList<DbObject> dbContent = cl.queryAll();
+				int entryNumber = dbContent.size();
+				
+				for(int i = 0; i < entryNumber; i++) {
+					cl.delete(dbContent.get(i).getName());			
+				}
+				
+				
+				//Create new DBEntries form JTable
+				int rowCount = contactTable.getRowCount();
+				for(int i = 0; i < rowCount; i++) {
+					String name = (String) contactTable.getValueAt(i, contactDBNameIndex);
+					String ip = (String) contactTable.getValueAt(i, contactDBIPIndex);
+					int port = Integer.valueOf((String) contactTable.getValueAt(i, contactDBPortIndex));
+					String sig = (String) contactTable.getValueAt(i, contactDBSigIndex);
+					cl.insert(name, ip, port, sig);
+				}
+				
+				
+				
+			}
+		});
+		contactControlPanel.add(SaveChangesButton);
 		
 		JScrollPane ContactScrollPane = new JScrollPane();
 		ContactScrollPane.setAlignmentY(Component.TOP_ALIGNMENT);
@@ -318,9 +351,15 @@ public class GUIMainWindow implements Runnable{
 			};
 	}
 	
+	
 	public void refreshContactsTable() {
 		contactTable.setModel(new DefaultTableModel(contactData, contactColumnNames));
 		contactListChanged = true;
+	}
+	
+	
+	public void clearContactsTable() {
+		
 	}
 	
 	
