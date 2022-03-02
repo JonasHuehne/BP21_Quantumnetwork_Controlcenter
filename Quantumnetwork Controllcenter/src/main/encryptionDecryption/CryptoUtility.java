@@ -1,12 +1,19 @@
 package encryptionDecryption;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
+
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Utility for conversion of different inputs into byte arrays and Secret Keys
  * 
- * @author Lukas Dentler
+ * @author Lukas Dentler, Sasha Petri
  */
 public class CryptoUtility {
 	//constants
@@ -76,5 +83,89 @@ public class CryptoUtility {
 		}
 		//wrapping key information in SecretKey class for AES
 		return new SecretKeySpec(bytes, 0, bytes.length,ALGORITHM_AES);
+	}
+	
+	// TODO: For large files, these methods will likely use a lot of RAM.
+	// Divide & Conquer + change encrypt to instead modify the array parsed to it (no new malloc)? 
+	
+	/**
+	 * Reads a file and encrypts it with the {@link AES256} crypto module, using the given key.
+	 * @param fileToEncrypt
+	 * 		path to a file to encrypt
+	 * @param key
+	 * 		the AES256 secret key to encrypt the file with
+	 * @return
+	 * 		the bytes of the file, encrypted with the given secret key
+	 * @throws IOException
+	 * 		if a problem occured trying to read the file
+	 */
+	public static byte[] loadAndEncryptFile_AES256(Path fileToEncrypt, SecretKey key) throws IOException {
+		byte[] bytesToEncrypt = Files.readAllBytes(fileToEncrypt);
+		return AES256.encrypt(bytesToEncrypt, key);
+	}
+	
+	/**
+	 * Wrapper method for {@linkplain #loadAndEncryptFile_AES256(Path, SecretKey)}.
+	 * Calls {@linkplain #loadAndEncryptFile_AES256(Path, SecretKey)} with the given byte array passed as an AES256 SecretKey object.
+	 * @param fileToEncrypt
+	 * 		the file to encrypt 
+	 * @param key
+	 * 		size 32 array (256 bit), will be transformed into an AES256 SecretKey object
+	 * @return
+	 * 		the bytes of the file, encrypted with the given secret key
+	 * @throws IOException
+	 * 		if a problem occured trying to read the file
+	 */
+	public static byte[] loadAndEncryptFile_AES256(Path fileToEncrypt, byte[] key) throws IOException {
+		SecretKey sk = byteArrayToSecretKeyAES256(key);
+		return loadAndEncryptFile_AES256(fileToEncrypt, sk);
+	}
+	
+	/**
+	 * Decrypts a file and saves it to the specified location.
+	 * @param fileBytes
+	 * 		bytes of the file to decrypt
+	 * @param key
+	 * 		the AES256 secret key to decrypt the file with
+	 * @param directory
+	 * 		directory to save the file in, must exist
+	 * @param fileName
+	 * 		what the file should be saved as
+	 * @throws NotDirectoryException
+	 * 		if {@code directory} does not specify a directory
+	 * @throws FileNotFoundException
+	 * 		if {@code directory} does not resolve to an existing directory
+	 * @throws IOException
+	 * 		other IOExceptions may be thrown if the writing of the file fails
+	 */
+	public static void decryptAndSaveFile_AES256(byte[] fileBytes, SecretKey key, Path directory, String fileName) throws IOException {
+		if(!Files.isDirectory(directory)) throw new NotDirectoryException("Path " + directory.toString() + " does not specify a directory.");
+		if(!Files.exists(directory)) throw new FileNotFoundException("Path " + directory.toString() + " did not resolve to an existing directory.");
+		byte[] decrBytes = AES256.decrypt(fileBytes, key);
+		
+		Files.write(directory.resolve(fileName), decrBytes);
+	}
+	
+	/**
+	 * Wrapper Method for {@linkplain #decryptAndSaveFile_AES256(byte[], SecretKey, Path, String)}.
+	 * Calls that method with the byte array passed as an AES256 SecretKey object.
+	 * @param fileBytes
+	 * 		bytes of the file to decrypt
+	 * @param key
+	 * 		size 32 array (256 bit), will be transformed into an AES256 SecretKey object
+	 * @param directory
+	 * 		directory to save the file in, must exist
+	 * @param fileName
+	 * 		what the file should be saved as
+	 * @throws NotDirectoryException
+	 * 		if {@code directory} does not specify a directory
+	 * @throws FileNotFoundException
+	 * 		if {@code directory} does not resolve to an existing directory
+	 * @throws IOException
+	 * 		if {@code directory} does not resolve to an existing directory 
+	 */
+	public static void decryptAndSaveFile_AES256(byte[] fileBytes, byte[] key, Path directory, String fileName) throws IOException {
+		SecretKey sk = byteArrayToSecretKeyAES256(key);
+		decryptAndSaveFile_AES256(fileBytes, sk, directory, fileName);
 	}
 }

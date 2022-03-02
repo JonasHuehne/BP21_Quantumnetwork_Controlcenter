@@ -1,7 +1,9 @@
 
 import static org.junit.Assert.assertTrue;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
 import messengerSystem.MessageSystem;
@@ -101,11 +103,17 @@ public class NetworkTests {
 			e1.printStackTrace();
 		}
 		
+		Random r = new Random();
+		byte[] testMsg1	= new byte[16];
+		byte[] testMsg2 = new byte[16];
+		
+		r.nextBytes(null);		
+				
 		//Send a Message directly via CE
-		ce1.pushMessage(TransmissionTypeEnum.TRANSMISSION, "", "test Message 1", "");
+		ce1.pushMessage(TransmissionTypeEnum.TRANSMISSION, "", testMsg1, "");
 		
 		//Send a Message via the connectionManager
-		QuantumnetworkControllcenter.conMan.sendMessage("ceTest1", TransmissionTypeEnum.TRANSMISSION, "", "test Message 2", "");
+		QuantumnetworkControllcenter.conMan.sendMessage("ceTest1", TransmissionTypeEnum.TRANSMISSION, "", testMsg2, "");
 		
 		//Wait
 		try {
@@ -114,12 +122,11 @@ public class NetworkTests {
 			e.printStackTrace();
 		}
 		
-		//Do the same for the ConnectionEndpointMap
+		// Assert that both messages arrived
 		Map<String, ConnectionEndpoint> i = QuantumnetworkControllcenter.conMan.returnAllConnections();
 		assert(i.size() == 2);
-		i.clear();
-		i = QuantumnetworkControllcenter.conMan.returnAllConnections();
-		assert(i.size() == 2);
+
+		// TODO Check the contents of the messages (order can be disregarded)
 		
 		//Close the connection again
 		ce1.closeConnection(true);

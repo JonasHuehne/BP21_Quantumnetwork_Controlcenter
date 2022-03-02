@@ -71,10 +71,9 @@ public class ConnectionManager {
 	 * @param sig the optional signature, used by authenticated messages
 	 * @param message the String Message that is supposed to be sent via the designated ConnectionEndpoint.
 	 */
-	public void sendMessage(String connectionID, TransmissionTypeEnum type, String typeArgument, String message, String sig) {	
+	public void sendMessage(String connectionID, TransmissionTypeEnum type, String typeArgument, byte[] message, String sig) {	
 		connections.get(connectionID).pushMessage(type, typeArgument, message, sig);
 	}
-	
 	
 	/**Returns a ConnectionEndpoint if one by the given name was found. Returns NULL and a Warning otherwise.
 	 * 

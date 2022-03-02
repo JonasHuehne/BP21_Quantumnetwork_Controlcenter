@@ -262,9 +262,9 @@ public class ConnectionEndpoint implements Runnable{
 	 * 
 	 * @param type the type of message being sent. Regular transmissions should use TransmissionTypeEnum.TRANSMSSION.
 	 * @param typeArgument an additional argument used by some TransmissionTypes to pass on important information. Can be "" if not needed.
-	 * @param message the String Message that should be send to the connected ConnectionEndpoints Server.
+	 * @param message the byte array Message that should be send to the connected ConnectionEndpoints Server.
 	 */
-	public void pushMessage(TransmissionTypeEnum type, String typeArgument, String message, String sig) {
+	public void pushMessage(TransmissionTypeEnum type, String typeArgument, byte[] message, String sig) {
 		//Check for existence of connection before attempting so send.
 		if(!isConnected) {
 			System.err.println("[" + connectionID + "]: Warning: Attempted to push a message to another Endpoint while not beeing connected to anything!");

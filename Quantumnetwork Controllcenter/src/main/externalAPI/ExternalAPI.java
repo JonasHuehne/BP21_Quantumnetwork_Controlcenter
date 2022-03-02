@@ -3,20 +3,25 @@ package externalAPI;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Random;
+
 import javax.crypto.SecretKey;
 
 import encryptionDecryption.AES256;
+import encryptionDecryption.CryptoUtility;
+import exceptions.NoKeyForContactException;
 import keyStore.KeyStoreDbManager;
 import messengerSystem.MessageSystem;
 
 /**
  * An API class for external use to get keys and use the encryption/decryption with or without sending the file.
  * 
- * @author Lukas Dentler
+ * @author Lukas Dentler, Sasha Petri
  */
 public class ExternalAPI {
 	
@@ -24,6 +29,7 @@ public class ExternalAPI {
 	 * returning a key for the stated communication partner
 	 * 
 	 * if "42debugging42" is used as parameter for communicationPartner a fixed key is returned for debugging and testing purposes
+	 * 
 	 * 
 	 * @param communicationPartner name of the receiver as saved in communicationList 
 	 * @return a key as byte array
@@ -34,7 +40,7 @@ public class ExternalAPI {
 			return new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32}; 
 		}
 		return KeyStoreDbManager.getEntryFromKeyStore(communicationPartner).getKeyBuffer();
-	}
+	} // TODO: Incrementation of the used key bits, potentially just use MessageSystem.getKeyOrDefault() here
 	
 	/**
 	 * returning a key for the stated communication partner
@@ -83,21 +89,17 @@ public class ExternalAPI {
 	 * 
 	 * @param communicationPartner name of the receiver as saved in communicationList {@link communicationList.Contact#getName()}
 	 * @param fileName name of the file to be encrypted
+	 * @throws IOException 
+	 * 		if an I/O error occured trying to read or write the file
 	 */
-	public static void encryptFile(String communicationPartner, String fileName) {
+	public static void encryptFile(String communicationPartner, String fileName) throws IOException {
 		Path externalPath = getExternalAPIPath();
 		Path toEncrypt = externalPath.resolve(fileName);
 		
 		byte[] key = exportKeyByteArray(communicationPartner);
+		byte[] encryptedBits = CryptoUtility.loadAndEncryptFile_AES256(toEncrypt, key);
 		
-		if(Files.exists(toEncrypt)) {
-			File encrypt = toEncrypt.toFile();
-			File encrypted = new File(externalPath.resolve("encrypted_" + fileName).toString());
-			AES256.encryptFile(encrypt, key, encrypted);
-		}
-		else {
-			System.err.println("Error, could not find the file to encrypt, expected" + toEncrypt.normalize());
-		}
+		Files.write(externalPath.resolve("encrypted_" + fileName), encryptedBits);
 	}
 	
 	/**
@@ -105,77 +107,17 @@ public class ExternalAPI {
 	 * 
 	 * @param communicationPartner name of the receiver as saved in communicationList {@link communicationList.Contact#getName()}
 	 * @param fileName name of the file to be decrypted
+	 * @throws IOException 
+	 * 		if an I/O Exception occured trying to read the file or save it again
 	 */
-	public static void decryptFile(String communicationPartner, String fileName) {
+	public static void decryptFile(String communicationPartner, String fileName) throws IOException {
 		Path externalPath = getExternalAPIPath();
 		Path toDecrypt = externalPath.resolve(fileName);
 		
 		byte[] key = exportKeyByteArray(communicationPartner);
-		
-		if(Files.exists(toDecrypt)) {
-			File decrypt = toDecrypt.toFile();
-			File decrypted = new File(externalPath.resolve("decrypted_" + fileName).toString());
-			AES256.decryptFile(decrypt, key, decrypted);
-		}
-		else {
-			System.err.println("Error, could not find the file to decrypt, expected" + toDecrypt.normalize());
-		}
-		
-		/*
-		 * TODO: maybe rework this function to use with a given key index or something similar to reduce unwanted effects
-		 * when using this message and communicating over the messengerSystem in close temporal proximity.
-		 */
+		byte[] fileBytes = Files.readAllBytes(toDecrypt);
+		CryptoUtility.decryptAndSaveFile_AES256(fileBytes, key, externalPath, "decrypted_" + fileName);
 	}
-	
-	/**
-	 * sends a signed message with encrypted text from given .txt file
-	 * 
-	 * @param communicationPartner name of the receiver as saved in communicationList {@link communicationList.Contact#getName()}
-	 * @param fileName Name of the .txt file containing the suffix ".txt"
-	 */
-	public static boolean sendEncryptedTxtFile(String communicationPartner, String fileName) {
-		Path externalPath = getExternalAPIPath();
-		Path toRead = externalPath.resolve(fileName);
-		
-		String message = "";
-		
-		try {
-		message = Files.readString(toRead);
-		} catch (IOException e) {
-			
-			System.err.println("Error, could not read the given File \n" + e.toString());
-			return false;
-		}
-		
-		return MessageSystem.sendEncryptedMessage(communicationPartner, message);
-	}
-	
-	/**
-	 * receives a signed message with encrypted text, sent from an external source.
-	 * Saves the text decrypted in a .txt file in externalAPI directory, named with the ID of the sender and current Timestamp.
-	 * 
-	 * @param communicationPartner name of the sender as saved in communicationList {@link communicationList.Contact#getName()}
-	 */
-	public static void receiveEncryptedTxtFile(String communicationPartner) {
-		Path externalPath = getExternalAPIPath();
-		
-		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu_MM_dd_HH_mm");
-        LocalDateTime now = LocalDateTime.now();
-        String currentDateTime = dateTimeFormatter.format(now);
-        
-		Path toWrite = externalPath.resolve(currentDateTime + "_" + communicationPartner + ".txt");
-		
-		File decrypted = new File(toWrite.toString());
-		
-		String received = MessageSystem.readEncryptedMessage(communicationPartner);
-		
-		try {
-			Files.writeString(decrypted.toPath(), received);
-		} catch (IOException e) {
-			System.err.println("Error, could not write to the outputfile \n" + e.toString());
-		}
-	}
-	
 	
 	/**
 	 * encrypts and sends a given file from externalAPI directory 
@@ -183,12 +125,16 @@ public class ExternalAPI {
 	 * @param communicationPartner name of the receiver as saved in communicationList {@link communicationList.Contact#getName()}
 	 * @param fileName Name of the file to be sent
 	 * @return true if the file has been sent successfully, false otherwise
+	 * @throws NoKeyForContactException 
+	 * 		if no key could be found for the associated contact
+	 * @throws IOException 
+	 * 		if an I/O error occured trying to read the file
 	 */
-	public static boolean sendEncryptedFile(String communicationPartner, String fileName) {
+	public static boolean sendEncryptedFile(String communicationPartner, String fileName) throws IOException, NoKeyForContactException {
 		Path externalPath = getExternalAPIPath();
 		Path toSend = externalPath.resolve(fileName);
 		
-		return MessageSystem.sendEncryptedFile(fileName, toSend);
+		return MessageSystem.sendEncryptedFile(communicationPartner, toSend);
 	}
 	
 	/**
@@ -196,11 +142,13 @@ public class ExternalAPI {
 	 * {@link messengerSystem.MessageSystem#receiveEncryptedFileToPath(String, Path)} with externalAPI directory as Path
 	 * 
 	 * @param communicationPartner name of the sender as saved in communicationList {@link communicationList.Contact#getName()}
+	 * @throws IOException 
+	 * @throws NoKeyForContactException 
 	 */
-	public static void receiveEncryptedFile(String communicationPartner) {
+	public static void receiveEncryptedFile(String communicationPartner) throws NoKeyForContactException, IOException {
 		Path externalPath = getExternalAPIPath();
-		
-		MessageSystem.receiveEncryptedFileToPath(communicationPartner, externalPath);
+		int i = (new Random()).nextInt();
+		MessageSystem.receiveAndWriteEncryptedFile(communicationPartner, externalPath, "received_file" + i);
 	}
 	
 	/*

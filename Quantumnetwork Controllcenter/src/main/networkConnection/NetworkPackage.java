@@ -12,7 +12,7 @@ public class NetworkPackage implements Serializable{
 	private static final long serialVersionUID = -6406450845229886762L;
 	private TransmissionTypeEnum head;
 	private String typeArgument; 
-	private String content;
+	private byte[] content;
 	private String signature;
 	
 	/**Supply the newly created NetworkPackage with a TransmissionType, an Argument depending on the type and the actual content of the package.
@@ -22,7 +22,7 @@ public class NetworkPackage implements Serializable{
 	 * @param content	the actual content of the transmission
 	 * @param sig	the signature if the NetworkPackage is used for authenticated communication
 	 */
-	public NetworkPackage(TransmissionTypeEnum head, String typeArgument, String content, String sig) {
+	public NetworkPackage(TransmissionTypeEnum head, String typeArgument, byte[] content, String sig) {
 		this.head = head;
 		this.typeArgument = typeArgument;
 		this.content = content;
@@ -49,7 +49,7 @@ public class NetworkPackage implements Serializable{
 	 * 
 	 * @return the transmissions content String.
 	 */
-	public String getContent() {
+	public byte[] getContent() {
 		return content;
 	}
 	

@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import communicationList.Contact;
+import exceptions.NoKeyForContactException;
 import externalAPI.ExternalAPI;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.SHA256withRSAAuthentication;
@@ -90,7 +91,7 @@ public class ExternalAPITests {
 
         @Test
         // only realistically testable if signature key generation, signing and sending of messages work
-        void testLocalSendAuthenticatedMessage() throws IOException {
+        void testLocalSendAuthenticatedMessage() throws IOException, NoKeyForContactException {
             SHA256withRSAAuthentication.generateSignatureKeyPair();
             String otherPublicKeyString =
                     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
@@ -110,13 +111,13 @@ public class ExternalAPITests {
             QuantumnetworkControllcenter.conMan.getConnectionEndpoint("42debugging42").waitForConnection();
             QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 6604);
 
-            boolean result = ExternalAPI.sendEncryptedTxtFile("42debugging42", "message.txt");
+            boolean result = ExternalAPI.sendEncryptedFile("42debugging42", "message.txt");
             assertTrue(result);
         }
         
         @Test
         // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
-        void testLocalReceiveAuthenticatedMessage() throws IOException {
+        void testLocalReceiveAuthenticatedMessage() throws IOException, NoKeyForContactException {
             SHA256withRSAAuthentication.generateSignatureKeyPair();
             String otherPublicKeyString =
                     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
@@ -136,7 +137,7 @@ public class ExternalAPITests {
             QuantumnetworkControllcenter.conMan.getConnectionEndpoint("42debugging42").waitForConnection();
             QuantumnetworkControllcenter.conMan.getConnectionEndpoint("41debugging41").establishConnection("127.0.0.1", 8303);
 
-            ExternalAPI.sendEncryptedTxtFile("42debugging42", "message.txt");
+            ExternalAPI.sendEncryptedFile("42debugging42", "message.txt");
             
             DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu_MM_dd_HH_mm");
             LocalDateTime now = LocalDateTime.now();
@@ -145,7 +146,7 @@ public class ExternalAPITests {
             
     		Path received = externalPath.resolve(currentDateTime + "_" + "41debugging41" + ".txt");
     		
-            ExternalAPI.receiveEncryptedTxtFile("41debugging41");
+            ExternalAPI.receiveEncryptedFile("41debugging41");
             
             Path sent = externalPath.resolve("message.txt");
     		

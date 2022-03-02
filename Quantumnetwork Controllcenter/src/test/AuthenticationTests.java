@@ -270,7 +270,7 @@ class AuthenticationTests {
 
             MessageSystem.sendAuthenticatedMessage("Bob", "Hello, how are you?");
 
-            String message = MessageSystem.readAuthenticatedMessage("Alice");
+            String message = MessageSystem.readAuthenticatedMessageAsString("Alice");
             Assertions.assertEquals("Hello, how are you?", message);
         }
 
@@ -298,7 +298,7 @@ class AuthenticationTests {
 
             MessageSystem.sendAuthenticatedMessage("Alice", "Hello");
 
-            String message = MessageSystem.readAuthenticatedMessage("Bob");
+            String message = MessageSystem.readAuthenticatedMessageAsString("Bob");
             Assertions.assertNull(message);
         }
     }
