@@ -60,10 +60,11 @@ public class ConnectionEndpointServerHandler extends Thread{
 						System.out.println("-.-Creating new CE in responce to the ConnectionRequest");
 						remoteIP = receivedMessage.getTypeArg().split(":::")[0];
 						remotePort = Integer.valueOf(receivedMessage.getTypeArg().split(":::")[1]);
+						String remoteName = receivedMessage.getTypeArg().split(":::")[2];
 						System.out.println(receivedMessage.getTypeArg() + "---+++---");
 						System.out.println(remoteIP + "---+++---");
 						System.out.println(remotePort + "---+++---");
-						QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ResponceCE" + MessageSystem.generateRandomMessageID(), clientSocket, serverOut, serverIn, remoteIP, remotePort);
+						QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(remoteName + "_" + MessageSystem.generateRandomMessageID(), clientSocket, serverOut, serverIn, remoteIP, remotePort);
 						settingUp = false;
 					}
 					

@@ -9,6 +9,7 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
 import frame.Configuration;
+import messengerSystem.MessageSystem;
 
 import javax.swing.Box;
 import javax.swing.JLabel;
@@ -284,7 +285,15 @@ public class SettingsDialog extends JDialog {
 	private void writeSettings() {
 		
 		Configuration.setProperty("UserName", ownNameTextfield.getText());
+		if(!Configuration.getProperty("UserIP").equals(ownIPTextField.getText())) {
+			MessageSystem.conMan.destroyAllConnectionEndpoints();
+			MessageSystem.conMan.setLocalAddress(ownNameTextfield.getText());
+		}
 		Configuration.setProperty("UserIP", ownIPTextField.getText());
+		if(!Configuration.getProperty("UserPort").equals(ownPortTextField.getText())) {
+			MessageSystem.conMan.destroyAllConnectionEndpoints();
+			MessageSystem.conMan.setLocalPort(Integer.valueOf(ownPortTextField.getText()));
+		}
 		Configuration.setProperty("UserPort", ownPortTextField.getText());
 		Configuration.setProperty("SourceIP", sourceIPTextField.getText());
 		Configuration.setProperty("SourcePort", sourcePortTextField.getText());

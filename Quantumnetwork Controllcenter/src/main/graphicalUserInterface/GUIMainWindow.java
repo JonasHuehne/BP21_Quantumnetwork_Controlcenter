@@ -70,7 +70,6 @@ public class GUIMainWindow implements Runnable{
             "IP Address",
             "Target Port",
             "Signature"};
-	private Boolean contactListChanged = false;
 	
 	private JFrame frame;
 	private JTable contactTable;
@@ -101,7 +100,7 @@ public class GUIMainWindow implements Runnable{
 		getFrame().setBounds(100, 100, 1120, 567);
 		getFrame().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		gatherContacts(true);
+		
 		frame.getContentPane().setLayout(new MigLayout("", "[1008px]", "[][528px][]"));
 		
 		JToolBar toolBar = new JToolBar();
@@ -165,7 +164,8 @@ public class GUIMainWindow implements Runnable{
 				String id = (String) contactTable.getValueAt(rowIndex, contactDBNameIndex);
 				System.out.println("Deleting Contact Entry! " + id);
 				QuantumnetworkControllcenter.communicationList.delete(id);
-				gatherContacts(false);
+				DefaultTableModel model = (DefaultTableModel)contactTable.getModel();
+				model.removeRow(rowIndex);
 			}
 		});
 		removeContactButton.setToolTipText("Removes a row from the \"Contacts\"-Table.");
@@ -175,7 +175,8 @@ public class GUIMainWindow implements Runnable{
 		contactRefreshButton.setToolTipText("Forces the \"Contacts\"-Table to update. This can be used after modifying the ContactsDatabase.");
 		contactRefreshButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				gatherContacts(false);
+				clearContacts();
+				gatherContacts();
 			}
 		});
 		contactControlPanel.add(contactRefreshButton);
@@ -199,7 +200,8 @@ public class GUIMainWindow implements Runnable{
 				for(int i = 0; i < rowCount; i++) {
 					String name = (String) contactTable.getValueAt(i, contactDBNameIndex);
 					String ip = (String) contactTable.getValueAt(i, contactDBIPIndex);
-					int port = Integer.valueOf((String) contactTable.getValueAt(i, contactDBPortIndex));
+					String portString = String.valueOf(contactTable.getValueAt(i, contactDBPortIndex));
+					int port = Integer.valueOf(portString);
 					String sig = (String) contactTable.getValueAt(i, contactDBSigIndex);
 					cl.insert(name, ip, port, sig);
 				}
@@ -213,7 +215,9 @@ public class GUIMainWindow implements Runnable{
 		JScrollPane ContactScrollPane = new JScrollPane();
 		ContactScrollPane.setAlignmentY(Component.TOP_ALIGNMENT);
 		contactsColumn.add(ContactScrollPane);
-		contactTable = new JTable(contactData, contactColumnNames);
+		//contactTable = new JTable(contactData, contactColumnNames);
+		contactTable = new JTable(new DefaultTableModel(contactColumnNames,0));
+		gatherContacts();
 		ContactScrollPane.setViewportView(contactTable);
 		
 		JPanel panel = new JPanel();
@@ -343,7 +347,7 @@ public class GUIMainWindow implements Runnable{
 	}
 	
 	
-	public void gatherContacts(Boolean initialGather) {
+	public void gatherContacts() {
 		ArrayList<Contact> dbEntries = QuantumnetworkControllcenter.communicationList.queryAll();
 		
 		Object[][]tmpContactData = new Object[dbEntries.size()][4];
@@ -355,24 +359,34 @@ public class GUIMainWindow implements Runnable{
 			String sig = dbEntries.get(i).getSignatureKey();
 			
 			tmpContactData[i] = new Object[]{name, ip, port, sig};
-			contactData = tmpContactData;
-			if(!initialGather) {
-			refreshContactsTable();
-			}
-			};
+		}
+		contactData = tmpContactData;
+		DefaultTableModel model = (DefaultTableModel)contactTable.getModel();
+		for(int i = 0; i < contactData.length; i++) {
+			model.addRow(contactData[i]);		
+		}
+		
+	}
+	
+	public void clearContacts() {
+		DefaultTableModel model = (DefaultTableModel)contactTable.getModel();
+		int rc = model.getRowCount();
+		for(int i = rc - 1; i >= 0; i--) {
+			model.removeRow(i);
+		}
+	}
+	
+	public void addRowToContactTable(String name, String ip, int port, String sig) {
+		
+		DefaultTableModel model = (DefaultTableModel)contactTable.getModel();
+		QuantumnetworkControllcenter.communicationList.insert(name, ip, port, sig);
+		model.addRow(new Object[]{name, ip, port, sig});
 	}
 	
 	
 	public void refreshContactsTable() {
 		contactTable.setModel(new DefaultTableModel(contactData, contactColumnNames));
-		contactListChanged = true;
 	}
-	
-	
-	public void clearContactsTable() {
-		
-	}
-	
 	
 	public void createConnectionRepresentation(String connectionName, String targetIP, int targetPort) {
 		//ConnectionEndpointTemplate
