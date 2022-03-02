@@ -125,6 +125,25 @@ class AuthenticationTests {
             String result7 = Utils.readKeyStringFromFile("test_public_key2.txt");
             Assertions.assertNotNull(result7);
         }
+
+        @Test
+        void testExistsValidKeyPair() {
+            QuantumnetworkControllcenter.authentication.setPrivateKey("test_private_key.pem");
+            QuantumnetworkControllcenter.authentication.setPublicKey("test_public_key.pem");
+
+            boolean result1 = QuantumnetworkControllcenter.authentication.existsValidKeyPair();
+            Assertions.assertTrue(result1);
+
+            QuantumnetworkControllcenter.authentication.setPublicKey("");
+
+            boolean result2 = QuantumnetworkControllcenter.authentication.existsValidKeyPair();
+            Assertions.assertFalse(result2);
+
+            QuantumnetworkControllcenter.authentication.setPrivateKey("");
+
+            boolean result3 = QuantumnetworkControllcenter.authentication.existsValidKeyPair();
+            Assertions.assertFalse(result3);
+        }
     }
 
     @Nested

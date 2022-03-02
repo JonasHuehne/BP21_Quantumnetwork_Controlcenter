@@ -264,6 +264,37 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
     }
 
     /**
+     * Method to check if a valid key pair is currently set
+     * @return true if there currently is a valid key pair set, false if not or error
+     */
+    @Override
+    public boolean existsValidKeyPair() {
+        String currentPath = Configuration.getBaseDirPath();
+        if(privateKeyFile.equals("") || publicKeyFile.equals("")) {
+            return false;
+        } else if (!Files.exists(Path.of(currentPath + Utils.KEY_PATH + privateKeyFile))
+                || !Files.exists(Path.of(currentPath + Utils.KEY_PATH + publicKeyFile))) {
+            return false;
+        } else {
+            try {
+                Signature signature = Signature.getInstance("SHA256withRSA");
+                PrivateKey privateKey = getPrivateKeyFromFile();
+                PublicKey publicKey = getPublicKeyFromString(Utils.readKeyStringFromFile(publicKeyFile));
+                signature.initSign(privateKey);
+                byte[] message = "Hello".getBytes();
+                signature.update(message);
+                byte[] sig = signature.sign();
+                signature.initVerify(publicKey);
+                signature.update(message);
+                return signature.verify(sig);
+            } catch (Exception e) {
+                System.err.println("Error: No valid Key Pair set: " + e);
+                return false;
+            }
+        }
+    }
+
+    /**
      * Generates a key pair for signing messages
      * (calls the other generateSignatureKeyPair Method with default parameters)
      * uses the default file name, specified by the class
