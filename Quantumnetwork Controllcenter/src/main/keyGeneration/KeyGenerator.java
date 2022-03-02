@@ -320,7 +320,7 @@ public class KeyGenerator implements Runnable{
 		if(KeyStoreDbManager.doesKeyStreamIdExist(connectionID)) {
 			KeyStoreDbManager.deleteKeyInformationByID(connectionID);
 		}
-		KeyStoreDbManager.insertToKeyStore(connectionID, key, 0, ownAddress + ":" + String.valueOf(ownPort), remoteAddress + ":" + String.valueOf(remotePort), false);
+		KeyStoreDbManager.insertToKeyStore(connectionID, key, ownAddress + ":" + String.valueOf(ownPort), remoteAddress + ":" + String.valueOf(remotePort), false, initiative == 1);
 		
 		//End the KeyGen Process and clean up.
 		shutdownKeyGen(false, false);

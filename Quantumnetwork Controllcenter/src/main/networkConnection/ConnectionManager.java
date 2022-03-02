@@ -37,12 +37,19 @@ public class ConnectionManager {
 	}
 	
 	
-	/**Creates a new ConnectionEndpoint and stores the Connection-Name and Endpoint-Ref.
-	 * Returns null instead of the new connectionEndpoint if it was not created duo to naming and port constraints.
-	*@param endpointName 	the Identifier for a connection. This Name can be used to access it later
-	*@param serverPort 		the local serverPort, this is the port a remote client needs to connect to, since this is where the connectionEndpoint will be listening on.
-	*@return ConnectionEndpoint		a representation of a connection line to a different ConnectionEndpoint. Will be stored and accessed from the "Connections" Mapping.
-	*/
+	 /**Creates a new ConnectionEndpoint and stores the Connection-Name and Endpoint-Ref.
+	 * Returns null instead of the new connectionEndpoint if it was not created due to naming and port constraints.
+	 * 
+	 * This version of the method should be used if the CE is being created because of the local users intentions and not as part of the response to a connection request
+	 * from an external source.
+	 * 
+	 * The CE will attempt to connect to the targetIP and Port as soon as it is created.
+	 * 
+	 *@param endpointName 	the Identifier for a connection. This Name can be used to access it later
+	 *@param targetIP 		the IP of the Server that we wish to connect to.
+	 *@param targetPort 	the Port of the Server that we wish to connect to.
+	 *@return ConnectionEndpoint	it returns the newly created ConnectionEndpoint. It can also be accessed via ConnectionManger.getConnectionEndpoint().
+	 */
 	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort) {
 		if(!connections.containsKey(endpointName)) {
 			System.out.println("---Received new request for a CE. Creating it now. It will connect to the Server at "+ targetIP +":"+ targetPort +".---");
@@ -53,7 +60,23 @@ public class ConnectionManager {
 		return null;
 	}
 	
-	//ResponceCE
+	 /**Creates a new ConnectionEndpoint and stores the Connection-Name and Endpoint-Ref.
+	 * Returns null instead of the new connectionEndpoint if it was not created due to naming and port constraints.
+	 * 
+	 * This version of the method should be used as part of the response to a connection request
+	 * from an external source only.
+	 * It is called by the local ConnectionEndpointServerHandler and SHOULD NOT BE CALLED FROM ANYWHERE ELSE!
+	 * 
+	 * The CE will be give In- and OutStreams as well as IP:Port Information about its communication partner.
+	 * 
+	 * @param endpointName	the Identifier for a connection. This Name can be used to access it later
+	 * @param clientSocket	the Socket that was created by accepting the connectionRequest at the ServerSocket.
+	 * @param streamOut	the OutputStream that can be used to send messages to the communication partner.
+	 * @param streamIn	the InputStream that can be used to receive messages from the communication partner.
+	 * @param targetIP	the IP of the communication partner.
+	 * @param targetPort	the Port of the communication partner.
+	 * @return	it returns the newly created ConnectionEndpoint. It can also be accessed via ConnectionManger.getConnectionEndpoint().
+	 */
 	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, Socket clientSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, int targetPort) {
 		if(!connections.containsKey(endpointName)) {
 			connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, clientSocket, streamOut, streamIn, targetIP, targetPort));
