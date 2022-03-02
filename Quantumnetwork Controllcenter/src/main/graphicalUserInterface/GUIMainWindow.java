@@ -123,6 +123,11 @@ public class GUIMainWindow implements Runnable{
 		toolBar.add(settingsButton);
 		
 		JButton btnNewButton_7 = new JButton("?");
+		btnNewButton_7.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				new HelpMenu();
+			}
+		});
 		btnNewButton_7.setToolTipText("Opens the Help Screen.");
 		toolBar.add(btnNewButton_7);
 		

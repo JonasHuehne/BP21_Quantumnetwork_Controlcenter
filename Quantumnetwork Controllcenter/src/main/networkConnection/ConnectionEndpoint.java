@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
 
+import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import keyGeneration.KeyGenerator;
 import messengerSystem.MessageSystem;
@@ -224,7 +225,7 @@ public class ConnectionEndpoint implements Runnable{
 			isBuildingConnection = false;
 			//Send Message to allow foreign Endpoint to connect with us.
 			System.out.println("[" + connectionID + "]: " + connectionID + " is sending a greeting.");
-			pushMessage(TransmissionTypeEnum.CONNECTION_REQUEST, localAddress + ":::" + localServerPort, null, null);
+			pushMessage(TransmissionTypeEnum.CONNECTION_REQUEST, localAddress + ":::" + localServerPort + ":::" + Configuration.getProperty("UserName"), null, null);
 			System.out.println("[" + connectionID + "]: waiting for response");
 	
 			listenForMessage();
