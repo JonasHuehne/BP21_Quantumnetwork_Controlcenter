@@ -31,6 +31,9 @@ import networkConnection.TransmissionTypeEnum;
  *
  */
 
+
+//TODO: Add partial Key Usage
+
 public class KeyGenerator implements Runnable{
 	
 	private String connectionID;
