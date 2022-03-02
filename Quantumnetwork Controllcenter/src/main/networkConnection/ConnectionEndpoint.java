@@ -431,86 +431,64 @@ public class ConnectionEndpoint implements Runnable{
 	private void processMessage(NetworkPackage transmission) {
 
 		System.out.println("[" + connectionID + "]: Received Message, starting processing!: " + transmission.getHead() + " - " + transmission.getTypeArg() + " - " + transmission.getContent());
-		try {
-			//Chose processing based on transmissionType in the NetworkPackage head.
-			switch(transmission.getHead()){
+		//Chose processing based on transmissionType in the NetworkPackage head.
+		switch(transmission.getHead()){
 			
-			case CONNECTION_REQUEST:	//This is received if another ConnectionEndpoint intents to create a connection to this one. The Greeting contains the other CEs IP and PORT to connect back to it.
-				//Parse Greeting
-				String greetingMessage = transmission.getTypeArg();
-				remoteIP = greetingMessage.split(":::")[0];
-				remotePort = Integer.parseInt(greetingMessage.split(":::")[1]);
-				//System.out.println("[" + connectionID + "]: Received initial Message: " + greetingMessage);
+		case CONNECTION_TERMINATION:	//This is received if the other, connected connectionEndpoint wishes to close the connection. Takes all necessary actions on this local side of the connection.
+			//System.out.println("[" + connectionID + "]: TerminationOrder Received at " + connectionID + "!");
+			closeConnection(false);
+			return;
 			
-				//Use greeting(ip:port) to establish back-connection to the ConnectionAttempt-Sources ServerSocket
-				System.out.println("[" + connectionID + "]: Connecting back to " + remoteIP + " at Port: " + remotePort);
-				localClientSocket = new Socket(remoteIP, remotePort);
-				clientOut = new ObjectOutputStream(localClientSocket.getOutputStream());
-				System.out.println("[" + connectionID + "]: Connection Completed!");
-				return;
-				
-			case CONNECTION_TERMINATION:	//This is received if the other, connected connectionEndpoint wishes to close the connection. Takes all necessary actions on this local side of the connection.
-				//System.out.println("[" + connectionID + "]: TerminationOrder Received at " + connectionID + "!");
-				closeConnection(false);
-				return;
-				
-			case TRANSMISSION:	//This is received if the connected connectionEndpoint wants to send this CE a transmission containing actual data in the NetworkPackages content field. The transmission is added to the MessageStack.
-				System.out.println("[" + connectionID + "]: Received Message: " + MessageSystem.byteArrayToString(transmission.getContent()) + "!");
-				addMessageToStack( transmission);
-				return;
-				
-			case RECEPTION_CONFIRMATION_REQUEST:	//This works similar to the regular Transmission but it indicates the sender is waiting for a reception confirmation. This sends this confirmation back.
-				//System.out.println("[" + connectionID + "]: Received Confirm-Message: " + transmission.getHead() + "!");
-				addMessageToStack( transmission);
-				pushMessage(TransmissionTypeEnum.RECEPTION_CONFIRMATION_RESPONSE, transmission.getTypeArg(), null, null);
-				return;
-				
-			case RECEPTION_CONFIRMATION_RESPONSE:	//This is received if the local CE has sent a confirmedMessage and is waiting for the confirmation. Once received the confirmation in the form of the messageID is added to the pendingConfirmations.
-				//System.out.println("[" + connectionID + "]: Received Confirm_Back-Message: " + transmission.getHead() + "!");
-				registerConfirmation(transmission.getTypeArg());
-				return;
-				
-			case KEYGEN_SYNC_REQUEST:	//This is received if another ConnectionEndpoint that is connected to this one is intending to start a KeyGeneration Process and is asking for a response(accept/reject).
-				//System.out.println("[" + connectionID + "]: Received KeyGenSync-Message: " + transmission.getHead() + "!");
-				SHA256withRSAAuthentication authenticator = new SHA256withRSAAuthentication();
-				if (authenticator.verify(MessageSystem.byteArrayToString(transmission.getContent()), transmission.getSignature(), connectionID)) {
-					keyGen.keyGenSyncResponse();
-				}
-				return;
-				
-			case KEYGEN_SYNC_ACCEPT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
-				//The SyncConfirm is added to the regular messagesStack and read by the KeyGenerator.
-				//System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
-				addMessageToStack( transmission);
-				return;
-				
-			case KEYGEN_SYNC_REJECT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
-				//The SyncReject is added to the regular messagesStack and read by the KeyGenerator.
-				//System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
-				addMessageToStack( transmission);
-				return;			
-				
-			case KEYGEN_SOURCE_SIGNAL:	//THis is only used for signaling the source server to start sending photons. 
-				
-				
-			case KEYGEN_TERMINATION:	//This is received if the connected ConnectionEndpoint intends to terminate the KeyGen Process. This will cause a local shutdown in response.
-				//Terminating Key Gen
-				keyGen.shutdownKeyGen(false, true);
-				return;
-				
-			default:	//This is the fallback if no valid Transmission Type was recognized.
-				System.err.println("ERROR: [" + connectionID + "]: Invalid message prefix in message: " + transmission.getHead());
-				return;
+		case TRANSMISSION:	//This is received if the connected connectionEndpoint wants to send this CE a transmission containing actual data in the NetworkPackages content field. The transmission is added to the MessageStack.
+			System.out.println("[" + connectionID + "]: Received Message: " + MessageSystem.byteArrayToString(transmission.getContent()) + "!");
+			addMessageToStack( transmission);
+			return;
 			
+		case RECEPTION_CONFIRMATION_REQUEST:	//This works similar to the regular Transmission but it indicates the sender is waiting for a reception confirmation. This sends this confirmation back.
+			//System.out.println("[" + connectionID + "]: Received Confirm-Message: " + transmission.getHead() + "!");
+			addMessageToStack( transmission);
+			pushMessage(TransmissionTypeEnum.RECEPTION_CONFIRMATION_RESPONSE, transmission.getTypeArg(), null, null);
+			return;
 			
-		}
+		case RECEPTION_CONFIRMATION_RESPONSE:	//This is received if the local CE has sent a confirmedMessage and is waiting for the confirmation. Once received the confirmation in the form of the messageID is added to the pendingConfirmations.
+			//System.out.println("[" + connectionID + "]: Received Confirm_Back-Message: " + transmission.getHead() + "!");
+			registerConfirmation(transmission.getTypeArg());
+			return;
+			
+		case KEYGEN_SYNC_REQUEST:	//This is received if another ConnectionEndpoint that is connected to this one is intending to start a KeyGeneration Process and is asking for a response(accept/reject).
+			//System.out.println("[" + connectionID + "]: Received KeyGenSync-Message: " + transmission.getHead() + "!");
+			SHA256withRSAAuthentication authenticator = new SHA256withRSAAuthentication();
+			if (authenticator.verify(MessageSystem.byteArrayToString(transmission.getContent()), transmission.getSignature(), connectionID)) {
+				keyGen.keyGenSyncResponse();
+			}
+			return;
+			
+		case KEYGEN_SYNC_ACCEPT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
+			//The SyncConfirm is added to the regular messagesStack and read by the KeyGenerator.
+			//System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
+			addMessageToStack( transmission);
+			return;
+			
+		case KEYGEN_SYNC_REJECT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
+			//The SyncReject is added to the regular messagesStack and read by the KeyGenerator.
+			//System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
+			addMessageToStack( transmission);
+			return;			
+			
+		case KEYGEN_SOURCE_SIGNAL:	//This is only used for signaling the source server to start sending photons. 
+			//TODO: Add source logic
+			
+		case KEYGEN_TERMINATION:	//This is received if the connected ConnectionEndpoint intends to terminate the KeyGen Process. This will cause a local shutdown in response.
+			//Terminating Key Gen
+			keyGen.shutdownKeyGen(false, true);
+			return;
+			
+		default:	//This is the fallback if no valid Transmission Type was recognized.
+			System.err.println("ERROR: [" + connectionID + "]: Invalid message prefix in message: " + transmission.getHead());
+			return;
 		
-		} catch (IOException e) {
-			System.err.println("There was an issue at " + connectionID + " while trying to parse special commands from the latest Message: " + transmission.getHead() + ".");
-			e.printStackTrace();
-		}
-				
-		return;
+		
+}
 	}
 
 	

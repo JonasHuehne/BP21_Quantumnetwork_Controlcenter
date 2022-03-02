@@ -168,12 +168,11 @@ public class ConnectionManager {
 	 * @param newLocalAddress the new LocalAddress
 	 */
 	public void setLocalAddress(String newLocalAddress) {
-		System.out.println("[ConnectionManager]: Updating LocalAddress from " + localAddress + " to " + newLocalAddress + "!");
 		localAddress = newLocalAddress;
-		connections.forEach((k,v) -> {
-		connections.get(k).closeConnection(true);
-		});
-		connections.forEach((k,v) -> connections.get(k).updateLocalAddress(localAddress));
+	}
+	
+	public void setLocalPort(int newLocalPort) {
+		localPort = newLocalPort;
 	}
 	
 	/**Returns the localAddress Value currently in use by all connectionEndpoints.

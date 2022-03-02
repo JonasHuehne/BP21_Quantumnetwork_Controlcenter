@@ -25,10 +25,10 @@ import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 
 public class ContactAddDialog extends JDialog {
-	private JTextField textField;
-	private JTextField textField_1;
-	private JTextField textField_2;
-	private JTextField textField_3;
+	private JTextField nameTextField;
+	private JTextField ipTextField;
+	private JTextField portTextField;
+	private JTextField sigTextField;
 	private JButton okButton;
 	private JButton cancelButton;
 
@@ -86,36 +86,36 @@ public class ContactAddDialog extends JDialog {
 					JPanel panel = new JPanel();
 					verticalBox.add(panel);
 					{
-						textField = new JTextField();
-						panel.add(textField);
-						textField.setColumns(10);
+						nameTextField = new JTextField();
+						panel.add(nameTextField);
+						nameTextField.setColumns(10);
 					}
 				}
 				{
 					JPanel panel = new JPanel();
 					verticalBox.add(panel);
 					{
-						textField_1 = new JTextField();
-						panel.add(textField_1);
-						textField_1.setColumns(10);
+						ipTextField = new JTextField();
+						panel.add(ipTextField);
+						ipTextField.setColumns(10);
 					}
 				}
 				{
 					JPanel panel = new JPanel();
 					verticalBox.add(panel);
 					{
-						textField_2 = new JTextField();
-						panel.add(textField_2);
-						textField_2.setColumns(10);
+						portTextField = new JTextField();
+						panel.add(portTextField);
+						portTextField.setColumns(10);
 					}
 				}
 				{
 					JPanel panel = new JPanel();
 					verticalBox.add(panel);
 					{
-						textField_3 = new JTextField();
-						panel.add(textField_3);
-						textField_3.setColumns(10);
+						sigTextField = new JTextField();
+						panel.add(sigTextField);
+						sigTextField.setColumns(10);
 					}
 				}
 			}
@@ -128,8 +128,8 @@ public class ContactAddDialog extends JDialog {
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						
-						QuantumnetworkControllcenter.communicationList.insert( textField.getText(), textField_1.getText(), Integer.valueOf(textField_2.getText()), textField_3.getText());
-						QuantumnetworkControllcenter.guiWindow.gatherContacts(false);
+						QuantumnetworkControllcenter.guiWindow.addRowToContactTable(nameTextField.getText(), ipTextField.getText(), Integer.valueOf(portTextField.getText()), sigTextField.getText());
+						
 						setVisible(false);
 						dispose();
 					}
