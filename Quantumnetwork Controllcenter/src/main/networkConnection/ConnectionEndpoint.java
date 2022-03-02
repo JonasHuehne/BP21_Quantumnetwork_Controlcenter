@@ -479,6 +479,7 @@ public class ConnectionEndpoint implements Runnable{
 		case KEYGEN_SOURCE_SIGNAL:	//This is only used for signaling the source server to start sending photons. 
 			//TODO: Add source logic
 			
+			
 		case KEYGEN_TERMINATION:	//This is received if the connected ConnectionEndpoint intends to terminate the KeyGen Process. This will cause a local shutdown in response.
 			//Terminating Key Gen
 			keyGen.shutdownKeyGen(false, true);
