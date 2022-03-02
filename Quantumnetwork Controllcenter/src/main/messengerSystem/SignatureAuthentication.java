@@ -76,4 +76,10 @@ public interface SignatureAuthentication {
      */
     boolean setPublicKey (String keyFileName);
 
+    /**
+     * Method to check if a valid key pair is currently set
+     * @return true if there currently is a valid key pair set, false if not or error
+     */
+    boolean existsValidKeyPair();
+
 }
