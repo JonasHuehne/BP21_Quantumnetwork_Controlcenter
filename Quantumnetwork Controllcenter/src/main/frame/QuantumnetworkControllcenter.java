@@ -3,6 +3,7 @@ package frame;
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
 import graphicalUserInterface.GUIMainWindow;
+import graphicalUserInterface.SettingsDialog;
 import messengerSystem.Authentication;
 import messengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionEndpoint;
@@ -40,6 +41,9 @@ public class QuantumnetworkControllcenter {
 		try {
 			Configuration.findProperties();
 			Configuration.createFolders();
+			
+			//Init ApplicationSettings
+			SettingsDialog.initSettings();
 		} catch (IOException e) {
 			System.err.println("ERROR: Configuration failed: " + e);
 		}

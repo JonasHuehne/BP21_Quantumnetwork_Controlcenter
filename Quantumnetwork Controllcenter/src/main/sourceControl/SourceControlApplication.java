@@ -1,5 +1,9 @@
 package sourceControl;
 
+import communicationList.CommunicationList;
+import communicationList.SQLiteCommunicationList;
+import messengerSystem.Authentication;
+import messengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionManager;
 
 
@@ -19,6 +23,9 @@ public class SourceControlApplication {
 
 	private static String ip;
 	private static int port;
+	public static ConnectionManager conMan;
+	public static CommunicationList communicationList;
+	public static Authentication authentication;
 	
 	public static void main(String[] args) {
 		
@@ -26,7 +33,13 @@ public class SourceControlApplication {
 		port = Integer.valueOf(args[1]);
 		System.out.println("Starting the Source Control on IP: " + ip + " and Port: " + String.valueOf(port) + "!");
 		
-		ConnectionManager conMan = new ConnectionManager(ip,port);
+		conMan = new ConnectionManager(ip,port);
+		
+		// Communication List Init
+		communicationList = new SQLiteCommunicationList();
+
+		// Authentication Init
+		authentication = new SHA256withRSAAuthentication();
 		
 		
 	}
