@@ -21,7 +21,7 @@ import java.awt.Color;
 import javax.swing.border.BevelBorder;
 
 import communicationList.CommunicationList;
-import communicationList.DbObject;
+import communicationList.Contact;
 import frame.QuantumnetworkControllcenter;
 
 import javax.swing.ListSelectionModel;
@@ -109,6 +109,17 @@ public class GUIMainWindow implements Runnable{
 		frame.getContentPane().add(toolBar, "cell 0 0,alignx left,aligny top");
 		
 		JButton settingsButton = new JButton("Settings");
+		settingsButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					SettingsDialog settings = new SettingsDialog();
+					settings.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+					settings.setVisible(true);
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+			}
+		});
 		settingsButton.setToolTipText("Opens the Application Settings.");
 		toolBar.add(settingsButton);
 		
@@ -175,7 +186,7 @@ public class GUIMainWindow implements Runnable{
 				
 				//Delete all Entries in the DB first.
 				CommunicationList cl = QuantumnetworkControllcenter.communicationList;
-				ArrayList<DbObject> dbContent = cl.queryAll();
+				ArrayList<Contact> dbContent = cl.queryAll();
 				int entryNumber = dbContent.size();
 				
 				for(int i = 0; i < entryNumber; i++) {
@@ -333,7 +344,7 @@ public class GUIMainWindow implements Runnable{
 	
 	
 	public void gatherContacts(Boolean initialGather) {
-		ArrayList<DbObject> dbEntries = QuantumnetworkControllcenter.communicationList.queryAll();
+		ArrayList<Contact> dbEntries = QuantumnetworkControllcenter.communicationList.queryAll();
 		
 		Object[][]tmpContactData = new Object[dbEntries.size()][4];
 		for(int i = 0; i < dbEntries.size(); i++){

@@ -38,7 +38,6 @@ public class ConnectionAddDialog extends JDialog {
 	 * Create the dialog.
 	 */
 	public ConnectionAddDialog() {
-		setType(Type.POPUP);
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 450, 229);
 		getContentPane().setLayout(new MigLayout("", "[434px]", "[80px][80px]"));
@@ -172,7 +171,7 @@ public class ConnectionAddDialog extends JDialog {
 						}
 						
 						//Check if ID is taken
-						if(QuantumnetworkControllcenter.conMan.getConnectionEndpoint(newID) != null) {
+						if(QuantumnetworkControllcenter.conMan.hasConnectionEndpoint(newID)) {
 							System.out.println("Warning: ConnectionID is already in use!");
 							return;
 						}

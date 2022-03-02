@@ -21,12 +21,16 @@ import java.awt.Window.Type;
 import net.miginfocom.swing.MigLayout;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import javax.swing.GroupLayout;
+import javax.swing.GroupLayout.Alignment;
 
 public class ContactAddDialog extends JDialog {
 	private JTextField textField;
 	private JTextField textField_1;
 	private JTextField textField_2;
 	private JTextField textField_3;
+	private JButton okButton;
+	private JButton cancelButton;
 
 
 	/**
@@ -34,11 +38,11 @@ public class ContactAddDialog extends JDialog {
 	 */
 	public ContactAddDialog() {
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-		setBounds(100, 100, 450, 220);
-		getContentPane().setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+		setBounds(100, 100, 352, 210);
+		getContentPane().setLayout(new MigLayout("", "[368px]", "[123.00px][]"));
 		{
 			Box horizontalBox = Box.createHorizontalBox();
-			getContentPane().add(horizontalBox);
+			getContentPane().add(horizontalBox, "cell 0 0,alignx center,aligny top");
 			{
 				Box verticalBox = Box.createVerticalBox();
 				horizontalBox.add(verticalBox);
@@ -118,11 +122,9 @@ public class ContactAddDialog extends JDialog {
 		}
 		{
 			JPanel buttonPane = new JPanel();
-			getContentPane().add(buttonPane);
-			FlowLayout fl_buttonPane = new FlowLayout(FlowLayout.CENTER, 5, 5);
-			buttonPane.setLayout(fl_buttonPane);
+			getContentPane().add(buttonPane, "cell 0 1,alignx center,aligny center");
 			{
-				JButton okButton = new JButton("OK");
+				okButton = new JButton("OK");
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						
@@ -133,11 +135,10 @@ public class ContactAddDialog extends JDialog {
 					}
 				});
 				okButton.setActionCommand("OK");
-				buttonPane.add(okButton);
 				getRootPane().setDefaultButton(okButton);
 			}
 			{
-				JButton cancelButton = new JButton("Cancel");
+				cancelButton = new JButton("Cancel");
 				cancelButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						
@@ -146,8 +147,25 @@ public class ContactAddDialog extends JDialog {
 					}
 				});
 				cancelButton.setActionCommand("Cancel");
-				buttonPane.add(cancelButton);
 			}
+			GroupLayout gl_buttonPane = new GroupLayout(buttonPane);
+			gl_buttonPane.setHorizontalGroup(
+				gl_buttonPane.createParallelGroup(Alignment.LEADING)
+					.addGroup(gl_buttonPane.createSequentialGroup()
+						.addGap(29)
+						.addComponent(okButton)
+						.addGap(5)
+						.addComponent(cancelButton))
+			);
+			gl_buttonPane.setVerticalGroup(
+				gl_buttonPane.createParallelGroup(Alignment.LEADING)
+					.addGroup(gl_buttonPane.createSequentialGroup()
+						.addGap(5)
+						.addGroup(gl_buttonPane.createParallelGroup(Alignment.LEADING)
+							.addComponent(okButton)
+							.addComponent(cancelButton)))
+			);
+			buttonPane.setLayout(gl_buttonPane);
 		}
 		setLocationRelativeTo(null);
 	}

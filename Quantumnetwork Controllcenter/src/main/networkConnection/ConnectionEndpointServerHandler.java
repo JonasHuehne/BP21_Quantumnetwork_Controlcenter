@@ -3,6 +3,7 @@ package networkConnection;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.time.Duration;
 import java.time.Instant;
@@ -43,17 +44,19 @@ public class ConnectionEndpointServerHandler extends Thread{
 			serverOut = new ObjectOutputStream(clientSocket.getOutputStream());
 			serverIn = new ObjectInputStream(clientSocket.getInputStream());
 			System.out.println("-.-Trying to receive first Transmission...-.-");
-			Instant startWait = Instant.now();
-			Instant current;
 			while(settingUp) {
-				System.out.println("Updating time");
-				current = Instant.now();
+				
+				//Create TimeOut
+				NetworkTimeoutThread ntt = new NetworkTimeoutThread(3000, this, this.getClass().getMethod("terminateThread"));
+				ntt.start();
+				
 				if((receivedMessage = (NetworkPackage) serverIn.readObject()) != null) {
 					System.out.println("-.-Received following Transmission:-.-");
 					System.out.println("-.-"+ receivedMessage.getHead().toString() + " - " + receivedMessage.getTypeArg() +"-.-");
 					
 					//Create new CE
 					if(receivedMessage.getHead() == TransmissionTypeEnum.CONNECTION_REQUEST) {
+						ntt.abortTimer();
 						System.out.println("-.-Creating new CE in responce to the ConnectionRequest");
 						remoteIP = receivedMessage.getTypeArg().split(":::")[0];
 						remotePort = Integer.valueOf(receivedMessage.getTypeArg().split(":::")[1]);
@@ -66,20 +69,22 @@ public class ConnectionEndpointServerHandler extends Thread{
 					
 					
 				}
-				
-				//Timeout after 10 Seconds
-				if(Duration.between(startWait, current).toSeconds() <= 10) {
-					System.out.println("TIMEOUT!");
-					settingUp = false;
-				}
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchMethodException e) {
+			e.printStackTrace();
+		} catch (SecurityException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public void terminateThread() {
+		System.out.println("Terminating ConnectionEndpointHandlerThread!");
+		settingUp = false;
+		this.interrupt();
 	}
 	
 	
