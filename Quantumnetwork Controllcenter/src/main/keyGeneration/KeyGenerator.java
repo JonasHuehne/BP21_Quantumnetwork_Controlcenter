@@ -12,12 +12,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Date;
 
 import frame.Configuration;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
 import frame.QuantumnetworkControllcenter;
 import keyStore.KeyStoreDbManager;
+import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionState;
 import networkConnection.TransmissionTypeEnum;
 
@@ -98,12 +100,20 @@ public class KeyGenerator implements Runnable{
 		}
 	}
 	
-	/**Dummy Method for signaling the source API.
-	 * Needs to be added once the API exists.
+	/**Method for signaling the source API.
+	 * This will sent an authenticated Message to the Source Server.
 	 */
 	private void signalSourceAPI() {
-		//TODO: add Implementation depending on SourceAPI.
-		return;
+		//Create connection to Source Server
+		String sourceServerConnectionName = "SourceServer_" + MessageSystem.generateRandomMessageID();
+		MessageSystem.conMan.createNewConnectionEndpoint(sourceServerConnectionName, Configuration.getProperty("SourceIP"), Integer.valueOf(Configuration.getProperty("SourcePort")));
+
+		//File name will be UserName_Date_RandomString
+		String filename = Configuration.getProperty("UserName") + "_" + new Date().toString() + "_" + MessageSystem.generateRandomMessageID();
+		
+		//Message will be OwnServerIP_OwnServerPort_RemoteServerIP_RemoteServerPort
+		String sourceInfo = Configuration.getProperty("UserIP") + "_" + Configuration.getProperty("UserPort") + "_" + MessageSystem.conMan.getConnectionEndpoint(connectionID).getRemoteAddress() + "_" + MessageSystem.conMan.getConnectionEndpoint(connectionID).getRemotePort();
+		MessageSystem.sendAuthenticatedMessage(sourceServerConnectionName, TransmissionTypeEnum.KEYGEN_SOURCE_SIGNAL, filename, sourceInfo);
 	}
 
 	
@@ -119,11 +129,11 @@ public class KeyGenerator implements Runnable{
 		
 		check = check && MessageSystem.getNumberOfPendingMessages(connectionID) == 0;
 		
-		if(!Files.exists(Path.of(SHA256withRSAAuthentication.KEY_PATH + SHA256withRSAAuthentication.KEY_FILE_NAME + ".key"))) {
+		/*if(!Files.exists(Path.of(SHA256withRSAAuthentication.KEY_PATH + SHA256withRSAAuthentication.KEY_FILE_NAME + ".key"))) {
 			check = check && SHA256withRSAAuthentication.generateSignatureKeyPair();
-
+		//TODO: Check this out later, maybe add working check for local Signature File.
 		}
-		
+		*/
 		return check;
 		
 	}

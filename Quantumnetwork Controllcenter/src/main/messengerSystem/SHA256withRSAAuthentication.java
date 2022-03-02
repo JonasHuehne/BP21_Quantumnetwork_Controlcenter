@@ -79,7 +79,7 @@ public class SHA256withRSAAuthentication implements Authentication {
      * @return the signed message as a String; null if Error
      */
     @Override
-    public String sign (final String message) {
+    public byte[] sign (final String message) {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
             // get PrivateKey object from File
@@ -90,7 +90,7 @@ public class SHA256withRSAAuthentication implements Authentication {
             signature.update(msg);
             byte[] sig = signature.sign();
             // convert signature into 'readable' string
-            return new String(Base64.getEncoder().encode(sig));
+            return Base64.getEncoder().encode(sig);
         } catch (Exception e) {
             System.err.println("Error while signing: " + e.getMessage());
             return null;
@@ -107,7 +107,7 @@ public class SHA256withRSAAuthentication implements Authentication {
      * @throws IllegalArgumentException if sender null or does not exist, or no Signature Key for sender
      */
     @Override
-    public boolean verify (final String message, final String receivedSignature,
+    public boolean verify (final String message, final byte[] receivedSignature,
                            final String sender) {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
@@ -128,7 +128,7 @@ public class SHA256withRSAAuthentication implements Authentication {
             byte[] msg = message.getBytes();
             signature.update(msg);
             // convert receivedSignature to byte array
-            byte[] recSig = Base64.getDecoder().decode(receivedSignature.getBytes());
+            byte[] recSig = Base64.getDecoder().decode(receivedSignature);
             // return result of verification
             return signature.verify(recSig);
         } catch (Exception e) {

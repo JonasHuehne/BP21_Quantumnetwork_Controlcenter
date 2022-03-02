@@ -17,5 +17,6 @@ public enum TransmissionTypeEnum {
 	KEYGEN_SYNC_REQUEST,	//This is sent to another connectionEndpoint to ask if that cE wants to generate a common key for encrypted communication.
 	KEYGEN_SYNC_ACCEPT,	//This is a positive response to KEYGEN_SYNC_REQUEST and will continue the key-generation process.
 	KEYGEN_SYNC_REJECT,	//This is a negative response to KEYGEN_SYNC_REQUEST and will abort the key-generation process.
+	KEYGEN_SOURCE_SIGNAL,	//This is used for signals intended for the Photon source. I contains will cause it´s message to be written into a .txt at the Source Servers location.
 	KEYGEN_TERMINATION;	//This causes the recipient to stop the key-generation process.
 }

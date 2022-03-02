@@ -13,7 +13,7 @@ public class NetworkPackage implements Serializable{
 	private TransmissionTypeEnum head;
 	private String typeArgument; 
 	private byte[] content;
-	private String signature;
+	private byte[] signature;
 	
 	/**Supply the newly created NetworkPackage with a TransmissionType, an Argument depending on the type and the actual content of the package.
 	 * 
@@ -22,7 +22,7 @@ public class NetworkPackage implements Serializable{
 	 * @param content	the actual content of the transmission
 	 * @param sig	the signature if the NetworkPackage is used for authenticated communication
 	 */
-	public NetworkPackage(TransmissionTypeEnum head, String typeArgument, byte[] content, String sig) {
+	public NetworkPackage(TransmissionTypeEnum head, String typeArgument, byte[] content, byte[] sig) {
 		this.head = head;
 		this.typeArgument = typeArgument;
 		this.content = content;
@@ -57,7 +57,7 @@ public class NetworkPackage implements Serializable{
 	 * 
 	 * @return the signature of the transmission
 	 */
-	public String getSignature() {
+	public byte[] getSignature() {
 		return signature;
 	}
 }

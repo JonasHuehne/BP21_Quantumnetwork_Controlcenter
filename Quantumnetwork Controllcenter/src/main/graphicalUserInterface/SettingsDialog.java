@@ -24,12 +24,17 @@ public class SettingsDialog extends JDialog {
 	private JTextField ownNameTextfield;
 	private JTextField ownIPTextField;
 	private JTextField ownPortTextField;
+	private JTextField sourceIPTextField;
+	private JTextField sourcePortTextField;
 	private JTextField encodingTextField;
 	
-	private String name = null;
-	private String ip = null;
-	private String port = null;
-	private String enc = null;
+	private static String name = null;
+	private static String ip = null;
+	private static String port = null;
+	private static String sourceIP = null;
+	private static String sourcePort = null;
+	private static String enc = null;
+	
 
 
 
@@ -47,6 +52,10 @@ public class SettingsDialog extends JDialog {
 		{
 			Box verticalBox = Box.createVerticalBox();
 			contentPanel.add(verticalBox);
+			{
+				JSeparator separator = new JSeparator();
+				verticalBox.add(separator);
+			}
 			{
 				Box horizontalBox = Box.createHorizontalBox();
 				verticalBox.add(horizontalBox);
@@ -113,6 +122,46 @@ public class SettingsDialog extends JDialog {
 				Box horizontalBox = Box.createHorizontalBox();
 				verticalBox.add(horizontalBox);
 				{
+					JLabel sourceIPLabel = new JLabel("Source IP:    ");
+					sourceIPLabel.setToolTipText("This needs to be set to the public IP of the Photon Source Server.");
+					horizontalBox.add(sourceIPLabel);
+				}
+				{
+					sourceIPTextField = new JTextField();
+					sourceIPTextField.setToolTipText("This needs to be set to the public IP of the Photon Source Server.");
+					sourceIPTextField.setText("127.0.0.1");
+					horizontalBox.add(sourceIPTextField);
+					sourceIPTextField.setColumns(10);
+				}
+			}
+			{
+				JSeparator separator = new JSeparator();
+				verticalBox.add(separator);
+			}
+			{
+				Box horizontalBox = Box.createHorizontalBox();
+				verticalBox.add(horizontalBox);
+				{
+					JLabel sourcePortNewLabel = new JLabel("Source Port:    ");
+					sourcePortNewLabel.setToolTipText("This needs to be set to the Portnumber of the Photon Source Server.");
+					horizontalBox.add(sourcePortNewLabel);
+				}
+				{
+					sourcePortTextField = new JTextField();
+					sourcePortTextField.setToolTipText("This needs to be set to the Portnumber of the Photon Source Server.");
+					sourcePortTextField.setText("2300");
+					horizontalBox.add(sourcePortTextField);
+					sourcePortTextField.setColumns(10);
+				}
+			}
+			{
+				JSeparator separator = new JSeparator();
+				verticalBox.add(separator);
+			}
+			{
+				Box horizontalBox = Box.createHorizontalBox();
+				verticalBox.add(horizontalBox);
+				{
 					JLabel encodingLabel = new JLabel("Preferred Encoding:");
 					encodingLabel.setToolTipText("The Encoding used when transferring Strings to bytes. If some characters are not correctly transmitted, you can change the encoding to one that supports the characters in question.");
 					horizontalBox.add(encodingLabel);
@@ -124,6 +173,10 @@ public class SettingsDialog extends JDialog {
 					horizontalBox.add(encodingTextField);
 					encodingTextField.setColumns(10);
 				}
+			}
+			{
+				JSeparator separator = new JSeparator();
+				verticalBox.add(separator);
 			}
 		}
 		{
@@ -169,7 +222,7 @@ public class SettingsDialog extends JDialog {
 	/**This method checks if the config file contains each of the setting parameters and if not, it creates the parameter with a default value.
 	 * 
 	 */
-	public void initSettings() {
+	public static void initSettings() {
 		
 		name = Configuration.getProperty("UserName");	
 		if(name == null) {
@@ -189,6 +242,18 @@ public class SettingsDialog extends JDialog {
 			port = Configuration.getProperty("UserPort");
 		}
 		
+		sourceIP = Configuration.getProperty("SourceIP");	
+		if(sourceIP == null) {
+			Configuration.setProperty("SourceIP", "127.0.0.1");
+			sourceIP = Configuration.getProperty("SourceIP");
+		}
+		
+		sourcePort = Configuration.getProperty("SourcePort");	
+		if(sourcePort == null) {
+			Configuration.setProperty("SourcePort", "2400");
+			sourcePort = Configuration.getProperty("SourcePort");
+		}
+		
 		enc = Configuration.getProperty("Encoding");
 		if(enc == null) {
 			Configuration.setProperty("Encoding", "ISO-8859-1");
@@ -206,6 +271,10 @@ public class SettingsDialog extends JDialog {
 		
 		ownPortTextField.setText(port);
 		
+		sourceIPTextField.setText(sourceIP);
+		
+		sourcePortTextField.setText(sourcePort);
+		
 		encodingTextField.setText(enc);
 	}
 	
@@ -217,6 +286,8 @@ public class SettingsDialog extends JDialog {
 		Configuration.setProperty("UserName", ownNameTextfield.getText());
 		Configuration.setProperty("UserIP", ownIPTextField.getText());
 		Configuration.setProperty("UserPort", ownPortTextField.getText());
+		Configuration.setProperty("SourceIP", sourceIPTextField.getText());
+		Configuration.setProperty("SourcePort", sourcePortTextField.getText());
 		Configuration.setProperty("Encoding", encodingTextField.getText());
 	}
 

@@ -8,6 +8,8 @@ import encryptionDecryption.AES256;
 import keyStore.KeyStoreDbManager;
 import keyStore.KeyStoreObject;
 import java.util.Random;
+
+import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
@@ -22,7 +24,7 @@ import networkConnection.TransmissionTypeEnum;
  */
 public class MessageSystem {
 	
-	private static final String ENCODING_STANDARD = "ISO-8859-1";
+	private static final String ENCODING_STANDARD = Configuration.getProperty("Encoding");
 	
 	public static ConnectionManager conMan;
 	private static final byte[] debuggingKey = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
@@ -33,7 +35,7 @@ public class MessageSystem {
 	 * @param message the message to be sent.
 	 * @param sig the signature of an authenticated message.
 	 */
-	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, byte[] message, String sig) {
+	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, byte[] message, byte[] sig) {
 
 		//Check if connectionManager exists
 		if(conMan == null) {
@@ -55,7 +57,7 @@ public class MessageSystem {
 	
 	
 	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, String message, String sig) {
-		sendMessage(connectionID, type, argument, stringToByteArray(message), sig);
+		sendMessage(connectionID, type, argument, stringToByteArray(message), stringToByteArray(sig));
 	}
 
 	/**Similar to sendMessage but allows for custom prefix. Used for internal system calls via the net.
@@ -77,7 +79,7 @@ public class MessageSystem {
 		if(state == ConnectionState.CONNECTED) {
 			
 			//Send the signal
-			sendMessage(connectionID, signal, signalTypeArgument, (byte[])null, "");
+			sendMessage(connectionID, signal, signalTypeArgument, (byte[])null, null);
 		}
 		else {
 			System.err.println("[" + connectionID + "]: Sending of message: " + signal + " aborted, because the ConnectionEndpoint was not connected to anything!");
@@ -92,7 +94,7 @@ public class MessageSystem {
 	 * @param sig optional signature used by authenticated messages.
 	 * @return returns True if the confirmation of the message has been received, False if it times out.
 	 */
-	public static boolean sendConfirmedMessage(String connectionID, byte[] message, String sig) {
+	public static boolean sendConfirmedMessage(String connectionID, byte[] message, byte[] sig) {
 		
 		ConnectionState state = QuantumnetworkControllcenter.conMan.getConnectionState(connectionID);
 		
@@ -145,7 +147,7 @@ public class MessageSystem {
 	}
 	
 	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) {
-		return sendConfirmedMessage(connectionID, stringToByteArray(message), sig);
+		return sendConfirmedMessage(connectionID, stringToByteArray(message), stringToByteArray(sig));
 	}
 	
 	
@@ -212,7 +214,7 @@ public class MessageSystem {
 	 * @return true if the sending of both messages worked, false otherwise
 	 */
 	public static boolean sendAuthenticatedMessage(String connectionID, final byte[] message) {
-		String signature;
+		byte[] signature;
 		signature = QuantumnetworkControllcenter.authentication.sign(byteArrayToString(message));
 		return sendConfirmedMessage(connectionID, message, signature);
 	}
@@ -243,7 +245,7 @@ public class MessageSystem {
 	 * @return Returns true unless the Encoding from byte[] to String used for the authentication fails. Then it returns false.
 	 */
 	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final byte[] message) {
-		String signature;
+		byte[] signature;
 		signature = QuantumnetworkControllcenter.authentication.sign(byteArrayToString(message));
 		sendMessage(connectionID, type, argument, message, signature);
 		return true;
@@ -277,7 +279,7 @@ public class MessageSystem {
 		else {
 		//getting key
 		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
-		byteKey = keyObject.getKeyBuffer();
+		byteKey = keyObject.getCompleteKeyBuffer();
 		
 		//TODO wird sp�ter vermutlich nicht mehr ben�tigt
 		//marking key as used
@@ -315,7 +317,7 @@ public class MessageSystem {
 		NetworkPackage msg = readReceivedMessage(connectionID);
 		byte[] message;
 		message = msg.getContent();
-		String signature = msg.getSignature();
+		byte[] signature = msg.getSignature();
 		if(QuantumnetworkControllcenter.authentication.verify(byteArrayToString(message), signature, connectionID)) {
 			return message;
 		}
@@ -338,7 +340,7 @@ public class MessageSystem {
 		else {
 		//getting key
 		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
-		byteKey = keyObject.getKeyBuffer();
+		byteKey = keyObject.getCompleteKeyBuffer();
 		
 		//TODO wird sp�ter vermutlich nicht mehr ben�tigt
 		//marking key as used

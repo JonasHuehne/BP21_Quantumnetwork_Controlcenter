@@ -81,7 +81,7 @@ public class ConnectionEndpoint implements Runnable{
 		isConnected = true;
 		
 		System.out.println("+++CE "+ connectionID +" is sending a message back!+++");
-		pushMessage(TransmissionTypeEnum.TRANSMISSION, "", MessageSystem.stringToByteArray("Hallo, dies ist eine Nachricht von dem automatisch generierten CE zurück zu dem CE der die Verbindung aufgebaut hat!"), "");
+		pushMessage(TransmissionTypeEnum.TRANSMISSION, "", MessageSystem.stringToByteArray("Hallo, dies ist eine Nachricht von dem automatisch generierten CE zurück zu dem CE der die Verbindung aufgebaut hat!"), null);
 		QuantumnetworkControllcenter.guiWindow.createConnectionRepresentation(connectionName, remoteIP, remotePort);
 		//Wait for greeting
 		//System.out.println("[" + connectionID + "]: Waiting for Greeting from connecting Party");
@@ -224,7 +224,7 @@ public class ConnectionEndpoint implements Runnable{
 			isBuildingConnection = false;
 			//Send Message to allow foreign Endpoint to connect with us.
 			System.out.println("[" + connectionID + "]: " + connectionID + " is sending a greeting.");
-			pushMessage(TransmissionTypeEnum.CONNECTION_REQUEST, localAddress + ":::" + localServerPort, null, "");
+			pushMessage(TransmissionTypeEnum.CONNECTION_REQUEST, localAddress + ":::" + localServerPort, null, null);
 			System.out.println("[" + connectionID + "]: waiting for response");
 	
 			listenForMessage();
@@ -259,7 +259,7 @@ public class ConnectionEndpoint implements Runnable{
 	public void closeConnection(boolean localRequest) {
 		if(isConnected && localRequest) {
 			//If close-request has local origin, message other connectionEndpoint about closing the connection.
-			pushMessage(TransmissionTypeEnum.CONNECTION_TERMINATION, "", null, "");
+			pushMessage(TransmissionTypeEnum.CONNECTION_TERMINATION, "", null, null);
 		}
 		System.out.println("[" + connectionID + "]: Local Shutdown of ConnectionEndpoint " + connectionID);
 		isConnected = false;
@@ -297,7 +297,7 @@ public class ConnectionEndpoint implements Runnable{
 	 * @param typeArgument an additional argument used by some TransmissionTypes to pass on important information. Can be "" if not needed.
 	 * @param message the String Message that should be send to the connected ConnectionEndpoints Server.
 	 */
-	public void pushMessage(TransmissionTypeEnum type, String typeArgument, byte[] message, String sig) {
+	public void pushMessage(TransmissionTypeEnum type, String typeArgument, byte[] message, byte[] sig) {
 		//Check for existence of connection before attempting so send.
 		if(!isConnected) {
 			System.err.println("[" + connectionID + "]: Warning: Attempted to push a message to another Endpoint while not beeing connected to anything!");
@@ -462,7 +462,7 @@ public class ConnectionEndpoint implements Runnable{
 			case RECEPTION_CONFIRMATION_REQUEST:	//This works similar to the regular Transmission but it indicates the sender is waiting for a reception confirmation. This sends this confirmation back.
 				//System.out.println("[" + connectionID + "]: Received Confirm-Message: " + transmission.getHead() + "!");
 				addMessageToStack( transmission);
-				pushMessage(TransmissionTypeEnum.RECEPTION_CONFIRMATION_RESPONSE, transmission.getTypeArg(), null, "");
+				pushMessage(TransmissionTypeEnum.RECEPTION_CONFIRMATION_RESPONSE, transmission.getTypeArg(), null, null);
 				return;
 				
 			case RECEPTION_CONFIRMATION_RESPONSE:	//This is received if the local CE has sent a confirmedMessage and is waiting for the confirmation. Once received the confirmation in the form of the messageID is added to the pendingConfirmations.
@@ -489,6 +489,9 @@ public class ConnectionEndpoint implements Runnable{
 				//System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
 				addMessageToStack( transmission);
 				return;			
+				
+			case KEYGEN_SOURCE_SIGNAL:	//THis is only used for signaling the source server to start sending photons. 
+				
 				
 			case KEYGEN_TERMINATION:	//This is received if the connected ConnectionEndpoint intends to terminate the KeyGen Process. This will cause a local shutdown in response.
 				//Terminating Key Gen
