@@ -173,16 +173,19 @@ public class KeyGenerator implements Runnable{
 			if(Duration.between(startWait, current).toSeconds() >= 10) {
 				new GenericWarningMessage("ERROR: The Communication Partner has not agreed to generate a Key. Aborting Process...");
 				System.err.println("[" + connectionID + "]: Time-out while waiting for Pre-Key-Generation Sync. Did not recieve an Accept- or Reject-Answer in time");
+				hasBeenAccepted = 0;
 				return false;
 			}
 		}
 		
 		if(hasBeenAccepted>0) {
 			System.out.println("SyncRequest Accepted!");
+			hasBeenAccepted = 0;
 			return true;
 		}
 		
 		System.out.println("SyncRequest Rejected!");
+		hasBeenAccepted = 0;
 		return false;
 	}
 	
