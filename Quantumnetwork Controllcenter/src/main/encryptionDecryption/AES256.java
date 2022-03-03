@@ -12,6 +12,9 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
+import qnccLogger.GetCodeLine;
+import qnccLogger.Log;
+
 
 /**
  * Class for AES-256 encryption and decryption of Strings using the CBC Mode with a constant IV
@@ -29,6 +32,7 @@ public class AES256 {
 	private static final int KEY_LENGTH_BYTE = 32;
 	private static final int KEY_LENGTH_BIT = 256;
 	private static final String KEY_WRONG_SIZE = "An invalid key was used. Please use a key of length 256";
+	private static final Log log = new Log(AES256.class.getName());
 	
 	/**
 	 * Encrypts the given plain text String using the AES-256 CBC algorithm and a suitable key
@@ -42,7 +46,7 @@ public class AES256 {
 		
 		//checking that key has the right length
 		if(strKey.length() != KEY_LENGTH_BIT) {
-			System.err.println(KEY_WRONG_SIZE);
+			log.logWarning(KEY_WRONG_SIZE, new IllegalArgumentException("a Exception messag :)"));
 			return null;
 		}
 		
@@ -65,7 +69,7 @@ public class AES256 {
 		
 		//checking that key has the right length
 		if(byteKey.length != KEY_LENGTH_BYTE) {
-			System.err.println(KEY_WRONG_SIZE);
+			log.logWarning(KEY_WRONG_SIZE);
 			return null;
 		}
 		
@@ -87,7 +91,7 @@ public class AES256 {
 		
 		//checking that key has the right length
 		if(key.getEncoded().length != KEY_LENGTH_BYTE) {
-			System.err.println(KEY_WRONG_SIZE);
+			log.logWarning(KEY_WRONG_SIZE);
 			return null;
 		}
 		
@@ -136,7 +140,7 @@ public class AES256 {
 		
 		//checking that key has the right length
 		if(byteKey.length != KEY_LENGTH_BYTE) {
-			System.err.println(KEY_WRONG_SIZE);
+			log.logWarning(KEY_WRONG_SIZE);
 			return;
 		}
 				
@@ -185,7 +189,7 @@ public class AES256 {
 	
 		//checking that key has the right length
 		if(strKey.length() != KEY_LENGTH_BIT) {
-			System.err.println(KEY_WRONG_SIZE);
+			log.logWarning(KEY_WRONG_SIZE);
 			return null;
 		}
 		
@@ -207,7 +211,7 @@ public class AES256 {
 		
 		//checking that key has the right length
 		if(byteKey.length != KEY_LENGTH_BYTE) {
-			System.err.println(KEY_WRONG_SIZE);
+			log.logWarning(KEY_WRONG_SIZE);
 			return null;
 		}
 		
@@ -229,7 +233,7 @@ public class AES256 {
 		
 		//checking that key has the right length
 		if(key.getEncoded().length != KEY_LENGTH_BYTE) {
-			System.err.println(KEY_WRONG_SIZE);
+			log.logWarning(KEY_WRONG_SIZE);
 			return null;
 		}
 		
@@ -280,7 +284,7 @@ public static void decryptFile(File inputFile, byte[] byteKey, File outputFile) 
 		
 		//checking that key has the right length
 		if(byteKey.length != KEY_LENGTH_BYTE) {
-			System.err.println(KEY_WRONG_SIZE);
+			log.logWarning(KEY_WRONG_SIZE);
 			return;
 		}
 				
