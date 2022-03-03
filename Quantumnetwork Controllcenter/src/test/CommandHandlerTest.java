@@ -619,17 +619,17 @@ class CommandHandlerTest {
 			CommandHandler.processCommand(hello_world + " Bob");
 			TimeUnit.MILLISECONDS.sleep(NETWORK_DELAY_MS);
 			// Bob should have received a message on his CE to Alice
-			assertEquals(1, conMan.getConnectionEndpoint("Alice").sizeOfMessageStack(), "Bob should have received a message from Alice.");
+			assertEquals(1, conMan.getConnectionEndpoint("Alice").sizeOfMessageQueue(), "Bob should have received a message from Alice.");
 			// Alice should not have gotten any messages from Bob yet
-			assertEquals(0, conMan.getConnectionEndpoint("Bob").sizeOfMessageStack(), "Alice should not have received a message from Bob.");
+			assertEquals(0, conMan.getConnectionEndpoint("Bob").sizeOfMessageQueue(), "Alice should not have received a message from Bob.");
 
 			
 			// Bob sends a hello world back to Alice
 			CommandHandler.processCommand(hello_world + " Alice");
 			TimeUnit.MILLISECONDS.sleep(NETWORK_DELAY_MS);
 			// Now both should have exactly one message waiting
-			assertEquals(1, conMan.getConnectionEndpoint("Alice").sizeOfMessageStack(), "Bob should have received a message from Alice.");
-			assertEquals(1, conMan.getConnectionEndpoint("Bob").sizeOfMessageStack(), "Alice should have received a message from Bob.");
+			assertEquals(1, conMan.getConnectionEndpoint("Alice").sizeOfMessageQueue(), "Bob should have received a message from Alice.");
+			assertEquals(1, conMan.getConnectionEndpoint("Bob").sizeOfMessageQueue(), "Alice should have received a message from Bob.");
 			
 		}
 		
@@ -666,17 +666,17 @@ class CommandHandlerTest {
 			CommandHandler.processCommand(hello_world + " Bob");
 			TimeUnit.MILLISECONDS.sleep(NETWORK_DELAY_MS);
 			// Bob should have received a message on his CE to Alice
-			assertEquals(1, conMan.getConnectionEndpoint("Alice").sizeOfMessageStack(), "Bob should have received a message from Alice.");
+			assertEquals(1, conMan.getConnectionEndpoint("Alice").sizeOfMessageQueue(), "Bob should have received a message from Alice.");
 			// Alice should not have gotten any messages from Bob yet
-			assertEquals(0, conMan.getConnectionEndpoint("Bob").sizeOfMessageStack(), "Alice should not have received a message from Bob.");
+			assertEquals(0, conMan.getConnectionEndpoint("Bob").sizeOfMessageQueue(), "Alice should not have received a message from Bob.");
 
 			
 			// Bob sends a hello world back to Alice
 			CommandHandler.processCommand(hello_world + " Alice");
 			TimeUnit.MILLISECONDS.sleep(NETWORK_DELAY_MS);
 			// Now both should have exactly one message waiting
-			assertEquals(1, conMan.getConnectionEndpoint("Alice").sizeOfMessageStack(), "Bob should have received a message from Alice.");
-			assertEquals(1, conMan.getConnectionEndpoint("Bob").sizeOfMessageStack(), "Alice should have received a message from Bob.");			
+			assertEquals(1, conMan.getConnectionEndpoint("Alice").sizeOfMessageQueue(), "Bob should have received a message from Alice.");
+			assertEquals(1, conMan.getConnectionEndpoint("Bob").sizeOfMessageQueue(), "Alice should have received a message from Bob.");			
 		}
 		
 		/*
@@ -749,11 +749,11 @@ class CommandHandlerTest {
 			conMan.createNewConnectionEndpoint("Alice", 55500);
 			
 			CommandHandler.processCommand(hello_world);
-			assertEquals(0, conMan.getConnectionEndpoint("Alice").sizeOfMessageStack());
+			assertEquals(0, conMan.getConnectionEndpoint("Alice").sizeOfMessageQueue());
 			CommandHandler.processCommand(hello_world + " Bob");
-			assertEquals(0, conMan.getConnectionEndpoint("Alice").sizeOfMessageStack());
+			assertEquals(0, conMan.getConnectionEndpoint("Alice").sizeOfMessageQueue());
 			CommandHandler.processCommand(hello_world + " Alice"); 
-			assertEquals(0, conMan.getConnectionEndpoint("Alice").sizeOfMessageStack());
+			assertEquals(0, conMan.getConnectionEndpoint("Alice").sizeOfMessageQueue());
 		
 		}
 		

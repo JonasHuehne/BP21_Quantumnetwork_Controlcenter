@@ -19,6 +19,11 @@ import javax.swing.JSeparator;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
+/**This Dialog contains settings such as the own ServerIP/Port
+ * 
+ * @author Jonas Huehne
+ *
+ */
 public class SettingsDialog extends JDialog {
 
 	private final JPanel contentPanel = new JPanel();

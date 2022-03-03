@@ -24,6 +24,12 @@ import java.awt.event.ActionEvent;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 
+/**This Dialog is used to add a new Contact to the ContactDB.
+ * 
+ * @author Jonas Huehne
+ *
+ */
+
 public class ContactAddDialog extends JDialog {
 	private JTextField nameTextField;
 	private JTextField ipTextField;

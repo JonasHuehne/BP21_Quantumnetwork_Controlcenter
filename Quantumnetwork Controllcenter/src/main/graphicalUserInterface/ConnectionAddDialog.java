@@ -25,6 +25,11 @@ import javax.swing.JRadioButton;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
 
+/**This Dialog is used to create a new Connection.
+ * 
+ * @author Jonas Huehne
+ *
+ */
 public class ConnectionAddDialog extends JDialog {
 	private JTextField textField;
 	private JTextField textField_1;
@@ -232,7 +237,10 @@ public class ConnectionAddDialog extends JDialog {
 		
 	}
 	
-	
+	/**This is used to ensure that only one of the 2 RadioButtons is selected at once.
+	 * 
+	 * @param editedRadioButton The newly changed RadioButton.
+	 */
 	private void toggleRadioButtons(JRadioButton editedRadioButton) {
 		boolean newState;
 		JRadioButton notEditedRB;

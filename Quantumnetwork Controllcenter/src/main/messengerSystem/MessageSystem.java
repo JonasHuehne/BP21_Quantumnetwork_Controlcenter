@@ -32,8 +32,10 @@ public class MessageSystem {
 	/**This simply sends a message on the given ConnectionEndpoint. No confirmation is expected from the recipient.
 	 *
 	 * @param connectionID the name of the ConnectionEndpoint to send the message from.
+	 * @param type the specific type of message. Look at TransmissionTypeEnum for more information.
+	 * @param argument the type-specific argument. Look at TransmissionTypeEnum for more information.
 	 * @param message the message to be sent.
-	 * @param sig the signature of an authenticated message.
+	 * @param sig the signature of an authenticated message. May be null for non-authenticated messages.
 	 */
 	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, byte[] message, byte[] sig) {
 
@@ -42,11 +44,9 @@ public class MessageSystem {
 			System.err.println("WARNING: Tried to send a message via the MessageSystem before initializing the QuantumnetworkControllcenter, thereby setting the connectionManager Reference.");
 			return;
 		}
-
 		//Check if connectionEndpoint is connected to something.
 		ConnectionState state = conMan.getConnectionState(connectionID);
 		if(state == ConnectionState.CONNECTED) {
-			
 			//Send the messages
 			conMan.sendMessage(connectionID, type, argument, message, sig);
 		}
@@ -55,35 +55,38 @@ public class MessageSystem {
 		}
 	}
 	
-	
+	/**This simply sends a message on the given ConnectionEndpoint. No confirmation is expected from the recipient.
+	 *
+	 * @param connectionID the name of the ConnectionEndpoint to send the message from.
+	 * @param type the specific type of message. Look at TransmissionTypeEnum for more information.
+	 * @param argument the type-specific argument. Look at TransmissionTypeEnum for more information.
+	 * @param message the message to be sent.
+	 * @param sig the signature of an authenticated message. May be null for non-authenticated messages.
+	 */
 	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, String message, String sig) {
-		sendMessage(connectionID, type, argument, stringToByteArray(message), stringToByteArray(sig));
+		if(sig == null) {
+			sendMessage(connectionID, type, argument, stringToByteArray(message), null);
+		}else {
+			sendMessage(connectionID, type, argument, stringToByteArray(message), stringToByteArray(sig));
+		}
 	}
 
-	/**Similar to sendMessage but allows for custom prefix. Used for internal system calls via the net.
-	 *
-	 * @param connectionID the name of the ConnectionEndpoint to send the signal from.
-	 * @param signal used as message prefix, should be one of the cases inside ConnectionEndpoint.java -> processMessage()
-	 * @param signalTypeArgument a special string that contains further information that some signalTypes need to work. Can be "" if not needed.
+	/**
+	 * This returns the actual message contained inside a given NetworkPackage.
+	 * @param transmission the NetworkPackage to open.
+	 * @return the content as a byte[]. Can be converted to string with MessageSystem.byteArrayToString().
 	 */
-	public static void sendSignal(String connectionID, TransmissionTypeEnum signal, String signalTypeArgument) {
-		
-		//Check if connectionManager exists
-		if(conMan == null) {
-			System.err.println("WARNING: Tried to send a message via the MessageSystem before initializing the QuantumnetworkControllcenter, thereby setting the connectionManager reference.");
-			return;
-		}
-
-		//Check if connectionEndpoint is connected to something.
-		ConnectionState state = conMan.getConnectionState(connectionID);
-		if(state == ConnectionState.CONNECTED) {
-			
-			//Send the signal
-			sendMessage(connectionID, signal, signalTypeArgument, (byte[])null, null);
-		}
-		else {
-			System.err.println("[" + connectionID + "]: Sending of message: " + signal + " aborted, because the ConnectionEndpoint was not connected to anything!");
-		}
+	public static byte[] readMessage(NetworkPackage transmission) {
+		return transmission.getContent();
+	}
+	
+	/**
+	 * This returns the actual message contained inside a given NetworkPackage.
+	 * @param transmission the NetworkPackage to open.
+	 * @return the content as a String.
+	 */
+	public static String readMessageAsString(NetworkPackage transmission) {
+		return byteArrayToString(transmission.getContent());
 	}
 
 
@@ -146,6 +149,13 @@ public class MessageSystem {
 
 	}
 	
+	/**This sends a message and the recipient is going to echo the message back to us.
+	 *
+	 * @param connectionID the name of the ConnectionEndpoint to send the message from.
+	 * @param message the message to be sent.
+	 * @param sig optional signature used by authenticated messages.
+	 * @return returns True if the confirmation of the message has been received, False if it times out.
+	 */
 	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) {
 		return sendConfirmedMessage(connectionID, stringToByteArray(message), stringToByteArray(sig));
 	}
@@ -160,89 +170,41 @@ public class MessageSystem {
 	    return randomGen.ints(48, 123).filter(i -> (i<=57||i>=65) && (i<=90||i>=97)).limit(16).collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
 	}
 
-	/**reads the oldest Message available and removes it from the stack(actually a queue)
-	 * @param connectionID the name of the ConnectionEndpoint
-	 * @return the oldest message
-	 */
-	public static NetworkPackage readReceivedMessage(String connectionID) {
-		return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).readMessageFromStack();
-	}
-
-	/**returns the oldest message, but does not remove it from the queue
-	 * @param connectionID the name of the ConnectionEndpoint
-	 * @return the oldest message that was received and not yet read(removed)
-	 */
-	public static NetworkPackage previewReceivedMessage(String connectionID) {
-		return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).peekMessageFromStack();
-	}
-
-	/**returns the last message that was received but does not remove it from the queue
-	 * @param connectionID the name of the ConnectionEndpoint
-	 * @return the latest message
-	 */
-	public static NetworkPackage previewLastReceivedMessage(String connectionID) {
-		return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).peekLatestMessageFromStack();
-	}
-
-	/**Returns the number of messages that are on the stack and waiting to be read(removed).
-	 * @param connectionID the name of the ConnectionEndpoint
-	 * @return the number of messages.
-	 */
-	public static int getNumberOfPendingMessages(String connectionID) {
-		return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).sizeOfMessageStack();
-	}
-
-	/**Returns a linkedList of all un-read messages
-	 * @param connectionID the name of the ConnectionEndpoint
-	 * @return the list of unread messages.
-	 */
-	public static LinkedList<String> getAllReceivedMessages(String connectionID){
-		return QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getMessageStack();
-	}
 
 	
-	/**
-	 * sends a signed message, it is the first variant of sendAuthenticatedMessage()
-	 * The first variant with 2 parameters sends confirmedMessages, meaning it will wait for a confirmation that the message was received on the other end.
-	 * It should be used for standard message- and filetransfers, i.e. transmissions of type TRANSMISSION.
+	/**Sends a signed and confirmed Message.
+	 * Signing requires valid keys.
 	 * 
-	 * The second variant with 4 parameters does not expect a confirmation, but allows for any TransmissionType to be used.
-	 * It is intended to be used for signals to the program at the other end of the connection, i.e. anything other than transmissionType TRANSMISSION
-	 * 
-	 * @param connectionID the name of the ConnectionEndpoint
-	 * @param message the message to be sent, can be generic byte[] or String
-	 * @return true if the sending of both messages worked, false otherwise
+	 * @param connectionID the connection that should sent the message.
+	 * @param message the actual message as a byte[].
+	 * @return returns true if the message was confirmed to have been received.
 	 */
 	public static boolean sendAuthenticatedMessage(String connectionID, final byte[] message) {
 		byte[] signature;
+		SHA256withRSAAuthentication.generateSignatureKeyPair();
 		signature = QuantumnetworkControllcenter.authentication.sign(byteArrayToString(message));
 		return sendConfirmedMessage(connectionID, message, signature);
 	}
 	
-	/**
-	 * this is a version of sendAuthenticatedMessage() that takes a String instead of a byte[] as a message to sent.
-	 * @param connectionID the name of the connection that this should be sent on.
-	 * @param message the message as a String
-	 * @return returns true if sending was successful, false and potentially logs an UnsupportedEncodingException if it failed.
+	/**Sends a signed and confirmed Message.
+	 * Signing requires valid keys.
+	 * 
+	 * @param connectionID the connection that should sent the message.
+	 * @param message the actual message as a String.
+	 * @return returns true if the message was confirmed to have been received.
 	 */
 	public static boolean sendAuthenticatedMessage(String connectionID, final String message) {
 		return sendAuthenticatedMessage(connectionID, stringToByteArray(message));
 	}
 	
-	
-	/**
-	 * sends a signed message, it is the second variant of sendAuthenticatedMessage()
-	 * The first variant with 2 parameters sends confirmedMessages, meaning it will wait for a confirmation that the message was received on the other end.
-	 * It should be used for standard message- and filetransfers, i.e. transmissions of type TRANSMISSION.
+	/**Sends a signed and confirmed Message.
+	 * Signing requires valid keys.
 	 * 
-	 * The second variant with 4 parameters does not expect a confirmation, but allows for any TransmissionType to be used.
-	 * It is intended to be used for signals to the program at the other end of the connection, i.e. anything other than transmissionType TRANSMISSION
-	 * 
-	 * @param connectionID the name of the ConnectionEndpoint
-	 * @param type the type of the transmission. For TransmissionType == TRANSMISSION, i.e. content transmissions, use the first variant instead.
+	 * @param connectionID the connection that should sent the message.
+	 * @param type the type of the transmission.
 	 * @param argument the optional argument, use depends on the chosen TransmissionType. Refer to ConnectionEndpoint.processMessage() for more information.
 	 * @param message the actual message to be transmitted. Can be empty. Most transmissions with content will use the first variant of this method.
-	 * @return Returns true unless the Encoding from byte[] to String used for the authentication fails. Then it returns false.
+	 * @return returns true if the message was confirmed to have been received.
 	 */
 	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final byte[] message) {
 		byte[] signature;
@@ -251,18 +213,37 @@ public class MessageSystem {
 		return true;
 	}
 	
-	/**This is the same as the regular version of sendAuthenticatedMessage() with a custom TransmissionType, but allows for the message to be a String instead of a byte[].
+	/**Sends a signed and confirmed Message.
+	 * Signing requires valid keys.
 	 * 
-	 * @param connectionID the name of the ConnectionEndpoint
-	 * @param type the type of the transmission. For TransmissionType == TRANSMISSION, i.e. content transmissions, use the first variant instead.
+	 * @param connectionID the connection that should sent the message.
+	 * @param type the type of the transmission.
 	 * @param argument the optional argument, use depends on the chosen TransmissionType. Refer to ConnectionEndpoint.processMessage() for more information.
 	 * @param message the actual message to be transmitted. Can be empty. Most transmissions with content will use the first variant of this method.
-	 * @return
+	 * @return returns true if the message was confirmed to have been received.
 	 */
 	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final String message) {
 		return sendAuthenticatedMessage(connectionID, type, argument, stringToByteArray(message));
 	}
 
+	/**
+	 * Receives and verifies a signed message.
+	 * 
+	 * @param connectionID the name of the ConnectionEndpoint
+	 * @param transmission the NetworkPackage that was received and needs to be verified.
+	 * @return the received message as byte[], null if error none, on time-out, if the decoding failed or if result of verify was false
+	 */
+	public static byte[] readAuthenticatedMessage(String connectionID, NetworkPackage transmission) {
+		NetworkPackage msg = transmission;
+		byte[] message;
+		message = msg.getContent();
+		byte[] signature = msg.getSignature();
+		if(QuantumnetworkControllcenter.authentication.verify(byteArrayToString(message), signature, connectionID)) {
+			return message;
+		}
+		return null;
+	}
+	
 	/**
 	 * sends a signed message with encrypted text
 	 * 
@@ -301,37 +282,13 @@ public class MessageSystem {
 	}
 	
 	/**
-	 * receives a signed message
-	 * 
-	 * @param connectionID the name of the ConnectionEndpoint
-	 * @return the received message as byte[], null if error none, on time-out, if the decoding failed or if result of verify was false
-	 */
-	public static byte[] readAuthenticatedMessage(String connectionID) {
-		Instant startWait = Instant.now();
-		while(getNumberOfPendingMessages(connectionID) < 1) {
-			Instant current = Instant.now();
-			if(Duration.between(startWait, current).toSeconds() > 10) {
-				return null;
-			}
-		}
-		NetworkPackage msg = readReceivedMessage(connectionID);
-		byte[] message;
-		message = msg.getContent();
-		byte[] signature = msg.getSignature();
-		if(QuantumnetworkControllcenter.authentication.verify(byteArrayToString(message), signature, connectionID)) {
-			return message;
-		}
-		return null;
-	}
-	
-	/**
 	 * receives a signed message with encrypted text
 	 * 
 	 * @param connectionID the ID of the sender
 	 * @return the received and decrypted message as string, null if error none or if result of verify was false
 	 */
-	public static String readEncryptedMessage(String connectionID) {
-		byte[] encrypted = readAuthenticatedMessage(connectionID);
+	public static String readEncryptedMessage(String connectionID, NetworkPackage transmission) {
+		byte[] encrypted = readAuthenticatedMessage(connectionID, transmission);
 		
 		byte[] byteKey;
 		if(connectionID.equals("42debugging42") || connectionID.equals("41debugging41") ) {

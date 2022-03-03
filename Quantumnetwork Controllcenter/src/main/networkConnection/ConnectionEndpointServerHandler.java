@@ -39,11 +39,9 @@ public class ConnectionEndpointServerHandler extends Thread{
 	}
 	
 	public void run() {
-		System.out.println("-.-Starting to handle ConnectionEndpoint-.-");
 		try {
 			serverOut = new ObjectOutputStream(clientSocket.getOutputStream());
 			serverIn = new ObjectInputStream(clientSocket.getInputStream());
-			System.out.println("-.-Trying to receive first Transmission...-.-");
 			while(settingUp) {
 				
 				//Create TimeOut
@@ -51,20 +49,16 @@ public class ConnectionEndpointServerHandler extends Thread{
 				ntt.start();
 				
 				if((receivedMessage = (NetworkPackage) serverIn.readObject()) != null) {
-					System.out.println("-.-Received following Transmission:-.-");
 					System.out.println("-.-"+ receivedMessage.getHead().toString() + " - " + receivedMessage.getTypeArg() +"-.-");
 					
 					//Create new CE
 					if(receivedMessage.getHead() == TransmissionTypeEnum.CONNECTION_REQUEST) {
 						ntt.abortTimer();
-						System.out.println("-.-Creating new CE in responce to the ConnectionRequest");
 						remoteIP = receivedMessage.getTypeArg().split(":::")[0];
 						remotePort = Integer.valueOf(receivedMessage.getTypeArg().split(":::")[1]);
 						String remoteName = receivedMessage.getTypeArg().split(":::")[2];
-						System.out.println(receivedMessage.getTypeArg() + "---+++---");
-						System.out.println(remoteIP + "---+++---");
-						System.out.println(remotePort + "---+++---");
-						QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(remoteName + "_" + MessageSystem.generateRandomMessageID(), clientSocket, serverOut, serverIn, remoteIP, remotePort);
+						ConnectionEndpoint ce = QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(remoteName, clientSocket, serverOut, serverIn, remoteIP, remotePort);
+						ce.setRemoteName(remoteName);
 						settingUp = false;
 					}
 					
@@ -82,6 +76,9 @@ public class ConnectionEndpointServerHandler extends Thread{
 		}
 	}
 	
+	/**
+	 * This stops the thread.
+	 */
 	public void terminateThread() {
 		System.out.println("Terminating ConnectionEndpointHandlerThread!");
 		settingUp = false;
