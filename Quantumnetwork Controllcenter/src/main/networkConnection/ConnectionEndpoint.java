@@ -439,7 +439,7 @@ public class ConnectionEndpoint implements Runnable{
 		case KEYGEN_SYNC_REQUEST:	//This is received if another ConnectionEndpoint that is connected to this one is intending to start a KeyGeneration Process and is asking for a response(accept/reject).
 			//System.out.println("[" + connectionID + "]: Received KeyGenSync-Message: " + transmission.getHead() + "!");
 			SHA256withRSAAuthentication authenticator = new SHA256withRSAAuthentication();
-			if (authenticator.verify(MessageSystem.byteArrayToString(transmission.getContent()), transmission.getSignature(), connectionID)) {
+			if (authenticator.verify(transmission.getContent(), transmission.getSignature(), connectionID)) {
 				keyGen.keyGenSyncResponse();
 			}
 			return;

@@ -27,7 +27,7 @@ public class SQLiteCommunicationList implements CommunicationList {
      * Regex for checking the validity of the contact name
      * only allows a-z, 0-9. _ and -
      */
-    private static final String CONTACT_NAME_SYNTAX = "(\\w|_|-)*";
+    private static final String CONTACT_NAME_SYNTAX = "(\\w|_|-|\\.|:)*";
 
     // Regex for checking the validity of the ip
     // accepts both correct ipv4 and ipv6 patterns
