@@ -31,10 +31,10 @@ import javax.swing.event.ChangeEvent;
  *
  */
 public class ConnectionAddDialog extends JDialog {
-	private JTextField textField;
-	private JTextField textField_1;
-	private JTextField textField_2;
-	private JTextField textField_3;
+	private JTextField textFieldContactName;
+	private JTextField textFieldContactIpAddr;
+	private JTextField textFieldContactPort;
+	private JTextField textFieldContactPK;
 	private JRadioButton useManualInputRadioButton;
 	private JRadioButton useSelectedInputRadioButton;
 	
@@ -63,35 +63,35 @@ public class ConnectionAddDialog extends JDialog {
 					verticalBox.add(useSelectedInputRadioButton);
 				}
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForNameLabel = new JPanel();
+					verticalBox.add(panelForNameLabel);
 					{
-						JLabel lblNewLabel = new JLabel("Name:");
-						panel.add(lblNewLabel);
+						JLabel labelName = new JLabel("Name:");
+						panelForNameLabel.add(labelName);
 					}
 				}
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForIpAddrLabel = new JPanel();
+					verticalBox.add(panelForIpAddrLabel);
 					{
-						JLabel lblNewLabel_1 = new JLabel("IP Address:");
-						panel.add(lblNewLabel_1);
+						JLabel labelIpAddr = new JLabel("IP Address:");
+						panelForIpAddrLabel.add(labelIpAddr);
 					}
 				}
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForPortLabel = new JPanel();
+					verticalBox.add(panelForPortLabel);
 					{
-						JLabel lblNewLabel_2 = new JLabel("Port:");
-						panel.add(lblNewLabel_2);
+						JLabel labelPort = new JLabel("Port:");
+						panelForPortLabel.add(labelPort);
 					}
 				}
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForSignatureLabel = new JPanel();
+					verticalBox.add(panelForSignatureLabel);
 					{
-						JLabel lblNewLabel_3 = new JLabel("Signature:");
-						panel.add(lblNewLabel_3);
+						JLabel labelSignature = new JLabel("Signature:");
+						panelForSignatureLabel.add(labelSignature);
 					}
 				}
 			}
@@ -110,43 +110,43 @@ public class ConnectionAddDialog extends JDialog {
 					verticalBox.add(useManualInputRadioButton);
 				}
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForNameEntry = new JPanel();
+					verticalBox.add(panelForNameEntry);
 					{
-						textField = new JTextField();
-						textField.setToolTipText("This is the name of the connection. It should be named after the intended TARGET of the connection.");
-						panel.add(textField);
-						textField.setColumns(10);
+						textFieldContactName = new JTextField();
+						textFieldContactName.setToolTipText("This is the name of the connection. It should be named after the intended TARGET of the connection.");
+						panelForNameEntry.add(textFieldContactName);
+						textFieldContactName.setColumns(10);
 					}
 				}
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForIpEntry = new JPanel();
+					verticalBox.add(panelForIpEntry);
 					{
-						textField_1 = new JTextField();
-						textField_1.setToolTipText("The IP Address that this connection should be connecting to.");
-						panel.add(textField_1);
-						textField_1.setColumns(10);
+						textFieldContactIpAddr = new JTextField();
+						textFieldContactIpAddr.setToolTipText("The IP Address that this connection should be connecting to.");
+						panelForIpEntry.add(textFieldContactIpAddr);
+						textFieldContactIpAddr.setColumns(10);
 					}
 				}
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForPortEntry = new JPanel();
+					verticalBox.add(panelForPortEntry);
 					{
-						textField_2 = new JTextField();
-						textField_2.setToolTipText("The Port Number that this connection should be connecting to. This would be what the other end of the connection entered as \"Local Port\".");
-						panel.add(textField_2);
-						textField_2.setColumns(10);
+						textFieldContactPort = new JTextField();
+						textFieldContactPort.setToolTipText("The Port Number that this connection should be connecting to. This would be what the other end of the connection entered as \"Local Port\".");
+						panelForPortEntry.add(textFieldContactPort);
+						textFieldContactPort.setColumns(10);
 					}
 				}
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForSignatureEntry = new JPanel();
+					verticalBox.add(panelForSignatureEntry);
 					{
-						textField_3 = new JTextField();
-						textField_3.setToolTipText("The signature used by this connection.");
-						panel.add(textField_3);
-						textField_3.setColumns(10);
+						textFieldContactPK = new JTextField();
+						textFieldContactPK.setToolTipText("The signature used by this connection.");
+						panelForSignatureEntry.add(textFieldContactPK);
+						textFieldContactPK.setColumns(10);
 					}
 				}
 			}
@@ -165,7 +165,7 @@ public class ConnectionAddDialog extends JDialog {
 						
 						//Determine new ID
 						if(useManualInputRadioButton.isSelected()) {
-							newID = textField.getText();
+							newID = textFieldContactName.getText();
 						}else {
 							selectedTableRowIndex = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
 							if(selectedTableRowIndex == -1) {
@@ -183,8 +183,8 @@ public class ConnectionAddDialog extends JDialog {
 						
 						
 						if(useManualInputRadioButton.isSelected()) {
-							System.out.println("Created new CE: " + textField.getText() + " : "+ QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(textField.getText(), textField_1.getText(), Integer.valueOf(textField_2.getText())));
-							QuantumnetworkControllcenter.guiWindow.createConnectionRepresentation(textField.getText(), textField_1.getText(), Integer.valueOf(textField_2.getText()));
+							System.out.println("Created new CE: " + textFieldContactName.getText() + " : "+ QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(textFieldContactName.getText(), textFieldContactIpAddr.getText(), Integer.valueOf(textFieldContactPort.getText())));
+							QuantumnetworkControllcenter.guiWindow.createConnectionRepresentation(textFieldContactName.getText(), textFieldContactIpAddr.getText(), Integer.valueOf(textFieldContactPort.getText()));
 						}else {
 							selectedTableRowIndex = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
 							if(selectedTableRowIndex == -1) {
@@ -254,15 +254,15 @@ public class ConnectionAddDialog extends JDialog {
 			notEditedRB.setSelected(!newState);
 			
 			if(useManualInputRadioButton.getSelectedObjects() != null) {
-				textField.setEnabled(true);
-				textField_1.setEnabled(true);
-				textField_2.setEnabled(true);
-				textField_3.setEnabled(true);
+				textFieldContactName.setEnabled(true);
+				textFieldContactIpAddr.setEnabled(true);
+				textFieldContactPort.setEnabled(true);
+				textFieldContactPK.setEnabled(true);
 			}else {
-				textField.setEnabled(false);
-				textField_1.setEnabled(false);
-				textField_2.setEnabled(false);
-				textField_3.setEnabled(false);
+				textFieldContactName.setEnabled(false);
+				textFieldContactIpAddr.setEnabled(false);
+				textFieldContactPort.setEnabled(false);
+				textFieldContactPK.setEnabled(false);
 			}
 
 	}
