@@ -18,9 +18,11 @@ import frame.Configuration;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
 import frame.QuantumnetworkControllcenter;
+import graphicalUserInterface.GenericWarningMessage;
 import keyStore.KeyStoreDbManager;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionState;
+import networkConnection.NetworkPackage;
 import networkConnection.TransmissionTypeEnum;
 
 
@@ -49,6 +51,8 @@ public class KeyGenerator implements Runnable{
 	private String expectedTermination = "terminate.txt";	//Use this to set the filename of the terminate signal wirtten by the local python script to signal this program to stop the KeyGen Process.
 	private String expectedPythonTerm = "pythonTerm.txt";	//Use this to set the filename of the signal for the python script to terminate the KeyGen Process. This is created if the program was told to shutdown from the other side of the connection.
 	private boolean keyGenRunning;
+	private int hasBeenAccepted = 0; //This controls the waiting period while waiting for the KeyGenPartner to Accept(1) or Reject(-1).
+
 	
 	/**A new KeyGenerator is added for each ConnectionEndpoint automatically and is supplied that CEs ID.
 	 * 
@@ -129,18 +133,19 @@ public class KeyGenerator implements Runnable{
 		
 		//Check if active connection is connected
 		check = check && MessageSystem.conMan.getConnectionState(connectionID).equals(ConnectionState.CONNECTED);
+		//TODO: Add any other Reqs here!
 		
-		check = check && MessageSystem.getNumberOfPendingMessages(connectionID) == 0;
-		
-		/*if(!Files.exists(Path.of(SHA256withRSAAuthentication.KEY_PATH + SHA256withRSAAuthentication.KEY_FILE_NAME + ".key"))) {
-			check = check && SHA256withRSAAuthentication.generateSignatureKeyPair();
-		//TODO: Check this out later, maybe add working check for local Signature File.
-		}
-		*/
 		return check;
 		
 	}
 	
+	/**This is used to signal if the other Party has accepted or rejected the proposal to generate a key.
+	 * 
+	 * @param response 1 = Accepted, -1 = Rejected, 0 = Default/Undecided.
+	 */
+	public void updateAccRejState(int response) {
+		hasBeenAccepted = response;
+	}
 	
 	/**Returns true if both ends of the keyGen process agree to begin the generation process.
 	 * 
@@ -159,22 +164,21 @@ public class KeyGenerator implements Runnable{
 		//Wait for Answer
 		while(true) {
 			//Wait for authenticated Transmission of KeyGenResponse(message and signature == 2)
-			if(MessageSystem.getNumberOfPendingMessages(connectionID) > 0) {
-				if(MessageSystem.previewReceivedMessage(connectionID).getHead() == TransmissionTypeEnum.KEYGEN_SYNC_ACCEPT || MessageSystem.previewReceivedMessage(connectionID).getHead() == TransmissionTypeEnum.KEYGEN_SYNC_REJECT) {
-					break;
-				}
+			if(hasBeenAccepted != 0) {
+				break;
 			}
 			
 			
 			current = Instant.now();
 			if(Duration.between(startWait, current).toSeconds() >= 10) {
+				new GenericWarningMessage("ERROR: The Communication Partner has not agreed to generate a Key. Aborting Process...");
 				System.err.println("[" + connectionID + "]: Time-out while waiting for Pre-Key-Generation Sync. Did not recieve an Accept- or Reject-Answer in time");
 				return false;
 			}
 		}
-		String msg = MessageSystem.byteArrayToString(MessageSystem.readReceivedMessage(connectionID).getContent());
-		System.out.println("[" + connectionID + "]: Received Sync-Response: " + msg + "!");
-		if(msg.equals("syncConfirm")) {
+		
+		if(hasBeenAccepted>0) {
+			System.out.println("SyncRequest Accepted!");
 			return true;
 		}
 		
@@ -350,11 +354,11 @@ public class KeyGenerator implements Runnable{
 			Files.deleteIfExists(connectionPath.resolve(expectedTermination + ".lock"));
 			
 			if(relay) {
-				MessageSystem.sendSignal(connectionID, TransmissionTypeEnum.KEYGEN_TERMINATION, "");
+				MessageSystem.sendAuthenticatedMessage(connectionID, TransmissionTypeEnum.KEYGEN_TERMINATION, "", "");
 			}
 			if(informPython) {
 				//Signal the local python script that the other end of the connection has terminated the KeyGen Process
-				Writer pythonTermWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(connectionPath.resolve(expectedPythonTerm).toString()), "ISO-8859-1"));
+				Writer pythonTermWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(connectionPath.resolve(expectedPythonTerm).toString()), Configuration.getProperty("Encoding")));
 				pythonTermWriter.write("");
 			}
 			
@@ -389,9 +393,9 @@ public class KeyGenerator implements Runnable{
 				
 			    //Send FileContent
 			    try {
-					MessageSystem.sendAuthenticatedMessage(connectionID, new String(outFileContent, "ISO-8859-1"));
+			    	MessageSystem.sendAuthenticatedMessage(connectionID, TransmissionTypeEnum.KEYGEN_TRANSMISSION, "" ,new String(outFileContent, Configuration.getProperty("Encoding")));
 				} catch (UnsupportedEncodingException e) {
-					System.err.println("[" + connectionID + "]: Error: unsupportet Encoding: ISO-8859-1!");
+					System.err.println("[" + connectionID + "]: Error: unsupportet Encoding: "+ Configuration.getProperty("Encoding") +"!");
 					e.printStackTrace();	    
 				}
 				
@@ -427,45 +431,50 @@ public class KeyGenerator implements Runnable{
 						e.printStackTrace();
 					}
 					return;
-				}
-				
-				
-				
-			}
-			//Part 2
-			//Writing Incoming Files
-			if(!Files.exists(inFilePath) && QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getMessageStack().size() > 0) {
-				byte[] inFileContent = null;
-				
-				//Receive Message
-				inFileContent = MessageSystem.readReceivedMessage(connectionID).getContent();    
-				
-				//Write temporary lock file
-				File lockFile = new File(connectionPath.resolve(inFilePath + ".lock").toString());
-				try {
-					lockFile.createNewFile();
-				} catch (IOException e1) {
-					System.err.println("[" + connectionID + "]: Error while creating temp lock file for the new in.txt");
-					e1.printStackTrace();
-				}
-				//Write to file
-				try		
-				(Writer inWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(inFilePath.toString()), "ISO-8859-1"))) {
-					inWriter.write(MessageSystem.byteArrayToString(inFileContent));
-				} catch (UnsupportedEncodingException e) {
-
-					e.printStackTrace();
-				} catch (FileNotFoundException e) {
-
-					e.printStackTrace();
-				} catch (IOException e) {
-
-					e.printStackTrace();
-				}
-				//Remove .lockFile
-				lockFile.delete();
+				}	
 			}
 		}
+		
+	}
+	
+	/**This is called whenever a NetworkPackage of type KEYGEN_TRANSMISSION is received during KeyGen.
+	 * It is used to transmit the vital information needed for the KeyGen Process.
+	 * 
+	 * @param msg the NetworkPackage containing the KeyGen Information.
+	 */
+	public void writeKeyGenFile(NetworkPackage msg) {
+		Path inFilePath = connectionPath.resolve(expectedIncomingFilename);
+		
+		//Writing Incoming Files
+		byte[] inFileContent = null;
+		
+		//Receive Message
+		inFileContent = MessageSystem.readAuthenticatedMessage(connectionID, msg);    
+		
+		//Write temporary lock file
+		File lockFile = new File(connectionPath.resolve(inFilePath + ".lock").toString());
+		try {
+			lockFile.createNewFile();
+		} catch (IOException e1) {
+			System.err.println("[" + connectionID + "]: Error while creating temp lock file for the new in.txt");
+			e1.printStackTrace();
+		}
+		//Write to file
+		try		
+		(Writer inWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(inFilePath.toString()), Configuration.getProperty("Encoding")))) {
+			inWriter.write(MessageSystem.byteArrayToString(inFileContent));
+		} catch (UnsupportedEncodingException e) {
+
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+
+			e.printStackTrace();
+		} catch (IOException e) {
+
+			e.printStackTrace();
+		}
+		//Remove .lockFile
+		lockFile.delete();
 	}
 }
 

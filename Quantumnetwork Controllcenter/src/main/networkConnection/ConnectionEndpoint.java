@@ -11,6 +11,8 @@ import java.util.LinkedList;
 
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
+import graphicalUserInterface.GenericWarningMessage;
+import graphicalUserInterface.MessageGUI;
 import keyGeneration.KeyGenerator;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
@@ -37,22 +39,26 @@ public class ConnectionEndpoint implements Runnable{
 	private Socket remoteClientSocket;	// another Endpoints ClientSocket that messaged out local Server Socket	
 	private String remoteIP;	//the IP of the connected Endpoint
 	private int remotePort;		//the Port of the connected Endpoint
+	private String remoteName;	//the Name of the connected Partner
 	
 	//Communication Channels
 	private ObjectOutputStream clientOut;	//the outgoing channel that information from this ConnectionEndpoint is sent to another.
-	private ObjectInputStream clientIn;
+	private ObjectInputStream clientIn;	//the incoming message channel.
 	
 	//State
 	private boolean listenForMessages = false;
 	private boolean isConnected = false;
 	private boolean isBuildingConnection = false;
-	private boolean waitingForConnection = false;
 	private boolean waitingForMessage = false;
+	
+	private MessageGUI logGUI;//This is a ref to the Chat GUI
 	
 	private Thread messageThread = new Thread(this, connectionID + "_messageThread");	//a parallel thread used to listen for incoming messages while connected to another ConnectionEndpoint.
 	
-	private LinkedList<NetworkPackage> messageStack = new LinkedList<NetworkPackage>();	//this is where received messages are stored in order of reception and are read from via MessageSystems.readReceivedMessage
+	
 	private LinkedList<String> pendingConfirmations = new LinkedList<String>();	//this is where reception confirmations are stored and checked from while a confirmedMessage is waiting for a confirmation.
+	
+	private String messageLog = " ------ START OF MESSAGE LOG ------ ";
 	
 	/**A ConnectionEndpoint is created with a unique name, an address, that determines the information exchanged during the creation of a connection and
 	 * a port that this ConnectionEndpoint is listening on for messages.
@@ -78,11 +84,11 @@ public class ConnectionEndpoint implements Runnable{
 		remotePort = targetPort;
 		System.out.println("+++CE "+ connectionID +" received Socket and Streams!+++");
 		
-		waitingForConnection = false;
+		isBuildingConnection = false;
 		isConnected = true;
 		
 		System.out.println("+++CE "+ connectionID +" is sending a message back!+++");
-		pushMessage(TransmissionTypeEnum.TRANSMISSION, "", MessageSystem.stringToByteArray("Hallo, dies ist eine Nachricht von dem automatisch generierten CE zurück zu dem CE der die Verbindung aufgebaut hat!"), null);
+		pushMessage(TransmissionTypeEnum.CONNECTION_CONFIRMATION, Configuration.getProperty("UserName"), null, null);
 		QuantumnetworkControllcenter.guiWindow.createConnectionRepresentation(connectionName, remoteIP, remotePort);
 		//Wait for greeting
 		//System.out.println("[" + connectionID + "]: Waiting for Greeting from connecting Party");
@@ -108,6 +114,7 @@ public class ConnectionEndpoint implements Runnable{
 			System.err.println("Error occured while establishing a connection from " + connectionID + " to target ServerSocket @ " + remoteIP + ":" + remotePort + ".");
 			e.printStackTrace();
 		}
+		
 	}
 	
 	/**Reports the current State of this Endpoints Connection.
@@ -118,16 +125,13 @@ public class ConnectionEndpoint implements Runnable{
 		if(isConnected && !isBuildingConnection) {
 			return ConnectionState.CONNECTED;
 		}
-		if(!isConnected && !isBuildingConnection && !waitingForConnection && !waitingForMessage) {
+		if(!isConnected && !isBuildingConnection && !waitingForMessage) {
 			return ConnectionState.CLOSED;
 		}
-		if(waitingForConnection && !isConnected && !isBuildingConnection) {
-			return ConnectionState.WAITINGFORCONNECTION;
-		}
-		if(!waitingForConnection && !isConnected && !isBuildingConnection && waitingForMessage) {
+		if(!isConnected && !isBuildingConnection && waitingForMessage) {
 			return ConnectionState.WAITINGFORMESSAGE;
 		}
-		if(!waitingForConnection && !isConnected && isBuildingConnection) {
+		if(!isConnected && isBuildingConnection) {
 			return ConnectionState.CONNECTING;
 		}
 		return ConnectionState.ERROR;
@@ -193,6 +197,38 @@ public class ConnectionEndpoint implements Runnable{
 		return remotePort;
 	}
 	
+	/**Returns the Name of the Connected User.
+	 * 
+	 * @return the Name of the Connected User.
+	 */
+	public String getRemoteName() {
+		return remoteName;
+	}
+	
+	/**Sets the Name of the Connected User.
+	 * 
+	 * @param remoteName the Name of the connected User.
+	 */
+	public void setRemoteName(String remoteName) {
+		this.remoteName = remoteName;
+	}
+	
+	/**Returns the latest Text-Message Log.
+	 * 
+	 * @return the latest Text-Message Log.
+	 */
+	public MessageGUI getLogGUI() {
+		return logGUI;
+	}
+	
+	/**Use this to Edit the Text-Message Log.
+	 * 
+	 * @param log The new Log.
+	 */
+	public void setLogGUI(MessageGUI log) {
+		logGUI = log;
+	}
+	
 	
 	//-------------//
 	// Client Side //
@@ -221,8 +257,6 @@ public class ConnectionEndpoint implements Runnable{
 			localClientSocket = new Socket(remoteIP,remotePort);
 			clientOut = new ObjectOutputStream(localClientSocket.getOutputStream());
 			clientIn = new ObjectInputStream(localClientSocket.getInputStream());
-			isConnected = true;
-			isBuildingConnection = false;
 			//Send Message to allow foreign Endpoint to connect with us.
 			System.out.println("[" + connectionID + "]: " + connectionID + " is sending a greeting.");
 			pushMessage(TransmissionTypeEnum.CONNECTION_REQUEST, localAddress + ":::" + localServerPort + ":::" + Configuration.getProperty("UserName"), null, null);
@@ -265,7 +299,6 @@ public class ConnectionEndpoint implements Runnable{
 		System.out.println("[" + connectionID + "]: Local Shutdown of ConnectionEndpoint " + connectionID);
 		isConnected = false;
 		isBuildingConnection = false;
-		waitingForConnection = false;
 		waitingForMessage = false;
 		listenForMessages = false;
 		
@@ -297,15 +330,15 @@ public class ConnectionEndpoint implements Runnable{
 	 * @param type the type of message being sent. Regular transmissions should use TransmissionTypeEnum.TRANSMSSION.
 	 * @param typeArgument an additional argument used by some TransmissionTypes to pass on important information. Can be "" if not needed.
 	 * @param message the String Message that should be send to the connected ConnectionEndpoints Server.
+	 * @param sig the signature of the Message if it is an authenticated message. If not, set sig to null.
 	 */
 	public void pushMessage(TransmissionTypeEnum type, String typeArgument, byte[] message, byte[] sig) {
 		//Check for existence of connection before attempting so send.
-		if(!isConnected) {
+		if(!isConnected && !isBuildingConnection) {
 			System.err.println("[" + connectionID + "]: Warning: Attempted to push a message to another Endpoint while not beeing connected to anything!");
 			return;
 		}
-		//System.out.println("Trying to send package");
-		//System.out.println("[" + connectionID + "]: ConnectionEndpoint of " + connectionID + " is pushing Message: " + message + " to ServerSocket of " + remoteID + ":" + String.valueOf(remotePort) + "!");
+		//Write Message to Stream
 		try {
 			clientOut.writeObject(new NetworkPackage(type, typeArgument, message, sig));
 		} catch (IOException e) {
@@ -313,62 +346,7 @@ public class ConnectionEndpoint implements Runnable{
 			e.printStackTrace();
 		}
 	}
-	
-	/**this is usually called during message-processing if the messages has content that needs to be stored in the message queue.
-	 * 
-	 * @param message the message to store in the queue.
-	 */
-	private void addMessageToStack(NetworkPackage message) {
-		messageStack.add(message);
-		//System.out.println("Received the following Message: " + message.getContent());
-	}
 
-	/**This reads the oldest message form the MessageStack and removes the messages from the queue.
-	 * Use peekMessageFromStack if you do not want to remove the messages from the queue.
-	 * May return null if no message was found in the queue.
-	 * @return the oldest message in the queue. It is removed from the queue an can not be accessed again.
-	 */
-	public NetworkPackage readMessageFromStack() {
-		
-		//check if a messages is in the queue before reading it.
-		if (messageStack.size()>0) {
-			return messageStack.pop();
-		}
-		System.err.println("[" + connectionID + "]: Error: Tried to read a messages from the MessageStack, but the queue was empty! Check if a message exists via sizeOfMessageStack() before attempting to read the message.");
-		return null;
-	}
-	
-	/**Returns the content of the oldest message in the queue and returns it without removing it from the queue.
-	 * May return null if no message was found in the queue.
-	 * @return the oldest message in the queue. It is not removed from messageStack by this action.
-	 */
-	public NetworkPackage peekMessageFromStack() {
-		if (messageStack.size()>0) {
-			return messageStack.peekFirst();
-		}
-		System.err.println("[" + connectionID + "]: Error: Tried to read a messages from the MessageStack, but the queue was empty! Check if a message exists via sizeOfMessageStack() before attempting to read the message.");
-		return null;
-	}
-	
-	/**This works just like peekMessageFromStack() but returns the newest message in the queue.
-	 * May return null if no message was found in the queue.
-	 * @return the newest message in the queue. It is not removed from the mesageStack by this action.
-	 */
-	public NetworkPackage peekLatestMessageFromStack() {
-		if (messageStack.size()>0) {
-			return messageStack.peekLast();
-		}
-		System.err.println("[" + connectionID + "]: Error: Tried to read a messages from the MessageStack, but the queue was empty! Check if a message exists via sizeOfMessageStack() before attempting to read the message.");
-		return null;
-	}
-	
-	/**This returns the number of messages in the MessageStack waiting to be read.
-	 * 
-	 * @return the size of the queue.
-	 */
-	public int sizeOfMessageStack() {
-		return messageStack.size();
-	}
 	
 	/**This is called in the message processing step after receiving a transmission if the type was a response to a confirmedMessages.
 	 * This stores the messageID in the pendingConfirmations List where it will be found by the confirmedMessage method waiting for the confirmation this id is representing.
@@ -395,14 +373,6 @@ public class ConnectionEndpoint implements Runnable{
 		pendingConfirmations.remove(messageID);
 	}
 	
-	/**This returns a copy of the messages that are waiting to be read on the messageStack.
-	 * 
-	 * @return a copy of the queue of waiting messages.
-	 */
-	@SuppressWarnings("unchecked")
-	public LinkedList<String> getMessageStack(){
-		return (LinkedList<String>) messageStack.clone();
-	}
 	
 	
 	
@@ -434,6 +404,13 @@ public class ConnectionEndpoint implements Runnable{
 		System.out.println("[" + connectionID + "]: Received Message, starting processing!: " + transmission.getHead() + " - " + transmission.getTypeArg() + " - " + transmission.getContent());
 		//Chose processing based on transmissionType in the NetworkPackage head.
 		switch(transmission.getHead()){
+		
+		case CONNECTION_CONFIRMATION:
+			System.out.println("[" + connectionID + "]: Connection Confirmation received!");
+			remoteName = transmission.getTypeArg();
+			isBuildingConnection = false;
+			isConnected = true;
+			return;
 			
 		case CONNECTION_TERMINATION:	//This is received if the other, connected connectionEndpoint wishes to close the connection. Takes all necessary actions on this local side of the connection.
 			//System.out.println("[" + connectionID + "]: TerminationOrder Received at " + connectionID + "!");
@@ -441,13 +418,16 @@ public class ConnectionEndpoint implements Runnable{
 			return;
 			
 		case TRANSMISSION:	//This is received if the connected connectionEndpoint wants to send this CE a transmission containing actual data in the NetworkPackages content field. The transmission is added to the MessageStack.
-			System.out.println("[" + connectionID + "]: Received Message: " + MessageSystem.byteArrayToString(transmission.getContent()) + "!");
-			addMessageToStack( transmission);
+			receiveMessage(transmission);
+			return;
+			
+		case FILE_TRANSFER:
+			receiveFile(transmission);
 			return;
 			
 		case RECEPTION_CONFIRMATION_REQUEST:	//This works similar to the regular Transmission but it indicates the sender is waiting for a reception confirmation. This sends this confirmation back.
 			//System.out.println("[" + connectionID + "]: Received Confirm-Message: " + transmission.getHead() + "!");
-			addMessageToStack( transmission);
+			receiveMessage(transmission);
 			pushMessage(TransmissionTypeEnum.RECEPTION_CONFIRMATION_RESPONSE, transmission.getTypeArg(), null, null);
 			return;
 			
@@ -467,18 +447,24 @@ public class ConnectionEndpoint implements Runnable{
 		case KEYGEN_SYNC_ACCEPT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
 			//The SyncConfirm is added to the regular messagesStack and read by the KeyGenerator.
 			//System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
-			addMessageToStack( transmission);
+			//addMessageToQueue( transmission);
+			keyGen.updateAccRejState(1);
 			return;
 			
 		case KEYGEN_SYNC_REJECT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
 			//The SyncReject is added to the regular messagesStack and read by the KeyGenerator.
 			//System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
-			addMessageToStack( transmission);
-			return;			
+			//addMessageToQueue( transmission);
+			keyGen.updateAccRejState(-1);
+			return;		
+			
+		case KEYGEN_TRANSMISSION:
+			keyGen.writeKeyGenFile(transmission);
+			return;
 			
 		case KEYGEN_SOURCE_SIGNAL:	//This is only used for signaling the source server to start sending photons. 
-			//TODO: Add source logic
-			
+			//TODO: Add source logic. It just needs to drop a file containing the message content as Text in a special folder where the source is waiting for the file.
+			return;
 			
 		case KEYGEN_TERMINATION:	//This is received if the connected ConnectionEndpoint intends to terminate the KeyGen Process. This will cause a local shutdown in response.
 			//Terminating Key Gen
@@ -504,7 +490,7 @@ public class ConnectionEndpoint implements Runnable{
 		NetworkPackage receivedMessage;
 		while(waitingForMessage) {
 			try {
-				if(waitingForMessage && clientIn != null && isConnected && !waitingForConnection && (receivedMessage = (NetworkPackage) clientIn.readObject()) != null) {
+				if(waitingForMessage && clientIn != null && (isConnected||isBuildingConnection) && (receivedMessage = (NetworkPackage) clientIn.readObject()) != null) {
 					System.out.println( "[" + connectionID + "]:Starting to process Message...");
 					processMessage(receivedMessage);
 
@@ -517,6 +503,72 @@ public class ConnectionEndpoint implements Runnable{
 			}
 		}
 		listenForMessages = false;
+	}
+	
+	/**This Method handles all types of Transmissions.
+	 * TRANSMISSION, FILE_TRANSFER and RECEPTION_CONFIRMATION_REQUEST will be handled by this method after being processed.
+	 * 
+	 * @param transmission the new transmission.
+	 */
+	private void receiveMessage(NetworkPackage transmission) {
+		String msg;
+		System.out.println("[" + connectionID + "]: Receiving new Message...");
+		
+		if(transmission.getHead() == TransmissionTypeEnum.FILE_TRANSFER) {
+			//TODO: Implement File Handling
+		}
+		
+		
+		if(transmission.getTypeArg().split(":::")[0] == "encrypted") {
+			//Handle Encrypted Messages
+			msg = MessageSystem.readEncryptedMessage(connectionID, transmission);
+			if(msg == null) {
+				System.err.println("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
+				new GenericWarningMessage("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
+			}
+			return;
+		}
+		
+		if(transmission.getSignature() != null) {
+			//Handle Authenticated Messages
+			msg = MessageSystem.byteArrayToString(MessageSystem.readAuthenticatedMessage(connectionID, transmission));
+			if(msg == null) {
+				System.err.println("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
+				new GenericWarningMessage("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
+			}
+			
+		}else {
+			//Handle Unsafe Messages
+			msg = MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission));
+		}
+		
+		//Update Message Log
+		logMessage(messageLog + "\n" + remoteName +" wrote: \n" + msg);
+		
+		if(logGUI != null) {
+			logGUI.refreshMessageLog();
+		}
+	}
+	
+	private void receiveFile(NetworkPackage transmission) {
+		//TODO: Add creation of file here! I assume the Argument of the NetworkPackage will contain the path + filename.filetype!
+	}
+	
+	/**This replaces the message log with a new one.
+	 * Normally the new one also contains the old one.
+	 * 
+	 * @param msg the new message log.
+	 */
+	public void logMessage(String msg) {
+		messageLog = (msg);
+	}
+	
+	/**This returns the MessageLog that contains any plain-text messages of this connection.
+	 * 
+	 * @return the message log
+	 */
+	public String getMessageLog() {
+		return messageLog;
 	}
 
 }

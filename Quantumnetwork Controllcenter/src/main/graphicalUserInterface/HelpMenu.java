@@ -11,6 +11,11 @@ import javax.swing.JLabel;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
+/**This Menu will contain an instructional manual
+ * 
+ * @author Jonas Huehne
+ *
+ */
 public class HelpMenu extends JDialog {
 
 	private final JPanel contentPanel = new JPanel();

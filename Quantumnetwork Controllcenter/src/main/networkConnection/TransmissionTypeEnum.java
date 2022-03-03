@@ -9,6 +9,7 @@ package networkConnection;
  */
 public enum TransmissionTypeEnum {
 	CONNECTION_REQUEST,	//A ConnectionRequest is sent if establishConnection() is called, to create a connection from one connectionEndpoint to another.
+	CONNECTION_CONFIRMATION,	//This is used to confirm a newly established connection back to the initiating CE.
 	CONNECTION_TERMINATION,	//This type of transmission signals that the connection is going to be closed from the senders end and the receiver should do the same.
 	TRANSMISSION,	//This is the default transmission type, used to transmit anything that has "actual content", like a file or text message via the NetworkPackage.content String field.
 	FILE_TRANSFER,	//This is the transmission type to be used if a file rather than a message is being transmitted. It implies that the typeArgument contains the relative filePath and filename.type
@@ -17,6 +18,7 @@ public enum TransmissionTypeEnum {
 	KEYGEN_SYNC_REQUEST,	//This is sent to another connectionEndpoint to ask if that cE wants to generate a common key for encrypted communication.
 	KEYGEN_SYNC_ACCEPT,	//This is a positive response to KEYGEN_SYNC_REQUEST and will continue the key-generation process.
 	KEYGEN_SYNC_REJECT,	//This is a negative response to KEYGEN_SYNC_REQUEST and will abort the key-generation process.
+	KEYGEN_TRANSMISSION,	//This is used to transmit the data needed during the Key Generation.
 	KEYGEN_SOURCE_SIGNAL,	//This is used for signals intended for the Photon source. I contains will cause it´s message to be written into a .txt at the Source Servers location.
 	KEYGEN_TERMINATION;	//This causes the recipient to stop the key-generation process.
 }

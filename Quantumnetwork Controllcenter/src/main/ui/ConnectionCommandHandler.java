@@ -161,7 +161,7 @@ public class ConnectionCommandHandler {
 					connectionID, connectionState, localPort, contactRemoteIP, contactRemotePort, latestRemoteIP, latestRemotePort)
 					);
 			// TODO: TEMPORARY - FOR DEBUGGING ONLY:
-			output.append(" Messages: " + endpoint.getValue().sizeOfMessageStack());
+			output.append(" Messages: " + endpoint.getValue().sizeOfMessageQueue());
 			output.append(System.lineSeparator());
 		}
 		

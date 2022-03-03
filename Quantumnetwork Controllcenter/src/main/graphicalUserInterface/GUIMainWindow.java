@@ -16,6 +16,7 @@ import javax.swing.JPanel;
 import javax.swing.JMenuBar;
 import javax.swing.JSplitPane;
 import javax.swing.BoxLayout;
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JTable;
 import java.awt.Color;
 import javax.swing.border.BevelBorder;
@@ -51,6 +52,7 @@ import net.miginfocom.swing.MigLayout;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
+import networkConnection.ConnectionType;
 import networkConnection.NetworkPackage;
 
 import javax.swing.border.EtchedBorder;
@@ -58,11 +60,17 @@ import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import java.awt.CardLayout;
 import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.JComboBox;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
 
+/**This is the Main GUI of this Application. The left half handles the ContactDB and the right half handles the Connections.
+ * 
+ * @author Jonas Huehne
+ *
+ */
 public class GUIMainWindow implements Runnable{
 
 	private Object[][] contactData = {};
@@ -83,6 +91,8 @@ public class GUIMainWindow implements Runnable{
 	private int contactDBIPIndex = 1;
 	private int contactDBPortIndex = 2;
 	private int contactDBSigIndex = 3;
+	
+	public HashMap<String,ConnectionType> conType = new HashMap<String,ConnectionType>();
 
 	/**
 	 * Create the application.
@@ -101,7 +111,7 @@ public class GUIMainWindow implements Runnable{
 		getFrame().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
 		
-		frame.getContentPane().setLayout(new MigLayout("", "[1008px]", "[][528px][]"));
+		frame.getContentPane().setLayout(new MigLayout("", "[1088.00px]", "[][528px][]"));
 		
 		JToolBar toolBar = new JToolBar();
 		toolBar.setFloatable(false);
@@ -133,11 +143,11 @@ public class GUIMainWindow implements Runnable{
 		
 		JPanel panel_5 = new JPanel();
 		panel_5.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "Contacts", TitledBorder.CENTER, TitledBorder.TOP, null, new Color(0, 0, 0)));
-		frame.getContentPane().add(panel_5, "flowx,cell 0 1,grow");
+		frame.getContentPane().add(panel_5, "flowx,cell 0 1,alignx left,growy");
 		panel_5.setLayout(new BorderLayout(0, 0));
 		
 		JPanel contactPanel = new JPanel();
-		panel_5.add(contactPanel, BorderLayout.NORTH);
+		panel_5.add(contactPanel, BorderLayout.WEST);
 		contactPanel.setLayout(new BoxLayout(contactPanel, BoxLayout.X_AXIS));
 		
 		Box contactsColumn = Box.createVerticalBox();
@@ -227,11 +237,11 @@ public class GUIMainWindow implements Runnable{
 		
 		JPanel panel = new JPanel();
 		panel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "Connections", TitledBorder.CENTER, TitledBorder.TOP, null, new Color(0, 0, 0)));
-		frame.getContentPane().add(panel, "cell 0 1,alignx right,growy");
+		frame.getContentPane().add(panel, "cell 0 1,grow");
 		panel.setLayout(new BorderLayout(0, 0));
 		
 		JPanel panel_1 = new JPanel();
-		panel.add(panel_1);
+		panel.add(panel_1, BorderLayout.CENTER);
 		panel_1.setLayout(new BoxLayout(panel_1, BoxLayout.X_AXIS));
 		
 		Box verticalBox = Box.createVerticalBox();
@@ -267,6 +277,7 @@ public class GUIMainWindow implements Runnable{
 				representedConnectionEndpoints.get(activeConnection).setVisible(false);
 				connectionEndpointVerticalBox.remove(representedConnectionEndpoints.get(activeConnection));
 				representedConnectionEndpoints.remove(activeConnection);
+				conType.remove(activeConnection);
 				QuantumnetworkControllcenter.conMan.destroyConnectionEndpoint(activeConnection);
 				activeConnection = null;
 				
@@ -285,10 +296,7 @@ public class GUIMainWindow implements Runnable{
 				}
 				
 				if(QuantumnetworkControllcenter.conMan.getConnectionState(activeConnection) == ConnectionState.CONNECTED) {
-					
-					
-					
-					
+
 					QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).getKeyGen().generateKey();
 					
 				}else {
@@ -312,19 +320,6 @@ public class GUIMainWindow implements Runnable{
 		
 		connectionEndpointVerticalBox = Box.createVerticalBox();
 		scrollPane.setViewportView(connectionEndpointVerticalBox);
-		
-		JPanel panel_4 = new JPanel();
-		panel_2.add(panel_4, BorderLayout.SOUTH);
-		GroupLayout gl_panel_4 = new GroupLayout(panel_4);
-		gl_panel_4.setHorizontalGroup(
-			gl_panel_4.createParallelGroup(Alignment.LEADING)
-				.addGap(0, 427, Short.MAX_VALUE)
-		);
-		gl_panel_4.setVerticalGroup(
-			gl_panel_4.createParallelGroup(Alignment.LEADING)
-				.addGap(0, 34, Short.MAX_VALUE)
-		);
-		panel_4.setLayout(gl_panel_4);
 	}
 
 	public JFrame getFrame() {
@@ -352,6 +347,9 @@ public class GUIMainWindow implements Runnable{
 	}
 	
 	
+	/**This method gathers all rows from the contact DB and translates them into JTable Rows.
+	 * 
+	 */
 	public void gatherContacts() {
 		ArrayList<Contact> dbEntries = QuantumnetworkControllcenter.communicationList.queryAll();
 		
@@ -373,6 +371,9 @@ public class GUIMainWindow implements Runnable{
 		
 	}
 	
+	/**This Method clears all Lines from the JTable.
+	 * 
+	 */
 	public void clearContacts() {
 		DefaultTableModel model = (DefaultTableModel)contactTable.getModel();
 		int rc = model.getRowCount();
@@ -381,6 +382,13 @@ public class GUIMainWindow implements Runnable{
 		}
 	}
 	
+	/**This Method adds a single Row to the JTable.
+	 * 
+	 * @param name the connectionName
+	 * @param ip	the targetIP
+	 * @param port	the targetPort
+	 * @param sig	the public signature of the connectionPartner
+	 */
 	public void addRowToContactTable(String name, String ip, int port, String sig) {
 		
 		DefaultTableModel model = (DefaultTableModel)contactTable.getModel();
@@ -388,61 +396,76 @@ public class GUIMainWindow implements Runnable{
 		model.addRow(new Object[]{name, ip, port, sig});
 	}
 	
-	
-	public void refreshContactsTable() {
-		contactTable.setModel(new DefaultTableModel(contactData, contactColumnNames));
-	}
-	
+
+	/**This Method adds a set of SwingItems that allow the user to interact with the ConnectionEndpoint.
+	 * 
+	 * @param connectionName	the name of the CE
+	 * @param targetIP	the targetIP of the CE
+	 * @param targetPort	the targetPort of the CE
+	 */
 	public void createConnectionRepresentation(String connectionName, String targetIP, int targetPort) {
-		//ConnectionEndpointTemplate
+
 		
-		int localPortNumber = QuantumnetworkControllcenter.conMan.getLocalPort();
+		JPanel ceFrame = new JPanel();
+		ceFrame.setBorder(new LineBorder(new Color(0, 0, 0)));
+		ceFrame.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+		connectionEndpointVerticalBox.add(ceFrame);
 		
-				JPanel ceInteractionPanel = new JPanel();
-				ceInteractionPanel.setBorder(new LineBorder(new Color(0, 0, 0)));
-				connectionEndpointVerticalBox.add(ceInteractionPanel);
-				System.out.println("Adding new rep to the verical box!");
-				ceInteractionPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-				
-				JLabel cEName_Label = new JLabel(connectionName);
-				ceInteractionPanel.add(cEName_Label);
-				cEName_Label.setText(cEName_Label.getText() + " @ LocalPort: ");
-				
-				JLabel cEPort_Label = new JLabel(String.valueOf(localPortNumber));
-				ceInteractionPanel.add(cEPort_Label);
-				
-				JButton CESelectorButton = new JButton("Select Connection");
-				CESelectorButton.addActionListener(new ActionListener() {
-					public void actionPerformed(ActionEvent e) {
-						try {
-							prevActiveConnection = activeConnection;
-							activeConnection = connectionName;
-							System.out.println("Changed Active Connection to: " + activeConnection);
-						} catch (Exception e1) {
-							e1.printStackTrace();
-						}
-						//QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(null, 0)
-					}
-				});
-				ceInteractionPanel.add(CESelectorButton);
-				
-				JLabel connectionStateLabel = new JLabel("CE State");
-				ceInteractionPanel.add(connectionStateLabel);
-				
-				JLabel ceTargetIPLabel = new JLabel(targetIP);
-				ceInteractionPanel.add(ceTargetIPLabel);
-				
-				JLabel ceTargetPortLabel = new JLabel(String.valueOf(targetPort));
-				ceInteractionPanel.add(ceTargetPortLabel);
-				
-				representedConnectionEndpoints.put(connectionName, ceInteractionPanel);
-				
-				activeConnection = connectionName;
-				
-				connectionEndpointVerticalBox.revalidate();
-				connectionEndpointVerticalBox.repaint();
-				
 		
+		JLabel connectionNameLabel = new JLabel(connectionName + " - " + targetIP + " - " + targetPort);
+		ceFrame.add(connectionNameLabel);
+		
+		Component horizontalStrut = Box.createHorizontalStrut(20);
+		ceFrame.add(horizontalStrut);
+		
+		JLabel lblNewLabel = new JLabel("New label");
+		ceFrame.add(lblNewLabel);
+		
+		Component horizontalStrut_1 = Box.createHorizontalStrut(20);
+		ceFrame.add(horizontalStrut_1);
+		
+		JButton selectConnectionButton = new JButton("Select");
+		selectConnectionButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					prevActiveConnection = activeConnection;
+					activeConnection = connectionName;
+					System.out.println("Changed Active Connection to: " + activeConnection);
+				} catch (Exception e1) {
+					e1.printStackTrace();
+				}
+			}
+		});
+		ceFrame.add(selectConnectionButton);
+		
+		Component horizontalStrut_2 = Box.createHorizontalStrut(5);
+		ceFrame.add(horizontalStrut_2);
+		
+		JComboBox<ConnectionType> connectionTypeCB = new JComboBox<ConnectionType>();
+		connectionTypeCB.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				conType.put(connectionName, (ConnectionType) connectionTypeCB.getSelectedItem());
+			}
+		});
+		connectionTypeCB.setModel(new DefaultComboBoxModel<ConnectionType>(ConnectionType.values()));
+		ceFrame.add(connectionTypeCB);
+		
+		Component horizontalStrut_3 = Box.createHorizontalStrut(5);
+		ceFrame.add(horizontalStrut_3);
+		
+		JButton openTransferButton = new JButton("Message System");
+		openTransferButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				new MessageGUI(connectionName);
+			}
+		});
+		ceFrame.add(openTransferButton);
+		
+		representedConnectionEndpoints.put(connectionName, ceFrame);
+		activeConnection = connectionName;
+		
+		connectionEndpointVerticalBox.revalidate();
+		connectionEndpointVerticalBox.repaint();
 	}
 	
 	public void startUpdateService() {
@@ -457,8 +480,8 @@ public class GUIMainWindow implements Runnable{
 			
 			representedConnectionEndpoints.forEach((k,v)->{
 				
-				JButton activeButton = ((JButton) representedConnectionEndpoints.get(k).getComponent(2));
-				JLabel label_2 = ((JLabel) representedConnectionEndpoints.get(k).getComponent(3));
+				JButton activeButton = ((JButton) representedConnectionEndpoints.get(k).getComponent(4));
+				JLabel label_2 = ((JLabel) representedConnectionEndpoints.get(k).getComponent(2));
 				ConnectionEndpoint ce = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(k);
 				ConnectionState state = ce.reportState();
 				label_2.setText(state.name());

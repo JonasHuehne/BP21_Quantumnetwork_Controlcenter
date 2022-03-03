@@ -160,6 +160,7 @@ public class SHA256withRSAAuthentication implements Authentication {
     private PrivateKey getPrivateKeyFromFile () {
         try {
             String currentPath = Configuration.getBaseDirPath();
+            System.out.println(currentPath + KEY_PATH + privateKeyFile);
             if(!Files.exists(Path.of(currentPath + KEY_PATH + privateKeyFile))) {
                 System.err.println("Error while creating a private key from the signature key file: "
                         + "no signature key file found");
