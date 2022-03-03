@@ -449,6 +449,7 @@ public class GUIMainWindow implements Runnable{
 		});
 		connectionTypeCB.setModel(new DefaultComboBoxModel<ConnectionType>(ConnectionType.values()));
 		ceFrame.add(connectionTypeCB);
+		conType.put(connectionName, (ConnectionType) connectionTypeCB.getSelectedItem());
 		
 		Component horizontalStrut_3 = Box.createHorizontalStrut(5);
 		ceFrame.add(horizontalStrut_3);
