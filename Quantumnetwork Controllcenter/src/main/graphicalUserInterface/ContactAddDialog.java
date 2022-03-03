@@ -53,35 +53,35 @@ public class ContactAddDialog extends JDialog {
 				Box verticalBox = Box.createVerticalBox();
 				horizontalBox.add(verticalBox);
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForNameLabel = new JPanel();
+					verticalBox.add(panelForNameLabel);
 					{
-						JLabel lblNewLabel = new JLabel("Name:");
-						panel.add(lblNewLabel);
+						JLabel labelName = new JLabel("Name:");
+						panelForNameLabel.add(labelName);
 					}
 				}
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForIpAddrLabel = new JPanel();
+					verticalBox.add(panelForIpAddrLabel);
 					{
-						JLabel lblNewLabel_1 = new JLabel("IP Address:");
-						panel.add(lblNewLabel_1);
+						JLabel labelIpAddr = new JLabel("IP Address:");
+						panelForIpAddrLabel.add(labelIpAddr);
 					}
 				}
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForPortLabel = new JPanel();
+					verticalBox.add(panelForPortLabel);
 					{
-						JLabel lblNewLabel_2 = new JLabel("Port:");
-						panel.add(lblNewLabel_2);
+						JLabel labelPort = new JLabel("Port:");
+						panelForPortLabel.add(labelPort);
 					}
 				}
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForSignatureLabel = new JPanel();
+					verticalBox.add(panelForSignatureLabel);
 					{
-						JLabel lblNewLabel_3 = new JLabel("Signature:");
-						panel.add(lblNewLabel_3);
+						JLabel labelSignature = new JLabel("Signature:");
+						panelForSignatureLabel.add(labelSignature);
 					}
 				}
 			}
@@ -89,38 +89,38 @@ public class ContactAddDialog extends JDialog {
 				Box verticalBox = Box.createVerticalBox();
 				horizontalBox.add(verticalBox);
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForNameTextField = new JPanel();
+					verticalBox.add(panelForNameTextField);
 					{
 						nameTextField = new JTextField();
-						panel.add(nameTextField);
+						panelForNameTextField.add(nameTextField);
 						nameTextField.setColumns(10);
 					}
 				}
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForIpTextField = new JPanel();
+					verticalBox.add(panelForIpTextField);
 					{
 						ipTextField = new JTextField();
-						panel.add(ipTextField);
+						panelForIpTextField.add(ipTextField);
 						ipTextField.setColumns(10);
 					}
 				}
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForPortTextField = new JPanel();
+					verticalBox.add(panelForPortTextField);
 					{
 						portTextField = new JTextField();
-						panel.add(portTextField);
+						panelForPortTextField.add(portTextField);
 						portTextField.setColumns(10);
 					}
 				}
 				{
-					JPanel panel = new JPanel();
-					verticalBox.add(panel);
+					JPanel panelForSignatureTextField = new JPanel();
+					verticalBox.add(panelForSignatureTextField);
 					{
 						sigTextField = new JTextField();
-						panel.add(sigTextField);
+						panelForSignatureTextField.add(sigTextField);
 						sigTextField.setColumns(10);
 					}
 				}
@@ -154,24 +154,24 @@ public class ContactAddDialog extends JDialog {
 				});
 				cancelButton.setActionCommand("Cancel");
 			}
-			GroupLayout gl_buttonPane = new GroupLayout(buttonPane);
-			gl_buttonPane.setHorizontalGroup(
-				gl_buttonPane.createParallelGroup(Alignment.LEADING)
-					.addGroup(gl_buttonPane.createSequentialGroup()
+			GroupLayout glButtonPane = new GroupLayout(buttonPane);
+			glButtonPane.setHorizontalGroup(
+				glButtonPane.createParallelGroup(Alignment.LEADING)
+					.addGroup(glButtonPane.createSequentialGroup()
 						.addGap(29)
 						.addComponent(okButton)
 						.addGap(5)
 						.addComponent(cancelButton))
 			);
-			gl_buttonPane.setVerticalGroup(
-				gl_buttonPane.createParallelGroup(Alignment.LEADING)
-					.addGroup(gl_buttonPane.createSequentialGroup()
+			glButtonPane.setVerticalGroup(
+				glButtonPane.createParallelGroup(Alignment.LEADING)
+					.addGroup(glButtonPane.createSequentialGroup()
 						.addGap(5)
-						.addGroup(gl_buttonPane.createParallelGroup(Alignment.LEADING)
+						.addGroup(glButtonPane.createParallelGroup(Alignment.LEADING)
 							.addComponent(okButton)
 							.addComponent(cancelButton)))
 			);
-			buttonPane.setLayout(gl_buttonPane);
+			buttonPane.setLayout(glButtonPane);
 		}
 		setLocationRelativeTo(null);
 	}
