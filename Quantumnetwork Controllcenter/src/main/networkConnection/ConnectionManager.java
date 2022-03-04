@@ -114,6 +114,13 @@ public class ConnectionManager {
 		return returnConnections;
 	}
 	
+	/**
+	 * @return how many connections are currently managed by this ConnectionManager
+	 */
+	public int getConnectionsAmount() {
+		return connections.size();
+	}
+	
 	/**Sends a Message via a local ConnectionEndpoint to the ConnectionEndpoint connected to it.
 	 * @param connectionID	the Identifier of the intended connectionEndpoint.
 	 * @param type the type of the transmission expressed as a TransmissionTypeEnum

@@ -89,7 +89,6 @@ public class ConnectionEndpoint implements Runnable{
 		
 		System.out.println("+++CE "+ connectionID +" is sending a message back!+++");
 		pushMessage(TransmissionTypeEnum.CONNECTION_CONFIRMATION, Configuration.getProperty("UserName"), null, null);
-		QuantumnetworkControllcenter.guiWindow.createConnectionRepresentation(connectionName, remoteIP, remotePort);
 		//Wait for greeting
 		//System.out.println("[" + connectionID + "]: Waiting for Greeting from connecting Party");
 		listenForMessage();

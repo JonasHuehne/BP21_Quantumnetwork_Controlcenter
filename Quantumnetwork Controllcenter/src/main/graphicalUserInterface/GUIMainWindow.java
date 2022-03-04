@@ -1,70 +1,44 @@
 package graphicalUserInterface;
 
-import java.awt.EventQueue;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.List;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.JFrame;
-import java.awt.BorderLayout;
-import javax.swing.JScrollPane;
-import java.awt.Component;
 import javax.swing.Box;
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JPanel;
-import javax.swing.JMenuBar;
-import javax.swing.JSplitPane;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import java.awt.Color;
-import javax.swing.border.BevelBorder;
+import javax.swing.JToolBar;
+import javax.swing.Timer;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableModel;
 
 import communicationList.CommunicationList;
 import communicationList.Contact;
+import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
-
-import javax.swing.ListSelectionModel;
-import javax.swing.ScrollPaneConstants;
-import javax.swing.JList;
-import javax.swing.JLabel;
-import javax.swing.AbstractButton;
-import javax.swing.AbstractListModel;
-import java.awt.FlowLayout;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableModel;
-import javax.swing.JSeparator;
-import javax.swing.JToolBar;
-import java.awt.event.ActionListener;
-import java.io.IOException;
-import java.awt.event.ActionEvent;
-import javax.swing.JTextField;
-import javax.swing.JTextPane;
-import java.awt.GridLayout;
-import javax.swing.JTextArea;
-import javax.swing.JInternalFrame;
-import javax.swing.border.TitledBorder;
 import net.miginfocom.swing.MigLayout;
 import networkConnection.ConnectionEndpoint;
-import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
 import networkConnection.ConnectionType;
-import networkConnection.NetworkPackage;
-
-import javax.swing.border.EtchedBorder;
-import javax.swing.GroupLayout;
-import javax.swing.GroupLayout.Alignment;
-import java.awt.CardLayout;
-import javax.swing.border.CompoundBorder;
-import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
-import javax.swing.JComboBox;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyChangeEvent;
 
 /**This is the Main GUI of this Application. The left half handles the ContactDB and the right half handles the Connections.
  * 
@@ -92,6 +66,11 @@ public class GUIMainWindow implements Runnable{
 	private int contactDBPortIndex = 2;
 	private int contactDBSigIndex = 3;
 	
+	/** contains the last measured size of our local ConnectionManager, used in updating the list of active connections */
+	private int ceAmountOld = 0;
+	/** used in updating the list of active connections */
+	private ArrayList<String> namesOfConnections = new ArrayList<String>();
+	
 	public HashMap<String,ConnectionType> conType = new HashMap<String,ConnectionType>();
 
 	/**
@@ -115,7 +94,7 @@ public class GUIMainWindow implements Runnable{
 		
 		JToolBar toolBar = new JToolBar();
 		toolBar.setFloatable(false);
-		frame.getContentPane().add(toolBar, "cell 0 0,alignx left,aligny top");
+		frame.getContentPane().add(toolBar, "flowx,cell 0 0,alignx left,aligny top");
 		
 		JButton settingsButton = new JButton("Settings");
 		settingsButton.addActionListener(new ActionListener() {
@@ -320,6 +299,36 @@ public class GUIMainWindow implements Runnable{
 		
 		connectionEndpointVerticalBox = Box.createVerticalBox();
 		scrollPane.setViewportView(connectionEndpointVerticalBox);
+		
+		JLabel dummyLabel = new JLabel("0");
+		frame.getContentPane().add(dummyLabel, "cell 0 0");
+		
+		// Once per Second, update the connections
+		Timer connectionsUpdater = new Timer(100, new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				int ceAmountNew = QuantumnetworkControllcenter.conMan.getConnectionsAmount();
+				// If the amount of connections in the CM changed
+				if (ceAmountNew != ceAmountOld) {
+					if (ceAmountNew > ceAmountOld) { // if new connections were added
+						Map<String, ConnectionEndpoint> currentConnections = QuantumnetworkControllcenter.conMan.returnAllConnections();		
+						// Add a graphical entry for each connection that doesn't have one yet
+						for (Entry<String, ConnectionEndpoint> entry : currentConnections.entrySet()) {
+							if (!(namesOfConnections.contains(entry.getKey()))) {
+									createConnectionRepresentation(
+											entry.getKey(), 
+											entry.getValue().getRemoteAddress(), 
+											entry.getValue().getRemotePort());
+							}
+						}
+					}
+					// Update the List of names currently in the CM and the size of the CM accordingly
+					namesOfConnections = new ArrayList<>(QuantumnetworkControllcenter.conMan.returnAllConnections().keySet());
+					ceAmountNew = ceAmountOld;
+				}
+			}
+		});
+		connectionsUpdater.start();
 	}
 
 	public JFrame getFrame() {

@@ -184,7 +184,6 @@ public class ConnectionAddDialog extends JDialog {
 						
 						if(useManualInputRadioButton.isSelected()) {
 							System.out.println("Created new CE: " + textFieldContactName.getText() + " : "+ QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(textFieldContactName.getText(), textFieldContactIpAddr.getText(), Integer.valueOf(textFieldContactPort.getText())));
-							QuantumnetworkControllcenter.guiWindow.createConnectionRepresentation(textFieldContactName.getText(), textFieldContactIpAddr.getText(), Integer.valueOf(textFieldContactPort.getText()));
 						}else {
 							selectedTableRowIndex = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
 							if(selectedTableRowIndex == -1) {
@@ -198,7 +197,6 @@ public class ConnectionAddDialog extends JDialog {
 							String sig = QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedTableRowIndex, QuantumnetworkControllcenter.guiWindow.getContactDBSigIndex()).toString();
 							
 							System.out.println("Created new CE: " + name + " : "+ QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(name, ip, port));
-							QuantumnetworkControllcenter.guiWindow.createConnectionRepresentation(name, ip, port);
 							
 						}
 						
