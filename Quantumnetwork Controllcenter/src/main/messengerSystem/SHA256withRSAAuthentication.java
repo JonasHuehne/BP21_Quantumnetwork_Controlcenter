@@ -281,7 +281,7 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
                 PrivateKey privateKey = getPrivateKeyFromFile();
                 PublicKey publicKey = getPublicKeyFromString(Utils.readKeyStringFromFile(publicKeyFile));
                 signature.initSign(privateKey);
-                byte[] message = "Hello".getBytes();
+                byte[] message = MessageSystem.stringToByteArray("Hello");
                 signature.update(message);
                 byte[] sig = signature.sign();
                 signature.initVerify(publicKey);

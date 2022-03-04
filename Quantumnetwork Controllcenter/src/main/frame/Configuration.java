@@ -68,7 +68,7 @@ public class Configuration {
                 return true;
             } catch (Exception e) {
                 throw new IOException("Error while reading the config file at " + LOCAL_PATH
-                        + "(" + e.getMessage() + ")");
+                        + "(" + e + ")");
             }
         } else {
             createConfigFile();
@@ -95,7 +95,7 @@ public class Configuration {
      * @param absolutePath the new base path as a String of the absolute path
      * @return true if it worked, false if not or error
      */
-    public static boolean changeBasePath (String absolutePath) {
+    public static boolean changeBasePath (final String absolutePath) {
         if (!Files.exists(Path.of(absolutePath))) {
             System.err.println("Error while changing the base path: directory/file does not exist.");
             return false;
@@ -162,7 +162,7 @@ public class Configuration {
      * @return the property for the key as String,
      *         null if not there or error
      */
-    public static String getProperty (String propertyKey) {
+    public static String getProperty (final String propertyKey) {
         try {
             // create an input stream
             InputStream in = Files.newInputStream(Paths.get(LOCAL_PATH, CONFIG_FILE_NAME));
