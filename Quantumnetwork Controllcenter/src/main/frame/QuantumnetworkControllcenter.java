@@ -29,6 +29,12 @@ public class QuantumnetworkControllcenter {
 	public static CommunicationList communicationList;
 	public static Authentication authentication;
 	public static GUIMainWindow guiWindow;
+	
+	/*
+	 * This could be done via args as well.
+	 */
+	static final boolean launchGUI = true;  // launch GUI
+	static final boolean launchCUI = false; // launch console UI
 
 	/**
 	 * Method to initialize a Quantumnetwork Controllcenter
@@ -100,9 +106,13 @@ public class QuantumnetworkControllcenter {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					ConsoleUI consoleWindow = new ConsoleUI();
-					guiWindow = new GUIMainWindow();
-					guiWindow.getFrame().setVisible(true);
+					if (launchCUI) {
+						ConsoleUI consoleWindow = new ConsoleUI();
+					}
+					if (launchGUI) {
+						guiWindow = new GUIMainWindow();
+						guiWindow.getFrame().setVisible(true);
+					}
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
