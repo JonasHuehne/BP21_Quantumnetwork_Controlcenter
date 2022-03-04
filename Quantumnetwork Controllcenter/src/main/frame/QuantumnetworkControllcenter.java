@@ -55,7 +55,7 @@ public class QuantumnetworkControllcenter {
 		}
 		
 		//Network Connection Init
-		if(args.length == 2) {
+		if(args != null && args.length == 2) {
 			Configuration.setProperty("UserIP", args[0]);
 			Configuration.setProperty("UserPort", args[1]);
 		}

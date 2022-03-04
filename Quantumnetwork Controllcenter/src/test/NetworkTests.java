@@ -1,199 +1,143 @@
 
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import messengerSystem.MessageSystem;
+import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import networkConnection.ConnectionEndpoint;
+import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
 import networkConnection.TransmissionTypeEnum;
 
-/**Attention: Some tests may cause a red error message to appear in the log. Unless an exception is thrown, this is an intended byproduct of the tests
- * 
- * @author Jonas Huehne
+/**
+ * Tests for the basic functionality of the network classes, in particular connection management.
+ * Expects {@link Configuration} to work correctly.
+ * @author Jonas Huehne, Sasha Petri
  *
  */
 public class NetworkTests {
 	
-	QuantumnetworkControllcenter QCC = new QuantumnetworkControllcenter();
-	
-	
-	@Test
-	public void testConnectionEndpoints() {
-		QuantumnetworkControllcenter.initialize();
-		
-		//Create 2 connectionEndpoints + invalid Duplicates
-		QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ceTest1", 2300);
-		QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ceTest2", 3300);
-		QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ceTest2", 4300);
-		QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ceTest3", 3300);
-		assert(QuantumnetworkControllcenter.conMan.returnAllConnections().size() == 2);
-		
-		//Closing Connections without destroying the connectionEndpoints.
-		QuantumnetworkControllcenter.conMan.closeAllConnections();
-		assert(QuantumnetworkControllcenter.conMan.returnAllConnections().size() == 2);
-		
-		//Destroying one connectionEndpoint.
-		QuantumnetworkControllcenter.conMan.destroyConnectionEndpoint("ceTest2");
-		assert(QuantumnetworkControllcenter.conMan.returnAllConnections().size() == 1);
-		
-		//Destroying all connectionEndpoint.
-		QuantumnetworkControllcenter.conMan.destroyAllConnectionEndpoints();
-		assert(QuantumnetworkControllcenter.conMan.returnAllConnections().size() == 0);
+	@BeforeAll
+	public static void setup() {
+		QuantumnetworkControllcenter.initialize(null);
 	}
 	
-	
-	@Test
-	public void testConnecting() {
+	@Nested
+	/**
+	 * Low Level Tests directly testing the {@link ConnectionEndpoint} class.
+	 */
+	class ConnectionEndpointTests {
 		
-		//Setup and initial State-Check
-		QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ceTest1", 2300);
-		ConnectionEndpoint ce1 = QuantumnetworkControllcenter.conMan.getConnectionEndpoint("ceTest1");
-		QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ceTest2", 3300);
-		ConnectionEndpoint ce2 = QuantumnetworkControllcenter.conMan.getConnectionEndpoint("ceTest2");
-		assert(ce1.reportState() == ConnectionState.CLOSED);
-		assert(ce2.reportState() == ConnectionState.CLOSED);
-		
-		//Start waiting for connection
-		ce1.waitForConnection();
-		
-		//delay
-		try {
-			TimeUnit.MILLISECONDS.sleep(250);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		@Test
+		public void singular_ce_behaves_as_expected() throws InterruptedException {
+			String remoteAddr = "127.0.0.1";
+			int	remotePort = 60200;
+			// Create CE that tries to connect to a non-existant CE
+			ConnectionEndpoint Alice = new ConnectionEndpoint("Alice", remoteAddr, remotePort);
+			// It tries to connect
+			assertEquals(ConnectionState.CONNECTING, Alice.reportState());
+			// Wait until the connection attempt should time out
+			Thread.sleep(3050);
+			// It should no longer be trying to connect
+			assertEquals(ConnectionState.CLOSED, Alice.reportState(), "CE should have stopped trying to connect. Is the time out set correctly?");
+			
+			// Assert that values are set correctly
+			assertEquals(Alice.getLocalAddress(), Configuration.getProperty("UserIP"));
+			assertEquals(Alice.getServerPort(), Integer.valueOf(Configuration.getProperty("UserPort")));
+			assertEquals(Alice.getRemoteAddress(), remoteAddr);
+			assertEquals(Alice.getRemotePort(), remotePort);
 		}
-		//Check State
-		assert(ce1.reportState() == ConnectionState.WAITINGFORCONNECTION);
 		
-		//Connection creation from other connectionEndpoint
-		try {
-			ce2.establishConnection("localhost", 2300);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		//Check State
-		assert(ce1.reportState() == ConnectionState.CONNECTED);		
-		
-		//test connection termination
-		QuantumnetworkControllcenter.conMan.destroyAllConnectionEndpoints();
-		assert(QuantumnetworkControllcenter.conMan.returnAllConnections().size() == 0);
 	}
 	
-	@Test
-	public void testMessageLowLevel() {
-		QuantumnetworkControllcenter.initialize();
-		QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ceTest1", 2300);
-		ConnectionEndpoint ce1 = QuantumnetworkControllcenter.conMan.getConnectionEndpoint("ceTest1");
-		QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ceTest2", 3300);
-		ConnectionEndpoint ce2 = QuantumnetworkControllcenter.conMan.getConnectionEndpoint("ceTest2");
+	@Nested
+	/**
+	 * Tests for the {@link ConnectionManager} class and the classes it uses to establish and manage connections.
+	 */
+	class ConnectionManagerTests {
+		
+		@Test
+		public void basic_functionality_of_CM_works() {
+			ConnectionManager conMan = QuantumnetworkControllcenter.conMan;
+			
+			// Connections can be created
+			conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200);
+			assertEquals(1, conMan.returnAllConnections().size());
+			assertNotNull(conMan.getConnectionEndpoint("Alice"));
+			// Created connection immediately attempts to connect
+			assertEquals(ConnectionState.CONNECTING, conMan.getConnectionState("Alice"));
 
-		ce1.waitForConnection();
-		
-		try {
-			ce2.establishConnection(QuantumnetworkControllcenter.conMan.getLocalAddress() , 2300);
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+			// Test that no two connections of the same name can be created
+			conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200);
+			assertEquals(1, conMan.returnAllConnections().size());
+			
+			// No two connections to the same port and IP with different names can be created
+			conMan.createNewConnectionEndpoint("Bob", "127.0.0.1", 60200);
+			assertEquals(1, conMan.returnAllConnections().size(), "No new connection to the same address and port should have been created.");
+			
+			// Attempting to create the new connection should not have overriden Alice
+			assertNotNull(conMan.getConnectionEndpoint("Alice"));
+			
+			// Assert that values are set correctly
+			ConnectionEndpoint Alice = conMan.getConnectionEndpoint("Alice");
+			assertEquals(Alice.getLocalAddress(), Configuration.getProperty("UserIP"));
+			assertEquals(Alice.getServerPort(), Integer.valueOf(Configuration.getProperty("UserPort")));
+			assertEquals(Alice.getRemoteAddress(), "127.0.0.1");
+			assertEquals(Alice.getRemotePort(), 60200);
+			
+			// CE can be destroyed
+			conMan.destroyConnectionEndpoint("Alice");
+			assertNull(conMan.getConnectionEndpoint("Alice"));
+			assertEquals(0, conMan.returnAllConnections().size());
+			
+			// Destroyed CE is closed
+			assertEquals(ConnectionState.CLOSED, Alice);
+			
+			// Destroying multiple CE's works
+			conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200);
+			conMan.createNewConnectionEndpoint("Bob", "127.0.0.2", 60200);
+			assertEquals(2, conMan.returnAllConnections().size());
+			conMan.destroyAllConnectionEndpoints();
+			assertEquals(0, conMan.returnAllConnections().size());
 		}
 		
-		//Send a Message directly via CE
-		ce1.pushMessage(TransmissionTypeEnum.TRANSMISSION, "", "test Message 1", "");
-		
-		//Send a Message via the connectionManager
-		QuantumnetworkControllcenter.conMan.sendMessage("ceTest1", TransmissionTypeEnum.TRANSMISSION, "", "test Message 2", "");
-		
-		//Wait
-		try {
-			TimeUnit.MILLISECONDS.sleep(25);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+		public void can_create_cyclical_connection_and_send_messages() {
+			// TODO <Sasha>: Due to the massive changes to the ConnectionManager and there only being one server port now,
+			// the process of creating a cyclical connection has changed. I think I'd have to use ConnectionSwitchbox for that
+			// but there is no documentation for it at the moment, so I don't know how to go about it.
+			// I still think it would be good to have a local test for the sending and receiving of messages.
+			assertFalse(true, "Not implemented yet.");
 		}
 		
-		//Do the same for the ConnectionEndpointMap
-		Map<String, ConnectionEndpoint> i = QuantumnetworkControllcenter.conMan.returnAllConnections();
-		assert(i.size() == 2);
-		i.clear();
-		i = QuantumnetworkControllcenter.conMan.returnAllConnections();
-		assert(i.size() == 2);
 		
-		//Close the connection again
-		ce1.closeConnection(true);
-		
-		//Wait
-		try {
-			TimeUnit.MILLISECONDS.sleep(25);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		// TODO once proper Exception Handling is implemented
+		public void methods_throw_no_such_connection_exception_when_appropriate() {
+			assertFalse(true, "Not implemented yet.");
 		}
 		
-		//Check that both connectionEndpoints are closed down.
-		assert(ce1.reportState() == ConnectionState.CLOSED);
-		assert(ce2.reportState() == ConnectionState.CLOSED);
-		
-		QuantumnetworkControllcenter.conMan.destroyAllConnectionEndpoints();
-		assert(QuantumnetworkControllcenter.conMan.returnAllConnections().size() == 0);
 	}
 	
-	@Test
-	public void testMessageHighLevel() {
-		QuantumnetworkControllcenter.initialize();
-		QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ceTest8", 4300);
-		QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("ceTest9", 5300);
-		ConnectionEndpoint ce3 = QuantumnetworkControllcenter.conMan.getConnectionEndpoint("ceTest8");
-		ConnectionEndpoint ce4 = QuantumnetworkControllcenter.conMan.getConnectionEndpoint("ceTest9");
+	@Nested
+	/**
+	 * Tests for some of the other functionalities provided by classes in the networkConnection package.
+	 */
+	class MiscNetworkTests {
 		
-		ce3.waitForConnection();
-		try {
-			ce4.establishConnection("localhost", 4300);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-
+		// TODO Add some tests here where appropriate
 		
-		MessageSystem.sendMessage("ceTest8", TransmissionTypeEnum.TRANSMISSION, "", "Test Message 3", "");
-		MessageSystem.sendMessage("ceTest8", TransmissionTypeEnum.TRANSMISSION, "", "Test Message 4", "");
-		MessageSystem.sendMessage("ceTest8", TransmissionTypeEnum.TRANSMISSION, "", "Test Message 5", "");
-		
-		//Wait
-		try {
-			TimeUnit.MILLISECONDS.sleep(25);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		assert(MessageSystem.getNumberOfPendingMessages("ceTest9") == 3);
-		//Test Message Content
-		assert(MessageSystem.previewReceivedMessage("ceTest9").getContent().equals("Test Message 3"));
-		//Test non-removing preview
-		assert(MessageSystem.previewReceivedMessage("ceTest9").getContent().equals("Test Message 3"));
-		//Test non-removing preview of latest message
-		assert(MessageSystem.previewLastReceivedMessage("ceTest9").getContent().equals("Test Message 5"));
-		//Test Message Read
-		assert(MessageSystem.readReceivedMessage("ceTest9").getContent().equals("Test Message 3"));
-		//Test removing-reading
-		assert(MessageSystem.readReceivedMessage("ceTest9").getContent().equals("Test Message 4"));
-		//Try sending confirmed Messages
-		assertTrue(MessageSystem.sendConfirmedMessage("ceTest8", "Confirmed Test Message 1", ""));
-		//Check for no unintended confirmations on message stack
-		assert(MessageSystem.getNumberOfPendingMessages("ceTest8") == 0);
-		
-		//Check Message Order after confirmed Message
-		assert(MessageSystem.getNumberOfPendingMessages("ceTest9") == 2);
-		assert(MessageSystem.readReceivedMessage("ceTest9").getContent().equals("Test Message 5"));
-		assert(MessageSystem.readReceivedMessage("ceTest9").getContent().equals("Confirmed Test Message 1"));
-		
-		QuantumnetworkControllcenter.conMan.destroyAllConnectionEndpoints();
-		assert(QuantumnetworkControllcenter.conMan.returnAllConnections().size() == 0);
 	}
 
 }

@@ -91,6 +91,7 @@ public class ConnectionManager {
 	 * 
 	 * @param portNumber the port to be checked for availability.
 	 * @return returns true if the port is being used already by any ConnectionEndpoint, false if the port is free.
+	 * @deprecated Due to Network rework.
 	 */
 	public boolean isPortInUse(int portNumber) {
 		boolean isInUse = false;

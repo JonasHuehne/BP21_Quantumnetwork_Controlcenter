@@ -7,7 +7,10 @@ import java.io.File;
  * Its purpose is to make the Command class more readable by outsourcing strings that are only
  * rarely changed when updating the program, and also reduces the use of literals.
  * @author Sasha Petri
- */
+ * @deprecated Due to time concerns, the focus of developement has shifted to the GUI. 
+ * Support for the Console UI may be picked up again later, but at the moment there is no guarantee for it to be up to date or functional.
+*/
+@Deprecated
 final class CommandConstants {
 
 	enum Category {
