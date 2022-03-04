@@ -13,7 +13,7 @@ public final class Contact {
     private final String signatureKey;
 
     // number how much of the public key should be in the string representation
-    private final int lengthSignatureKeyToString = 7;
+    private static final int lengthSignatureKeyToString = 7;
 
     /**
      * Constructor.

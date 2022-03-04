@@ -33,15 +33,15 @@ public class Utils {
      * @param fileName the name of the key file
      * @return the key from the file as a string (without the beginning and end lines like "-----BEGIN-----"), null if error
      */
-    public static String readKeyStringFromFile(String fileName) {
+    public static String readKeyStringFromFile(final String fileName) {
         try {
             if(!Pattern.matches(KEY_FILENAME_SYNTAX, fileName)) {
                 System.err.println("Error while creating a key string from the input file: "
                         + "wrong key file format");
                 return null;
             }
-            String currentPath = Configuration.getBaseDirPath();
-            String key = new String (Files.readAllBytes
+            final String currentPath = Configuration.getBaseDirPath();
+            final String key = new String (Files.readAllBytes
                     (Path.of(currentPath + KEY_PATH + fileName)));
             return key
                     .replaceAll("-----.{5,50}-----", "")
