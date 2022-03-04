@@ -26,7 +26,7 @@ class AuthenticationTests {
 
     @BeforeEach
     void setup () {
-        QuantumnetworkControllcenter.initialize();
+        QuantumnetworkControllcenter.initialize(new String[]{"127.0.0.1", "8303"});
         currentPath = Configuration.getBaseDirPath();
     }
 
@@ -136,12 +136,12 @@ class AuthenticationTests {
         void testSign() {
             SHA256withRSAAuthentication.generateSignatureKeyPair();
 
-            String result1 = QuantumnetworkControllcenter.authentication.sign("Hello");
+            byte[] result1 = QuantumnetworkControllcenter.authentication.sign(MessageSystem.stringToByteArray("Hello"));
             Assertions.assertNotNull(result1);
             SHA256withRSAAuthentication.deleteSignatureKeys();
 
             SHA256withRSAAuthentication.setPrivateKey("test_private_key.pem");
-            String result2 = QuantumnetworkControllcenter.authentication.sign("Hello");
+            byte[] result2 = QuantumnetworkControllcenter.authentication.sign(MessageSystem.stringToByteArray("Hello"));
             Assertions.assertNotNull(result2);
             SHA256withRSAAuthentication.setPrivateKey("");
         }
@@ -152,8 +152,8 @@ class AuthenticationTests {
             SHA256withRSAAuthentication.generateSignatureKeyPair();
             QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
 
-            String signature = QuantumnetworkControllcenter.authentication.sign("Hello");
-            boolean result = QuantumnetworkControllcenter.authentication.verify("Hello", signature, "self");
+            byte[] signature = QuantumnetworkControllcenter.authentication.sign(MessageSystem.stringToByteArray("Hello"));
+            boolean result = QuantumnetworkControllcenter.authentication.verify(MessageSystem.stringToByteArray("Hello"), signature, "self");
             Assertions.assertTrue(result);
         }
 
@@ -163,8 +163,8 @@ class AuthenticationTests {
             SHA256withRSAAuthentication.generateSignatureKeyPair();
 
             QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
-            String signature1 = QuantumnetworkControllcenter.authentication.sign("Hello");
-            boolean result1 = QuantumnetworkControllcenter.authentication.verify("Hallo", signature1, "self");
+            byte[] signature1 = QuantumnetworkControllcenter.authentication.sign(MessageSystem.stringToByteArray("Hello"));
+            boolean result1 = QuantumnetworkControllcenter.authentication.verify(MessageSystem.stringToByteArray("Hallo"), signature1, "self");
             Assertions.assertFalse(result1);
 
             String otherPublicKeyString =
@@ -175,21 +175,22 @@ class AuthenticationTests {
                             "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                             "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                             "1QIDAQAB";
-            QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
-            QuantumnetworkControllcenter.communicationList.insert("other", "128.0.0.1", 2505, otherPublicKeyString);
-            String signature2 = QuantumnetworkControllcenter.authentication.sign("Hello");
-            boolean result2 = QuantumnetworkControllcenter.authentication.verify("Hello", signature2, "other");
+            QuantumnetworkControllcenter.communicationList.insert("testSelf", "127.0.0.1", 2303, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
+            QuantumnetworkControllcenter.communicationList.insert("testOther", "128.0.0.1", 2505, otherPublicKeyString);
+
+            byte[] signature2 = QuantumnetworkControllcenter.authentication.sign(MessageSystem.stringToByteArray("Hello"));
+            boolean result2 = QuantumnetworkControllcenter.authentication.verify(MessageSystem.stringToByteArray("Hello"), signature2, "testOther");
             Assertions.assertFalse(result2);
 
-            boolean result3 = QuantumnetworkControllcenter.authentication.verify("Hello", signature2, null);
+            boolean result3 = QuantumnetworkControllcenter.authentication.verify(MessageSystem.stringToByteArray("Hello"), signature2, null);
             Assertions.assertFalse(result3);
 
-            QuantumnetworkControllcenter.communicationList.updateSignatureKey("self", "");
-            boolean result4 = QuantumnetworkControllcenter.authentication.verify("Hello", signature2, "self");
+            QuantumnetworkControllcenter.communicationList.updateSignatureKey("testSelf", "");
+            boolean result4 = QuantumnetworkControllcenter.authentication.verify(MessageSystem.stringToByteArray("Hello"), signature2, "testSelf");
             Assertions.assertFalse(result4);
 
-            QuantumnetworkControllcenter.communicationList.updateSignatureKey("self", null);
-            boolean result5 = QuantumnetworkControllcenter.authentication.verify("Hello", signature2, "self");
+            QuantumnetworkControllcenter.communicationList.updateSignatureKey("testSelf", null);
+            boolean result5 = QuantumnetworkControllcenter.authentication.verify(MessageSystem.stringToByteArray("Hello"), signature2, "testSelf");
             Assertions.assertFalse(result5);
         }
     }

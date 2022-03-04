@@ -180,9 +180,9 @@ public class MessageSystem {
 	 * @return returns true if the message was confirmed to have been received.
 	 */
 	public static boolean sendAuthenticatedMessage(String connectionID, final byte[] message) {
+		// TODO: add check for valid key pair
 		byte[] signature;
-		SHA256withRSAAuthentication.generateSignatureKeyPair();
-		signature = QuantumnetworkControllcenter.authentication.sign(byteArrayToString(message));
+		signature = QuantumnetworkControllcenter.authentication.sign(message);
 		return sendConfirmedMessage(connectionID, message, signature);
 	}
 	
@@ -197,7 +197,7 @@ public class MessageSystem {
 		return sendAuthenticatedMessage(connectionID, stringToByteArray(message));
 	}
 	
-	/**Sends a signed and confirmed Message.
+	/**Sends a signed unconfirmed Message.
 	 * Signing requires valid keys.
 	 * 
 	 * @param connectionID the connection that should sent the message.
@@ -207,13 +207,14 @@ public class MessageSystem {
 	 * @return returns true if the message was confirmed to have been received.
 	 */
 	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final byte[] message) {
+		// TODO: add check for valid key pair
 		byte[] signature;
-		signature = QuantumnetworkControllcenter.authentication.sign(byteArrayToString(message));
+		signature = QuantumnetworkControllcenter.authentication.sign(message);
 		sendMessage(connectionID, type, argument, message, signature);
 		return true;
 	}
 	
-	/**Sends a signed and confirmed Message.
+	/**Sends a signed unconfirmed Message.
 	 * Signing requires valid keys.
 	 * 
 	 * @param connectionID the connection that should sent the message.
@@ -238,7 +239,7 @@ public class MessageSystem {
 		byte[] message;
 		message = msg.getContent();
 		byte[] signature = msg.getSignature();
-		if(QuantumnetworkControllcenter.authentication.verify(byteArrayToString(message), signature, connectionID)) {
+		if(QuantumnetworkControllcenter.authentication.verify(message, signature, connectionID)) {
 			return message;
 		}
 		return null;
