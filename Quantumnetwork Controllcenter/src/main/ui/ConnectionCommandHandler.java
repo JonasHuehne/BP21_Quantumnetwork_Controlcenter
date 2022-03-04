@@ -15,6 +15,12 @@ import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionState;
 import networkConnection.TransmissionTypeEnum;
 
+/**
+ * Handles execution of Commands related to Connection Management.
+ * @deprecated Due to time concerns, the focus of developement has shifted to the GUI. 
+ * Support for the Console UI may be picked up again later, but at the moment there is no guarantee for it to be up to date or functional.
+*/
+@Deprecated
 public class ConnectionCommandHandler {
 	
 	static CommunicationList communicationList = QuantumnetworkControllcenter.communicationList;
@@ -88,7 +94,7 @@ public class ConnectionCommandHandler {
 		} 
 		
 		// If contact exists, and there is no connection, add the new connection	
-		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(contactName, localPort);	
+		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(contactName, "", localPort);	
 		
 		if (localPoint == null) {
 			return "ERROR - Could not create the specified connection. Something went wrong, please see the system console in case there is an error log. ";
@@ -161,7 +167,7 @@ public class ConnectionCommandHandler {
 					connectionID, connectionState, localPort, contactRemoteIP, contactRemotePort, latestRemoteIP, latestRemotePort)
 					);
 			// TODO: TEMPORARY - FOR DEBUGGING ONLY:
-			output.append(" Messages: " + endpoint.getValue().sizeOfMessageQueue());
+			output.append(" Messages: " + 0);
 			output.append(System.lineSeparator());
 		}
 		
@@ -256,7 +262,7 @@ public class ConnectionCommandHandler {
 				if (localPoint.reportState() == ConnectionState.WAITINGFORCONNECTION) {
 					return "ERROR - Endpoint \"" + connectionID + "\" is already waiting for a connection request.";
 				} else {
-					localPoint.waitForConnection();
+					// localPoint.waitForConnection();
 					return "Endpoint \"" + connectionID + "\" is now waiting for a connection request.";
 				}
 				/*

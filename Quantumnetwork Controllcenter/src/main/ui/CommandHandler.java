@@ -10,7 +10,10 @@ import ui.CommandConstants.Category;
 /**
  * The purpose of this class is to process text commands (given as Strings) and execute corresponding program method.
  * @author Sasha Petri
- */
+ * @deprecated Due to time concerns, the focus of developement has shifted to the GUI. 
+ * Support for the Console UI may be picked up again later, but at the moment there is no guarantee for it to be up to date or functional.
+*/
+@Deprecated
 public final class CommandHandler {
 
 	private CommandHandler() {

@@ -16,7 +16,10 @@ import networkConnection.ConnectionState;
  * although in lower case and with underscores replaced by spaces. That means that:
  * {@link #CONTACTS_SHOW} would become "contacts show".
  * @author Sasha Petri
- */
+ * @deprecated Due to time concerns, the focus of developement has shifted to the GUI. 
+ * Support for the Console UI may be picked up again later, but at the moment there is no guarantee for it to be up to date or functional.
+*/
+@Deprecated
 public enum Command {
 
 	// TODO: Potentially remove this later

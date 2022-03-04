@@ -11,7 +11,10 @@ import frame.QuantumnetworkControllcenter;
 /**
  * The purpose of this class is to be used by {@link CommandHandler}, specifically for executing commands pertaining to the Communication List.
  * @author Sasha Petri
- */
+* @deprecated Due to time concerns, the focus of developement has shifted to the GUI. 
+* Support for the Console UI may be picked up again later, but at the moment there is no guarantee for it to be up to date or functional.
+*/
+@Deprecated
 class CommunicationListCommandHandler {
 	
 	static CommunicationList communicationList = QuantumnetworkControllcenter.communicationList;
