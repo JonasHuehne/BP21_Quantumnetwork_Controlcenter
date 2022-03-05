@@ -21,7 +21,7 @@ import messengerSystem.MessageSystem;
 /**
  * Main Class of QuantumnetworkControllcenter
  * 
- * @author Lukas Dentler
+ * @author Lukas Dentler, Sasha Petri
  */
 public class QuantumnetworkControllcenter {
 	
@@ -66,7 +66,15 @@ public class QuantumnetworkControllcenter {
 		System.out.println("Initialising IP: " + IP + " and Port " + Port);
 		String localIP = IP;
 		int localPort = Port;
-		conMan = new ConnectionManager(localIP, localPort);
+		try {
+			conMan = new ConnectionManager(localIP, localPort);
+		} catch (IOException e) {
+			System.err.println("Could not initialize the ConnectionManager - an I/O Exception occured. ");
+			System.err.println(e.getClass().getCanonicalName() + " - Message: " + e.getMessage());
+			e.printStackTrace();
+			System.err.println("Shutting down.");
+			System.exit(0);
+		}
 		MessageSystem.conMan = conMan;
 
 		// Communication List Init

@@ -4,13 +4,12 @@ package networkConnection;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
 
 import frame.Configuration;
-import frame.QuantumnetworkControllcenter;
 import graphicalUserInterface.GenericWarningMessage;
 import graphicalUserInterface.MessageGUI;
 import keyGeneration.KeyGenerator;
@@ -23,7 +22,7 @@ import messengerSystem.SHA256withRSAAuthentication;
  *  manually unless you know what you are doing. Use connectionManager.sendMessage() at the very least. Ideally you would use one of the methods from MessageSystem to send anything.
  * This class also contains parsing for different message types in processMessage(). This is used to trigger additional functionality from messages that are f.ex. used to close the connection.
  * 
- * @author Jonas Huehne
+ * @author Jonas Huehne, Sasha Petri
  *
  */
 public class ConnectionEndpoint implements Runnable{
@@ -59,6 +58,8 @@ public class ConnectionEndpoint implements Runnable{
 	private LinkedList<String> pendingConfirmations = new LinkedList<String>();	//this is where reception confirmations are stored and checked from while a confirmedMessage is waiting for a confirmation.
 	
 	private String messageLog = " ------ START OF MESSAGE LOG ------ ";
+	/** Timeout in ms when trying to connect to a remote server, 0 is an infinite timeout */
+	private final int CONNECTION_TIMEOUT = 3000;
 	
 	/**A ConnectionEndpoint is created with a unique name, an address, that determines the information exchanged during the creation of a connection and
 	 * a port that this ConnectionEndpoint is listening on for messages.
@@ -69,11 +70,21 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	
 	//Use for conResp
-	public ConnectionEndpoint(String connectionName, String localAddress, Socket localSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, int targetPort) {
-		connectionID = connectionName;
-		keyGen = new KeyGenerator(connectionID);
+	/**
+	 * Used when creating a ConnectionEndpoint as a response to a connection request.
+	 * @param connectionName
+	 * @param localAddress
+	 * @param localSocket
+	 * @param streamOut
+	 * @param streamIn
+	 * @param targetIP
+	 * @param targetPort
+	 */
+	public ConnectionEndpoint(String connectionName, String localAddress, Socket localSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, int targetPort, int localPort) {
+		this.connectionID = connectionName;
+		this.keyGen = new KeyGenerator(connectionID);
 		this.localAddress = localAddress;
-		localServerPort = QuantumnetworkControllcenter.conMan.getConnectionSwitchbox().getMasterServerPort();
+		this.localServerPort = localPort;
 		System.out.println("Initialised local ServerSocket in Endpoint of " + connectionID + " at Port " + String.valueOf(localServerPort));
 		
 		
@@ -95,13 +106,13 @@ public class ConnectionEndpoint implements Runnable{
 	}
 	
 	//Used for conEst
-	public ConnectionEndpoint(String connectionName, String targetIP, int targetPort) {
+	public ConnectionEndpoint(String connectionName, String targetIP, int targetPort, String localIP, int localPort) {
 		System.out.println("---A new CE has been created! I am named: "+ connectionName +" and my own IP is: "+ localAddress +" and I am going to connect to :"+ targetIP+":"+targetPort +".--");
 		connectionID = connectionName;
 		keyGen = new KeyGenerator(connectionID);
 
-		localAddress = QuantumnetworkControllcenter.conMan.getLocalAddress();
-		localServerPort = QuantumnetworkControllcenter.conMan.getLocalPort();
+		this.localAddress = localIP;
+		this.localServerPort = localPort;
 		
 		remoteIP = targetIP;
 		remotePort = targetPort;
@@ -253,7 +264,8 @@ public class ConnectionEndpoint implements Runnable{
 		//Try to connect to other Server
 		try {
 			//Connecting own Client Socket to foreign Server Socket
-			localClientSocket = new Socket(remoteIP,remotePort);
+			localClientSocket = new Socket();
+			localClientSocket.connect(new InetSocketAddress(remoteIP, remotePort), CONNECTION_TIMEOUT);
 			clientOut = new ObjectOutputStream(localClientSocket.getOutputStream());
 			clientIn = new ObjectInputStream(localClientSocket.getInputStream());
 			//Send Message to allow foreign Endpoint to connect with us.

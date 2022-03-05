@@ -1,41 +1,99 @@
 package networkConnection;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-/**A class that holds any number of ConnectionEndpoints. These represent connections from one local port to one other port at a give Address. 
- * This class offers methods to create and destroy ConnectionEndpoints, as well as setting and getting their relevant information.
- *
- * @author Jonas Huehne
+/** This class is used for the creation, destruction and management of multiple {@linkplain ConnectionEndpoint}s. <br>
+ * A ConnectionEndpoint represents a connection from our local machine to another machine also running this program. <br>
+ * The ConnectionManager allows you to create multiple of these endpoints, allowing connections to different machines,
+ * and to manage these connections. It also automatically reacts to incoming connection requests via a {@link ConnectionEndpointServerHandler},
+ * creating a new ConnectionEndpoint if a connection request comes in. <br>
+ * 
+ * (05.03.2022) For testing purposes, it is possible to create multiple ConnectionManagers on one machine to simulate multiple machines running
+ * this program. For an example, please see the NetworkTests class.
+ * 
+ * @author Jonas Huehne, Sasha Petri
  *
  */
 public class ConnectionManager {
 	
+	/** The connections held by this ConnectionManager */
 	private Map<String,ConnectionEndpoint> connections = new HashMap<String,ConnectionEndpoint>();
+	
+	/*
+	 * Fields related to handling incoming connection requests.
+	 */
+	
+	/** Our local IP address, to which other ConnectionEndpoints connect */
 	private String localAddress;
+	/** The port our local server uses to service ConnectionEndpoints connecting to us */
 	private int localPort;
-	private ConnectionSwitchbox connectionSwitchbox;
+	/** This ServerSocket allows other ConnectionEndpoints to connect to us by sending requests to {@link #localAddress}:{@link #localPort}*/
+	private ServerSocket masterServerSocket;
+	/** This thread continously checks for incoming connection requests */
+	private ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
+	/** Whether this CM is currently accepting ConnectionRequests */
+	private boolean isAcceptingConnections = false;
+	/** Used for control flow only */
+	private boolean submittedTaskOnce = false;
 	
 	
 	/**A ConnectionManager needs to be supplied with the ip under which the local ConnectionEndpoints should be accessible. 
 	 * 
 	 * @param localAddress the ip address that is being passed on to any local ConnectionEndpoints.
+	 * @throws IOException 
+	 * 		if an I/O Exception occured while trying to open the ServerSocket used for accepting connections
 	 */
-	public ConnectionManager(String localAddress, int localPort){
+	public ConnectionManager(String localAddress, int localPort) throws IOException{
 		this.localAddress = localAddress;
 		this.localPort = localPort;
-		connectionSwitchbox = new ConnectionSwitchbox(this.localPort);
 		
+		masterServerSocket = new ServerSocket(this.localPort);
+		waitForConnections();
 	}
 	
-	
-	public ConnectionSwitchbox getConnectionSwitchbox() {
-		return connectionSwitchbox;
+	public void waitForConnections() {
+		isAcceptingConnections = true;
+		
+		if (!submittedTaskOnce) {
+			// Used to asynchronously wait for incoming connections
+			connectionExecutor.submit(() -> {
+				while (isAcceptingConnections) {
+					Socket clientSocket;
+					try { // Wait for a Socket to attempt a connection to our ServerSocket
+						clientSocket = masterServerSocket.accept();
+					} catch (IOException e) {
+						System.err.println("An I/O Exception occured while trying to accept a connection in the ConnectionManager "
+								+ "with local IP " + localAddress + " and server port " + localPort + ". Accepting connections is being shut down.");
+						System.err.println("Message: " + e.getMessage());
+						isAcceptingConnections = false;
+						break;
+					} // Check that it is from a ConnectionEndpoint of our program
+					ConnectionEndpointServerHandler cesh = new ConnectionEndpointServerHandler(clientSocket, localAddress, localPort);
+					cesh.run();
+					if (cesh.acceptedRequest() == true) { // if it is, and a connection request came in time, add the new CE to our set of CE's
+						ConnectionEndpoint ce = cesh.getCE();
+						connections.put(ce.getRemoteName(), ce);
+						System.out.println("Received a CR from " + ce.getRemoteName() + " and accepted it.");
+					} 
+				}
+			});
+			submittedTaskOnce = true;
+		}
 	}
 	
+	public void stopWaitingForConnections() {
+		isAcceptingConnections = false;
+	}
+	
+	public boolean isWaitingForConnections() {
+		return isAcceptingConnections;
+	}
 	
 	 /**Creates a new ConnectionEndpoint and stores the Connection-Name and Endpoint-Ref.
 	 * Returns null instead of the new connectionEndpoint if it was not created due to naming and port constraints.
@@ -53,33 +111,7 @@ public class ConnectionManager {
 	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort) {
 		if(!connections.containsKey(endpointName)) {
 			System.out.println("---Received new request for a CE. Creating it now. It will connect to the Server at "+ targetIP +":"+ targetPort +".---");
-			connections.put(endpointName, new ConnectionEndpoint(endpointName, targetIP, targetPort));
-			return connections.get(endpointName);
-		}
-		System.err.println("[" + endpointName + "]: Could not create a new ConnectionEndpoint because of the Name- and Portuniqueness constraints.");
-		return null;
-	}
-	
-	 /**Creates a new ConnectionEndpoint and stores the Connection-Name and Endpoint-Ref.
-	 * Returns null instead of the new connectionEndpoint if it was not created due to naming and port constraints.
-	 * 
-	 * This version of the method should be used as part of the response to a connection request
-	 * from an external source only.
-	 * It is called by the local ConnectionEndpointServerHandler and SHOULD NOT BE CALLED FROM ANYWHERE ELSE!
-	 * 
-	 * The CE will be give In- and OutStreams as well as IP:Port Information about its communication partner.
-	 * 
-	 * @param endpointName	the Identifier for a connection. This Name can be used to access it later
-	 * @param clientSocket	the Socket that was created by accepting the connectionRequest at the ServerSocket.
-	 * @param streamOut	the OutputStream that can be used to send messages to the communication partner.
-	 * @param streamIn	the InputStream that can be used to receive messages from the communication partner.
-	 * @param targetIP	the IP of the communication partner.
-	 * @param targetPort	the Port of the communication partner.
-	 * @return	it returns the newly created ConnectionEndpoint. It can also be accessed via ConnectionManger.getConnectionEndpoint().
-	 */
-	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, Socket clientSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, int targetPort) {
-		if(!connections.containsKey(endpointName)) {
-			connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, clientSocket, streamOut, streamIn, targetIP, targetPort));
+			connections.put(endpointName, new ConnectionEndpoint(endpointName, targetIP, targetPort, localAddress, localPort));
 			return connections.get(endpointName);
 		}
 		System.err.println("[" + endpointName + "]: Could not create a new ConnectionEndpoint because of the Name- and Portuniqueness constraints.");
