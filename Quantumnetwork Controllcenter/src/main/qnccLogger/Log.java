@@ -28,7 +28,7 @@ public class Log {
 	}
 	
 	public void logDebugInfo(String message, Throwable exception) {
-		logger.log(Level.INFO, message, exception);
+		logger.log(Level.INFO, message + "\n \t[Exception Name]:\t" + exception.getClass().getSimpleName() + "\n\t[Exception Message]:" + exception.getMessage(), exception);
 	}
 	
 	public void logInfo(String message) {

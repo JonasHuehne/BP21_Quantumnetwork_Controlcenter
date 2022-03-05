@@ -11,8 +11,6 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
-
-import qnccLogger.GetCodeLine;
 import qnccLogger.Log;
 
 

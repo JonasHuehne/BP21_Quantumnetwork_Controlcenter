@@ -30,7 +30,7 @@ public class SingleFileHandler {
 		}
 		
 		Path currentWorkingDir = Paths.get("").toAbsolutePath();
-		File myLoggingProperties = currentWorkingDir.resolve("mylogging.properties").toFile();
+		File myLoggingProperties = currentWorkingDir.resolve("logger.properties").toFile();
 		try {
 			LogManager.getLogManager().readConfiguration(new FileInputStream(myLoggingProperties));
 		} catch (SecurityException | IOException e) {
