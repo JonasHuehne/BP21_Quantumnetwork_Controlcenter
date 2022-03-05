@@ -43,9 +43,14 @@ public class ConnectionManager {
 	private boolean submittedTaskOnce = false;
 	
 	
-	/**A ConnectionManager needs to be supplied with the ip under which the local ConnectionEndpoints should be accessible. 
+	/**
+	 * Creates and new ConnectionManager.
+	 * Automatically begins accepting connection requests.
 	 * 
-	 * @param localAddress the ip address that is being passed on to any local ConnectionEndpoints.
+	 * @param localAddress 
+	 * 		the ip address that is being passed on to any local ConnectionEndpoints, should be our local IP address
+	 * @param localPort
+	 * 		the port that this ConnectionManager will be accepting connection requests on, and that contained ConnectionEndpoints will be receiving messages on
 	 * @throws IOException 
 	 * 		if an I/O Exception occured while trying to open the ServerSocket used for accepting connections
 	 */
@@ -57,10 +62,13 @@ public class ConnectionManager {
 		waitForConnections();
 	}
 	
+	/**
+	 * Causes the ConnectionManager to start accepting incoming connection requests.
+	 */
 	public void waitForConnections() {
 		isAcceptingConnections = true;
 		
-		if (!submittedTaskOnce) {
+		if (!submittedTaskOnce) { // TODO check if calling waitForConnections() and then stopWaitingForConnections() and then waitForConnections() again works
 			// Used to asynchronously wait for incoming connections
 			connectionExecutor.submit(() -> {
 				while (isAcceptingConnections) {
@@ -87,10 +95,16 @@ public class ConnectionManager {
 		}
 	}
 	
+	/**
+	 * Causes the ConnectionManager to stop accepting incoming connection requests.
+	 */
 	public void stopWaitingForConnections() {
 		isAcceptingConnections = false;
 	}
 	
+	/**
+	 * @return true iff this ConnectionManager is currently accepting incoming connection requests
+	 */
 	public boolean isWaitingForConnections() {
 		return isAcceptingConnections;
 	}
