@@ -28,21 +28,33 @@ import messengerSystem.SHA256withRSAAuthentication;
 public class ConnectionEndpoint implements Runnable{
 	
 	//Local information
-	private String connectionID;	//the name of the ConnectionEndpoint. Used to identify it when using methods from MessageSystem or when interacting with the ConnectionListDB. Should be named after the target of the connection.
-	private KeyGenerator keyGen;	//a private instance of KeyGenerator that will be used if this particular ConnectionEndpoint is generating a new Key.
+	/** Name of this ConnectionEndpoint, used to identify it, e.g. in {@linkplain MessageSystem}. Generally the same as {@link #remoteName}. */
+	private String connectionID; // TODO Possibly refactor connectionID and remoteName to be the same
+	/** a private instance of KeyGenerator that will be used if this particular ConnectionEndpoint is generating a new Key. */
+	private KeyGenerator keyGen;
 	
 	//Addresses, Sockets and Ports
-	private String localAddress;	//the own IP
-	private int localServerPort;	//the Port of the local Server that other Endpoints can send Messages to.
-	public Socket localClientSocket;	// connects to another Endpoints Serversocket.
-	private Socket remoteClientSocket;	// another Endpoints ClientSocket that messaged out local Server Socket	
-	private String remoteIP;	//the IP of the connected Endpoint
-	private int remotePort;		//the Port of the connected Endpoint
-	private String remoteName;	//the Name of the connected Partner
+	/** Our local IP, sent when trying to establish a connection, so that the partner knows which IP to connect to */
+	private String localAddress;
+	/** When sending a connection request, our CE tells the other CE that we will be receiving messages on this port
+	 *  generally this will be the port of the ConnectionManager managing this CE */
+	private int localServerPort;
+	/** Connected to the ServerSocket of this CE's partner */
+	public Socket localClientSocket;
+	/** ClientSocket of another CE, set if we accept an incoming connection instead of sending a request */
+	private Socket remoteClientSocket;	
+	/** IP of the partner CE */
+	private String remoteIP;
+	/** Port of the partner CE */
+	private int remotePort;	
+	/** Name of the connected partner, used, for example, in the chat window. Note that this is not the {@link #connectionID} of the partner's CE. */
+	private String remoteName;
 	
 	//Communication Channels
-	private ObjectOutputStream clientOut;	//the outgoing channel that information from this ConnectionEndpoint is sent to another.
-	private ObjectInputStream clientIn;	//the incoming message channel.
+	/** Outgoing messages to the other CE are sent along this channel */
+	private ObjectOutputStream clientOut;
+	/** Incoming messages from the other CE are received on tis channel */
+	private ObjectInputStream clientIn;	
 	
 	//State
 	private boolean listenForMessages = false;
@@ -69,16 +81,26 @@ public class ConnectionEndpoint implements Runnable{
 	 * @param serverPort	the port this ConnectionEndpoints server is listening on for messages.
 	 */
 	
-	//Use for conResp
 	/**
-	 * Used when creating a ConnectionEndpoint as a response to a connection request.
+	 * Used when creating a ConnectionEndpoint as a response to a ConnectionRequest.
+	 * Called by {@linkplain ConnectionEndpointServerHandler}. 
 	 * @param connectionName
+	 * 		name of the partner that this connection request came from <br>
+	 * 		will be the {@link #connectionID} of this endpoint, and the {@link #remoteName}
 	 * @param localAddress
+	 * 		our local IP address
 	 * @param localSocket
+	 * 		socket created by ServerSocket.accept()
 	 * @param streamOut
+	 * 		messages to the other CE are sent to this channel
 	 * @param streamIn
+	 * 		incoming messages from the other CE are received on this stream
 	 * @param targetIP
+	 * 		IP of the partner that sent the connection request
 	 * @param targetPort
+	 * 		server port of the partner that sent the connection request, outgoing messages will be sent to this port
+	 * @param localPort
+	 * 		our server port, that we receive messages on
 	 */
 	public ConnectionEndpoint(String connectionName, String localAddress, Socket localSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, int targetPort, int localPort) {
 		this.connectionID = connectionName;
@@ -86,7 +108,6 @@ public class ConnectionEndpoint implements Runnable{
 		this.localAddress = localAddress;
 		this.localServerPort = localPort;
 		System.out.println("Initialised local ServerSocket in Endpoint of " + connectionID + " at Port " + String.valueOf(localServerPort));
-		
 		
 		localClientSocket = localSocket;
 		clientOut = streamOut;
@@ -105,7 +126,20 @@ public class ConnectionEndpoint implements Runnable{
 		listenForMessage();
 	}
 	
-	//Used for conEst
+	/**
+	 * Used when creating a ConnectionEndpoint that tries to connect to another ConnectionEndpoint by sending a request.
+	 * @param connectionName
+	 * 		name of the partner that this connection request came from <br>
+	 * 		will be the {@link #connectionID} of this endpoint, and the {@link #remoteName}
+	 * @param targetIP
+	 * 		IP of the partner that sent the connection request
+	 * @param targetPort
+	 * 		server port of the partner that sent the connection request, outgoing messages will be sent to this port
+	 * @param localIP
+	 * 		our local IP address (this is the IP we tell the remote endpoint to send messages back to)
+	 * @param localPort
+	 * 		our server port, that we receive messages on (this is the port we tell the remote endpoint to send messages to)
+	 */
 	public ConnectionEndpoint(String connectionName, String targetIP, int targetPort, String localIP, int localPort) {
 		System.out.println("---A new CE has been created! I am named: "+ connectionName +" and my own IP is: "+ localAddress +" and I am going to connect to :"+ targetIP+":"+targetPort +".--");
 		connectionID = connectionName;
