@@ -4,9 +4,14 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import exceptions.ConnectionWithThatNameAlreadyExistsException;
+import exceptions.PortIsInUseException;
 
 /** This class is used for the creation, destruction and management of multiple {@linkplain ConnectionEndpoint}s. <br>
  * A ConnectionEndpoint represents a connection from our local machine to another machine also running this program. <br>
@@ -22,6 +27,9 @@ import java.util.concurrent.Executors;
  */
 public class ConnectionManager {
 	
+	/** Ports in use by any ConnectionManager */
+	private static HashSet<Integer> portsInUse = new HashSet<Integer>();
+	
 	/** The connections held by this ConnectionManager */
 	private Map<String,ConnectionEndpoint> connections = new HashMap<String,ConnectionEndpoint>();
 	
@@ -35,7 +43,7 @@ public class ConnectionManager {
 	private int localPort;
 	/** This ServerSocket allows other ConnectionEndpoints to connect to us by sending requests to {@link #localAddress}:{@link #localPort}*/
 	private ServerSocket masterServerSocket;
-	/** This thread continously checks for incoming connection requests */
+	/** This thread continuously checks for incoming connection requests */
 	private ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
 	/** Whether this CM is currently accepting ConnectionRequests */
 	private boolean isAcceptingConnections = false;
@@ -50,22 +58,29 @@ public class ConnectionManager {
 	 * @param localAddress 
 	 * 		the ip address that is being passed on to any local ConnectionEndpoints, should be our local IP address
 	 * @param localPort
-	 * 		the port that this ConnectionManager will be accepting connection requests on, and that contained ConnectionEndpoints will be receiving messages on
+	 * 		the port that this ConnectionManager will be accepting connection requests on, and that contained ConnectionEndpoints will be receiving messages on <br>
+	 * 		must not be in use by any other ConnectionManager
 	 * @throws IOException 
-	 * 		if an I/O Exception occured while trying to open the ServerSocket used for accepting connections
+	 * 		if an I/O Exception occurred while trying to open the ServerSocket used for accepting connections
+	 * @throws PortIsInUseException
+	 * 		if the specified port is already in use by another ConnectionManager <br>
+	 * 		ports used by a ConnectionManager remain marked as used until the program is restarted
 	 */
-	public ConnectionManager(String localAddress, int localPort) throws IOException{
+	public ConnectionManager(String localAddress, int localPort) throws IOException, PortIsInUseException{
+		if (portsInUse.contains(localPort)) throw new PortIsInUseException("Port " + localPort + " is already in use by a ConnectionManager.");
+		
 		this.localAddress = localAddress;
 		this.localPort = localPort;
 		
 		masterServerSocket = new ServerSocket(this.localPort);
+		portsInUse.add(localPort);
 		waitForConnections();
 	}
 	
 	/**
 	 * Causes the ConnectionManager to start accepting incoming connection requests.
 	 */
-	public void waitForConnections() {
+	public final void waitForConnections() {
 		isAcceptingConnections = true;
 		
 		if (!submittedTaskOnce) { // TODO check if calling waitForConnections() and then stopWaitingForConnections() and then waitForConnections() again works
@@ -76,7 +91,7 @@ public class ConnectionManager {
 					try { // Wait for a Socket to attempt a connection to our ServerSocket
 						clientSocket = masterServerSocket.accept();
 					} catch (IOException e) {
-						System.err.println("An I/O Exception occured while trying to accept a connection in the ConnectionManager "
+						System.err.println("An I/O Exception occurred while trying to accept a connection in the ConnectionManager "
 								+ "with local IP " + localAddress + " and server port " + localPort + ". Accepting connections is being shut down.");
 						System.err.println("Message: " + e.getMessage());
 						isAcceptingConnections = false;
@@ -110,26 +125,32 @@ public class ConnectionManager {
 	}
 	
 	 /**Creates a new ConnectionEndpoint and stores the Connection-Name and Endpoint-Ref.
-	 * Returns null instead of the new connectionEndpoint if it was not created due to naming and port constraints.
 	 * 
 	 * This version of the method should be used if the CE is being created because of the local users intentions and not as part of the response to a connection request
 	 * from an external source.
 	 * 
 	 * The CE will attempt to connect to the targetIP and Port as soon as it is created.
 	 * 
-	 *@param endpointName 	the Identifier for a connection. This Name can be used to access it later
-	 *@param targetIP 		the IP of the Server that we wish to connect to.
-	 *@param targetPort 	the Port of the Server that we wish to connect to.
-	 *@return ConnectionEndpoint	it returns the newly created ConnectionEndpoint. It can also be accessed via ConnectionManger.getConnectionEndpoint().
+	 *	@param endpointName 	
+	 *		the identifier for a connection. This name can be used to access it later
+	 *	@param targetIP 
+	 *		IP of the {@linkplain ConnectionEndpoint} that the newly created CE should connect to
+	 *	@param targetPort 	
+	 *		server port of the {@linkplain ConnectionEndpoint} that the newly created CE should connect to
+	 *	@return ConnectionEndpoint
+	 *		the newly created {@linkplain ConnectionEndpoint} <br>
+	 *		can also be accessed via {@linkplain #getConnectionEndpoint(String)} with argument {@code endpointName}
+	 * 	@throws ConnectionWithThatNameAlreadyExistsException 
+	 * 		if a connection with the specified name is already managed by this ConnectionManager
 	 */
-	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort) {
+	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort) throws ConnectionWithThatNameAlreadyExistsException {
 		if(!connections.containsKey(endpointName)) {
 			System.out.println("---Received new request for a CE. Creating it now. It will connect to the Server at "+ targetIP +":"+ targetPort +".---");
 			connections.put(endpointName, new ConnectionEndpoint(endpointName, targetIP, targetPort, localAddress, localPort));
 			return connections.get(endpointName);
+		} else {
+			throw new ConnectionWithThatNameAlreadyExistsException(endpointName);
 		}
-		System.err.println("[" + endpointName + "]: Could not create a new ConnectionEndpoint because of the Name- and Portuniqueness constraints.");
-		return null;
 	}
 	
 	
