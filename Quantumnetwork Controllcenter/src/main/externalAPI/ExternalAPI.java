@@ -9,9 +9,11 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import javax.crypto.SecretKey;
 
+import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
 import keyStore.KeyStoreDbManager;
 import messengerSystem.MessageSystem;
+import networkConnection.ConnectionEndpoint;
 
 /**
  * An API class for external use to get keys and use the encryption/decryption with or without sending the file.
@@ -132,8 +134,10 @@ public class ExternalAPI {
 	 * 
 	 * @param communicationPartner the ID of the receiver as listed in communicationList
 	 * @param fileName Name of the .txt file containing the suffix ".txt"
+	 * @throws ManagerHasNoSuchEndpointException 
+	 * 		if there is no {@linkplain ConnectionEndpoint} with the specified name in the manager currently used by the {@linkplain MessageSystem}
 	 */
-	public static boolean sendEncryptedTxtFile(String communicationPartner, String fileName) {
+	public static boolean sendEncryptedTxtFile(String communicationPartner, String fileName) throws ManagerHasNoSuchEndpointException {
 		Path externalPath = getExternalAPIPath();
 		Path toRead = externalPath.resolve(fileName);
 		
@@ -151,30 +155,10 @@ public class ExternalAPI {
 	}
 	
 	/**
-	 * receives a signed message with encrypted text, sent from an external source.
-	 * Saves the text decrypted in a .txt file in externalAPI directory, named with the ID of the sender and current Timestamp.
-	 * 
-	 * @param communicationPartner the ID of the sender
+	 * @deprecated This is changed in the US for sending and receiving encrypted files.
 	 */
 	public static void receiveEncryptedTxtFile(String communicationPartner) {
-		Path externalPath = getExternalAPIPath();
-		
-		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu_MM_dd_HH_mm");
-        LocalDateTime now = LocalDateTime.now();
-        String currentDateTime = dateTimeFormatter.format(now);
-		System.out.println(currentDateTime);
-        
-		Path toWrite = externalPath.resolve(currentDateTime + "_" + communicationPartner + ".txt");
-		
-		File decrypted = new File(toWrite.toString());
-		
-		String received = MessageSystem.readEncryptedMessage(communicationPartner);
-		
-		try {
-			Files.writeString(decrypted.toPath(), received);
-		} catch (IOException e) {
-			System.err.println("Error, could not write to the outputfile \n" + e.toString());
-		}
+
 	}
 	
 	/*
