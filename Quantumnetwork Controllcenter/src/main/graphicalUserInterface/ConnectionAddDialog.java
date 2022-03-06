@@ -25,6 +25,7 @@ import javax.swing.JRadioButton;
 import javax.swing.event.ChangeListener;
 
 import exceptions.ConnectionAlreadyExistsException;
+import exceptions.IpAndPortAlreadyInUseException;
 
 import javax.swing.event.ChangeEvent;
 
@@ -187,7 +188,9 @@ public class ConnectionAddDialog extends JDialog {
 								QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(ceName, ceIP, cePort);
 								System.out.println("Created new CE: " + textFieldContactName.getText());
 							} catch (ConnectionAlreadyExistsException e1) {
-								System.err.println("Could not created connection with that name, such a connection already exists."); // TODO Make this into a GUI warning
+								new GenericWarningMessage("Could not create connection with that name. Such a connection already exists.");
+							} catch (IpAndPortAlreadyInUseException e1) {
+								new GenericWarningMessage("Could not create connection with that IP / Port pairing. Such a connection already exists.");
 							}
 						}else {
 							selectedTableRowIndex = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
@@ -205,7 +208,9 @@ public class ConnectionAddDialog extends JDialog {
 								QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(name, ip, port);
 								System.out.println("Created new CE: " + name);
 							} catch (ConnectionAlreadyExistsException e1) {
-								System.err.println("Could not created connection with that name, such a connection already exists."); // TODO Make this into a GUI warning
+								new GenericWarningMessage("Could not create connection with that name. Such a connection already exists.");
+							} catch (IpAndPortAlreadyInUseException e1) {
+								new GenericWarningMessage("Could not create connection with that IP / Port pairing. Such a connection already exists.");
 							}
 						}
 						
