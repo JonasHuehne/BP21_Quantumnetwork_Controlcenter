@@ -9,6 +9,7 @@ import javax.swing.border.EmptyBorder;
 
 import org.w3c.dom.css.RGBColor;
 
+import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
@@ -107,18 +108,20 @@ public class MessageGUI extends JFrame {
 				if(MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState() != ConnectionState.CONNECTED) {
 					new GenericWarningMessage("Warning: you can not send Message on a Connection that is not connected!");
 				}
-				
-				
-				switch(QuantumnetworkControllcenter.guiWindow.conType.get(connectionID)) {
-				case AUTHENTICATED: MessageSystem.sendAuthenticatedMessage(connectionID, msg);
-					break;
-				case ENCRYPTED: MessageSystem.sendEncryptedMessage(connectionID, msg);
-					break;
-				case UNSAFE: MessageSystem.sendMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg, null);
-					break;
-				default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selected!");
-					break;
-				
+
+				try {
+					switch(QuantumnetworkControllcenter.guiWindow.conType.get(connectionID)) {
+					case AUTHENTICATED: MessageSystem.sendAuthenticatedMessage(connectionID, msg);
+						break;
+					case ENCRYPTED: MessageSystem.sendEncryptedMessage(connectionID, msg);
+						break;
+					case UNSAFE: MessageSystem.sendMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg, null);
+						break;
+					default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selected!");
+						break;
+					}
+				} catch (ManagerHasNoSuchEndpointException nsce) {
+					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". No such connection exists.");
 				}
 				
 				logSentMessage(msg);

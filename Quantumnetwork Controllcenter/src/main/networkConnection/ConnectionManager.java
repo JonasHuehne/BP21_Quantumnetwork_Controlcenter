@@ -10,7 +10,8 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import exceptions.ConnectionWithThatNameAlreadyExistsException;
+import exceptions.ConnectionAlreadyExistsException;
+import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.PortIsInUseException;
 
 /** This class is used for the creation, destruction and management of multiple {@linkplain ConnectionEndpoint}s. <br>
@@ -78,7 +79,8 @@ public class ConnectionManager {
 	}
 	
 	/**
-	 * Causes the ConnectionManager to start accepting incoming connection requests.
+	 * Causes the ConnectionManager to start accepting incoming connection requests. <br>
+	 * Does nothing if the connection manager is already waiting for connection requests.
 	 */
 	public final void waitForConnections() {
 		isAcceptingConnections = true;
@@ -140,24 +142,21 @@ public class ConnectionManager {
 	 *	@return ConnectionEndpoint
 	 *		the newly created {@linkplain ConnectionEndpoint} <br>
 	 *		can also be accessed via {@linkplain #getConnectionEndpoint(String)} with argument {@code endpointName}
-	 * 	@throws ConnectionWithThatNameAlreadyExistsException 
+	 * 	@throws ConnectionAlreadyExistsException 
 	 * 		if a connection with the specified name is already managed by this ConnectionManager
 	 */
-	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort) throws ConnectionWithThatNameAlreadyExistsException {
+	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort) throws ConnectionAlreadyExistsException {
 		if(!connections.containsKey(endpointName)) {
 			System.out.println("---Received new request for a CE. Creating it now. It will connect to the Server at "+ targetIP +":"+ targetPort +".---");
 			connections.put(endpointName, new ConnectionEndpoint(endpointName, targetIP, targetPort, localAddress, localPort));
 			return connections.get(endpointName);
 		} else {
-			throw new ConnectionWithThatNameAlreadyExistsException(endpointName);
+			throw new ConnectionAlreadyExistsException(endpointName);
 		}
 	}
 	
 	
-	/**This can be used if the supplied port is being used by any local ConnectionEndpoint.
-	 * 
-	 * @param portNumber the port to be checked for availability.
-	 * @return returns true if the port is being used already by any ConnectionEndpoint, false if the port is free.
+	/**
 	 * @deprecated Due to Network rework.
 	 */
 	public boolean isPortInUse(int portNumber) {
@@ -169,7 +168,6 @@ public class ConnectionManager {
 		}
 		return isInUse;
 	}
-	
 	
 	/**Returns all currently stored connections as a ID<->Endpoint Mapping.
 	 * 
@@ -194,23 +192,32 @@ public class ConnectionManager {
 	 * @param typeArgument an additional String that some transmission types use. Can be "" if not needed.
 	 * @param sig the optional signature, used by authenticated messages
 	 * @param message the String Message that is supposed to be sent via the designated ConnectionEndpoint.
+	 * @throws ManagerHasNoSuchEndpointException 
+	 * 		if no connection of that name could be found in the connection manager
 	 */
-	public void sendMessage(String connectionID, TransmissionTypeEnum type, String typeArgument, byte[] message, byte[] sig) {	
-		connections.get(connectionID).pushMessage(type, typeArgument, message, sig);
+	public void sendMessage(String connectionID, TransmissionTypeEnum type, String typeArgument, byte[] message, byte[] sig) throws ManagerHasNoSuchEndpointException {	
+		ConnectionEndpoint ce = connections.get(connectionID);
+		if (ce == null) {
+			throw new ManagerHasNoSuchEndpointException(connectionID);
+		} else {
+			connections.get(connectionID).pushMessage(type, typeArgument, message, sig);
+		}
 	}
 	
 	
 	/**Returns a ConnectionEndpoint if one by the given name was found. Returns NULL and a Warning otherwise.
 	 * 
 	 * @param connectionName the Identifier of the intended connectionEndpoint. 
-	 * @return ConnectionEndpoint the CE that was requested by ID.
+	 * @return ConnectionEndpoint 
+	 * 		the CE of the given name <br>
+	 * 		may be null if no such CE exists.
 	 */
 	public ConnectionEndpoint getConnectionEndpoint(String connectionName) {
 		if(connections.containsKey(connectionName)) {
 			return connections.get(connectionName);
+		} else {
+			return null;
 		}
-		System.err.println("Warning: No Connection by the name of " + connectionName + " was found by the ConnectionManager!");
-		return null;
 	}
 	
 	/**
@@ -226,51 +233,73 @@ public class ConnectionManager {
 	}
 	
 	/**Returns the ConnectionState of a ConnectionEndpoint given by name.
-	 * May Return ConnectionState.ERROR if no CE by the given connectionName was found.
 	 * @param connectionName	the Identifier of the intended connectionEndpoint.
 	 * @return ConnectionState	the State of the ConnectionEndpoint expressed as aConnectionStateEnum.
+	 * @throws ManagerHasNoSuchEndpointException 
+	 * 		if no connection of that name could be found in the connection manager
 	 */
-	public ConnectionState getConnectionState(String connectionName) {
+	public ConnectionState getConnectionState(String connectionName) throws ManagerHasNoSuchEndpointException {
 		ConnectionEndpoint ce = getConnectionEndpoint(connectionName);
 		if(ce != null) {
 			return ce.reportState();
+		} else {
+			throw new ManagerHasNoSuchEndpointException(connectionName);
 		}
-		return ConnectionState.ERROR;
 	}
 	
-	/**Changes the current LocalAddress to a new Value. This resets all active connectionEndpoints and closes their connections.
-	 *
-	 * @param newLocalAddress the new LocalAddress
+	/**Changes the current local IP address to a new value. 
+	 * This closes all {@linkplain ConnectionEndpoint}s managed by this manager, 
+	 * and sets their local IP address accordingly.
+	 * @param newLocalAddress the new local IP address
 	 */
 	public void setLocalAddress(String newLocalAddress) {
+		closeAllConnections();
 		localAddress = newLocalAddress;
+		for (ConnectionEndpoint ce : connections.values()) {
+			ce.updateLocalAddress(newLocalAddress);
+		}
 	}
 	
+	/**Changes the current local IP address to a new value. 
+	 * This closes all {@linkplain ConnectionEndpoint}s managed by this manager, 
+	 * and sets their local IP address accordingly.
+	 * @param newLocalAddress the new local IP address
+	 */
 	public void setLocalPort(int newLocalPort) {
+		closeAllConnections();
 		localPort = newLocalPort;
+		for (ConnectionEndpoint ce : connections.values()) {
+			ce.updatePort(newLocalPort);
+		}
 	}
 	
-	/**Returns the localAddress Value currently in use by all connectionEndpoints.
-	 * 
-	 * @return the current localAddress
+	/**
+	 * @return the local address value currently in use by all {@linkplain ConnectionEndpoint}s.
 	 */
 	public String getLocalAddress() {
 		return localAddress;
 	}
 	
+	/**
+	 * @return the local port value currently in use by all {@linkplain ConnectionEndpoint}s.
+	 */
 	public int getLocalPort() {
 		return localPort;
 	}
 
-	/**Closes a named connection if existing and open. Does not destroy the connectionEndpoint, use destroyConnectionEndpoint for that.
-	 * 
-	 * @param connectionName	the Identifier of the intended connectionEndpoint.
+	/**Closes a named connection if existing and open. Does not destroy the connectionEndpoint, use destroyConnectionEndpoint for that. <br>
+	 * @implNote Calls {@linkplain ConnectionEndpoint#closeConnection(boolean)} with {@code localRequest = true}.
+	 * @param connectionName	
+	 * 		the name of the intended {@linkplain ConnectionEndpoint}
+	 * @return true if the connection was closed, false if no such connection could be found
 	 */
-	public void closeConnection(String connectionName) {
-		if(getConnectionEndpoint(connectionName) != null && getConnectionState(connectionName) == ConnectionState.CONNECTED) {
-			getConnectionEndpoint(connectionName).closeConnection(true);
-		}else {
-			System.err.println("Warning: No active Connection found for Connection Endpoint " + connectionName + ". Aborting closing process!");
+	public boolean closeConnection(String connectionName) {
+		ConnectionEndpoint ce = getConnectionEndpoint(connectionName);
+		if (ce == null) {
+			return false;
+		} else {
+			ce.closeConnection(true);
+			return true;
 		}
 	}
 	
@@ -281,18 +310,26 @@ public class ConnectionManager {
 		connections.forEach((k,v) -> closeConnection(k));
 	}
 
-	/**Completely destroys a given connectionEndpoint after shutting down its potentially active connection.
+	/**
+	 * Closes the connection of a specified {@linkplain ConnectionEndpoint} and removes it from the manager.
 	 * 
-	 * @param connectionID the ID of the connectionEndpoint that is no longer needed.
+	 * @param connectionID the ID of the {@linkplain ConnectionEndpoint} that is no longer needed.
+	 * @throws ManagerHasNoSuchEndpointException 
+	 * 		if there is no {@linkplain ConnectionEndpoint} with the specified name in the manager
 	 */
-	public void destroyConnectionEndpoint(String connectionID) {
+	public void destroyConnectionEndpoint(String connectionID) throws ManagerHasNoSuchEndpointException {
 		System.out.println("[ConnectionManager]: Destroying ConnectionEndpoint " + connectionID);
-		connections.get(connectionID).closeConnection(true);
-		connections.remove(connectionID);
+		ConnectionEndpoint ce = connections.get(connectionID);
+		if (ce != null) {
+			ce.closeConnection(true);
+			connections.remove(connectionID);
+		} else {
+			throw new ManagerHasNoSuchEndpointException(connectionID);
+		}
 	}
 	
-	/**Completely destroys all connectionEndpoints after shutting down their potentially active connections.
-	 * 
+	/**
+	 * Closes all connections managed by this manager, and removes them from the manager.
 	 */
 	public void destroyAllConnectionEndpoints() {
 		connections.forEach((k,v) -> {

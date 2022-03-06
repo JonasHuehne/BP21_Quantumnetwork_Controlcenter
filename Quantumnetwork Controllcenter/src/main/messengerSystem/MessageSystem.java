@@ -5,12 +5,14 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedList;
 import encryptionDecryption.AES256;
+import exceptions.ManagerHasNoSuchEndpointException;
 import keyStore.KeyStoreDbManager;
 import keyStore.KeyStoreObject;
 import java.util.Random;
 
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
+import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
 import networkConnection.NetworkPackage;
@@ -26,6 +28,8 @@ public class MessageSystem {
 	
 	private static final String ENCODING_STANDARD = Configuration.getProperty("Encoding");
 	
+	/** Contains the ConnectionEndpoints for which the MessageSystem handles the high-level messaging. <br>
+	 * 	Generally, this is set once when initializing the program, however, for automated tests it may be needed to set this multiple times to simulate different users. */
 	public static ConnectionManager conMan;
 	private static final byte[] DEBUGKEY = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
 
@@ -36,9 +40,10 @@ public class MessageSystem {
 	 * @param argument the type-specific argument. Look at TransmissionTypeEnum for more information.
 	 * @param message the message to be sent.
 	 * @param sig the signature of an authenticated message. May be null for non-authenticated messages.
+	 * @throws ManagerHasNoSuchEndpointException 
+	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
 	 */
-	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, byte[] message, byte[] sig) {
-
+	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, byte[] message, byte[] sig) throws ManagerHasNoSuchEndpointException {
 		//Check if connectionManager exists
 		if(conMan == null) {
 			System.err.println("WARNING: Tried to send a message via the MessageSystem before initializing the QuantumnetworkControllcenter, thereby setting the connectionManager Reference.");
@@ -62,8 +67,10 @@ public class MessageSystem {
 	 * @param argument the type-specific argument. Look at TransmissionTypeEnum for more information.
 	 * @param message the message to be sent.
 	 * @param sig the signature of an authenticated message. May be null for non-authenticated messages.
+	 * @throws ManagerHasNoSuchEndpointException 
+	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
 	 */
-	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, String message, String sig) {
+	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, String message, String sig) throws ManagerHasNoSuchEndpointException {
 		if(sig == null) {
 			sendMessage(connectionID, type, argument, stringToByteArray(message), null);
 		}else {
@@ -90,14 +97,17 @@ public class MessageSystem {
 	}
 
 
-	/**This sends a message and the recipient is going to echo the message back to us.
+	/**This sends a message and requests the recipient to send back a confirmation.
+	 * A confirmation is an empty message of type {@linkplain TransmissionTypeEnum#RECEPTION_CONFIRMATION_RESPONSE}.
 	 *
 	 * @param connectionID the name of the ConnectionEndpoint to send the message from.
 	 * @param message the message to be sent.
 	 * @param sig optional signature used by authenticated messages.
 	 * @return returns True if the confirmation of the message has been received, False if it times out.
+	 * @throws ManagerHasNoSuchEndpointException 
+	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
 	 */
-	public static boolean sendConfirmedMessage(String connectionID, byte[] message, byte[] sig) {
+	public static boolean sendConfirmedMessage(String connectionID, byte[] message, byte[] sig) throws ManagerHasNoSuchEndpointException {
 		
 		ConnectionState state = QuantumnetworkControllcenter.conMan.getConnectionState(connectionID);
 		
@@ -155,8 +165,10 @@ public class MessageSystem {
 	 * @param message the message to be sent.
 	 * @param sig optional signature used by authenticated messages.
 	 * @return returns True if the confirmation of the message has been received, False if it times out.
+	 * @throws ManagerHasNoSuchEndpointException 
+	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
 	 */
-	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) {
+	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) throws ManagerHasNoSuchEndpointException {
 		return sendConfirmedMessage(connectionID, stringToByteArray(message), stringToByteArray(sig));
 	}
 	
@@ -178,8 +190,10 @@ public class MessageSystem {
 	 * @param connectionID the connection that should sent the message.
 	 * @param message the actual message as a byte[].
 	 * @return returns true if the message was confirmed to have been received.
+	 * @throws ManagerHasNoSuchEndpointException 
+	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
 	 */
-	public static boolean sendAuthenticatedMessage(String connectionID, final byte[] message) {
+	public static boolean sendAuthenticatedMessage(String connectionID, final byte[] message) throws ManagerHasNoSuchEndpointException {
 		// TODO: add check for valid key pair
 		byte[] signature;
 		signature = QuantumnetworkControllcenter.authentication.sign(message);
@@ -192,8 +206,10 @@ public class MessageSystem {
 	 * @param connectionID the connection that should sent the message.
 	 * @param message the actual message as a String.
 	 * @return returns true if the message was confirmed to have been received.
+	 * @throws ManagerHasNoSuchEndpointException 
+	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
 	 */
-	public static boolean sendAuthenticatedMessage(String connectionID, final String message) {
+	public static boolean sendAuthenticatedMessage(String connectionID, final String message) throws ManagerHasNoSuchEndpointException {
 		return sendAuthenticatedMessage(connectionID, stringToByteArray(message));
 	}
 	
@@ -205,8 +221,10 @@ public class MessageSystem {
 	 * @param argument the optional argument, use depends on the chosen TransmissionType. Refer to ConnectionEndpoint.processMessage() for more information.
 	 * @param message the actual message to be transmitted. Can be empty. Most transmissions with content will use the first variant of this method.
 	 * @return returns true if the message was confirmed to have been received.
+	 * @throws ManagerHasNoSuchEndpointException 
+	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
 	 */
-	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final byte[] message) {
+	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final byte[] message) throws ManagerHasNoSuchEndpointException {
 		// TODO: add check for valid key pair
 		byte[] signature;
 		signature = QuantumnetworkControllcenter.authentication.sign(message);
@@ -222,8 +240,10 @@ public class MessageSystem {
 	 * @param argument the optional argument, use depends on the chosen TransmissionType. Refer to ConnectionEndpoint.processMessage() for more information.
 	 * @param message the actual message to be transmitted. Can be empty. Most transmissions with content will use the first variant of this method.
 	 * @return returns true if the message was confirmed to have been received.
+	 * @throws ManagerHasNoSuchEndpointException 
+	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
 	 */
-	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final String message) {
+	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final String message) throws ManagerHasNoSuchEndpointException {
 		return sendAuthenticatedMessage(connectionID, type, argument, stringToByteArray(message));
 	}
 
@@ -251,8 +271,10 @@ public class MessageSystem {
 	 * @param connectionID the ID of the receiver
 	 * @param message the message to be sent
 	 * @return true if the sending of the message worked, false otherwise
+	 * @throws ManagerHasNoSuchEndpointException 
+	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
 	 */
-	public static boolean sendEncryptedMessage(String connectionID, final String message) {
+	public static boolean sendEncryptedMessage(String connectionID, final String message) throws ManagerHasNoSuchEndpointException {
 		
 		byte[] byteKey;
 		if(connectionID.equals("42debugging42") || connectionID.equals("41debugging41") ) {

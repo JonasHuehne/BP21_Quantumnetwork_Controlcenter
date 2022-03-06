@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
 
+import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
 import graphicalUserInterface.GenericWarningMessage;
 import graphicalUserInterface.MessageGUI;
@@ -73,13 +74,6 @@ public class ConnectionEndpoint implements Runnable{
 	/** Timeout in ms when trying to connect to a remote server, 0 is an infinite timeout */
 	private final int CONNECTION_TIMEOUT = 3000;
 	
-	/**A ConnectionEndpoint is created with a unique name, an address, that determines the information exchanged during the creation of a connection and
-	 * a port that this ConnectionEndpoint is listening on for messages.
-	 * 
-	 * @param connectionName the name of the ConnectionEndpoint, also used in the ContactListDB and the MessageSystem methods.
-	 * @param localAddress	the ip that the ConnectionEndpoint is working on. Is sent to the other ConnectionEndpoint when creating a connection.
-	 * @param serverPort	the port this ConnectionEndpoints server is listening on for messages.
-	 */
 	
 	/**
 	 * Used when creating a ConnectionEndpoint as a response to a ConnectionRequest.
@@ -104,7 +98,7 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public ConnectionEndpoint(String connectionName, String localAddress, Socket localSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, int targetPort, int localPort) {
 		this.connectionID = connectionName;
-		this.keyGen = new KeyGenerator(connectionID);
+		this.keyGen = new KeyGenerator(this);
 		this.localAddress = localAddress;
 		this.localServerPort = localPort;
 		System.out.println("Initialized local ServerSocket in Endpoint of " + connectionID + " at Port " + String.valueOf(localServerPort));
@@ -143,7 +137,7 @@ public class ConnectionEndpoint implements Runnable{
 	public ConnectionEndpoint(String connectionName, String targetIP, int targetPort, String localIP, int localPort) {
 		System.out.println("---A new CE has been created! I am named: "+ connectionName +" and my own IP is: "+ localAddress +" and I am going to connect to :"+ targetIP+":"+targetPort +".--");
 		connectionID = connectionName;
-		keyGen = new KeyGenerator(connectionID);
+		this.keyGen = new KeyGenerator(this);
 
 		this.localAddress = localIP;
 		this.localServerPort = localPort;
@@ -159,6 +153,13 @@ public class ConnectionEndpoint implements Runnable{
 			e.printStackTrace();
 		}
 		
+	}
+	
+	/**
+	 * @return the ID of this connection endpoint, used as a unique identifier
+	 */
+	public String getID() {
+		return this.connectionID;
 	}
 	
 	/**Reports the current State of this Endpoints Connection.
@@ -485,7 +486,15 @@ public class ConnectionEndpoint implements Runnable{
 			//System.out.println("[" + connectionID + "]: Received KeyGenSync-Message: " + transmission.getHead() + "!");
 			SHA256withRSAAuthentication authenticator = new SHA256withRSAAuthentication();
 			if (authenticator.verify(transmission.getContent(), transmission.getSignature(), connectionID)) {
-				keyGen.keyGenSyncResponse();
+				try {
+					keyGen.keyGenSyncResponse();
+				} catch (ManagerHasNoSuchEndpointException e) {
+					// TODO Log this
+					/*
+					 *  This occurs if this CE receives a message of type KEYGEN_SYNC_REQUEST while it is not in the 
+					 *  current ConnectionManager of MessageSystem. Outside of test scenarios, this should never occur.
+					 */
+				}
 			}
 			return;
 			
@@ -513,7 +522,15 @@ public class ConnectionEndpoint implements Runnable{
 			
 		case KEYGEN_TERMINATION:	//This is received if the connected ConnectionEndpoint intends to terminate the KeyGen Process. This will cause a local shutdown in response.
 			//Terminating Key Gen
-			keyGen.shutdownKeyGen(false, true);
+			try {
+				keyGen.shutdownKeyGen(false, true);
+			} catch (ManagerHasNoSuchEndpointException e) {
+				// TODO log this
+				/*
+				 *  This occurs if this CE receives a message of type KEYGEN_TERMINATION while it is not in the 
+				 *  current ConnectionManager of MessageSystem. Outside of test scenarios, this should never occur.
+				 */
+			}
 			return;
 			
 		default:	//This is the fallback if no valid Transmission Type was recognized.
