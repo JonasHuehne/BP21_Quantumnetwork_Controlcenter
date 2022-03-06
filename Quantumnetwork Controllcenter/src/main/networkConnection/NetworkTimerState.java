@@ -6,8 +6,12 @@ package networkConnection;
  *
  */
 public enum NetworkTimerState {
-RUNNING,	//This means the timer has started, but the timeout duration has not yet elapsed.
-TIMED_OUT,	//This means the timer was started and the timeout duration has elapsed. The timer will have called the method it was supplied.
-NOT_STARTED,	//This means the timer was created as an object but not started yet via start() or run().
-ABORTED	//This means the timer was aborted form the outside as it is not needed anymore.
+	/** Used to indicate the timer has started, but the timeout duration has not yet elapsed. */
+	RUNNING,
+	/** Used to indicate the timer was started and the timeout duration has elapsed. The timer will have called the method it was supplied. */
+	TIMED_OUT,
+	/** Used to indicate the timer was created as an object but not started yet via start() or run(). */
+	NOT_STARTED,
+	/** Used to indicate the timer was aborted from the outside. */
+	ABORTED	
 }

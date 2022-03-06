@@ -2,6 +2,7 @@ package frame;
 
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
+import exceptions.PortIsInUseException;
 import graphicalUserInterface.GUIMainWindow;
 import graphicalUserInterface.SettingsDialog;
 import messengerSystem.Authentication;
@@ -33,11 +34,15 @@ public class QuantumnetworkControllcenter {
 	/*
 	 * This could be done via args as well.
 	 */
-	static final boolean launchGUI = true;  // launch GUI
-	static final boolean launchCUI = false; // launch console UI
+	static final boolean LAUNCHGUI = true;  // launch GUI
+	static final boolean LAUNCHCUI = false; // launch console UI
 
 	/**
 	 * Method to initialize a Quantumnetwork Controllcenter
+	 * @param args <br>
+	 * 		args[0] local IP used by the ConnectionManager in this launch, also sets the corresponding entry "UserIP" in the config file
+	 * 		args[1] local port used by the ConnectionManager in this launch, also sets the corresponding entry "UserPort" in the config file
+	 * 		may be null, in this case the Properties file is no modified
 	 */
 	public static void initialize(String[] args) {
 		
@@ -61,20 +66,20 @@ public class QuantumnetworkControllcenter {
 		}
 		
 		
-		String IP = Configuration.getProperty("UserIP");
-		int Port = Integer.valueOf(Configuration.getProperty("UserPort"));
-		System.out.println("Initialising IP: " + IP + " and Port " + Port);
-		String localIP = IP;
-		int localPort = Port;
+		String ip = Configuration.getProperty("UserIP");
+		int port = Integer.valueOf(Configuration.getProperty("UserPort"));
+		System.out.println("Initialising IP: " + ip + " and Port " + port);
+		String localIP = ip;
+		int localPort = port;
 		try {
 			conMan = new ConnectionManager(localIP, localPort);
-		} catch (IOException e) {
-			System.err.println("Could not initialize the ConnectionManager - an I/O Exception occured. ");
+		} catch (IOException | PortIsInUseException e) {
+			System.err.println("Could not initialize the ConnectionManager - an  Exception occured. ");
 			System.err.println(e.getClass().getCanonicalName() + " - Message: " + e.getMessage());
 			e.printStackTrace();
 			System.err.println("Shutting down.");
 			System.exit(0);
-		}
+		} 
 		MessageSystem.conMan = conMan;
 
 		// Communication List Init
@@ -114,10 +119,10 @@ public class QuantumnetworkControllcenter {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					if (launchCUI) {
+					if (LAUNCHCUI) {
 						ConsoleUI consoleWindow = new ConsoleUI();
 					}
-					if (launchGUI) {
+					if (LAUNCHGUI) {
 						guiWindow = new GUIMainWindow();
 						guiWindow.getFrame().setVisible(true);
 					}

@@ -6,8 +6,11 @@ package networkConnection;
  *
  */
 public enum ConnectionType {
-	UNSAFE,	//Default and unsafe Message.
-	AUTHENTICATED,	//Authenticated Message that will be verified.
-	ENCRYPTED	//Encrypted and Authenticated Message.
+	/** Messages are not authenticated or encrypted*/
+	UNSAFE,	
+	/** Messages are authenticated, but not encrypted */
+	AUTHENTICATED,	
+	/** Messages are authenticated and encrypted */
+	ENCRYPTED	
 
 }

@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
 public class SHA256withRSAAuthentication implements Authentication {
 
     /**
-     * The path to the folder for the signature keys, incl a file separator at the end
+     * The path to the folder for the signature keys, includes a file separator at the end
      */
     private static final String KEY_PATH = "SignatureKeys" + File.separator;
 

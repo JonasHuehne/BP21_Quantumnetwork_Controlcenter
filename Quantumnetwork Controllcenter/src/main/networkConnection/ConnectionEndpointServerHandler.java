@@ -32,6 +32,18 @@ public class ConnectionEndpointServerHandler extends Thread{
 	private int localPort;
 	private String localIP;
 	
+	/**
+	 * Constructor.
+	 * For details see the JavaDoc of this class.
+	 * @param newClientSocket
+	 * 		a client socket created by a ServerSockets .accept() method <br>
+	 * 		the CESH will listen for a connection request on this, 
+	 * 		and if one is received this will be passed on as the client socket for the newly created {@linkplain ConnectionEndpoint}
+	 * @param localIP
+	 * 		local IP that will be passed to the newly created  {@linkplain ConnectionEndpoint}
+	 * @param localPort
+	 * 		local port that will be passed to the newly created {@linkplain ConnectionEndpoint}
+	 */
 	ConnectionEndpointServerHandler(Socket newClientSocket, String localIP, int localPort) {
 		clientSocket = newClientSocket;
 		this.localPort = localPort;

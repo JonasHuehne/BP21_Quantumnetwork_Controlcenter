@@ -17,7 +17,7 @@ import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
 
 
-/**Represents a single connection endpoint at a given port, that can connect to a single other connection endpoint on the same machine, in the same local network or via the internet.
+/**Represents a single connection endpoint at a given port, that can connect to a single other connection endpoint on the same machine, in the same local network or via the Internet.
  * Handles connection management and low-level transmissions. Use waitForConnection() and establishConnections() to connect 2 endpoints. Do not call pushMessage()
  *  manually unless you know what you are doing. Use connectionManager.sendMessage() at the very least. Ideally you would use one of the methods from MessageSystem to send anything.
  * This class also contains parsing for different message types in processMessage(). This is used to trigger additional functionality from messages that are f.ex. used to close the connection.
@@ -107,7 +107,7 @@ public class ConnectionEndpoint implements Runnable{
 		this.keyGen = new KeyGenerator(connectionID);
 		this.localAddress = localAddress;
 		this.localServerPort = localPort;
-		System.out.println("Initialised local ServerSocket in Endpoint of " + connectionID + " at Port " + String.valueOf(localServerPort));
+		System.out.println("Initialized local ServerSocket in Endpoint of " + connectionID + " at Port " + String.valueOf(localServerPort));
 		
 		localClientSocket = localSocket;
 		clientOut = streamOut;
@@ -216,7 +216,7 @@ public class ConnectionEndpoint implements Runnable{
 		localServerPort = newPort;
 	}
 	
-	/**Returns the int-Portnumber that this ConnectionEndpoint uses to listen to incoming messages.
+	/**Returns the number of the port that this ConnectionEndpoint uses to listen to incoming messages.
 	 * 
 	 * @return the Port Number used by this ConnectionEndpoint as an int.
 	 */
@@ -380,7 +380,7 @@ public class ConnectionEndpoint implements Runnable{
 	public void pushMessage(TransmissionTypeEnum type, String typeArgument, byte[] message, byte[] sig) {
 		//Check for existence of connection before attempting so send.
 		if(!isConnected && !isBuildingConnection) {
-			System.err.println("[" + connectionID + "]: Warning: Attempted to push a message to another Endpoint while not beeing connected to anything!");
+			System.err.println("[" + connectionID + "]: Warning: Attempted to push a message to another Endpoint while not being connected to anything!");
 			return;
 		}
 		//Write Message to Stream
@@ -429,7 +429,7 @@ public class ConnectionEndpoint implements Runnable{
 	 * 
 	 * @return	returns the String of the next received message.
 	 */
-	public void listenForMessage() {
+	public final void listenForMessage() {
 		if(listenForMessages) {
 			System.err.println("[" + connectionID + "]: Already listening for Message, not starting a 2. Thread.");
 			return;

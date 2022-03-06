@@ -23,6 +23,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.JRadioButton;
 import javax.swing.event.ChangeListener;
+
+import exceptions.ConnectionWithThatNameAlreadyExistsException;
+
 import javax.swing.event.ChangeEvent;
 
 /**This Dialog is used to create a new Connection.
@@ -54,7 +57,7 @@ public class ConnectionAddDialog extends JDialog {
 				horizontalBox.add(verticalBox);
 				{
 					useSelectedInputRadioButton = new JRadioButton("Use selected contact");
-					useSelectedInputRadioButton.setToolTipText("If this is ticked, the textfields below will be disabled and the target information for the connection is taken from the \"Contact Table\" on the left side of the main app.");
+					useSelectedInputRadioButton.setToolTipText("If this is ticked, the text fields below will be disabled and the target information for the connection is taken from the \"Contact Table\" on the left side of the main app.");
 					useSelectedInputRadioButton.addActionListener(new ActionListener() {
 						public void actionPerformed(ActionEvent e) {
 							toggleRadioButtons(useSelectedInputRadioButton);
@@ -100,7 +103,7 @@ public class ConnectionAddDialog extends JDialog {
 				horizontalBox.add(verticalBox);
 				{
 					useManualInputRadioButton = new JRadioButton("Use manual inputs");
-					useManualInputRadioButton.setToolTipText("If this is ticked, the textfields below are used to set the intended connection target.");
+					useManualInputRadioButton.setToolTipText("If this is ticked, the text fields below are used to set the intended connection target.");
 					useManualInputRadioButton.addActionListener(new ActionListener() {
 						public void actionPerformed(ActionEvent e) {
 							toggleRadioButtons(useManualInputRadioButton);
@@ -154,8 +157,8 @@ public class ConnectionAddDialog extends JDialog {
 		{
 			JPanel buttonPane = new JPanel();
 			getContentPane().add(buttonPane, "cell 0 1,grow");
-			FlowLayout fl_buttonPane = new FlowLayout(FlowLayout.CENTER, 5, 5);
-			buttonPane.setLayout(fl_buttonPane);
+			FlowLayout flButtonPane = new FlowLayout(FlowLayout.CENTER, 5, 5);
+			buttonPane.setLayout(flButtonPane);
 			{
 				JButton okButton = new JButton("OK");
 				okButton.addActionListener(new ActionListener() {
@@ -175,15 +178,17 @@ public class ConnectionAddDialog extends JDialog {
 							newID = QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedTableRowIndex, QuantumnetworkControllcenter.guiWindow.getContactDBNameIndex()).toString();
 						}
 						
-						//Check if ID is taken
-						if(QuantumnetworkControllcenter.conMan.hasConnectionEndpoint(newID)) {
-							System.out.println("Warning: ConnectionID is already in use!");
-							return;
-						}
-						
-						
 						if(useManualInputRadioButton.isSelected()) {
-							System.out.println("Created new CE: " + textFieldContactName.getText() + " : "+ QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(textFieldContactName.getText(), textFieldContactIpAddr.getText(), Integer.valueOf(textFieldContactPort.getText())));
+							// Create new CE
+							String ceName = textFieldContactName.getText();
+							String ceIP = textFieldContactIpAddr.getText();
+							int cePort =  Integer.valueOf(textFieldContactPort.getText());
+							try {
+								QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(ceName, ceIP, cePort);
+								System.out.println("Created new CE: " + textFieldContactName.getText());
+							} catch (ConnectionWithThatNameAlreadyExistsException e1) {
+								System.err.println("Could not created connection with that name, such a connection already exists."); // TODO Make this into a GUI warning
+							}
 						}else {
 							selectedTableRowIndex = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
 							if(selectedTableRowIndex == -1) {
@@ -196,8 +201,12 @@ public class ConnectionAddDialog extends JDialog {
 							int port = Integer.valueOf((QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedTableRowIndex, QuantumnetworkControllcenter.guiWindow.getContactDBPortIndex()).toString()));
 							String sig = QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedTableRowIndex, QuantumnetworkControllcenter.guiWindow.getContactDBSigIndex()).toString();
 							
-							System.out.println("Created new CE: " + name + " : "+ QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(name, ip, port));
-							
+							try {
+								QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(name, ip, port);
+								System.out.println("Created new CE: " + name);
+							} catch (ConnectionWithThatNameAlreadyExistsException e1) {
+								System.err.println("Could not created connection with that name, such a connection already exists."); // TODO Make this into a GUI warning
+							}
 						}
 						
 						

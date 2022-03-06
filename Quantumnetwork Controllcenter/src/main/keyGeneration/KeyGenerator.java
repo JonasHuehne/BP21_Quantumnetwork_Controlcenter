@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 
+import exceptions.ConnectionWithThatNameAlreadyExistsException;
 import frame.Configuration;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
@@ -63,7 +64,7 @@ public class KeyGenerator implements Runnable{
 	}
 	
 	
-	/**Generate a Key by using the python scrips and acting as a middelman between both involved parties,
+	/**Generate a Key by using the python scripts and acting as a middleman between both involved parties,
 	 *  by handling the network side of the key generation as well as storing the key in the KeyDB.
 	 * 
 	 */
@@ -109,11 +110,17 @@ public class KeyGenerator implements Runnable{
 	
 	/**Method for signaling the source API.
 	 * This will sent an authenticated Message to the Source Server.
+	 * @throws NumberFormatException 
+	 * 		if the value saved in the config file under "SourcePort" is not an Integer
 	 */
-	private void signalSourceAPI() {
+	private void signalSourceAPI() throws NumberFormatException {
 		//Create connection to Source Server
 		String sourceServerConnectionName = "SourceServer_" + MessageSystem.generateRandomMessageID();
-		MessageSystem.conMan.createNewConnectionEndpoint(sourceServerConnectionName, Configuration.getProperty("SourceIP"), Integer.valueOf(Configuration.getProperty("SourcePort")));
+		try {
+			MessageSystem.conMan.createNewConnectionEndpoint(sourceServerConnectionName, Configuration.getProperty("SourceIP"), Integer.valueOf(Configuration.getProperty("SourcePort")));
+		} catch (ConnectionWithThatNameAlreadyExistsException e) {
+			// If a connection the the source already exists, there is no problem
+		}
 
 		//File name will be UserName_Date_RandomString
 		String filename = Configuration.getProperty("UserName") + "_" + new Date().toString() + "_" + MessageSystem.generateRandomMessageID();
@@ -172,7 +179,7 @@ public class KeyGenerator implements Runnable{
 			current = Instant.now();
 			if(Duration.between(startWait, current).toSeconds() >= 10) {
 				new GenericWarningMessage("ERROR: The Communication Partner has not agreed to generate a Key. Aborting Process...");
-				System.err.println("[" + connectionID + "]: Time-out while waiting for Pre-Key-Generation Sync. Did not recieve an Accept- or Reject-Answer in time");
+				System.err.println("[" + connectionID + "]: Time-out while waiting for Pre-Key-Generation Sync. Did not receive an Accept- or Reject-Answer in time");
 				hasBeenAccepted = 0;
 				return false;
 			}
@@ -361,7 +368,7 @@ public class KeyGenerator implements Runnable{
 			}
 			if(informPython) {
 				//Signal the local python script that the other end of the connection has terminated the KeyGen Process
-				Writer pythonTermWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(connectionPath.resolve(expectedPythonTerm).toString()), Configuration.getProperty("Encoding")));
+				Writer pythonTermWriter = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(connectionPath.resolve(expectedPythonTerm)), Configuration.getProperty("Encoding")));
 				pythonTermWriter.write("");
 			}
 			
@@ -398,7 +405,7 @@ public class KeyGenerator implements Runnable{
 			    try {
 			    	MessageSystem.sendAuthenticatedMessage(connectionID, TransmissionTypeEnum.KEYGEN_TRANSMISSION, "" ,new String(outFileContent, Configuration.getProperty("Encoding")));
 				} catch (UnsupportedEncodingException e) {
-					System.err.println("[" + connectionID + "]: Error: unsupportet Encoding: "+ Configuration.getProperty("Encoding") +"!");
+					System.err.println("[" + connectionID + "]: Error: unsupported Encoding: "+ Configuration.getProperty("Encoding") +"!");
 					e.printStackTrace();	    
 				}
 				
@@ -464,7 +471,7 @@ public class KeyGenerator implements Runnable{
 		}
 		//Write to file
 		try		
-		(Writer inWriter = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(inFilePath.toString()), Configuration.getProperty("Encoding")))) {
+		(Writer inWriter = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(inFilePath), Configuration.getProperty("Encoding")))) {
 			inWriter.write(MessageSystem.byteArrayToString(inFileContent));
 		} catch (UnsupportedEncodingException e) {
 

@@ -116,7 +116,7 @@ public class MessageGUI extends JFrame {
 					break;
 				case UNSAFE: MessageSystem.sendMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg, null);
 					break;
-				default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selectd!");
+				default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selected!");
 					break;
 				
 				}

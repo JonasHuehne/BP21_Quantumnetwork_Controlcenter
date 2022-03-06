@@ -36,7 +36,7 @@ public interface CommunicationList {
 
     /**
      * Method to change the IP address of an entry
-     * @param name the name ot the entry to be changed as String
+     * @param name the name of the entry to be changed as String
      * @param ipAddress the new IP address as String
      * @return true if it worked, false if error or illegal input
      */
@@ -44,7 +44,7 @@ public interface CommunicationList {
 
     /**
      * Method to change the port of an entry
-     * @param name the name ot the entry to be changed as String
+     * @param name the name of the entry to be changed as String
      * @param port the new port as int
      * @return true if it worked, false if error or illegal input
      */
@@ -52,7 +52,7 @@ public interface CommunicationList {
 
     /**
      * Method to change the signature key of an entry
-     * @param name the name ot the entry to be changed as String
+     * @param name the name of the entry to be changed as String
      * @param signatureKey the new signature public key as String
      * @return true if it worked, false if error
      */

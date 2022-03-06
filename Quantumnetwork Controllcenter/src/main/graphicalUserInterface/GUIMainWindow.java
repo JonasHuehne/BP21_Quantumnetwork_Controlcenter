@@ -45,7 +45,7 @@ import networkConnection.ConnectionType;
  * @author Jonas Huehne
  *
  */
-public class GUIMainWindow implements Runnable{
+public final class GUIMainWindow implements Runnable{
 
 	private Object[][] contactData = {};
 	String[] contactColumnNames = {"Connection Name",
@@ -111,26 +111,26 @@ public class GUIMainWindow implements Runnable{
 		settingsButton.setToolTipText("Opens the Application Settings.");
 		toolBar.add(settingsButton);
 		
-		JButton btnNewButton_7 = new JButton("?");
-		btnNewButton_7.addActionListener(new ActionListener() {
+		JButton helpButton = new JButton("?");
+		helpButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				new HelpMenu();
 			}
 		});
-		btnNewButton_7.setToolTipText("Opens the Help Screen.");
-		toolBar.add(btnNewButton_7);
+		helpButton.setToolTipText("Opens the Help Screen.");
+		toolBar.add(helpButton);
 		
-		JPanel panel_5 = new JPanel();
-		panel_5.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "Contacts", TitledBorder.CENTER, TitledBorder.TOP, null, new Color(0, 0, 0)));
-		frame.getContentPane().add(panel_5, "flowx,cell 0 1,alignx left,growy");
-		panel_5.setLayout(new BorderLayout(0, 0));
+		JPanel contactsOuterPanel = new JPanel();
+		contactsOuterPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "Contacts", TitledBorder.CENTER, TitledBorder.TOP, null, new Color(0, 0, 0)));
+		frame.getContentPane().add(contactsOuterPanel, "flowx,cell 0 1,alignx left,growy");
+		contactsOuterPanel.setLayout(new BorderLayout(0, 0));
 		
-		JPanel contactPanel = new JPanel();
-		panel_5.add(contactPanel, BorderLayout.WEST);
-		contactPanel.setLayout(new BoxLayout(contactPanel, BoxLayout.X_AXIS));
+		JPanel contactsInnerPanel = new JPanel();
+		contactsOuterPanel.add(contactsInnerPanel, BorderLayout.WEST);
+		contactsInnerPanel.setLayout(new BoxLayout(contactsInnerPanel, BoxLayout.X_AXIS));
 		
 		Box contactsColumn = Box.createVerticalBox();
-		contactPanel.add(contactsColumn);
+		contactsInnerPanel.add(contactsColumn);
 		
 		JPanel contactControlPanel = new JPanel();
 		contactsColumn.add(contactControlPanel);
@@ -166,7 +166,7 @@ public class GUIMainWindow implements Runnable{
 		contactControlPanel.add(removeContactButton);
 		
 		JButton contactRefreshButton = new JButton("Re-Query DB");
-		contactRefreshButton.setToolTipText("Forces the \"Contacts\"-Table to update. This can be used after modifying the ContactsDatabase.");
+		contactRefreshButton.setToolTipText("Forces the contacts table shown below to update. This can be used after modifying the contacts database.");
 		contactRefreshButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				clearContacts();
@@ -175,8 +175,9 @@ public class GUIMainWindow implements Runnable{
 		});
 		contactControlPanel.add(contactRefreshButton);
 		
-		JButton SaveChangesButton = new JButton("Save Changes to DB");
-		SaveChangesButton.addActionListener(new ActionListener() {
+		JButton saveChangesButton = new JButton("Save Changes to DB");
+		saveChangesButton.setToolTipText("Saves the changes made in the table to the contacts database.");
+		saveChangesButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
 				//Delete all Entries in the DB first.
@@ -204,39 +205,39 @@ public class GUIMainWindow implements Runnable{
 				
 			}
 		});
-		contactControlPanel.add(SaveChangesButton);
+		contactControlPanel.add(saveChangesButton);
 		
-		JScrollPane ContactScrollPane = new JScrollPane();
-		ContactScrollPane.setAlignmentY(Component.TOP_ALIGNMENT);
-		contactsColumn.add(ContactScrollPane);
+		JScrollPane contactScrollPane = new JScrollPane();
+		contactScrollPane.setAlignmentY(Component.TOP_ALIGNMENT);
+		contactsColumn.add(contactScrollPane);
 		//contactTable = new JTable(contactData, contactColumnNames);
 		contactTable = new JTable(new DefaultTableModel(contactColumnNames,0));
 		gatherContacts();
-		ContactScrollPane.setViewportView(contactTable);
+		contactScrollPane.setViewportView(contactTable);
 		
-		JPanel panel = new JPanel();
-		panel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "Connections", TitledBorder.CENTER, TitledBorder.TOP, null, new Color(0, 0, 0)));
-		frame.getContentPane().add(panel, "cell 0 1,grow");
-		panel.setLayout(new BorderLayout(0, 0));
+		JPanel connectionsOuterPanel = new JPanel();
+		connectionsOuterPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "Connections", TitledBorder.CENTER, TitledBorder.TOP, null, new Color(0, 0, 0)));
+		frame.getContentPane().add(connectionsOuterPanel, "cell 0 1,grow");
+		connectionsOuterPanel.setLayout(new BorderLayout(0, 0));
 		
-		JPanel panel_1 = new JPanel();
-		panel.add(panel_1, BorderLayout.CENTER);
-		panel_1.setLayout(new BoxLayout(panel_1, BoxLayout.X_AXIS));
+		JPanel connectionsInnerPanel = new JPanel();
+		connectionsOuterPanel.add(connectionsInnerPanel, BorderLayout.CENTER);
+		connectionsInnerPanel.setLayout(new BoxLayout(connectionsInnerPanel, BoxLayout.X_AXIS));
 		
 		Box verticalBox = Box.createVerticalBox();
 		verticalBox.setAlignmentX(Component.CENTER_ALIGNMENT);
-		panel_1.add(verticalBox);
+		connectionsInnerPanel.add(verticalBox);
 		
-		JPanel panel_2 = new JPanel();
-		verticalBox.add(panel_2);
-		panel_2.setLayout(new BorderLayout(0, 0));
+		JPanel connectionsInnerPanel2 = new JPanel();
+		verticalBox.add(connectionsInnerPanel2);
+		connectionsInnerPanel2.setLayout(new BorderLayout(0, 0));
 		
-		JPanel panel_6 = new JPanel();
-		panel_2.add(panel_6, BorderLayout.NORTH);
+		JPanel connectionButtonsPanel = new JPanel();
+		connectionsInnerPanel2.add(connectionButtonsPanel, BorderLayout.NORTH);
 		
 		JButton createConnectionButton = new JButton("Establish Connection");
 		createConnectionButton.setToolTipText("Creates a new Connection-Endpoint, and immediately attempts to create a connection to the target.");
-		panel_6.add(createConnectionButton);
+		connectionButtonsPanel.add(createConnectionButton);
 		createConnectionButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				try {
@@ -262,11 +263,11 @@ public class GUIMainWindow implements Runnable{
 				
 			}
 		});
-		panel_6.add(closeConnectionButton);
+		connectionButtonsPanel.add(closeConnectionButton);
 		
-		JButton GenerateKeyButton = new JButton("Encrypt Connection");
-		panel_6.add(GenerateKeyButton);
-		GenerateKeyButton.addActionListener(new ActionListener() {
+		JButton generateKeyButton = new JButton("Generate Key");
+		connectionButtonsPanel.add(generateKeyButton);
+		generateKeyButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
 				if(activeConnection == null) {
@@ -285,17 +286,17 @@ public class GUIMainWindow implements Runnable{
 				
 			}
 		});
-		GenerateKeyButton.setToolTipText("This will start using encryption on the active connection or generate a key if one does not yet exist.");
+		generateKeyButton.setToolTipText("This will start the key generation with the selected connection.");
 		
-		JPanel panel_3 = new JPanel();
-		panel_2.add(panel_3, BorderLayout.CENTER);
-		panel_3.setLayout(new BoxLayout(panel_3, BoxLayout.X_AXIS));
+		JPanel panelForConnectionList = new JPanel();
+		connectionsInnerPanel2.add(panelForConnectionList, BorderLayout.CENTER);
+		panelForConnectionList.setLayout(new BoxLayout(panelForConnectionList, BoxLayout.X_AXIS));
 		
-		Box verticalBox_1 = Box.createVerticalBox();
-		panel_3.add(verticalBox_1);
+		Box verticalBoxForConnections = Box.createVerticalBox();
+		panelForConnectionList.add(verticalBoxForConnections);
 		
 		JScrollPane scrollPane = new JScrollPane();
-		verticalBox_1.add(scrollPane);
+		verticalBoxForConnections.add(scrollPane);
 		
 		connectionEndpointVerticalBox = Box.createVerticalBox();
 		scrollPane.setViewportView(connectionEndpointVerticalBox);
@@ -359,7 +360,7 @@ public class GUIMainWindow implements Runnable{
 	/**This method gathers all rows from the contact DB and translates them into JTable Rows.
 	 * 
 	 */
-	public void gatherContacts() {
+	private void gatherContacts() {
 		ArrayList<Contact> dbEntries = QuantumnetworkControllcenter.communicationList.queryAll();
 		
 		Object[][]tmpContactData = new Object[dbEntries.size()][4];
@@ -383,7 +384,7 @@ public class GUIMainWindow implements Runnable{
 	/**This Method clears all Lines from the JTable.
 	 * 
 	 */
-	public void clearContacts() {
+	private void clearContacts() {
 		DefaultTableModel model = (DefaultTableModel)contactTable.getModel();
 		int rc = model.getRowCount();
 		for(int i = rc - 1; i >= 0; i--) {
@@ -398,7 +399,7 @@ public class GUIMainWindow implements Runnable{
 	 * @param port	the targetPort
 	 * @param sig	the public signature of the connectionPartner
 	 */
-	public void addRowToContactTable(String name, String ip, int port, String sig) {
+	void addRowToContactTable(String name, String ip, int port, String sig) {
 		
 		DefaultTableModel model = (DefaultTableModel)contactTable.getModel();
 		QuantumnetworkControllcenter.communicationList.insert(name, ip, port, sig);
@@ -412,7 +413,7 @@ public class GUIMainWindow implements Runnable{
 	 * @param targetIP	the targetIP of the CE
 	 * @param targetPort	the targetPort of the CE
 	 */
-	public void createConnectionRepresentation(String connectionName, String targetIP, int targetPort) {
+	private void createConnectionRepresentation(String connectionName, String targetIP, int targetPort) {
 
 		
 		JPanel ceFrame = new JPanel();
@@ -430,8 +431,8 @@ public class GUIMainWindow implements Runnable{
 		JLabel lblNewLabel = new JLabel("New label");
 		ceFrame.add(lblNewLabel);
 		
-		Component horizontalStrut_1 = Box.createHorizontalStrut(20);
-		ceFrame.add(horizontalStrut_1);
+		Component horizontalStrut1 = Box.createHorizontalStrut(20);
+		ceFrame.add(horizontalStrut1);
 		
 		JButton selectConnectionButton = new JButton("Select");
 		selectConnectionButton.addActionListener(new ActionListener() {
@@ -447,8 +448,8 @@ public class GUIMainWindow implements Runnable{
 		});
 		ceFrame.add(selectConnectionButton);
 		
-		Component horizontalStrut_2 = Box.createHorizontalStrut(5);
-		ceFrame.add(horizontalStrut_2);
+		Component horizontalStrut2 = Box.createHorizontalStrut(5);
+		ceFrame.add(horizontalStrut2);
 		
 		JComboBox<ConnectionType> connectionTypeCB = new JComboBox<ConnectionType>();
 		connectionTypeCB.addActionListener(new ActionListener() {
@@ -460,8 +461,8 @@ public class GUIMainWindow implements Runnable{
 		ceFrame.add(connectionTypeCB);
 		conType.put(connectionName, (ConnectionType) connectionTypeCB.getSelectedItem());
 		
-		Component horizontalStrut_3 = Box.createHorizontalStrut(5);
-		ceFrame.add(horizontalStrut_3);
+		Component horizontalStrut3 = Box.createHorizontalStrut(5);
+		ceFrame.add(horizontalStrut3);
 		
 		JButton openTransferButton = new JButton("Message System");
 		openTransferButton.addActionListener(new ActionListener() {
@@ -478,7 +479,7 @@ public class GUIMainWindow implements Runnable{
 		connectionEndpointVerticalBox.repaint();
 	}
 	
-	public void startUpdateService() {
+	private void startUpdateService() {
 		ceUpdateThread = new Thread(this, "_ceUpdateThread");
 		ceUpdateThread.start();
 	}
@@ -491,12 +492,12 @@ public class GUIMainWindow implements Runnable{
 			representedConnectionEndpoints.forEach((k,v)->{
 				
 				JButton activeButton = ((JButton) representedConnectionEndpoints.get(k).getComponent(4));
-				JLabel label_2 = ((JLabel) representedConnectionEndpoints.get(k).getComponent(2));
+				JLabel labelCeState = ((JLabel) representedConnectionEndpoints.get(k).getComponent(2));
 				ConnectionEndpoint ce = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(k);
 				ConnectionState state = ce.reportState();
-				label_2.setText(state.name());
-				label_2.revalidate();
-				label_2.repaint();
+				labelCeState.setText(state.name());
+				labelCeState.revalidate();
+				labelCeState.repaint();
 				
 				//Color the Connections
 				if(activeConnection != null && activeConnection.equals(k)) {
