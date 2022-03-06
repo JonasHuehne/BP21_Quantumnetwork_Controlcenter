@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import exceptions.ConnectionAlreadyExistsException;
+import exceptions.IpAndPortAlreadyInUseException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.PortIsInUseException;
 
@@ -50,6 +51,10 @@ public class ConnectionManager {
 	private boolean isAcceptingConnections = false;
 	/** Used for control flow only */
 	private boolean submittedTaskOnce = false;
+	
+	/** true <==> no two connections to the same IP:Port pairing are allowed (should also make self-connections impossible) <br>
+	 *  for actual use we recommend setting this to true, however, it may make some manual tests impossible that involve connecting to oneself */
+	private boolean oneConnectionPerIpPortPair = false;
 	
 	
 	/**
@@ -144,9 +149,14 @@ public class ConnectionManager {
 	 *		can also be accessed via {@linkplain #getConnectionEndpoint(String)} with argument {@code endpointName}
 	 * 	@throws ConnectionAlreadyExistsException 
 	 * 		if a connection with the specified name is already managed by this ConnectionManager
+	 * @throws IpAndPortAlreadyInUseException 
+	 * 		if a connection with the same IP and Port pairing is already in this ConnectionManager
 	 */
-	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort) throws ConnectionAlreadyExistsException {
+	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort) 
+		throws ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException {
 		if(!connections.containsKey(endpointName)) {
+			// no two connections to the same IP / Port pairing
+			if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
 			System.out.println("---Received new request for a CE. Creating it now. It will connect to the Server at "+ targetIP +":"+ targetPort +".---");
 			connections.put(endpointName, new ConnectionEndpoint(endpointName, targetIP, targetPort, localAddress, localPort));
 			return connections.get(endpointName);
@@ -155,6 +165,15 @@ public class ConnectionManager {
 		}
 	}
 	
+	/**
+	 * Utility method. Used to check if an IP/Port pairing is not used by any connection in the manager at the moment.
+	 */
+	private boolean ipAndPortAreFree(String ip, int port) {
+		for (ConnectionEndpoint ce : connections.values()) {
+			if (ce.getRemoteAddress().equals(ip) && ce.getRemotePort() == port) return true;
+		}
+		return false;
+	}
 	
 	/**
 	 * @deprecated Due to Network rework.

@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.Date;
 
 import exceptions.ConnectionAlreadyExistsException;
+import exceptions.IpAndPortAlreadyInUseException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
@@ -136,7 +137,7 @@ public class KeyGenerator implements Runnable{
 		String sourceServerConnectionName = "SourceServer_" + MessageSystem.generateRandomMessageID();
 		try {
 			MessageSystem.conMan.createNewConnectionEndpoint(sourceServerConnectionName, Configuration.getProperty("SourceIP"), Integer.valueOf(Configuration.getProperty("SourcePort")));
-		} catch (ConnectionAlreadyExistsException e) {
+		} catch (ConnectionAlreadyExistsException | IpAndPortAlreadyInUseException e) {
 			// If a connection the the source already exists, there is no problem
 		}
 
