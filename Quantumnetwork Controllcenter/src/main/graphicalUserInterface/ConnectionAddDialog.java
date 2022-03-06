@@ -24,7 +24,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.JRadioButton;
 import javax.swing.event.ChangeListener;
 
-import exceptions.ConnectionWithThatNameAlreadyExistsException;
+import exceptions.ConnectionAlreadyExistsException;
 
 import javax.swing.event.ChangeEvent;
 
@@ -186,7 +186,7 @@ public class ConnectionAddDialog extends JDialog {
 							try {
 								QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(ceName, ceIP, cePort);
 								System.out.println("Created new CE: " + textFieldContactName.getText());
-							} catch (ConnectionWithThatNameAlreadyExistsException e1) {
+							} catch (ConnectionAlreadyExistsException e1) {
 								System.err.println("Could not created connection with that name, such a connection already exists."); // TODO Make this into a GUI warning
 							}
 						}else {
@@ -204,7 +204,7 @@ public class ConnectionAddDialog extends JDialog {
 							try {
 								QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(name, ip, port);
 								System.out.println("Created new CE: " + name);
-							} catch (ConnectionWithThatNameAlreadyExistsException e1) {
+							} catch (ConnectionAlreadyExistsException e1) {
 								System.err.println("Could not created connection with that name, such a connection already exists."); // TODO Make this into a GUI warning
 							}
 						}

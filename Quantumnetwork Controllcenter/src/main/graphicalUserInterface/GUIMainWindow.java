@@ -33,6 +33,8 @@ import javax.swing.table.DefaultTableModel;
 
 import communicationList.CommunicationList;
 import communicationList.Contact;
+import exceptions.KeyGenRequestTimeoutException;
+import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import net.miginfocom.swing.MigLayout;
@@ -254,11 +256,18 @@ public final class GUIMainWindow implements Runnable{
 		closeConnectionButton.setToolTipText("Closes the active Connection.");
 		closeConnectionButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if (activeConnection == null) { // Possibly display an error message here?
+					return;
+				}
 				representedConnectionEndpoints.get(activeConnection).setVisible(false);
 				connectionEndpointVerticalBox.remove(representedConnectionEndpoints.get(activeConnection));
 				representedConnectionEndpoints.remove(activeConnection);
 				conType.remove(activeConnection);
-				QuantumnetworkControllcenter.conMan.destroyConnectionEndpoint(activeConnection);
+				try {
+					QuantumnetworkControllcenter.conMan.destroyConnectionEndpoint(activeConnection);
+				} catch (ManagerHasNoSuchEndpointException e1) {
+					new GenericWarningMessage("ERROR - Could not remove connection: " + activeConnection + ". No such connection exists.");
+				}
 				activeConnection = null;
 				
 			}
@@ -275,13 +284,21 @@ public final class GUIMainWindow implements Runnable{
 					return;
 				}
 				
-				if(QuantumnetworkControllcenter.conMan.getConnectionState(activeConnection) == ConnectionState.CONNECTED) {
-
-					QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).getKeyGen().generateKey();
-					
-				}else {
-					System.out.println("Warning: Active Connection is not connected to anything!");
-					return;
+				try {
+					if(QuantumnetworkControllcenter.conMan.getConnectionState(activeConnection) == ConnectionState.CONNECTED) {
+						try {
+							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).getKeyGen().generateKey();
+						} catch (NumberFormatException e1) {
+							new GenericWarningMessage("ERROR - Could not generate key! The value stored as the port of the photon source is not an Integer!");
+						} catch (KeyGenRequestTimeoutException e1) {
+							new GenericWarningMessage("A timeout occurred while trying to generate a key with the specified connection.");
+						}
+					}else {
+						System.out.println("Warning: Active Connection is not connected to anything!");
+						return;
+					}
+				} catch (ManagerHasNoSuchEndpointException e1) {
+					new GenericWarningMessage("ERROR - Could not remove connection: " + activeConnection + ". No such connection exists.");
 				}
 				
 			}

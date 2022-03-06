@@ -10,6 +10,8 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.JTextPane;
 import javax.swing.JLabel;
 import java.awt.Font;
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import javax.swing.UIManager;
@@ -35,7 +37,14 @@ public class GenericWarningMessage extends JDialog {
 		
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setVisible(true);
-		setBounds(100, 100, 450, 150);
+		
+		int width = 450;
+		int height = 150;
+		Point mousePos = MouseInfo.getPointerInfo().getLocation();
+		int xPos = (int) Math.max(0, mousePos.getX() - (width / 2));
+		int yPos = (int) Math.max(0, mousePos.getY() - (height / 2));
+		setBounds(xPos, yPos, width, height);
+		
 		getContentPane().setLayout(new BorderLayout());
 		JPanel buttonPane = new JPanel();
 		buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
@@ -72,7 +81,12 @@ public class GenericWarningMessage extends JDialog {
 		
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setVisible(true);
-		setBounds(100, 100, xBounds, yBounds);
+		
+		Point mousePos = MouseInfo.getPointerInfo().getLocation();
+		int xPos = (int) Math.max(0, mousePos.getX() - (xBounds / 2));
+		int yPos = (int) Math.max(0, mousePos.getY() - (yBounds / 2));
+		setBounds(xPos, yPos, xBounds, yBounds);
+		
 		getContentPane().setLayout(new BorderLayout());
 		JPanel buttonPane = new JPanel();
 		buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
