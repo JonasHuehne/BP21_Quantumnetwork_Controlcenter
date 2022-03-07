@@ -250,6 +250,7 @@ public final class GUIMainWindow implements Runnable{
 			public void actionPerformed(ActionEvent e) {
 				try {
 					ConnectionAddDialog dialog = new ConnectionAddDialog();
+					dialog.fillTextFieldsWithSelectedContactInfo();
 					dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 					dialog.setVisible(true);
 				} catch (Exception e1) {
