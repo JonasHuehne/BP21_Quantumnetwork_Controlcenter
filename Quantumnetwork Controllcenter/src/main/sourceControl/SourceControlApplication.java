@@ -1,7 +1,10 @@
 package sourceControl;
 
+import java.io.IOException;
+
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
+import exceptions.PortIsInUseException;
 import messengerSystem.Authentication;
 import messengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionManager;
@@ -33,7 +36,17 @@ public class SourceControlApplication {
 		port = Integer.valueOf(args[1]);
 		System.out.println("Starting the Source Control on IP: " + ip + " and Port: " + String.valueOf(port) + "!");
 		
-		conMan = new ConnectionManager(ip,port);
+		try {
+			conMan = new ConnectionManager(ip,port);
+		} catch (IOException e) {
+			System.err.println("A " + e.getClass().getSimpleName() + " occurred trying to create the ConnectionManager for the Photon Source. Shutting down.");
+			e.printStackTrace();
+			return;
+		} catch (PortIsInUseException e) {
+			System.err.println("A " + e.getClass().getSimpleName() + " occurred trying to create the ConnectionManager for the Photon Source. Shutting down.");
+			e.printStackTrace();
+			return;
+		}
 		
 		// Communication List Init
 		communicationList = new SQLiteCommunicationList();

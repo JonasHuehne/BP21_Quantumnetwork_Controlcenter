@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
 
+import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
 import graphicalUserInterface.GenericWarningMessage;
@@ -488,11 +489,13 @@ public class ConnectionEndpoint implements Runnable{
 			if (authenticator.verify(transmission.getContent(), transmission.getSignature(), connectionID)) {
 				try {
 					keyGen.keyGenSyncResponse();
-				} catch (ManagerHasNoSuchEndpointException e) {
+				} catch (ManagerHasNoSuchEndpointException | NumberFormatException | EndpointIsNotConnectedException e) {
 					// TODO Log this
 					/*
 					 *  This occurs if this CE receives a message of type KEYGEN_SYNC_REQUEST while it is not in the 
 					 *  current ConnectionManager of MessageSystem. Outside of test scenarios, this should never occur.
+					 *  NFE occurs if the source port value in Configuration is not a valid Int.
+					 *  Possibly throw a custom Exception here? (e.g. KeyGenFailedException) or something
 					 */
 				}
 			}
@@ -524,7 +527,7 @@ public class ConnectionEndpoint implements Runnable{
 			//Terminating Key Gen
 			try {
 				keyGen.shutdownKeyGen(false, true);
-			} catch (ManagerHasNoSuchEndpointException e) {
+			} catch (ManagerHasNoSuchEndpointException | EndpointIsNotConnectedException e) {
 				// TODO log this
 				/*
 				 *  This occurs if this CE receives a message of type KEYGEN_TERMINATION while it is not in the 

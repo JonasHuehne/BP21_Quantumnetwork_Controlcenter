@@ -31,7 +31,7 @@ import javax.swing.event.ChangeEvent;
 
 /**This Dialog is used to create a new Connection.
  * 
- * @author Jonas Huehne
+ * @author Jonas Huehne, Sasha Petri
  *
  */
 public class ConnectionAddDialog extends JDialog {

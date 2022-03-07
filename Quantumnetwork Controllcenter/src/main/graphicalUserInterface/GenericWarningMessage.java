@@ -18,7 +18,7 @@ import javax.swing.UIManager;
 
 /**This is a simple generic Warning or Error Dialog Window. It can be used to display important messages to the user.
  * 
- * @author Jonas Huehne
+ * @author Jonas Huehne, Sasha Petri
  *
  */
 public class GenericWarningMessage extends JDialog {
