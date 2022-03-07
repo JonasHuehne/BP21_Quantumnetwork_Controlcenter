@@ -46,7 +46,8 @@ public class MessageSystem {
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
 	 */
-	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, byte[] message, byte[] sig) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
+	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, byte[] message, byte[] sig) 
+			throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
 		//Check if connectionManager exists
 		if(conMan == null) {
 			System.err.println("WARNING: Tried to send a message via the MessageSystem before initializing the QuantumnetworkControllcenter, thereby setting the connectionManager Reference.");
@@ -74,7 +75,8 @@ public class MessageSystem {
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
 	 */
-	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, String message, String sig) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
+	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, String message, String sig) 
+			throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
 		if(sig == null) {
 			sendMessage(connectionID, type, argument, stringToByteArray(message), null);
 		}else {
@@ -113,7 +115,8 @@ public class MessageSystem {
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
 	 */
-	public static boolean sendConfirmedMessage(String connectionID, byte[] message, byte[] sig) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
+	public static boolean sendConfirmedMessage(String connectionID, byte[] message, byte[] sig) 
+			throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
 		
 		ConnectionState state = QuantumnetworkControllcenter.conMan.getConnectionState(connectionID);
 		
@@ -176,7 +179,8 @@ public class MessageSystem {
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
 	 */
-	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
+	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) 
+			throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
 		return sendConfirmedMessage(connectionID, stringToByteArray(message), stringToByteArray(sig));
 	}
 	

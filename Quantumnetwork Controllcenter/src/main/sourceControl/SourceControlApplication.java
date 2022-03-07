@@ -30,6 +30,12 @@ public class SourceControlApplication {
 	public static CommunicationList communicationList;
 	public static Authentication authentication;
 	
+	/**
+	 * Launches the Source Control Application
+	 * @param args
+	 * 		args[0] IP of this machine, which other members of the network will connect to <br>
+	 * 		args[1] local server port
+	 */
 	public static void main(String[] args) {
 		
 		ip = args[0];
