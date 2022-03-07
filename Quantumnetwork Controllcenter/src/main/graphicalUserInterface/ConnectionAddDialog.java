@@ -62,6 +62,7 @@ public class ConnectionAddDialog extends JDialog {
 					useSelectedInputRadioButton.addActionListener(new ActionListener() {
 						public void actionPerformed(ActionEvent e) {
 							toggleRadioButtons(useSelectedInputRadioButton);
+							fillTextFieldsWithSelectedContactInfo();
 						}
 					});
 					verticalBox.add(useSelectedInputRadioButton);
@@ -199,10 +200,10 @@ public class ConnectionAddDialog extends JDialog {
 								return;
 							}
 							System.out.println("Selected RowIndex is " + String.valueOf(selectedTableRowIndex));
-							String name = QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedTableRowIndex, QuantumnetworkControllcenter.guiWindow.getContactDBNameIndex()).toString();
-							String ip = QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedTableRowIndex, QuantumnetworkControllcenter.guiWindow.getContactDBIPIndex()).toString();
-							int port = Integer.valueOf((QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedTableRowIndex, QuantumnetworkControllcenter.guiWindow.getContactDBPortIndex()).toString()));
-							String sig = QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedTableRowIndex, QuantumnetworkControllcenter.guiWindow.getContactDBSigIndex()).toString();
+							String name = getNameOfSelectedContact();
+							String ip = getIpOfSelectedContact();
+							int port = Integer.valueOf(getPortOfSelectedContact());
+							String sig = getPkOfSelectedContact();
 							
 							try {
 								QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(name, ip, port);
@@ -249,6 +250,52 @@ public class ConnectionAddDialog extends JDialog {
 		
 	}
 	
+	/**
+	 * Used to automatically fill the text fields with the selected contacts values.
+	 */
+	protected void fillTextFieldsWithSelectedContactInfo() {
+		textFieldContactName.setText(getNameOfSelectedContact());
+		textFieldContactIpAddr.setText(getIpOfSelectedContact());
+		textFieldContactPort.setText(getPortOfSelectedContact().toString());
+		textFieldContactPK.setText(getPkOfSelectedContact());
+	}
+	
+	/**
+	 * @return name of the currently selected contact in the contacts table, "" if no row is selected
+	 */
+	private String getNameOfSelectedContact() {
+		int selectedRow = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
+		if (selectedRow == -1) return "";
+		return (String) QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedRow, QuantumnetworkControllcenter.guiWindow.getContactDBNameIndex());
+	}
+	
+	/**
+	 * @return ip of the currently selected contact in the contacts table, "" if no row is selected
+	 */
+	private String getIpOfSelectedContact() {
+		int selectedRow = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
+		if (selectedRow == -1) return "";
+		return (String) QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedRow, QuantumnetworkControllcenter.guiWindow.getContactDBIPIndex());
+	}
+	
+	/**
+	 * @return port of the currently selected contact in the contacts table, 0 if no row is selected
+	 */
+	private Integer getPortOfSelectedContact() {
+		int selectedRow = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
+		if (selectedRow == -1) return 0;
+		return (Integer) QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedRow, QuantumnetworkControllcenter.guiWindow.getContactDBPortIndex());
+	}
+	
+	/**
+	 * @return pk of the currently selected contact in the contacts table, "" if no row is selected
+	 */
+	private String getPkOfSelectedContact() {
+		int selectedRow = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
+		if (selectedRow == -1) return "";
+		return (String) QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedRow, QuantumnetworkControllcenter.guiWindow.getContactDBSigIndex());
+	}
+
 	/**This is used to ensure that only one of the 2 RadioButtons is selected at once.
 	 * 
 	 * @param editedRadioButton The newly changed RadioButton.
