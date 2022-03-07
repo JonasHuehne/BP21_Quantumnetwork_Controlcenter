@@ -9,6 +9,7 @@ import javax.swing.border.EmptyBorder;
 
 import org.w3c.dom.css.RGBColor;
 
+import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
@@ -122,6 +123,8 @@ public class MessageGUI extends JFrame {
 					}
 				} catch (ManagerHasNoSuchEndpointException nsce) {
 					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". No such connection exists.");
+				} catch (EndpointIsNotConnectedException e1) {
+					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". You are not connected.");
 				}
 				
 				logSentMessage(msg);

@@ -33,6 +33,7 @@ import javax.swing.table.DefaultTableModel;
 
 import communicationList.CommunicationList;
 import communicationList.Contact;
+import exceptions.EndpointIsNotConnectedException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
@@ -44,7 +45,7 @@ import networkConnection.ConnectionType;
 
 /**This is the Main GUI of this Application. The left half handles the ContactDB and the right half handles the Connections.
  * 
- * @author Jonas Huehne
+ * @author Jonas Huehne, Sasha Petri
  *
  */
 public final class GUIMainWindow implements Runnable{
@@ -292,6 +293,8 @@ public final class GUIMainWindow implements Runnable{
 							new GenericWarningMessage("ERROR - Could not generate key! The value stored as the port of the photon source is not an Integer!");
 						} catch (KeyGenRequestTimeoutException e1) {
 							new GenericWarningMessage("A timeout occurred while trying to generate a key with the specified connection.");
+						} catch (EndpointIsNotConnectedException e1) { // control flow wise, this should not occur, but I'd rather not have an empty catch here
+							new GenericWarningMessage("ERROR - Could not generate key! The endpoint with id " + activeConnection + " is not connected!");
 						}
 					}else {
 						System.out.println("Warning: Active Connection is not connected to anything!");

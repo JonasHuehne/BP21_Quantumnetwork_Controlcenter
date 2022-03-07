@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import javax.crypto.SecretKey;
 
+import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
 import keyStore.KeyStoreDbManager;
@@ -136,6 +137,7 @@ public class ExternalAPI {
 	 * @param fileName Name of the .txt file containing the suffix ".txt"
 	 * @throws ManagerHasNoSuchEndpointException 
 	 * 		if there is no {@linkplain ConnectionEndpoint} with the specified name in the manager currently used by the {@linkplain MessageSystem}
+	 * @deprecated This is changed in the US for sending and receiving encrypted files.
 	 */
 	public static boolean sendEncryptedTxtFile(String communicationPartner, String fileName) throws ManagerHasNoSuchEndpointException {
 		Path externalPath = getExternalAPIPath();
@@ -151,7 +153,17 @@ public class ExternalAPI {
 			return false;
 		}
 		
-		return MessageSystem.sendEncryptedMessage(communicationPartner, message);
+		try {
+			return MessageSystem.sendEncryptedMessage(communicationPartner, message);
+		} catch (ManagerHasNoSuchEndpointException e) {
+			System.err.println("Error - no connection endpoint with id " + communicationPartner + " exists in the connection manager.");
+			e.printStackTrace();
+			return false;
+		} catch (EndpointIsNotConnectedException e) {
+			System.err.println("Error - could not send message. Connection endpoint with id " + communicationPartner + " is not connected.");
+			e.printStackTrace();
+			return false;
+		}
 	}
 	
 	/**

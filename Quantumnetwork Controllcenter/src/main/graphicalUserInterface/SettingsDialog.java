@@ -22,7 +22,7 @@ import java.awt.Font;
 
 /**This Dialog contains settings such as the own ServerIP/Port
  * 
- * @author Jonas Huehne
+ * @author Jonas Huehne, Sasha Petri
  *
  */
 public class SettingsDialog extends JDialog {

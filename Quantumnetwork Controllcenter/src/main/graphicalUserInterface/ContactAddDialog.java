@@ -26,7 +26,7 @@ import javax.swing.GroupLayout.Alignment;
 
 /**This Dialog is used to add a new Contact to the ContactDB.
  * 
- * @author Jonas Huehne
+ * @author Jonas Huehne, Sasha Petri
  *
  */
 

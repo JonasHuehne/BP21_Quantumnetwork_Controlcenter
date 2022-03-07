@@ -9,6 +9,10 @@ import java.util.Map.Entry;
 
 import communicationList.CommunicationList;
 import communicationList.Contact;
+import exceptions.ConnectionAlreadyExistsException;
+import exceptions.EndpointIsNotConnectedException;
+import exceptions.IpAndPortAlreadyInUseException;
+import exceptions.ManagerHasNoSuchEndpointException;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
 import networkConnection.ConnectionEndpoint;
@@ -90,11 +94,18 @@ public class ConnectionCommandHandler {
 		 */
 		
 		if (QuantumnetworkControllcenter.conMan.hasConnectionEndpoint(contactName)) {
-			return "ERROR - Can not create a connection to contact \"" + contactName + "\" - such a connection already exists.";
+			
 		} 
 		
 		// If contact exists, and there is no connection, add the new connection	
-		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(contactName, "", localPort);	
+		ConnectionEndpoint localPoint;
+		try {
+			localPoint = QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(contactName, "", localPort);
+		} catch (ConnectionAlreadyExistsException e) {
+			return "ERROR - Can not create a connection to contact \"" + contactName + "\" - such a connection already exists.";
+		} catch (IpAndPortAlreadyInUseException e) {
+			return "ERROR - Can not create a connection to contact \"" + contactName + "\" - a connection to that port:ip pair already exists.";
+		}	
 		
 		if (localPoint == null) {
 			return "ERROR - Could not create the specified connection. Something went wrong, please see the system console in case there is an error log. ";
@@ -286,15 +297,15 @@ public class ConnectionCommandHandler {
 		
 		ConnectionEndpoint localEndpoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID);
 		
-		if (localEndpoint == null) {
-			return "ERROR - There is no connection with the ID \"" + connectionID + "\", so it could not be closed.";
-		} else {
+		try {
 			if (QuantumnetworkControllcenter.conMan.getConnectionState(connectionID) == ConnectionState.CLOSED) {
 				return "ERROR - Connection with ID \"" + connectionID + "\" is already closed.";
 			} else {
 				QuantumnetworkControllcenter.conMan.closeConnection(connectionID);
 				return "Attempted to close connection with ID \"" + connectionID  +"\". If any errors occured, they will be printed to the system console. ";
 			}
+		} catch (ManagerHasNoSuchEndpointException e) {
+			return "ERROR - There is no connection with the ID \"" + connectionID + "\", so it could not be closed.";
 		}
 		
 	}
@@ -309,13 +320,11 @@ public class ConnectionCommandHandler {
 	 */
 	public static String handleConnectionsRemove(String connectionID) {
 		
-		ConnectionEndpoint localEndpoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID);
-		
-		if (localEndpoint == null) {
-			return "ERROR - There is no connection with the ID \"" + connectionID + "\", so it could not be removed.";
-		} else {
+		try {
 			QuantumnetworkControllcenter.conMan.destroyConnectionEndpoint(connectionID);
 			return "Closed and removed connection with the ID \"" + connectionID + "\".";
+		} catch (ManagerHasNoSuchEndpointException e) {
+			return "ERROR - There is no connection with the ID \"" + connectionID + "\", so it could not be removed.";
 		}
 		
 	}
@@ -333,15 +342,13 @@ public class ConnectionCommandHandler {
 		
 		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID);
 		
-		if (localPoint == null) {
+		try {
+			MessageSystem.sendMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", "Hello World!", "");
+		} catch (ManagerHasNoSuchEndpointException e) {
 			return "ERROR - There is no connection with the ID \"" + connectionID + "\", so no hello world could be sent.";
-		}
-			
-		if (localPoint.reportState() != ConnectionState.CONNECTED) {
+		} catch (EndpointIsNotConnectedException e) {
 			return "ERROR - Can only send messages on connections in state " + ConnectionState.CONNECTED;
 		}
-		
-		MessageSystem.sendMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", "Hello World!", "");
 		
 		return "An attempt has been made to send a hello world message.";
 	}
