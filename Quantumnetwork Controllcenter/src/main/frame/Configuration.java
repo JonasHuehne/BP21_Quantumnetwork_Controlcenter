@@ -35,7 +35,7 @@ public class Configuration {
     private static final String PATH_CONFIG_NAME = "basePathConfig";
 
     /**
-     * Name of the bade directory at the basePath location
+     * Name of the base directory at the basePath location
      */
     private static final String BASE_DIR_PATH = "QNCC" + File.separator;
 

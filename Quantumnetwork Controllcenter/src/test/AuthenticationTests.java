@@ -6,6 +6,7 @@ import messengerSystem.MessageSystem;
 import frame.QuantumnetworkControllcenter;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Nested;
@@ -24,8 +25,8 @@ class AuthenticationTests {
 
     private static String currentPath;
 
-    @BeforeEach
-    void setup () {
+    @BeforeAll
+    static void setup () {
         QuantumnetworkControllcenter.initialize(new String[]{"127.0.0.1", "8303"});
         currentPath = Configuration.getBaseDirPath();
     }
@@ -195,89 +196,4 @@ class AuthenticationTests {
         }
     }
 
-    @Nested
-    class testAuthenticatedMessage {
-
-        @Test
-        // only realistically testable if signature key generation, signing and sending of messages work
-        void testLocalSendAuthenticatedMessage() throws IOException {
-            SHA256withRSAAuthentication.generateSignatureKeyPair();
-            String otherPublicKeyString =
-                    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
-                            "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
-                            "yG6ClQS/YQ6hGQ4BH/FMz8h3HWsA/d9rhL1csmz8xJeqCoK0djEph1qGkso/AyoK" +
-                            "LohV1zXgRM3EMV09ZgJAEktw6xxuzDtoLvDe7LMtYb/ahtdpYQMGSaHmUlEsC5Wk" +
-                            "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
-                            "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
-                            "1QIDAQAB";
-            QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 6603, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
-            QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 6604, otherPublicKeyString);
-
-            QuantumnetworkControllcenter.initialize();
-            QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Alice", 6603);
-            QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Bob", 6604);
-
-            QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Bob").waitForConnection();
-            QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 6604);
-
-            boolean result = MessageSystem.sendAuthenticatedMessage("Bob", "Hello");
-            Assertions.assertTrue(result);
-        }
-
-        @Test
-        // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
-        void testLocalReceiveAuthenticatedMessage() throws IOException {
-            SHA256withRSAAuthentication.generateSignatureKeyPair();
-            String otherPublicKeyString =
-                    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
-                            "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
-                            "yG6ClQS/YQ6hGQ4BH/FMz8h3HWsA/d9rhL1csmz8xJeqCoK0djEph1qGkso/AyoK" +
-                            "LohV1zXgRM3EMV09ZgJAEktw6xxuzDtoLvDe7LMtYb/ahtdpYQMGSaHmUlEsC5Wk" +
-                            "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
-                            "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
-                            "1QIDAQAB";
-            QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 9303, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
-            QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 8303, otherPublicKeyString);
-
-            QuantumnetworkControllcenter.initialize();
-            QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Alice", 9303);
-            QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Bob", 8303);
-
-            QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Bob").waitForConnection();
-            QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 8303);
-
-            MessageSystem.sendAuthenticatedMessage("Bob", "Hello, how are you?");
-
-            String message = MessageSystem.readAuthenticatedMessage("Alice");
-            Assertions.assertEquals("Hello, how are you?", message);
-        }
-
-        @Test
-        // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
-        void testFalseLocalAuthenticatedMessage() throws IOException {
-            SHA256withRSAAuthentication.generateSignatureKeyPair();
-            String otherPublicKeyString =
-                    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
-                            "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
-                            "yG6ClQS/YQ6hGQ4BH/FMz8h3HWsA/d9rhL1csmz8xJeqCoK0djEph1qGkso/AyoK" +
-                            "LohV1zXgRM3EMV09ZgJAEktw6xxuzDtoLvDe7LMtYb/ahtdpYQMGSaHmUlEsC5Wk" +
-                            "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
-                            "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
-                            "1QIDAQAB";
-            QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 2303, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
-            QuantumnetworkControllcenter.communicationList.insert("Bob", "127.0.0.1", 3303, otherPublicKeyString);
-
-            QuantumnetworkControllcenter.initialize();
-            QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Alice", 2303);
-            QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Bob", 3303);
-
-            QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Bob").waitForConnection();
-            QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 3303);
-
-            MessageSystem.sendAuthenticatedMessage("Alice", "Hello");
-
-            String message = MessageSystem.readAuthenticatedMessage("Bob");
-            Assertions.assertNull(message);
-        }
-    }
-}
+ }
