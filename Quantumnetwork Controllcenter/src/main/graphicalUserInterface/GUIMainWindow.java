@@ -40,6 +40,7 @@ import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import net.miginfocom.swing.MigLayout;
 import networkConnection.ConnectionEndpoint;
+import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
 import networkConnection.ConnectionType;
 
@@ -325,35 +326,22 @@ public final class GUIMainWindow implements Runnable{
 		connectionEndpointVerticalBox = Box.createVerticalBox();
 		scrollPane.setViewportView(connectionEndpointVerticalBox);
 		
-		JLabel dummyLabel = new JLabel("0");
-		frame.getContentPane().add(dummyLabel, "cell 0 0");
-		
-		// Once per Second, update the connections
-		Timer connectionsUpdater = new Timer(100, new ActionListener() {
-			@Override
+		JButton connectionDebug = new JButton("Debug Button 1");
+		connectionDebug.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				int ceAmountNew = QuantumnetworkControllcenter.conMan.getConnectionsAmount();
-				// If the amount of connections in the CM changed
-				if (ceAmountNew != ceAmountOld) {
-					if (ceAmountNew > ceAmountOld) { // if new connections were added
-						Map<String, ConnectionEndpoint> currentConnections = QuantumnetworkControllcenter.conMan.returnAllConnections();		
-						// Add a graphical entry for each connection that doesn't have one yet
-						for (Entry<String, ConnectionEndpoint> entry : currentConnections.entrySet()) {
-							if (!(namesOfConnections.contains(entry.getKey()))) {
-									createConnectionRepresentation(
-											entry.getKey(), 
-											entry.getValue().getRemoteAddress(), 
-											entry.getValue().getRemotePort());
-							}
-						}
-					}
-					// Update the List of names currently in the CM and the size of the CM accordingly
-					namesOfConnections = new ArrayList<>(QuantumnetworkControllcenter.conMan.returnAllConnections().keySet());
-					ceAmountNew = ceAmountOld;
+				ConnectionManager cm = QuantumnetworkControllcenter.conMan;
+				System.out.println("Conman Size: " + cm.getConnectionsAmount());
+				System.out.println("Entries: ");
+				for (Entry<String, ConnectionEndpoint> entry : cm.returnAllConnections().entrySet()) {
+					System.out.println(" " + entry.getKey() + " with state " + entry.getValue().reportState());
 				}
+				System.out.println("namesOfConnections size: " + namesOfConnections.size());
+				System.out.println("Entries: ");
+				for (String n : namesOfConnections) System.out.println(" " + n);
 			}
 		});
-		connectionsUpdater.start();
+		connectionDebug.setToolTipText("Used for debugging purposes by the developers. Displays some information about connections to the console.");
+		frame.getContentPane().add(connectionDebug, "cell 0 0");
 	}
 
 	public JFrame getFrame() {
@@ -513,6 +501,31 @@ public final class GUIMainWindow implements Runnable{
 		
 		while(true) {
 			
+			/*
+			 * Update which connections are represented in the connections tab of the GUI
+			 */
+			
+			int ceAmountNew = QuantumnetworkControllcenter.conMan.getConnectionsAmount();
+			// If the amount of connections in the CM is not the same as the amount of listed connections
+			if (ceAmountNew != representedConnectionEndpoints.size()) {
+				if (ceAmountNew > representedConnectionEndpoints.size()) { // if new connections were added
+					Map<String, ConnectionEndpoint> currentConnections = QuantumnetworkControllcenter.conMan.returnAllConnections();		
+					// Add a graphical entry for each connection that doesn't have one yet
+					for (Entry<String, ConnectionEndpoint> entry : currentConnections.entrySet()) {
+						if (!(representedConnectionEndpoints.keySet().contains(entry.getKey()))) {
+								createConnectionRepresentation(
+										entry.getKey(), 
+										entry.getValue().getRemoteAddress(), 
+										entry.getValue().getRemotePort());
+						}
+					}
+				}
+			}
+			
+			/*
+			 * Update which connection is the "selected" one and color it accordingly
+			 */
+			
 			representedConnectionEndpoints.forEach((k,v)->{
 				
 				JButton activeButton = ((JButton) representedConnectionEndpoints.get(k).getComponent(4));
@@ -540,6 +553,10 @@ public final class GUIMainWindow implements Runnable{
 				
 			});
 			
+			/*
+			 * Sleep between the updates to save ressources.
+			 */
+			
 			try {
 				TimeUnit.MILLISECONDS.sleep(200);
 			} catch (InterruptedException e) {
@@ -548,5 +565,6 @@ public final class GUIMainWindow implements Runnable{
 			}
 			prevActiveConnection = activeConnection;
 		}
+		
 	}
 }
