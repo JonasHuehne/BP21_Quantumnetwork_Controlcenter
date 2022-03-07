@@ -22,6 +22,7 @@ import communicationList.Contact;
 import externalAPI.ExternalAPI;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.SHA256withRSAAuthentication;
+import networkConnection.ConnectionManager;
 
 public class ExternalAPITests {
 
@@ -74,7 +75,7 @@ public class ExternalAPITests {
 	
 	@BeforeEach
     void setup () {
-        QuantumnetworkControllcenter.initialize();
+        QuantumnetworkControllcenter.initialize(null);
     }
 
     @AfterEach
@@ -102,11 +103,16 @@ public class ExternalAPITests {
                             "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                             "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                             "1QIDAQAB";
+            
+            // Simulates the machine of our communication partner
+            int ourServerPort = QuantumnetworkControllcenter.conMan.getLocalPort();
+            ConnectionManager otherCM = new ConnectionManager("127.0.0.1", ourServerPort + 1);
+            
             QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 6603, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
             QuantumnetworkControllcenter.communicationList.insert("42debugging42", "127.0.0.1", 6604, otherPublicKeyString);
 
-            QuantumnetworkControllcenter.initialize();
-            QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Alice", 6603);
+            QuantumnetworkControllcenter.initialize(null);
+            QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 6603);
             QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("42debugging42", 6604);
 
             QuantumnetworkControllcenter.conMan.getConnectionEndpoint("42debugging42").waitForConnection();

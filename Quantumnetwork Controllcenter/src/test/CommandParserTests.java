@@ -10,6 +10,7 @@ import ui.CommandParser;
 
 /**
  * @author Sasha Petri
+ * @deprecated Console UI is currently not supported.
  */
 class CommandParserTests {
 	

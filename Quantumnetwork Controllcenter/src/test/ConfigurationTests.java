@@ -21,6 +21,33 @@ public class ConfigurationTests {
     private static final String[] DIRECTORY_LIST =
             {"SignatureKeys", "python", "connections", "externalAPI"};
 
+    @BeforeAll
+    static void backUpProperties() {
+    	if(Files.exists(Path.of(System.getProperty("user.dir") + File.separator + "config.xml" ))) {
+            try {
+            	Files.copy(
+            			Path.of(System.getProperty("user.dir") + File.separator + "config.xml" ),
+            			Path.of(System.getProperty("user.dir") + File.separator + "config_backup.xml"));
+            } catch (Exception e) {
+                System.err.println("Error during test setup: " + e);
+            }
+        }
+    }
+    
+    @AfterAll
+    static void restoreProperties() {
+    	if(Files.exists(Path.of(System.getProperty("user.dir") + File.separator + "config_backup.xml"))) {
+            try {
+            	Files.copy(
+            			Path.of(System.getProperty("user.dir") + File.separator + "config_backup.xml"),
+            			Path.of(System.getProperty("user.dir") + File.separator + "config.xml"));
+            	Files.delete(Path.of(System.getProperty("user.dir") + File.separator + "config_backup.xml"));
+            } catch (Exception e) {
+                System.err.println("Error restoring the backup: " + e);
+            }
+        }
+    }
+    
     @BeforeEach
     @AfterEach
     void setupCleanup() {

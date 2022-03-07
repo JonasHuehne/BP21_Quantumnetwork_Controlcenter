@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import exceptions.ConnectionAlreadyExistsException;
+import exceptions.EndpointIsNotConnectedException;
 import exceptions.IpAndPortAlreadyInUseException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.PortIsInUseException;
@@ -51,7 +52,7 @@ public class NetworkTests {
 			assertEquals(ConnectionState.CLOSED, Alice.reportState(), "CE should have stopped trying to connect. Is the time out set correctly?");
 			
 			// Assert that values are set correctly
-			assertEquals(Alice.getLocalAddress(), Configuration.getProperty("UserIP"));
+			assertEquals(Alice.getLocalAddress(), "127.0.0.1");
 			assertEquals(Alice.getServerPort(), 60400);
 			assertEquals(Alice.getRemoteAddress(), remoteAddr);
 			assertEquals(Alice.getRemotePort(), remotePort);
@@ -195,8 +196,12 @@ public class NetworkTests {
 		 * 		attempted to create a CE with a non-unique ID in a CM
 		 * @throws IpAndPortAlreadyInUseException
 		 * 		attempted to create a CE with a non-unique IP:Port pair in a CM
+		 * @throws EndpointIsNotConnectedException
+		 * 		if trying to send a message from an endpoint that is not connected
 		 */
-		public void can_send_messages_along_cyclical_connection() throws IOException, PortIsInUseException, ManagerHasNoSuchEndpointException, ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException {
+		public void can_send_messages_along_cyclical_connection() 
+				throws 	IOException, PortIsInUseException, ManagerHasNoSuchEndpointException, ConnectionAlreadyExistsException, 
+						IpAndPortAlreadyInUseException, EndpointIsNotConnectedException {
 			int serverPortAlice = 60021;
 			int serverPortBob	= 60041;
 			String ipAlice		= "127.0.0.1";
@@ -262,13 +267,21 @@ public class NetworkTests {
 				CM.getConnectionState("Bob");
 			});
 			
+			// Trying to send a message when a CE is not connected
+			assertThrows(EndpointIsNotConnectedException.class, () -> {
+				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60047);
+				CM.createNewConnectionEndpoint("Bob", "127.0.0.1", 34341);
+				CM.sendMessage("Bob", TransmissionTypeEnum.TRANSMISSION, "", null, null);
+				
+			});
+			
 			// Trying to insert two CEs connecting to the same IP:Port pair into one CM
 			// will fail in case same IP:Port pair is currently allowed to enable manual testing
 			assertThrows(IpAndPortAlreadyInUseException.class, () -> {
 				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60044);
 				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60043);
 				CM.createNewConnectionEndpoint("Bob", "127.0.0.1", 60043);
-			});
+			}, "This failure is most likely caused by identical IP:Port pairs being allowed for manual testing purposes.");
 		}
 		
 		/**

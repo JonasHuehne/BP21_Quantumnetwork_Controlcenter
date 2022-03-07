@@ -398,6 +398,7 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public void closeWithTerminationRequest() throws EndpointIsNotConnectedException {
 		pushMessage(TransmissionTypeEnum.CONNECTION_TERMINATION, "", null, null);
+		forceCloseConnection();
 	}
 	
 	/**Pushes a Message to the connected ConnectionEndpoints ServerSocket via the local clientOut Object. <br>
