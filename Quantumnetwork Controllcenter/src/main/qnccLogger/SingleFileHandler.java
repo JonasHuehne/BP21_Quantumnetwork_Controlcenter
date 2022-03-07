@@ -8,6 +8,13 @@ import java.nio.file.Paths;
 import java.util.logging.FileHandler;
 import java.util.logging.LogManager;
 
+/**
+ * singlet of {@link java.util.logging.FileHandler}
+ * used to let all loggers of project write to the same log file
+ * 
+ * @author lukas
+ *
+ */
 public class SingleFileHandler {
 	private static SingleFileHandler singleFileHandler;
 	private FileHandler fileHandler;
@@ -48,6 +55,10 @@ public class SingleFileHandler {
 		singleFileHandler = this;
 	}
 	
+	/**
+	 * 
+	 * @return the singlet FileHandler instance
+	 */
 	public FileHandler getFileHandler() {
 		return singleFileHandler.fileHandler;
 	}
