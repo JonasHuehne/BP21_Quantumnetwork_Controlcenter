@@ -12,7 +12,7 @@ import java.util.logging.LogManager;
  * singlet of {@link java.util.logging.FileHandler}
  * used to let all loggers of project write to the same log file
  * 
- * @author lukas
+ * @author Lukas Dentler
  *
  */
 public class SingleFileHandler {
@@ -20,8 +20,15 @@ public class SingleFileHandler {
 	private FileHandler fileHandler;
 	private static final String FILE_NAME = "log.txt";
 	
+	/**
+	 * creates the SingleFileHandler
+	 * 
+	 * since this is a singlet of {@link java.util.logging.FileHandler}
+	 * if there was already one created
+	 * the existing instance of SingleFileHandler is refferenced 
+	 */
 	public SingleFileHandler() {
-		//make singleFileHanler a singleton
+		//make SingleFileHanler a singleton
 		if (singleFileHandler != null) {
 			return;
 		}

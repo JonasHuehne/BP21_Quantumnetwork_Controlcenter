@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 /**
  * The logger for errorhandling in this project
  * 
- * @author lukas
+ * @author Lukas Dentler
  *
  */
 public class Log {
@@ -15,8 +15,8 @@ public class Log {
 	private FileHandler fileHandler = new SingleFileHandler().getFileHandler();
 	
 	/**
-	 * crates the logger with a given Name <br>
-	 * {@link loggerName} appears after "[at]: " in log file <br>
+	 * creates the logger with a given Name <br>
+	 * parameter loggerName appears after "[at]: " in log file <br>
 	 * for best orientation in log file use:
 	 *  *classname*.class.getName() as loggerName<br>
 	 *  example: QuantumnetworkControllcenter.class.getName()
@@ -30,9 +30,10 @@ public class Log {
 	}
 	
 	/**
-	 * log an Error in logfile with a devmessage and name, message and stacktrace of corresponding Exception
+	 * log an Error in logfile with a message shown after "[Dev Message]:" in logfile
+	 *  and name, message and stacktrace of corresponding Exception
 	 * 
-	 * @param message devmessage to be shown in logfile
+	 * @param message message to be shown after "[Dev Message]:" in logfile
 	 * @param exception the corresponding Exception
 	 */
 	public void logError(String message, Throwable exception) {
@@ -40,8 +41,10 @@ public class Log {
 	}
 	
 	/**
-	 * log a Warning in logfile with a devmessage and name, message and stacktrace of corresponding Exception
-	 * @param message devmessage to be shown in logfile
+	 * log a Warning in logfile with a message shown after "[Dev Message]:" in logfile
+	 *  and name, message and stacktrace of corresponding Exception
+	 * 
+	 * @param message message to be shown after "[Dev Message]:" in logfile
 	 * @param exception the corresponding Exception
 	 */
 	public void logWarning(String message, Exception exception) {
@@ -49,26 +52,29 @@ public class Log {
 	}
 	
 	/**
-	 * log a Warning in logfile with a devmessage and without a corresponding Exception
-	 * @param message devmessage to be shown in logfile
+	 * log a Warning in logfile with a message shown after "[Dev Message]:" in logfile
+	 * and without a corresponding Exception
+	 * @param message message to be shown after "[Dev Message]:" in logfile
 	 */
 	public void logWarning(String message) {
 		logger.log(Level.WARNING, message);
 	}
 	
 	/**
-	 * log a devmessage as DebugInfo in logfile
-	 * use a {@link GetCodeLine} Exception to show the code line in which the log was called in stacktrace
-	 * @param message a devmessage to be shown in logfile
-	 * @param exception the corresponding exception or {@link GetCodeLine} in order to see the code line where the log was called
+	 * log a DebugInfo in logfile with a message shown after "[Dev Message]:" in logfile
+	 * and name, message and stacktrace of corresponding Exception
+	 * 
+	 * @param message message to be shown after "[Dev Message]:" in logfile
+	 * @param exception the corresponding exception 
 	 */
 	public void logDebugInfo(String message, Throwable exception) {
 		logger.log(Level.INFO, message + "\n \t[Exception Name]:\t" + exception.getClass().getSimpleName() + "\n\t[Exception Message]:" + exception.getMessage(), exception);
 	}
 	
 	/**
-	 * log a devmessage as Info in logfile
-	 * @param message a devmessage to be shown in logfile
+	 * log an Info in logfile with a message shown after "[Dev Message]:" in logfile
+	 * and without a corresponding Exception
+	 * @param message message to be shown after "[Dev Message]:" in logfile
 	 */
 	public void logInfo(String message) {
 		logger.log(Level.INFO, message);
@@ -77,7 +83,7 @@ public class Log {
 	/**
 	 * used to set sensitivity of logger to INFO<br>
 	 * <br>
-	 * logs everything logged of severity INFO and higher
+	 * saves everything logged with severity INFO and higher into logfile
 	 */
 	public void loggerShowInfos() {
 		logger.setLevel(Level.INFO);
