@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import exceptions.ConnectionAlreadyExistsException;
+import exceptions.EndpointIsNotConnectedException;
 import exceptions.IpAndPortAlreadyInUseException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.PortIsInUseException;
@@ -85,18 +86,23 @@ public class ConnectionManager {
 	
 	/**
 	 * Causes the ConnectionManager to start accepting incoming connection requests. <br>
-	 * Does nothing if the connection manager is already waiting for connection requests.
+	 * Does nothing if the connection manager is already waiting for connection requests. <br>
+	 * 
+	 * @implNote At some points in this implementation, I/O exceptions may occur 
+	 * (particularly, with the ServerSocket.accept() methods and the handling of the client sockets InputStreams).
+	 * If this happens, the ConnectionManager stops waiting for connections, and the Exception that occurred is logged.
 	 */
 	public final void waitForConnections() {
 		isAcceptingConnections = true;
 		
-		if (!submittedTaskOnce) { // TODO check if calling waitForConnections() and then stopWaitingForConnections() and then waitForConnections() again works
+		if (!submittedTaskOnce) { 
 			// Used to asynchronously wait for incoming connections
 			connectionExecutor.submit(() -> {
 				while (isAcceptingConnections) {
 					Socket clientSocket;
 					try { // Wait for a Socket to attempt a connection to our ServerSocket
 						clientSocket = masterServerSocket.accept();
+						System.out.println("Accepted a request on master server socket.");
 					} catch (IOException e) {
 						System.err.println("An I/O Exception occurred while trying to accept a connection in the ConnectionManager "
 								+ "with local IP " + localAddress + " and server port " + localPort + ". Accepting connections is being shut down.");
@@ -104,7 +110,19 @@ public class ConnectionManager {
 						isAcceptingConnections = false;
 						break;
 					} // Check that it is from a ConnectionEndpoint of our program
-					ConnectionEndpointServerHandler cesh = new ConnectionEndpointServerHandler(clientSocket, localAddress, localPort);
+					
+					ConnectionEndpointServerHandler cesh; 
+					try { // Construct a CESH for the socket that just connected to our server socket
+						cesh = new ConnectionEndpointServerHandler(clientSocket, localAddress, localPort);
+						System.out.println("Created CESH for newly received client socket.");
+					} catch (IOException e) {
+						System.err.println("An I/O Exception occurred while trying to construct the ConnectionEndpointServerHandler "
+								+ "with local IP " + localAddress + " and server port " + localPort + ". Accepting connections is being shut down.");
+						System.err.println("Message: " + e.getMessage());
+						isAcceptingConnections = false;
+						break;
+					}
+					
 					cesh.run();
 					if (cesh.acceptedRequest() == true) { // if it is, and a connection request came in time, add the new CE to our set of CE's
 						ConnectionEndpoint ce = cesh.getCE();
@@ -213,8 +231,9 @@ public class ConnectionManager {
 	 * @param message the String Message that is supposed to be sent via the designated ConnectionEndpoint.
 	 * @throws ManagerHasNoSuchEndpointException 
 	 * 		if no connection of that name could be found in the connection manager
+	 * @throws EndpointIsNotConnectedException 
 	 */
-	public void sendMessage(String connectionID, TransmissionTypeEnum type, String typeArgument, byte[] message, byte[] sig) throws ManagerHasNoSuchEndpointException {	
+	public void sendMessage(String connectionID, TransmissionTypeEnum type, String typeArgument, byte[] message, byte[] sig) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {	
 		ConnectionEndpoint ce = connections.get(connectionID);
 		if (ce == null) {
 			throw new ManagerHasNoSuchEndpointException(connectionID);
@@ -307,7 +326,9 @@ public class ConnectionManager {
 	}
 
 	/**Closes a named connection if existing and open. Does not destroy the connectionEndpoint, use destroyConnectionEndpoint for that. <br>
-	 * @implNote Calls {@linkplain ConnectionEndpoint#closeConnection(boolean)} with {@code localRequest = true}.
+	 * @implNote Calls {@linkplain ConnectionEndpoint#closeConnection(boolean)} with the parameter {@code sendTerminationRequest} set to {@code true}.
+	 * If sending the termination request fails (because the endpoint was not connected), it attempts to force close the endpoint instead, by
+	 * calling {@linkplain ConnectionEndpoint#closeConnection(boolean)} again with {@code sendTerminationRequest} set to {@code false}.
 	 * @param connectionName	
 	 * 		the name of the intended {@linkplain ConnectionEndpoint}
 	 * @return true if the connection was closed, false if no such connection could be found
@@ -317,7 +338,11 @@ public class ConnectionManager {
 		if (ce == null) {
 			return false;
 		} else {
-			ce.closeConnection(true);
+			try {
+				ce.closeWithTerminationRequest();
+			} catch (EndpointIsNotConnectedException e) {
+				ce.forceCloseConnection();
+			}
 			return true;
 		}
 	}
@@ -339,11 +364,11 @@ public class ConnectionManager {
 	public void destroyConnectionEndpoint(String connectionID) throws ManagerHasNoSuchEndpointException {
 		System.out.println("[ConnectionManager]: Destroying ConnectionEndpoint " + connectionID);
 		ConnectionEndpoint ce = connections.get(connectionID);
-		if (ce != null) {
-			ce.closeConnection(true);
-			connections.remove(connectionID);
-		} else {
+		if (ce == null) {
 			throw new ManagerHasNoSuchEndpointException(connectionID);
+		} else {
+			closeConnection(connectionID);
+			connections.remove(connectionID);
 		}
 	}
 	
@@ -352,8 +377,12 @@ public class ConnectionManager {
 	 */
 	public void destroyAllConnectionEndpoints() {
 		connections.forEach((k,v) -> {
-			connections.get(k).closeConnection(true);
-			});
+			try {
+				connections.get(k).closeWithTerminationRequest();
+			} catch (EndpointIsNotConnectedException e) {
+				connections.get(k).forceCloseConnection();
+			}
+		});
 		connections.clear();
 	}
 }

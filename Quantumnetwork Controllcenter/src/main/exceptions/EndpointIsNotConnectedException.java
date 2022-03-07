@@ -4,7 +4,7 @@ import networkConnection.ConnectionEndpoint;
 
 /**
  * Intended to be thrown to indicate that an action (e.g. sending a message) failed
- * because the {@linkplain ConnectionEndpoint} that was intended to perform it was not connect to its partner.
+ * because the {@linkplain ConnectionEndpoint} that was intended to perform it was not connected to its partner.
  * @author Sasha Petri
  */
 public class EndpointIsNotConnectedException extends Exception {
