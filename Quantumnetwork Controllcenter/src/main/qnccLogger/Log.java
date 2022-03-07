@@ -61,17 +61,6 @@ public class Log {
 	}
 	
 	/**
-	 * log a DebugInfo in logfile with a message shown after "[Dev Message]:" in logfile
-	 * and name, message and stacktrace of corresponding Exception
-	 * 
-	 * @param message message to be shown after "[Dev Message]:" in logfile
-	 * @param exception the corresponding exception 
-	 */
-	public void logDebugInfo(String message, Throwable exception) {
-		logger.log(Level.INFO, message + "\n \t[Exception Name]:\t" + exception.getClass().getSimpleName() + "\n\t[Exception Message]:" + exception.getMessage(), exception);
-	}
-	
-	/**
 	 * log an Info in logfile with a message shown after "[Dev Message]:" in logfile
 	 * and without a corresponding Exception
 	 * @param message message to be shown after "[Dev Message]:" in logfile
@@ -92,8 +81,8 @@ public class Log {
 	/**
 	 * used to set sensitivity of logger to WARNING<br>
 	 * <br>
-	 * logs everything logged of severity WARNING and higher <br>
-	 * excludes Info and DebugInfo
+	 * saves everything logged of severity WARNING and higher into logfile<br>
+	 * excludes Info
 	 */
 	public void loggerShowWarnings() {
 		logger.setLevel(Level.WARNING);
@@ -102,8 +91,8 @@ public class Log {
 	/**
 	 * used to set sensitivity of logger to SEVERE<br>
 	 * <br>
-	 * logs only Errors
-	 * excludes Info, DebugInfo and Warnings
+	 * saves only Errors into logfile
+	 * excludes Info and Warnings
 	 */
 	public void loggerShowErrors() {
 		logger.setLevel(Level.SEVERE);

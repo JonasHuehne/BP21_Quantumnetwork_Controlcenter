@@ -3,8 +3,11 @@ package qnccLogger;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.logging.FileHandler;
 import java.util.logging.LogManager;
 
@@ -19,13 +22,15 @@ public class SingleFileHandler {
 	private static SingleFileHandler singleFileHandler;
 	private FileHandler fileHandler;
 	private static final String FILE_NAME = "log.txt";
+	private static final Path currentWorkingDir = Paths.get("").toAbsolutePath();
+	private static final Path propertiesDir = currentWorkingDir.resolve("properties");
 	
 	/**
 	 * creates the SingleFileHandler
 	 * 
 	 * since this is a singlet of {@link java.util.logging.FileHandler}
 	 * if there was already one created
-	 * the existing instance of SingleFileHandler is refferenced 
+	 * the existing instance of SingleFileHandler is referenced 
 	 */
 	public SingleFileHandler() {
 		//make SingleFileHanler a singleton
@@ -34,7 +39,30 @@ public class SingleFileHandler {
 		}
 		
 		//create log File if it does not exist
-		File file = new File(FILE_NAME);
+		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu_MM_dd_HH_mm_");
+        LocalDateTime now = LocalDateTime.now();
+        String currentDateTime = dateTimeFormatter.format(now);
+        
+        Path qnccPath = currentWorkingDir.resolve("QNCC");
+        if(!qnccPath.toFile().isDirectory()) {
+        	try {
+				Files.createDirectory(qnccPath);
+			} catch (IOException e) {
+				System.err.println(e.toString());
+			}
+        }
+        
+    	Path logsPath = qnccPath.resolve("logs");
+    	if(!logsPath.toFile().isDirectory()) {
+    		try {
+				Files.createDirectory(logsPath);
+			} catch (IOException e) {
+				System.err.println(e.toString());
+			}
+    	}
+    	
+    	String fileName = currentDateTime + FILE_NAME;
+		File file = logsPath.resolve(fileName).toFile();
 		if(!file.exists()) {
 			try {
 				file.createNewFile();
@@ -43,8 +71,7 @@ public class SingleFileHandler {
 			}
 		}
 		
-		Path currentWorkingDir = Paths.get("").toAbsolutePath();
-		File myLoggingProperties = currentWorkingDir.resolve("logger.properties").toFile();
+		File myLoggingProperties = propertiesDir.resolve("logger.properties").toFile();
 		try {
 			LogManager.getLogManager().readConfiguration(new FileInputStream(myLoggingProperties));
 		} catch (SecurityException | IOException e) {
@@ -53,7 +80,7 @@ public class SingleFileHandler {
 		
 		//create FileHandler
 		try {
-			fileHandler = new FileHandler(FILE_NAME, false);
+			fileHandler = new FileHandler(file.getAbsolutePath(), true);
 		} catch (SecurityException | IOException e) {
 			System.err.println(e.toString());
 		}
