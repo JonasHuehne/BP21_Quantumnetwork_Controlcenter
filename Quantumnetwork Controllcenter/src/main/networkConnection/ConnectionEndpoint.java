@@ -235,7 +235,7 @@ public class ConnectionEndpoint implements Runnable{
 	}
 	
 	/**Works just like getRemoteAddress() but returns the port this ConnectionEndpoint is currently connected to.
-	 * Note: this is the port of the OTHER ConnectionEndpoint, that this one is connected to, not this owns own serverPort.
+	 * Note: this is the port of the OTHER ConnectionEndpoint, that this one is connected to, not this ones own serverPort.
 	 * 
 	 * @return the port we are sending messages to
 	 */

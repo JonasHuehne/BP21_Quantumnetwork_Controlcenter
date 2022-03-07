@@ -30,8 +30,6 @@ public class EndpointIsNotConnectedException extends Exception {
 	 * Constructor for Exception with a message.
 	 * @param message
 	 * 		entirely custom message
-	 * @param actionThatFailed
-	 * 		description of the action that could not be performed, e.g. "send a message"
 	 */
 	public EndpointIsNotConnectedException(String message) {
 		super(message);

@@ -44,7 +44,7 @@ import networkConnection.ConnectionState;
 import networkConnection.ConnectionType;
 
 /**This is the Main GUI of this Application. The left half handles the ContactDB and the right half handles the Connections.
- * 
+ * @implNote We encourage the use of a tool like WindowBuilder when making changes to this and other GUI classes.
  * @author Jonas Huehne, Sasha Petri
  *
  */
@@ -64,10 +64,14 @@ public final class GUIMainWindow implements Runnable{
 	private Thread ceUpdateThread;
 	String prevActiveConnection;
 
-	private int contactDBNameIndex = 0;
-	private int contactDBIPIndex = 1;
-	private int contactDBPortIndex = 2;
-	private int contactDBSigIndex = 3;
+	/** column of the contacts table in which the names are listed */
+	private final int contactDBNameIndex = 0;
+	/** column of the contacts table in which the IPs are listed */
+	private final int contactDBIPIndex = 1;
+	/** column of the contacts table in which the ports are listed */
+	private final int contactDBPortIndex = 2;
+	/** column of the contacts table in which the public keys are listed */
+	private final int contactDBSigIndex = 3;
 	
 	/** contains the last measured size of our local ConnectionManager, used in updating the list of active connections */
 	private int ceAmountOld = 0;
@@ -168,8 +172,8 @@ public final class GUIMainWindow implements Runnable{
 		removeContactButton.setToolTipText("Removes a row from the \"Contacts\"-Table.");
 		contactControlPanel.add(removeContactButton);
 		
-		JButton contactRefreshButton = new JButton("Re-Query DB");
-		contactRefreshButton.setToolTipText("Forces the contacts table shown below to update. This can be used after modifying the contacts database.");
+		JButton contactRefreshButton = new JButton("Refresh Table");
+		contactRefreshButton.setToolTipText("Forces the contacts table shown below to update by re-querying the database. This can be used after modifying the contacts database.");
 		contactRefreshButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				clearContacts();
