@@ -31,6 +31,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 	private ConnectionEndpoint ce = null;
 	private int localPort;
 	private String localIP;
+
 	
 	/**
 	 * Constructor.
@@ -43,12 +44,13 @@ public class ConnectionEndpointServerHandler extends Thread{
 	 * 		local IP that will be passed to the newly created  {@linkplain ConnectionEndpoint}
 	 * @param localPort
 	 * 		local port that will be passed to the newly created {@linkplain ConnectionEndpoint}
+	 * @throws IOException 
+	 * 		if an I/O Exception occurred trying to construct an internal ObjectInputStream from the clientsocket's InputStream
 	 */
-	ConnectionEndpointServerHandler(Socket newClientSocket, String localIP, int localPort) {
+	ConnectionEndpointServerHandler(Socket newClientSocket, String localIP, int localPort) throws IOException {
 		clientSocket = newClientSocket;
 		this.localPort = localPort;
 		this.localIP = localIP;
-
 	}
 	
 	public void run() {
