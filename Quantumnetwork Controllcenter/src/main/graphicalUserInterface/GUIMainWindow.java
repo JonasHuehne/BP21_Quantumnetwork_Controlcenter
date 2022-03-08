@@ -489,10 +489,11 @@ public final class GUIMainWindow implements Runnable{
 		ceUpdateThread.start();
 	}
 	
-	@Override
+	
 	/**
 	 * Runs a thread that updates the representation of the connections in the right table of the GUI.
 	 */
+	@Override
 	public void run() {
 		
 		while(true) {
