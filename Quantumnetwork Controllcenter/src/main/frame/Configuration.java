@@ -45,7 +45,7 @@ public class Configuration {
      * The list of the needed directories for the program
      */
     private static final String[] DIRECTORY_LIST =
-            {"SignatureKeys", "python", "connections", "externalAPI"};
+            {"SignatureKeys", "python", "connections", "externalAPI", "logs"};
 
     // TODO: correct handling of potentially corrupt file?
     /**
