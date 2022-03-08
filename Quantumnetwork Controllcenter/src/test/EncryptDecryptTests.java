@@ -1,11 +1,18 @@
-import encryptionDecryption.AES256;
-import encryptionDecryption.CryptoUtility;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
+
 import org.junit.Test;
+
+import encryptionDecryption.AES256;
+import encryptionDecryption.CryptoUtility;
 
 
 public class EncryptDecryptTests {

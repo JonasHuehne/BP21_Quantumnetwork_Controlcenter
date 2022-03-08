@@ -1,28 +1,19 @@
 package graphicalUserInterface;
 
-import java.awt.BorderLayout;
-import java.awt.FlowLayout;
-
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-
-import frame.QuantumnetworkControllcenter;
-
-import javax.swing.BoxLayout;
-import javax.swing.Box;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-import java.awt.GridLayout;
-import java.awt.Component;
-import java.awt.Window.Type;
-import net.miginfocom.swing.MigLayout;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.Box;
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
+import frame.QuantumnetworkControllcenter;
+import net.miginfocom.swing.MigLayout;
 
 /**This Dialog is used to add a new Contact to the ContactDB.
  * 

@@ -1,26 +1,22 @@
 package messengerSystem;
 
-import communicationList.Contact;
-import frame.Configuration;
-import frame.QuantumnetworkControllcenter;
-
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.KeyPairGenerator;
-import java.security.Signature;
 import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-import java.util.Properties;
 import java.util.regex.Pattern;
+
+import communicationList.Contact;
+import frame.Configuration;
+import frame.QuantumnetworkControllcenter;
 
 /**
  * Class providing the methods necessary for authentication
@@ -76,7 +72,7 @@ public class SHA256withRSAAuthentication implements Authentication {
     /**
      * Method to create a signature for a message using the designated private key
      * @param message the message to be signed with the private key
-     * @return the signed message as a String; null if Error
+     * @return the signed message as a byte array; null if Error
      */
     @Override
     public byte[] sign (final byte[] message) {
@@ -96,8 +92,8 @@ public class SHA256withRSAAuthentication implements Authentication {
     /**
      * Method to verify a message with a signature, given a message, the signature and the sender name
      * (takes the public key from the corresponding entry in the communication list)
-     * @param message the received signed message (only text without the signature)
-     * @param receivedSignature the received signature as String
+     * @param message the received signed message (without the signature)
+     * @param receivedSignature the received signature
      * @param sender the sender of the message, needed to look up the public key in the communication list
      * @return true if the signature matches the message, false otherwise or if Error
      * @throws IllegalArgumentException if sender null or does not exist, or no Signature Key for sender

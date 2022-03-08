@@ -12,6 +12,8 @@ import networkConnection.NetworkPackage;
  */
 public class VerificationFailedException extends Exception {
 
+	private static final long serialVersionUID = 7128800800931123107L;
+
 	/**
 	 * Constructor for Exception with a message.
 	 * @param message

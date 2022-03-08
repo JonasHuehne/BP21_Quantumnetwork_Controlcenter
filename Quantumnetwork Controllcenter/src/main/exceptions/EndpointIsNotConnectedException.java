@@ -9,9 +9,6 @@ import networkConnection.ConnectionEndpoint;
  */
 public class EndpointIsNotConnectedException extends Exception {
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 6115323110235376697L;
 
 	/**

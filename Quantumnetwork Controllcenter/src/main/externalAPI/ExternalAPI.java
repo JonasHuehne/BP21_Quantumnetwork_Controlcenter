@@ -1,20 +1,13 @@
 package externalAPI;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+
 import javax.crypto.SecretKey;
 
-import exceptions.EndpointIsNotConnectedException;
-import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
 import keyStore.KeyStoreDbManager;
-import messengerSystem.MessageSystem;
-import networkConnection.ConnectionEndpoint;
 
 /**
  * An API class for external use to get keys and use the encryption/decryption with or without sending the file.
@@ -131,39 +124,10 @@ public class ExternalAPI {
 	}
 	
 	/**
-	 * sends a signed message with encrypted text from given .txt file
-	 * 
-	 * @param communicationPartner the ID of the receiver as listed in communicationList
-	 * @param fileName Name of the .txt file containing the suffix ".txt"
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if there is no {@linkplain ConnectionEndpoint} with the specified name in the manager currently used by the {@linkplain MessageSystem}
 	 * @deprecated This is changed in the US for sending and receiving encrypted files.
 	 */
-	public static boolean sendEncryptedTxtFile(String communicationPartner, String fileName) throws ManagerHasNoSuchEndpointException {
-		Path externalPath = getExternalAPIPath();
-		Path toRead = externalPath.resolve(fileName);
-		
-		String message = "";
-		
-		try {
-		message = Files.readString(toRead);
-		} catch (IOException e) {
-			
-			System.err.println("Error, could not read the given File \n" + e.toString());
-			return false;
-		}
-		
-		try {
-			return MessageSystem.sendEncryptedMessage(communicationPartner, message);
-		} catch (ManagerHasNoSuchEndpointException e) {
-			System.err.println("Error - no connection endpoint with id " + communicationPartner + " exists in the connection manager.");
-			e.printStackTrace();
-			return false;
-		} catch (EndpointIsNotConnectedException e) {
-			System.err.println("Error - could not send message. Connection endpoint with id " + communicationPartner + " is not connected.");
-			e.printStackTrace();
-			return false;
-		}
+	public static boolean sendEncryptedTxtFile(String communicationPartner, String fileName) {
+		return false;
 	}
 	
 	/**

@@ -55,7 +55,7 @@ public class ConnectionEndpoint implements Runnable{
 	//Communication Channels
 	/** Outgoing messages to the other CE are sent along this channel */
 	private ObjectOutputStream clientOut;
-	/** Incoming messages from the other CE are received on tis channel */
+	/** Incoming messages from the other CE are received on this channel */
 	private ObjectInputStream clientIn;	
 	
 	//State
@@ -304,7 +304,7 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public void establishConnection(String targetServerIP, int targetServerPort) throws IOException {
 		if(isConnected) {
-			System.out.println("Warning: " + connectionID + " is already connected to " + remoteIP + " at Port " + String.valueOf(remotePort) + "! Connection creation aborted!");
+			System.out.println("Warning: " + connectionID + " is already connected to " + remoteIP + " at Port " + remotePort + "! Connection creation aborted!");
 			return;
 		}
 		System.out.println("[" + connectionID + "]: Attempting to connect " + connectionID + " to: " + targetServerIP + " on port " + String.valueOf(targetServerPort) + "!");
@@ -408,7 +408,7 @@ public class ConnectionEndpoint implements Runnable{
 	 * @param typeArgument 
 	 * 		an additional argument used by some TransmissionTypes to pass on important information. Can be "" if not needed.
 	 * @param message 
-	 * 		the byte[] Message that should be send to the connected ConnectionEndpoints Server.
+	 * 		the byte[] Message that should be sent to the connected ConnectionEndpoints Server.
 	 * @param sig 
 	 * 		the signature of the Message if it is an authenticated message. If not, set sig to null.
 	 * @throws EndpointIsNotConnectedException 
@@ -512,7 +512,6 @@ public class ConnectionEndpoint implements Runnable{
 			return;
 			
 		case RECEPTION_CONFIRMATION_REQUEST:	//This works similar to the regular Transmission but it indicates the sender is waiting for a reception confirmation. This sends this confirmation back.
-			//System.out.println("[" + connectionID + "]: Received Confirm-Message: " + transmission.getHead() + "!");
 			receiveMessage(transmission);
 			try {
 				pushMessage(TransmissionTypeEnum.RECEPTION_CONFIRMATION_RESPONSE, transmission.getTypeArg(), null, null);
@@ -524,12 +523,10 @@ public class ConnectionEndpoint implements Runnable{
 			return;
 			
 		case RECEPTION_CONFIRMATION_RESPONSE:	//This is received if the local CE has sent a confirmedMessage and is waiting for the confirmation. Once received the confirmation in the form of the messageID is added to the pendingConfirmations.
-			//System.out.println("[" + connectionID + "]: Received Confirm_Back-Message: " + transmission.getHead() + "!");
 			registerConfirmation(transmission.getTypeArg());
 			return;
 			
 		case KEYGEN_SYNC_REQUEST:	//This is received if another ConnectionEndpoint that is connected to this one is intending to start a KeyGeneration Process and is asking for a response(accept/reject).
-			//System.out.println("[" + connectionID + "]: Received KeyGenSync-Message: " + transmission.getHead() + "!");
 			SHA256withRSAAuthentication authenticator = new SHA256withRSAAuthentication();
 			if (authenticator.verify(transmission.getContent(), transmission.getSignature(), connectionID)) {
 				try {
@@ -548,15 +545,11 @@ public class ConnectionEndpoint implements Runnable{
 			
 		case KEYGEN_SYNC_ACCEPT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
 			//The SyncConfirm is added to the regular messagesStack and read by the KeyGenerator.
-			//System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
-			//addMessageToQueue( transmission);
 			keyGen.updateAccRejState(1);
 			return;
 			
 		case KEYGEN_SYNC_REJECT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
 			//The SyncReject is added to the regular messagesStack and read by the KeyGenerator.
-			//System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
-			//addMessageToQueue( transmission);
 			keyGen.updateAccRejState(-1);
 			return;		
 			

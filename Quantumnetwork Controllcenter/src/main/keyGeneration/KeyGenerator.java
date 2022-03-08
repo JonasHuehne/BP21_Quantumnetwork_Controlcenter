@@ -71,7 +71,7 @@ public class KeyGenerator implements Runnable{
 	}
 	
 	/**
-	 * @returns {@linkplain ConnectionEndpoint#getID()} for the owner of this KeyGenerator
+	 * @return  {@linkplain ConnectionEndpoint#getID()} for the owner of this KeyGenerator
 	 */
 	private String getOwnerID() {
 		return owner.getID();
@@ -129,7 +129,7 @@ public class KeyGenerator implements Runnable{
 	}
 	
 	/**Method for signaling the source API.
-	 * This will sent an authenticated Message to the Source Server.
+	 * This will send an authenticated Message to the Source Server.
 	 * @throws NumberFormatException 
 	 * 		if the value saved in the config file under "SourcePort" is not an Integer
 	 * @throws ManagerHasNoSuchEndpointException 
@@ -143,7 +143,7 @@ public class KeyGenerator implements Runnable{
 		try {
 			MessageSystem.conMan.createNewConnectionEndpoint(sourceServerConnectionName, Configuration.getProperty("SourceIP"), Integer.valueOf(Configuration.getProperty("SourcePort")));
 		} catch (ConnectionAlreadyExistsException | IpAndPortAlreadyInUseException e) {
-			// If a connection the the source already exists, there is no problem
+			// If a connection to the source already exists, there is no problem
 		}
 
 		//File name will be UserName_Date_RandomString
@@ -195,7 +195,6 @@ public class KeyGenerator implements Runnable{
 	private boolean preGenSync() throws KeyGenRequestTimeoutException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
 		System.out.println("[" + getOwnerID() + "]: Sending Sync Request via " + getOwnerID() + " !");
 		//Send Sync Request
-		//MessageSystem.conMan.getConnectionEndpoint(connectionID).pushMessage(TransmissionTypeEnum.KEYGEN_SYNC_REQUEST, "", "");
 		MessageSystem.sendAuthenticatedMessage(getOwnerID(), TransmissionTypeEnum.KEYGEN_SYNC_REQUEST, "","");
 		
 		

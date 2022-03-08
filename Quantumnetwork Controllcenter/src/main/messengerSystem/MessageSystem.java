@@ -3,16 +3,15 @@ package messengerSystem;
 import java.io.UnsupportedEncodingException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.LinkedList;
+import java.util.Random;
+
 import encryptionDecryption.AES256;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
-import keyStore.KeyStoreDbManager;
-import keyStore.KeyStoreObject;
-import java.util.Random;
-
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
+import keyStore.KeyStoreDbManager;
+import keyStore.KeyStoreObject;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
@@ -32,25 +31,26 @@ public class MessageSystem {
 	/** Contains the ConnectionEndpoints for which the MessageSystem handles the high-level messaging. <br>
 	 * 	Generally, this is set once when initializing the program, however, for automated tests it may be needed to set this multiple times to simulate different users. */
 	public static ConnectionManager conMan;
-	private static final byte[] DEBUGKEY = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
+	private static final byte[] DEBUG_KEY = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
 
 	/**This simply sends a message on the given ConnectionEndpoint. No confirmation is expected from the recipient.
 	 *
 	 * @param connectionID the name of the ConnectionEndpoint to send the message from.
-	 * @param type the specific type of message. Look at TransmissionTypeEnum for more information.
-	 * @param argument the type-specific argument. Look at TransmissionTypeEnum for more information.
+	 * @param type the specific type of message. 
+	 * @param argument the type-specific argument.
 	 * @param message the message to be sent.
 	 * @param sig the signature of an authenticated message. May be null for non-authenticated messages.
 	 * @throws ManagerHasNoSuchEndpointException 
 	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
+	 * @see TransmissionTypeEnum
 	 */
 	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, byte[] message, byte[] sig) 
 			throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
 		//Check if connectionManager exists
 		if(conMan == null) {
-			System.err.println("WARNING: Tried to send a message via the MessageSystem before initializing the QuantumnetworkControllcenter, thereby setting the connectionManager Reference.");
+			System.err.println("ERROR - To send a Message via the MessageSystem, the QuantumNetworkControlCenter needs to be initialized first.");
 			return;
 		}
 		//Check if connectionEndpoint is connected to something.
@@ -199,7 +199,8 @@ public class MessageSystem {
 	/**Sends a signed and confirmed Message.
 	 * Signing requires valid keys.
 	 * 
-	 * @param connectionID the connection that should sent the message.
+	 * @param connectionID 
+	 * 		 the name of the ConnectionEndpoint to send the message from.
 	 * @param message the actual message as a byte[].
 	 * @return returns true if the message was confirmed to have been received.
 	 * @throws ManagerHasNoSuchEndpointException 
@@ -217,7 +218,7 @@ public class MessageSystem {
 	/**Sends a signed and confirmed Message.
 	 * Signing requires valid keys.
 	 * 
-	 * @param connectionID the connection that should sent the message.
+	 * @param connectionID  the name of the ConnectionEndpoint to send the message from.
 	 * @param message the actual message as a String.
 	 * @return returns true if the message was confirmed to have been received.
 	 * @throws ManagerHasNoSuchEndpointException 
@@ -232,7 +233,7 @@ public class MessageSystem {
 	/**Sends a signed unconfirmed Message.
 	 * Signing requires valid keys.
 	 * 
-	 * @param connectionID the connection that should sent the message.
+	 * @param connectionID  the name of the ConnectionEndpoint to send the message from.
 	 * @param type the type of the transmission.
 	 * @param argument the optional argument, use depends on the chosen TransmissionType. Refer to ConnectionEndpoint.processMessage() for more information.
 	 * @param message the actual message to be transmitted. Can be empty. Most transmissions with content will use the first variant of this method.
@@ -253,7 +254,7 @@ public class MessageSystem {
 	/**Sends a signed unconfirmed Message.
 	 * Signing requires valid keys.
 	 * 
-	 * @param connectionID the connection that should sent the message.
+	 * @param connectionID  the name of the ConnectionEndpoint to send the message from.
 	 * @param type the type of the transmission.
 	 * @param argument the optional argument, use depends on the chosen TransmissionType. Refer to ConnectionEndpoint.processMessage() for more information.
 	 * @param message the actual message to be transmitted. Can be empty. Most transmissions with content will use the first variant of this method.
@@ -300,7 +301,7 @@ public class MessageSystem {
 		
 		byte[] byteKey;
 		if(connectionID.equals("42debugging42") || connectionID.equals("41debugging41") ) {
-			byteKey = DEBUGKEY; 
+			byteKey = DEBUG_KEY; 
 		}
 		else {
 		//getting key
@@ -337,7 +338,7 @@ public class MessageSystem {
 		
 		byte[] byteKey;
 		if(connectionID.equals("42debugging42") || connectionID.equals("41debugging41") ) {
-			byteKey = DEBUGKEY;
+			byteKey = DEBUG_KEY;
 		}
 		else {
 		//getting key
@@ -375,7 +376,7 @@ public class MessageSystem {
 		try {
 			return new String(arr, ENCODING_STANDARD);
 		} catch (UnsupportedEncodingException e) {
-			System.err.println("Error: unsupportet Encoding: " + ENCODING_STANDARD + "!");
+			System.err.println("Error: unsupported Encoding: " + ENCODING_STANDARD + "!");
 			e.printStackTrace();
 			return null;
 		}
@@ -392,7 +393,7 @@ public class MessageSystem {
 		try {
 			return str.getBytes(ENCODING_STANDARD);
 		} catch (UnsupportedEncodingException e) {
-			System.err.println("Error: unsupportet Encoding: " + ENCODING_STANDARD + "!");
+			System.err.println("Error: unsupported Encoding: " + ENCODING_STANDARD + "!");
 			e.printStackTrace();
 			return null;
 		}
