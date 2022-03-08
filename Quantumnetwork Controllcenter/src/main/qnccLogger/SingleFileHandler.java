@@ -50,11 +50,7 @@ public class SingleFileHandler {
         
     	Path logsPath = qnccPath.resolve("logs");
     	if(!logsPath.toFile().isDirectory()) {
-    		try {
-				Files.createDirectory(logsPath);
-			} catch (IOException e) {
-				System.err.println(e.toString());
-			}
+    		Configuration.createFolders();
     	}
     	
     	String fileName = currentDateTime + FILE_NAME;
