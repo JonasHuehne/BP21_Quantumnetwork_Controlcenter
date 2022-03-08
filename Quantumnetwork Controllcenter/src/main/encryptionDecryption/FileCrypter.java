@@ -121,8 +121,7 @@ public class FileCrypter {
 		if (mode != Cipher.ENCRYPT_MODE && mode != Cipher.DECRYPT_MODE) 
 			throw new IllegalArgumentException("Mode must be either Cipher.ENCRYPT_MODE or Cipher.DECRYPT_MODE.");
 		
-		Cipher c = sc.getInstance();
-		c.init(mode, key);
+		Cipher c = sc.getInitializedInstance(mode);
 		
 		byte[] buffer = new byte[BUFFERSIZE];
 		
