@@ -98,16 +98,12 @@ public abstract class SymmetricCipher {
 	};
 	
 	/**
+	 * @param mode
+	 * 		the opmode to initialize the cipher in
 	 * @return an instance of the underlying {@linkplain Cipher} used by this encryption algorithm.
+	 * 		   this instance will be initialized the same way it would be initialized in this class
 	 */
-	protected Cipher getInstance() {
-		try {
-			return Cipher.getInstance(TRANSFORMATION_FULL);
-		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-			throw new RuntimeException("This method has not been implemented correctly. "
-					+ "The full transformation does not correspond to a valid algorithm / algorithm with padding.");
-		}
-	}
+	protected abstract Cipher getInitializedInstance(int mode);
 	
 	
 }
