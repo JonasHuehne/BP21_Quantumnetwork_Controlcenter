@@ -9,6 +9,8 @@ import networkConnection.ConnectionManager;
  */
 public class ConnectionAlreadyExistsException extends Exception {
 
+	private static final long serialVersionUID = 414620549169126409L;
+
 	/**
 	 * Constructs a new Exception with a message.
 	 * @param name

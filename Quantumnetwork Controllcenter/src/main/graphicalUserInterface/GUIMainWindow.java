@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
-import java.awt.List;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
@@ -25,7 +24,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JToolBar;
-import javax.swing.Timer;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
@@ -36,7 +34,6 @@ import communicationList.Contact;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
-import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import net.miginfocom.swing.MigLayout;
 import networkConnection.ConnectionEndpoint;
@@ -74,8 +71,6 @@ public final class GUIMainWindow implements Runnable{
 	/** column of the contacts table in which the public keys are listed */
 	private final int contactDBSigIndex = 3;
 	
-	/** contains the last measured size of our local ConnectionManager, used in updating the list of active connections */
-	private int ceAmountOld = 0;
 	/** used in updating the list of active connections */
 	private ArrayList<String> namesOfConnections = new ArrayList<String>();
 	
@@ -191,13 +186,8 @@ public final class GUIMainWindow implements Runnable{
 				//Delete all Entries in the DB first.
 				CommunicationList cl = QuantumnetworkControllcenter.communicationList;
 				ArrayList<Contact> dbContent = cl.queryAll();
-				int entryNumber = dbContent.size();
-				
-				for(int i = 0; i < entryNumber; i++) {
-					cl.delete(dbContent.get(i).getName());			
-				}
-				
-				
+				for (Contact c : dbContent) cl.delete(c.getName());
+		
 				//Create new DBEntries form JTable
 				int rowCount = contactTable.getRowCount();
 				for(int i = 0; i < rowCount; i++) {
@@ -218,7 +208,6 @@ public final class GUIMainWindow implements Runnable{
 		JScrollPane contactScrollPane = new JScrollPane();
 		contactScrollPane.setAlignmentY(Component.TOP_ALIGNMENT);
 		contactsColumn.add(contactScrollPane);
-		//contactTable = new JTable(contactData, contactColumnNames);
 		contactTable = new JTable(new DefaultTableModel(contactColumnNames,0));
 		gatherContacts();
 		contactScrollPane.setViewportView(contactTable);
@@ -492,12 +481,18 @@ public final class GUIMainWindow implements Runnable{
 		connectionEndpointVerticalBox.repaint();
 	}
 	
+	/**
+	 * Starts the thread used to update the representation of the connections in the right table.
+	 */
 	private void startUpdateService() {
 		ceUpdateThread = new Thread(this, "_ceUpdateThread");
 		ceUpdateThread.start();
 	}
 	
 	@Override
+	/**
+	 * Runs a thread that updates the representation of the connections in the right table of the GUI.
+	 */
 	public void run() {
 		
 		while(true) {
@@ -525,6 +520,7 @@ public final class GUIMainWindow implements Runnable{
 			
 			/*
 			 * Update which connection is the "selected" one and color it accordingly
+			 * Also updates the displayed state
 			 */
 			
 			representedConnectionEndpoints.forEach((k,v)->{
@@ -555,7 +551,7 @@ public final class GUIMainWindow implements Runnable{
 			});
 			
 			/*
-			 * Sleep between the updates to save ressources.
+			 * Sleep between the updates to save resources.
 			 */
 			
 			try {

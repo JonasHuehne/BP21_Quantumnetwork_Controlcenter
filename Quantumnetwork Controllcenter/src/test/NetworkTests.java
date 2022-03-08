@@ -1,17 +1,9 @@
 
-
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -20,9 +12,7 @@ import exceptions.EndpointIsNotConnectedException;
 import exceptions.IpAndPortAlreadyInUseException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.PortIsInUseException;
-import messengerSystem.MessageSystem;
 import frame.Configuration;
-import frame.QuantumnetworkControllcenter;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
@@ -36,10 +26,10 @@ import networkConnection.TransmissionTypeEnum;
  */
 public class NetworkTests {
 	
-	@Nested
 	/**
 	 * Low Level Tests directly testing the {@link ConnectionEndpoint} class.
 	 */
+	@Nested
 	class ConnectionEndpointTests {
 		
 		@Test
@@ -60,13 +50,12 @@ public class NetworkTests {
 		
 	}
 	
-	@Nested
 	/**
 	 * Tests for the {@link ConnectionManager} class and the classes it uses to establish and manage connections.
 	 */
+	@Nested
 	class ConnectionManagerTests {
 		
-		@Test
 		/**
 		 * None of this code should trigger any Exceptions.
 		 * @throws IOException
@@ -74,12 +63,13 @@ public class NetworkTests {
 		 * @throws PortIsInUseException
 		 * 		tried to create a CM which uses a port already used by another CM
 		 * @throws ManagerHasNoSuchEndpointException
-		 * 		attempted sensitive access of a non-existant CE in a CM
+		 * 		attempted sensitive access of a non-existent CE in a CM
 		 * @throws ConnectionAlreadyExistsException
 		 * 		attempted to create a CE with a non-unique ID in a CM
 		 * @throws IpAndPortAlreadyInUseException
 		 * 		attempted to create a CE with a non-unique IP:Port pair in a CM
 		 */
+		@Test
 		public void basic_functionality_of_CM_works() throws ConnectionAlreadyExistsException, IOException, PortIsInUseException, IpAndPortAlreadyInUseException {
 			/*
 			 * In this test we are "Bob", our partner is "Alice"
@@ -126,7 +116,6 @@ public class NetworkTests {
 			assertEquals(0, conMan.returnAllConnections().size());
 		}
 		
-		@Test
 		/**
 		 * None of this code should trigger any Exceptions.
 		 * @throws IOException
@@ -134,12 +123,13 @@ public class NetworkTests {
 		 * @throws PortIsInUseException
 		 * 		tried to create a CM which uses a port already used by another CM
 		 * @throws ManagerHasNoSuchEndpointException
-		 * 		attempted sensitive access of a non-existant CE in a CM
+		 * 		attempted sensitive access of a non-existent CE in a CM
 		 * @throws ConnectionAlreadyExistsException
 		 * 		attempted to create a CE with a non-unique ID in a CM
 		 * @throws IpAndPortAlreadyInUseException
 		 * 		attempted to create a CE with a non-unique IP:Port pair in a CM
 		 */
+		@Test
 		public void can_create_cyclical_connection_and_close_them() throws IOException, PortIsInUseException, ConnectionAlreadyExistsException, ManagerHasNoSuchEndpointException, IpAndPortAlreadyInUseException {
 			int serverPortAlice = 60020;
 			int serverPortBob	= 60040;
@@ -183,7 +173,6 @@ public class NetworkTests {
 			
 		}
 		
-		@Test
 		/**
 		 * None of this code should trigger any exceptions.
 		 * @throws IOException
@@ -191,7 +180,7 @@ public class NetworkTests {
 		 * @throws PortIsInUseException
 		 * 		tried to create a CM which uses a port already used by another CM
 		 * @throws ManagerHasNoSuchEndpointException
-		 * 		attempted sensitive access of a non-existant CE in a CM
+		 * 		attempted sensitive access of a non-existent CE in a CM
 		 * @throws ConnectionAlreadyExistsException
 		 * 		attempted to create a CE with a non-unique ID in a CM
 		 * @throws IpAndPortAlreadyInUseException
@@ -199,6 +188,7 @@ public class NetworkTests {
 		 * @throws EndpointIsNotConnectedException
 		 * 		if trying to send a message from an endpoint that is not connected
 		 */
+		@Test
 		public void can_send_messages_along_cyclical_connection() 
 				throws 	IOException, PortIsInUseException, ManagerHasNoSuchEndpointException, ConnectionAlreadyExistsException, 
 						IpAndPortAlreadyInUseException, EndpointIsNotConnectedException {
@@ -255,13 +245,13 @@ public class NetworkTests {
 				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60050);
 			});
 			
-			// Trying to destroy a non-existant CE 
+			// Trying to destroy a non-existent CE 
 			assertThrows(ManagerHasNoSuchEndpointException.class, () -> {
 				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60045);
 				CM.destroyConnectionEndpoint("Bob");
 			});
 			
-			// Trying to access state of non-existant CE
+			// Trying to access state of non-existent CE
 			assertThrows(ManagerHasNoSuchEndpointException.class, () -> {
 				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60046);
 				CM.getConnectionState("Bob");
@@ -292,7 +282,7 @@ public class NetworkTests {
 		 * @throws PortIsInUseException
 		 * 		tried to create a CM which uses a port already used by another CM
 		 * @throws ManagerHasNoSuchEndpointException
-		 * 		attempted sensitive access of a non-existant CE in a CM
+		 * 		attempted sensitive access of a non-existent CE in a CM
 		 * @throws ConnectionAlreadyExistsException
 		 * 		attempted to create a CE with a non-unique ID in a CM
 		 * @throws IpAndPortAlreadyInUseException
@@ -331,10 +321,10 @@ public class NetworkTests {
 		
 	}
 	
-	@Nested
 	/**
 	 * Tests for some of the other functionalities provided by classes in the networkConnection package.
 	 */
+	@Nested
 	class MiscNetworkTests {
 		
 		// TODO Add some tests here where appropriate

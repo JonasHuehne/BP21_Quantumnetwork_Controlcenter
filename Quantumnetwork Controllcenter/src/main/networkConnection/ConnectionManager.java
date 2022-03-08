@@ -6,7 +6,6 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -232,6 +231,8 @@ public class ConnectionManager {
 	 * @throws ManagerHasNoSuchEndpointException 
 	 * 		if no connection of that name could be found in the connection manager
 	 * @throws EndpointIsNotConnectedException 
+	 * 		if the specified connection endpoint is not connected to its partner <br>
+	 * 		will not be thrown for transmissions of type {@linkplain TransmissionTypeEnum#CONNECTION_REQUEST}
 	 */
 	public void sendMessage(String connectionID, TransmissionTypeEnum type, String typeArgument, byte[] message, byte[] sig) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {	
 		ConnectionEndpoint ce = connections.get(connectionID);
@@ -298,10 +299,10 @@ public class ConnectionManager {
 		}
 	}
 	
-	/**Changes the current local IP address to a new value. 
+	/**Changes the current local port address to a new value. 
 	 * This closes all {@linkplain ConnectionEndpoint}s managed by this manager, 
-	 * and sets their local IP address accordingly.
-	 * @param newLocalAddress the new local IP address
+	 * and sets their local port accordingly.
+	 * @param newLocalPort the new local port
 	 */
 	public void setLocalPort(int newLocalPort) {
 		closeAllConnections();
@@ -326,9 +327,8 @@ public class ConnectionManager {
 	}
 
 	/**Closes a named connection if existing and open. Does not destroy the connectionEndpoint, use destroyConnectionEndpoint for that. <br>
-	 * @implNote Calls {@linkplain ConnectionEndpoint#closeConnection(boolean)} with the parameter {@code sendTerminationRequest} set to {@code true}.
-	 * If sending the termination request fails (because the endpoint was not connected), it attempts to force close the endpoint instead, by
-	 * calling {@linkplain ConnectionEndpoint#closeConnection(boolean)} again with {@code sendTerminationRequest} set to {@code false}.
+	 * @implNote Calls {@linkplain ConnectionEndpoint#closeWithTerminationRequest()}. 
+	 * If the request can not be sent, it then calls {@linkplain ConnectionEndpoint#forceCloseConnection()}.
 	 * @param connectionName	
 	 * 		the name of the intended {@linkplain ConnectionEndpoint}
 	 * @return true if the connection was closed, false if no such connection could be found

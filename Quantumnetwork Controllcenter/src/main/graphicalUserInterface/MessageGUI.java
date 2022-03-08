@@ -1,38 +1,27 @@
 package graphicalUserInterface;
 
-import java.awt.BorderLayout;
-import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextPane;
+import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
-
-import org.w3c.dom.css.RGBColor;
 
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
-
-import javax.swing.JSplitPane;
-import java.awt.FlowLayout;
 import net.miginfocom.swing.MigLayout;
 import networkConnection.ConnectionState;
 import networkConnection.TransmissionTypeEnum;
-
-import javax.swing.JTextPane;
-import javax.swing.Box;
-import javax.swing.JButton;
-import javax.swing.JTextArea;
-import javax.swing.JScrollPane;
-import java.awt.Component;
-import javax.swing.BoxLayout;
-import javax.swing.JTextField;
-import javax.swing.JLabel;
-import javax.swing.SwingConstants;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 
 /**This GUI contains a chatLog that visualizes the MessageLog of a connectionEndpoint.
  * It allows for sending plain-text Messages and for sending Files.
@@ -74,8 +63,8 @@ public class MessageGUI extends JFrame {
 		topSplitPane.setOrientation(JSplitPane.VERTICAL_SPLIT);
 		String fromParty = Configuration.getProperty("UserName");
 		String toParty = MessageSystem.conMan.getConnectionEndpoint(connectionID).getRemoteName();
-		String labelTitel = fromParty + " <-> " + toParty;
-		JLabel commNamesLabel = new JLabel(labelTitel);
+		String labelTitle = fromParty + " <-> " + toParty;
+		JLabel commNamesLabel = new JLabel(labelTitle);
 		commNamesLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		topSplitPane.setLeftComponent(commNamesLabel);
 		
@@ -121,7 +110,7 @@ public class MessageGUI extends JFrame {
 					default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selected!");
 						break;
 					}
-				} catch (ManagerHasNoSuchEndpointException nsce) {
+				} catch (ManagerHasNoSuchEndpointException e1) {
 					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". No such connection exists.");
 				} catch (EndpointIsNotConnectedException e1) {
 					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". You are not connected.");

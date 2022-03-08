@@ -1,23 +1,20 @@
 package frame;
 
+import java.awt.EventQueue;
+import java.io.IOException;
+
+import javax.swing.UIManager;
+
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
 import exceptions.PortIsInUseException;
 import graphicalUserInterface.GUIMainWindow;
 import graphicalUserInterface.SettingsDialog;
 import messengerSystem.Authentication;
-import messengerSystem.SHA256withRSAAuthentication;
-import networkConnection.ConnectionEndpoint;
-import networkConnection.ConnectionManager;
-import networkConnection.TransmissionTypeEnum;
-import ui.ConsoleUI;
-import java.awt.EventQueue;
-import java.io.IOException;
-
-import javax.swing.UIManager;
-import java.util.concurrent.TimeUnit;
-
 import messengerSystem.MessageSystem;
+import messengerSystem.SHA256withRSAAuthentication;
+import networkConnection.ConnectionManager;
+import ui.ConsoleUI;
 
 /**
  * Main Class of QuantumnetworkControllcenter
@@ -34,15 +31,15 @@ public class QuantumnetworkControllcenter {
 	/*
 	 * This could be done via args as well.
 	 */
-	static final boolean LAUNCHGUI = true;  // launch GUI
-	static final boolean LAUNCHCUI = false; // launch console UI
+	static final boolean LAUNCH_GUI = true;  // launch GUI
+	static final boolean LAUNCH_CUI = false; // launch console UI
 
 	/**
 	 * Method to initialize a Quantumnetwork Controllcenter
 	 * @param args <br>
 	 * 		args[0] local IP used by the ConnectionManager in this launch, also sets the corresponding entry "UserIP" in the config file
 	 * 		args[1] local port used by the ConnectionManager in this launch, also sets the corresponding entry "UserPort" in the config file
-	 * 		may be null, in this case the Properties file is no modified
+	 * 		may be null, in this case the Properties file is not modified
 	 */
 	public static void initialize(String[] args) {
 		
@@ -94,6 +91,10 @@ public class QuantumnetworkControllcenter {
 	
 	/**
 	 * Main-method to run QuantumnetworkControllcenter
+	 * @param args <br>
+	 * 		args[0] local IP used by the ConnectionManager in this launch, also sets the corresponding entry "UserIP" in the config file
+	 * 		args[1] local port used by the ConnectionManager in this launch, also sets the corresponding entry "UserPort" in the config file
+	 * 		may be null, in this case the Properties file is not modified
 	 */
 	public static void main(String[] args) {
 		
@@ -119,14 +120,15 @@ public class QuantumnetworkControllcenter {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					if (LAUNCHCUI) {
+					if (LAUNCH_CUI) {
 						ConsoleUI consoleWindow = new ConsoleUI();
 					}
-					if (LAUNCHGUI) {
+					if (LAUNCH_GUI) {
 						guiWindow = new GUIMainWindow();
 						guiWindow.getFrame().setVisible(true);
 					}
 				} catch (Exception e) {
+					System.err.println("Something went wrong trying to launch the GUI or Console UI.");
 					e.printStackTrace();
 				}
 			}

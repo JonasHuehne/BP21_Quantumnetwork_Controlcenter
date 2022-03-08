@@ -1,33 +1,21 @@
 package graphicalUserInterface;
 
-import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
+import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
-
-import frame.QuantumnetworkControllcenter;
-
-import javax.swing.BoxLayout;
-import javax.swing.Box;
 import javax.swing.JLabel;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-import java.awt.GridLayout;
-import java.awt.Component;
-import java.awt.Window.Type;
-import net.miginfocom.swing.MigLayout;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
+import javax.swing.JPanel;
 import javax.swing.JRadioButton;
-import javax.swing.event.ChangeListener;
+import javax.swing.JTextField;
 
 import exceptions.ConnectionAlreadyExistsException;
 import exceptions.IpAndPortAlreadyInUseException;
-
-import javax.swing.event.ChangeEvent;
+import frame.QuantumnetworkControllcenter;
+import net.miginfocom.swing.MigLayout;
 
 /**This Dialog is used to create a new Connection.
  * 

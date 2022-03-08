@@ -1,21 +1,20 @@
 
-import communicationList.Contact;
-import frame.Configuration;
-import messengerSystem.SHA256withRSAAuthentication;
-import messengerSystem.MessageSystem;
-import frame.QuantumnetworkControllcenter;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Nested;
-
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import communicationList.Contact;
+import frame.Configuration;
+import frame.QuantumnetworkControllcenter;
+import messengerSystem.MessageSystem;
+import messengerSystem.SHA256withRSAAuthentication;
 
 /**
  * class for automated tests for the authentication

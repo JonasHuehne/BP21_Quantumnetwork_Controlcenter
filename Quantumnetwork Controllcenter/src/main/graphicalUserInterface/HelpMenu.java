@@ -2,14 +2,14 @@ package graphicalUserInterface;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
-import javax.swing.JLabel;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 
 /**This Menu will contain an instructional manual
  * 
@@ -33,7 +33,7 @@ public class HelpMenu extends JDialog {
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
 		{
-			JLabel lblNewLabel = new JLabel("Hier k\u00F6nnte ihre Werbung stehen!");
+			JLabel lblNewLabel = new JLabel("This window will contain information on how to use the program.");
 			contentPanel.add(lblNewLabel);
 		}
 		{

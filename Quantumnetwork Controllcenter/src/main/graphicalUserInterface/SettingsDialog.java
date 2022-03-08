@@ -2,23 +2,20 @@ package graphicalUserInterface;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
 import frame.Configuration;
 import messengerSystem.MessageSystem;
-
-import javax.swing.Box;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-import javax.swing.JSeparator;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.Font;
 
 /**This Dialog contains settings such as the own ServerIP/Port
  * 
@@ -28,7 +25,7 @@ import java.awt.Font;
 public class SettingsDialog extends JDialog {
 
 	private final JPanel contentPanel = new JPanel();
-	private JTextField ownNameTextfield;
+	private JTextField ownNameTextField;
 	private JTextField ownIPTextField;
 	private JTextField ownPortTextField;
 	private JTextField sourceIPTextField;
@@ -66,12 +63,12 @@ public class SettingsDialog extends JDialog {
 			ownNameLabel.setToolTipText("This should be a name that represents you. It will be sent to connecting parties and be used on their end to name the connection.");
 		}
 		{
-			ownNameTextfield = new JTextField();
-			ownNameTextfield.setBounds(181, 26, 140, 20);
-			contentPanel.add(ownNameTextfield);
-			ownNameTextfield.setText("Default Name");
-			ownNameTextfield.setToolTipText("This should be a name that represents you. It will be sent to connecting parties and be used on their end to name the connection.");
-			ownNameTextfield.setColumns(10);
+			ownNameTextField = new JTextField();
+			ownNameTextField.setBounds(181, 26, 140, 20);
+			contentPanel.add(ownNameTextField);
+			ownNameTextField.setText("Default Name");
+			ownNameTextField.setToolTipText("This should be a name that represents you. It will be sent to connecting parties and be used on their end to name the connection.");
+			ownNameTextField.setColumns(10);
 		}
 		{
 			JLabel ownIPLabel = new JLabel("Local IP:");
@@ -236,7 +233,7 @@ public class SettingsDialog extends JDialog {
 	 * 
 	 */
 	private void readSettings(){
-		ownNameTextfield.setText(name);
+		ownNameTextField.setText(name);
 		
 		ownIPTextField.setText(ip);
 		
@@ -254,10 +251,10 @@ public class SettingsDialog extends JDialog {
 	 */
 	private void writeSettings() {
 		
-		Configuration.setProperty("UserName", ownNameTextfield.getText());
+		Configuration.setProperty("UserName", ownNameTextField.getText());
 		if(!Configuration.getProperty("UserIP").equals(ownIPTextField.getText())) {
 			MessageSystem.conMan.destroyAllConnectionEndpoints();
-			MessageSystem.conMan.setLocalAddress(ownNameTextfield.getText());
+			MessageSystem.conMan.setLocalAddress(ownNameTextField.getText());
 		}
 		Configuration.setProperty("UserIP", ownIPTextField.getText());
 		if(!Configuration.getProperty("UserPort").equals(ownPortTextField.getText())) {
