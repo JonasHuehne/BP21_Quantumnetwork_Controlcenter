@@ -1,10 +1,12 @@
 package messengerSystem;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedList;
 import encryptionDecryption.AES256;
+import encryptionDecryption.SymmetricCipher;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import keyStore.KeyStoreDbManager;
@@ -27,6 +29,11 @@ import networkConnection.TransmissionTypeEnum;
  */
 public class MessageSystem {
 	
+	/** The cipher the message system uses to encrypt / decrypt messages & files */
+	private static SymmetricCipher cipher;
+	/** The authenticator the message system uses to sign / verify messages & files */
+	private static Authentication authenticator;
+	
 	private static final String ENCODING_STANDARD = Configuration.getProperty("Encoding");
 	
 	/** Contains the ConnectionEndpoints for which the MessageSystem handles the high-level messaging. <br>
@@ -34,6 +41,25 @@ public class MessageSystem {
 	public static ConnectionManager conMan;
 	private static final byte[] DEBUGKEY = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
 
+	
+	/**
+	 * Sets the encryption / decryption algorithm to be used by the MessageSystem.
+	 * @param cipher
+	 * 		the algorithm to use
+	 */
+	public static void setEncryption(SymmetricCipher cipher) {
+		MessageSystem.cipher = cipher;
+	}
+
+	/**
+	 * Sets the authentication algorithm to be used by the MessageSystem.
+	 * @param authentication
+	 * 		the algorithm to use
+	 */
+	public static void setAuthenticationAlgorithm(Authentication authentication) {
+		MessageSystem.authenticator = authentication;
+	}
+	
 	/**This simply sends a message on the given ConnectionEndpoint. No confirmation is expected from the recipient.
 	 *
 	 * @param connectionID the name of the ConnectionEndpoint to send the message from.
@@ -364,6 +390,56 @@ public class MessageSystem {
 		return AES256.decrypt(MessageSystem.byteArrayToString(encrypted), byteKey);
 	}
 	
+	private static void sendEncryptedMessage_sasha_wip(byte[] messageBytes) {
+		// Load the key for use with that contact
+		
+		// Inform contact that the bytes are going to be used
+		
+		// Only if the contact responds with an acknowledgement, continue (to prevent key sync issues)
+		
+		// Contact has acknowledged use? ==> Mark the bytes as used
+		
+		// Encrypt the bytes
+		byte[] encryptedMessage = cipher.encrypt(messageBytes, byteKey);
+		
+		// If an error occurs, consider the bytes used for encryption "lost"
+		// otherwise synchronization would get too complicated
+		
+		// Send the bytes as a regular message, with args specifying which bytes were used for encryption
+		// (obviously just the indexes, not the individual bytes)
+		// -> this allows the receiver to know which bytes to use for decryption, even if messages
+		// arrive out of order 
+	}
+	
+	private static void sendEncryptedFile() {
+		// Encrpyt file locally
+		
+		// Send the file as a regular message, with a flag that the contents are encrypted
+	}
+	
+	private static void encryptPackage(NetworkPackage p, SecretKey k) {
+		
+	}
+	
+	private static void decryptPackage(NetworkPackage p, SecretKey k) {
+		
+	}
+	
+	/**
+	 * Constructs the correct args to use in a network package for file transfer.
+	 * @return
+	 */
+	private static String makeFileTransferArgs(File file) {
+		return null;
+	}
+	
+	/**
+	 * Reads the args from a network package used for file transfer, and outputs a corresponding file.
+	 * @return
+	 */
+	private static File readFileTransferArgs(String args) {
+		return null;
+	}
 	
 	/**Utility for converting a byte[] to a String.
 	 * The Network sends messagesPackages with byte[]s as content. This Method is used 
@@ -397,5 +473,7 @@ public class MessageSystem {
 			return null;
 		}
 	}
+
+
 
 }
