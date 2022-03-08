@@ -11,6 +11,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.logging.FileHandler;
 import java.util.logging.LogManager;
 
+import frame.Configuration;
+
 /**
  * singlet of {@link java.util.logging.FileHandler}
  * used to let all loggers of project write to the same log file
@@ -33,7 +35,7 @@ public class SingleFileHandler {
 	 * the existing instance of SingleFileHandler is referenced 
 	 */
 	public SingleFileHandler() {
-		//make SingleFileHanler a singleton
+		//make SingleFileHandler a singleton
 		if (singleFileHandler != null) {
 			return;
 		}
@@ -43,14 +45,8 @@ public class SingleFileHandler {
         LocalDateTime now = LocalDateTime.now();
         String currentDateTime = dateTimeFormatter.format(now);
         
-        Path qnccPath = currentWorkingDir.resolve("QNCC");
-        if(!qnccPath.toFile().isDirectory()) {
-        	try {
-				Files.createDirectory(qnccPath);
-			} catch (IOException e) {
-				System.err.println(e.toString());
-			}
-        }
+        Path qnccPath = Paths.get(Configuration.getBaseDirPath());
+        
         
     	Path logsPath = qnccPath.resolve("logs");
     	if(!logsPath.toFile().isDirectory()) {
