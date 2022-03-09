@@ -421,7 +421,7 @@ public class KeyStoreDbManager {
     }
 
     /**
-     * Get a key of specified length for given ID of communication partner
+     * Get a key of the specified length for the given ID of a communication partner
      *
      * @param keyStreamID reference ID to locate a key
      * @param keyLength length of the key
