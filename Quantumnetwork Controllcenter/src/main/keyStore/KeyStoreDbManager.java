@@ -23,8 +23,7 @@ import java.util.stream.Collectors;
 public class KeyStoreDbManager {
     private static final String dataBaseName = "KeyStore.db";
     private static final String tableName = "KeyStorage";
-
-
+    
     /**
      *
      * @return a new Connection to KeyStore.db
