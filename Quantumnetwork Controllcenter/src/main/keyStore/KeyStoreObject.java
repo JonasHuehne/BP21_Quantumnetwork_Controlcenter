@@ -52,7 +52,8 @@ public final class KeyStoreObject {
      * Index will be updated automatically within this function
      *
      * @param keyLength
-     * @return a new byte[] that starts at the correct Index and has size of the desired keyLength.
+     * @return a new byte[] that starts at the correct Index and has size of the desired keyLength
+     *          or null if not enough key material is left
      */
     public byte[] getKey(int keyLength){
             int startIndex = index;

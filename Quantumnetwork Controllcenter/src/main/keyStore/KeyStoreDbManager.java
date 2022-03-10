@@ -422,6 +422,27 @@ public class KeyStoreDbManager {
         }
     }
 
+    /**
+     * Get a key of the specified length for the given ID of a communication partner
+     *
+     * @param keyStreamID reference ID to locate a key
+     * @param keyLength length of the key
+     * @return a new byte[] that starts at the correct Index and has size of the desired keyLength,
+     *          or null if requested key doesn't exist / not enough key material left
+     */
+    public static byte[] getKeyByID(String keyStreamID, int keyLength){
+        try {
+            KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
+            byte[] key = obj.getKey(keyLength);
+
+            return key;
+        } catch (Exception e) {
+            System.err.println("Getting the key for keyStreamID= " + keyStreamID + " failed!");
+            System.err.println(e.toString());
+            return null;
+        }
+    }
+
     /** Stores all the Entries of the KeyInformation table in an ArrayList and returns the List
      *
      * @return a ArrayList of KeyInformationObject which contain information about the keys currently in storage
