@@ -21,7 +21,7 @@ import frame.Configuration;
  * @author Sasha Petri, Aron Hernandez
  *
  */
-public class AlternativeKeyStore {
+public class SimpleKeyStore {
 	
 	/*
 	 * To keep things simple, we have (for now) restricted
