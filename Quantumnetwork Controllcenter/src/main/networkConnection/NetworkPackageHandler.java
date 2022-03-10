@@ -34,18 +34,13 @@ public class NetworkPackageHandler {
 	 * 		the ConnectionEndpoint that received the package
 	 * @param msg
 	 * 		the network package to process
-	 * @throws NumberFormatException
-	 * 		when processing a message of type KEYGEN_SYNC_REQUEST and the number saved as the source port is not an integer
 	 * @throws EndpointIsNotConnectedException 
 	 * 		can be thrown during key generation <br>
 	 * 		when processing a message would lead to sending a message back, but this endpoint is not connected to their partner
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		can be thrown during key generation <br>
-	 * 		when processing a message would lead to sending a message back, but this endpoint is not in the {@linkplain ConnectionManager} of the {@linkplain MessageSystem}
 	 */
-	public static void handlePackage(ConnectionEndpoint ce, NetworkPackage msg) throws EndpointIsNotConnectedException, ManagerHasNoSuchEndpointException {
+	public static void handlePackage(ConnectionEndpoint ce, NetworkPackage msg) throws EndpointIsNotConnectedException {
 		
-		TransmissionTypeEnum msgType = msg.getHead();
+		TransmissionTypeEnum msgType = msg.getType();
 		
 		switch (msgType) {
 		case CONNECTION_CONFIRMATION:

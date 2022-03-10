@@ -14,9 +14,12 @@ import messengerSystem.Authentication;
  */
 public class NetworkPackage implements Serializable{
 
-	private static final long serialVersionUID = -6406450845229886762L;
-	private TransmissionTypeEnum head;
+	private static final long serialVersionUID = -6406450845229886763L;
+	/** Transmission type of the Network Package, used when parsing it to identify what to do with the package */
+	private TransmissionTypeEnum type;
+	/** Content of the package, relevant for data transfer (e.g. text messages, file transfer) */
 	private byte[] content;
+	/** Signature of the package, used to verify the authenticity and integrity of the package */
 	private byte[] signature;
 	
 	/** meta information about the message being sent */
@@ -28,10 +31,10 @@ public class NetworkPackage implements Serializable{
 	
 	
 	public NetworkPackage(TransmissionTypeEnum type, MessageArgs args, byte[] content, boolean expectConfirmation) {
-		this.head = type;
-		this.args = args;
-		this.content = (content == null) ? new byte[] {} : content; // to avoid any issues with getTotalData()
-		this.packageID = new byte[32];
+		this.type 		= type;
+		this.args 		= (args == null) ? new MessageArgs() : args; // to avoid NPE
+		this.content 	= (content == null) ? new byte[] {} : content; // to avoid any issues with getTotalData()
+		this.packageID 	= new byte[32];
 		generatePackageID();
 		this.expectConfirmation = expectConfirmation;
 	}
@@ -65,7 +68,7 @@ public class NetworkPackage implements Serializable{
 	/**
 	 * Signs the NetworkPackage. <br>
 	 * Signs not only the content, but also the meta-data, specifically: <br>
-	 *  - the type {@link #getHead()} <br>
+	 *  - the type {@link #getType()} <br>
 	 *  - the arguments {@link #getMessageArgs()} <br>
 	 *  - the flag on whether confirmation is expected {@link #expectedToBeConfirmed()} <br>
 	 *  - the package id <br>
@@ -88,7 +91,7 @@ public class NetworkPackage implements Serializable{
 	/**
 	 * Verifies this NetworkPackage. <br>
 	 * Verifies not only the content, but also the meta-data, specifically: <br>
-	 *  - the type {@link #getHead()} <br>
+	 *  - the type {@link #getType()} <br>
 	 *  - the arguments {@link #getMessageArgs()} <br>
 	 *  - the flag on whether confirmation is expected {@link #expectedToBeConfirmed()} <br>
 	 *  - the package id <br>
@@ -109,7 +112,7 @@ public class NetworkPackage implements Serializable{
 	 */
 	private byte[] getTotalData() {
 		byte[] byteArgs = args.toString().getBytes(StandardCharsets.ISO_8859_1);
-		byte[] bytesForType = head.toString().getBytes(StandardCharsets.ISO_8859_1);
+		byte[] bytesForType = type.toString().getBytes(StandardCharsets.ISO_8859_1);
 		byte byteExpectConfirm = expectConfirmation ? (byte) 1 : (byte) 0;
 		
 		int metaDataLength = byteArgs.length + bytesForType.length + 1 + packageID.length;
@@ -128,8 +131,8 @@ public class NetworkPackage implements Serializable{
 	 * 
 	 * @return the TransmissionTypeEnum that describes this NetworkPackages type.
 	 */
-	public TransmissionTypeEnum getHead() {
-		return head;
+	public TransmissionTypeEnum getType() {
+		return type;
 	}
 	
 	/**

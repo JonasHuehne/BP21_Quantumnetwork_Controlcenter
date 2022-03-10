@@ -64,10 +64,10 @@ public class ConnectionEndpointServerHandler extends Thread{
 				ntt.start();
 				
 				if((receivedMessage = (NetworkPackage) serverIn.readObject()) != null) {
-					System.out.println("CESH Received a Message: -.-"+ receivedMessage.getHead().toString() + " - " + receivedMessage.getMessageArgs() +"-.-");
+					System.out.println("CESH Received a Message: -.-"+ receivedMessage.getType().toString() + " - " + receivedMessage.getMessageArgs() +"-.-");
 					
 					//Create new CE
-					if(receivedMessage.getHead() == TransmissionTypeEnum.CONNECTION_REQUEST) {
+					if(receivedMessage.getType() == TransmissionTypeEnum.CONNECTION_REQUEST) {
 						ntt.abortTimer();
 						remoteIP = receivedMessage.getMessageArgs().localIP();
 						remotePort = receivedMessage.getMessageArgs().localPort();
