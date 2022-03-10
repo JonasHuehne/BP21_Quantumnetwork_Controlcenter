@@ -291,7 +291,7 @@ public class SHA256withRSAAuthentication implements Authentication {
      * @return true if it worked, false if error
      */
     public static boolean generateSignatureKeyPair () {
-        return generateSignatureKeyPair(DEFAULT_KEY_FILE_NAME, true, true, true);
+        return generateSignatureKeyPair(DEFAULT_KEY_FILE_NAME, true, true);
     }
 
     /**
@@ -300,18 +300,12 @@ public class SHA256withRSAAuthentication implements Authentication {
      * @param keyFileName name for the created Key Pair
      * @param setAsKeyFile if true, sets the created Key Pair as new standard keys,
      *                     using {@link #setPrivateKey(String)} and {@link #setPublicKey(String)}
-     * @param deleteCurrent if true, deletes the currently set standard keys
      * @param overwrite if true, any existing file with the same name will be overwritten
      * @return true if it worked, false if error
      */
-    public static boolean generateSignatureKeyPair (String keyFileName, boolean setAsKeyFile,
-                                                    boolean deleteCurrent, boolean overwrite) {
+    public static boolean generateSignatureKeyPair (String keyFileName, boolean setAsKeyFile, boolean overwrite) {
         try {
             String currentPath = Configuration.getBaseDirPath();
-            // delete current standard keys if deleteCurrent is true
-            if(deleteCurrent) {
-                deleteSignatureKeys();
-            }
             // delete keys with the same name as the new ones if they exist and overwrite is true
             if(overwrite) {
                 deleteSignatureKey(keyFileName + ".key");
