@@ -1,24 +1,27 @@
 package graphicalUserInterface;
 
 import java.awt.BorderLayout;
+import java.awt.Desktop;
 import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
 import frame.Configuration;
 import messengerSystem.MessageSystem;
-
-import javax.swing.Box;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
-import javax.swing.SwingConstants;
-import javax.swing.JSeparator;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.Font;
+import messengerSystem.SHA256withRSAAuthentication;
 
 /**This Dialog contains settings such as the own ServerIP/Port
  * 
@@ -28,19 +31,21 @@ import java.awt.Font;
 public class SettingsDialog extends JDialog {
 
 	private final JPanel contentPanel = new JPanel();
-	private JTextField ownNameTextfield;
+	private JTextField ownNameTextField;
 	private JTextField ownIPTextField;
 	private JTextField ownPortTextField;
 	private JTextField sourceIPTextField;
 	private JTextField sourcePortTextField;
-	private JTextField encodingTextField;
+	private JComboBox<String> encodingComboBox;
 	
 	private static String name = null;
 	private static String ip = null;
 	private static String port = null;
 	private static String sourceIP = null;
 	private static String sourcePort = null;
+	private static String sourceSig = null;
 	private static String enc = null;
+	private JTextField sourceSigTextField;
 	
 
 
@@ -52,7 +57,7 @@ public class SettingsDialog extends JDialog {
 		setTitle("Settings");
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setVisible(true);
-		setBounds(100, 100, 350, 304);
+		setBounds(100, 100, 350, 390);
 		getContentPane().setLayout(new BorderLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
@@ -66,12 +71,12 @@ public class SettingsDialog extends JDialog {
 			ownNameLabel.setToolTipText("This should be a name that represents you. It will be sent to connecting parties and be used on their end to name the connection.");
 		}
 		{
-			ownNameTextfield = new JTextField();
-			ownNameTextfield.setBounds(181, 26, 140, 20);
-			contentPanel.add(ownNameTextfield);
-			ownNameTextfield.setText("Default Name");
-			ownNameTextfield.setToolTipText("This should be a name that represents you. It will be sent to connecting parties and be used on their end to name the connection.");
-			ownNameTextfield.setColumns(10);
+			ownNameTextField = new JTextField();
+			ownNameTextField.setBounds(181, 26, 140, 20);
+			contentPanel.add(ownNameTextField);
+			ownNameTextField.setText("Default Name");
+			ownNameTextField.setToolTipText("This should be a name that represents you. It will be sent to connecting parties and be used on their end to name the connection.");
+			ownNameTextField.setColumns(10);
 		}
 		{
 			JLabel ownIPLabel = new JLabel("Local IP:");
@@ -138,18 +143,58 @@ public class SettingsDialog extends JDialog {
 		{
 			JLabel encodingLabel = new JLabel("Preferred Encoding:");
 			encodingLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
-			encodingLabel.setBounds(10, 172, 161, 20);
+			encodingLabel.setBounds(10, 203, 161, 20);
 			contentPanel.add(encodingLabel);
 			encodingLabel.setToolTipText("The Encoding used when transferring Strings to bytes. If some characters are not correctly transmitted, you can change the encoding to one that supports the characters in question.");
 		}
+		
+		encodingComboBox = new JComboBox<String>();
+		encodingComboBox.setEditable(true);
+		encodingComboBox.setModel(new DefaultComboBoxModel<String>(new String[] {"ISO-8859-1", "UTF-8", "UTF-16"}));
+		encodingComboBox.setBounds(181, 204, 140, 22);
+		contentPanel.add(encodingComboBox);
+		
+		JLabel signatureFilesLabel = new JLabel("Signature Files:");
+		signatureFilesLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		signatureFilesLabel.setBounds(10, 234, 161, 18);
+		contentPanel.add(signatureFilesLabel);
+		
+		JButton openSigFileFolderButton = new JButton("Open Signature Folder");
+		openSigFileFolderButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String sigPath  = Configuration.getBaseDirPath() + File.separator + "SignatureKeys" + File.separator;
+				try {
+					Desktop.getDesktop().open(new File(sigPath));
+				} catch (IOException e1) {
+					System.err.println("Error while attempting to open the Folder containing the SignatureFiles. Folder Path: " + sigPath);
+					e1.printStackTrace();
+				}
+			}
+		});
+		openSigFileFolderButton.setBounds(181, 234, 140, 23);
+		contentPanel.add(openSigFileFolderButton);
+		
+		JButton reGenerateSigButton = new JButton("Regenerate Signature");
+		reGenerateSigButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				SHA256withRSAAuthentication.generateSignatureKeyPair ();
+				new GenericWarningMessage("New Signature Files have been created.");
+			}
+		});
+		reGenerateSigButton.setBounds(181, 268, 140, 23);
+		contentPanel.add(reGenerateSigButton);
 		{
-			encodingTextField = new JTextField();
-			encodingTextField.setBounds(181, 172, 140, 20);
-			contentPanel.add(encodingTextField);
-			encodingTextField.setToolTipText("The Encoding used when transferring Strings to bytes. If some characters are not correctly transmitted, you can change the encoding to one that supports the characters in question.");
-			encodingTextField.setText("ISO-8859-1");
-			encodingTextField.setColumns(10);
+			JLabel sourceSigLabel = new JLabel("Photon Source Sig:");
+			sourceSigLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
+			sourceSigLabel.setBounds(10, 172, 140, 20);
+			contentPanel.add(sourceSigLabel);
 		}
+		
+		sourceSigTextField = new JTextField();
+		sourceSigTextField.setToolTipText("The public Signature Key used by the Photon Source Server.");
+		sourceSigTextField.setBounds(181, 172, 140, 20);
+		contentPanel.add(sourceSigTextField);
+		sourceSigTextField.setColumns(10);
 		{
 			JPanel buttonPane = new JPanel();
 			buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
@@ -158,8 +203,6 @@ public class SettingsDialog extends JDialog {
 				JButton okButton = new JButton("Apply");
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						// TODO Input validation
-						applySettingsToRuntimeComponents();
 						writeSettings();
 						setVisible(false);
 						dispose();
@@ -227,6 +270,12 @@ public class SettingsDialog extends JDialog {
 			sourcePort = Configuration.getProperty("SourcePort");
 		}
 		
+		sourceSig = Configuration.getProperty("SourceSignature");
+		if(sourceSig == null) {
+			Configuration.setProperty("Not configured!", "SourceSignature");
+			sourceSig = Configuration.getProperty("SourceSignature");
+		}
+		
 		enc = Configuration.getProperty("Encoding");
 		if(enc == null) {
 			Configuration.setProperty("Encoding", "ISO-8859-1");
@@ -238,7 +287,7 @@ public class SettingsDialog extends JDialog {
 	 * 
 	 */
 	private void readSettings(){
-		ownNameTextfield.setText(name);
+		ownNameTextField.setText(name);
 		
 		ownIPTextField.setText(ip);
 		
@@ -248,41 +297,33 @@ public class SettingsDialog extends JDialog {
 		
 		sourcePortTextField.setText(sourcePort);
 		
-		encodingTextField.setText(enc);
+		sourceSigTextField.setText(sourceSig);
+		
+		encodingComboBox.setSelectedItem(enc);
 	}
 	
 	/**This method reads the text from the textFields and writes them into the config file.
 	 * 
 	 */
 	private void writeSettings() {
-		Configuration.setProperty("UserName", ownNameTextfield.getText());
-		Configuration.setProperty("UserIP", ownIPTextField.getText());
-		Configuration.setProperty("UserPort", ownPortTextField.getText());
-		Configuration.setProperty("SourceIP", sourceIPTextField.getText());
-		Configuration.setProperty("SourcePort", sourcePortTextField.getText());
-		Configuration.setProperty("Encoding", encodingTextField.getText());
-	}
-	
-	/**
-	 * Applies any settings that differ from what is saved in Configuration
-	 * to the relevant runtime components.
-	 */
-	private void applySettingsToRuntimeComponents() {
-		// If local Name was changed
-		if(!Configuration.getProperty("UserName").equals(ownNameTextfield.getText())) {
-			MessageSystem.conMan.setLocalName(ownNameTextfield.getText());
+		
+		Configuration.setProperty("UserName", ownNameTextField.getText());
+		if(!Configuration.getProperty("UserName").equals(ownNameTextField.getText())) {
+			MessageSystem.conMan.setLocalName(ownNameTextField.getText());
 		}
-		// If local IP was changed
 		if(!Configuration.getProperty("UserIP").equals(ownIPTextField.getText())) {
 			MessageSystem.conMan.destroyAllConnectionEndpoints();
-			MessageSystem.conMan.setLocalAddress(ownNameTextfield.getText());
+			MessageSystem.conMan.setLocalAddress(ownNameTextField.getText());
 		}
-		// If local Port was changed
+		Configuration.setProperty("UserIP", ownIPTextField.getText());
 		if(!Configuration.getProperty("UserPort").equals(ownPortTextField.getText())) {
 			MessageSystem.conMan.destroyAllConnectionEndpoints();
 			MessageSystem.conMan.setLocalPort(Integer.valueOf(ownPortTextField.getText()));
 		}
-		
-		// TODO Update connection to photon source accordingly if needed
+		Configuration.setProperty("UserPort", ownPortTextField.getText());
+		Configuration.setProperty("SourceIP", sourceIPTextField.getText());
+		Configuration.setProperty("SourcePort", sourcePortTextField.getText());
+		Configuration.setProperty("SourceSignature", sourceSigTextField.getText());
+		Configuration.setProperty("Encoding", (String) encodingComboBox.getSelectedItem());
 	}
 }

@@ -1,8 +1,6 @@
 package frame;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -48,7 +46,7 @@ public class Configuration {
      * The list of the needed directories for the program
      */
     private static final String[] DIRECTORY_LIST =
-            {"SignatureKeys", "python", "connections", "externalAPI"};
+            {"SignatureKeys", "python", "connections", "externalAPI", "logs"};
 
     // TODO: correct handling of potentially corrupt file?
     /**

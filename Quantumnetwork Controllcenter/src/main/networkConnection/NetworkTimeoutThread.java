@@ -10,7 +10,7 @@ import java.time.Instant;
  * a reference to the object that wants to set up the Timeout,
  * and a Method to call once the timeout happened.
  * To start the timer, create an object of it and then call start() on it.
- * The time can be aborted with abortTimer().
+ * The timer can be aborted with abortTimer().
  * 
  * @author Jonas Huehne
  *
@@ -35,7 +35,7 @@ public class NetworkTimeoutThread extends Thread{
      * and a Method to call once the timeout happened.
 	 * 
      * To start the timer, create an object of it and then call start() on it.
-     * The time can be aborted with abortTimer().
+     * The timer can be aborted with abortTimer().
 	 * 
 	 * @param ms the duration until the timeout happens in ms.
 	 * @param caller the object that wants to be notified of the timeout.
@@ -48,7 +48,6 @@ public class NetworkTimeoutThread extends Thread{
 		methodToCall = method;
 		this.caller = caller;
 		this.args = new Object[0];
-		//System.out.println("###Timer ready!");
 	}
 	
 	/**
@@ -59,7 +58,7 @@ public class NetworkTimeoutThread extends Thread{
      * and a Method to call once the timeout happened.
      * 
      * To start the timer, create an object of it and then call start() on it.
-     * The time can be aborted with abortTimer().
+     * The timer can be aborted with abortTimer().
 	 * 
 	 * @param ms the duration until the timeout happens in ms.
 	 * @param caller the object that wants to be notified of the timeout.
@@ -73,7 +72,6 @@ public class NetworkTimeoutThread extends Thread{
 		methodToCall = method;
 		this.caller = caller;
 		this.args = new Object[0];
-		//System.out.println("###Timer ready!");
 	}
 	
 	/**
@@ -81,6 +79,9 @@ public class NetworkTimeoutThread extends Thread{
 	 * This Utility can be used to easily setup Timeouts.
      * It needs to be supplied the duration until the timeout is happening
      * and reference to the object that wants to set up the Timeout.
+     * 
+     * To start the timer, create an object of it and then call start() on it.
+     * The timer can be aborted with abortTimer().
 	 * 
 	 * @param ms the duration until the timeout happens in ms.
 	 * @param timeoutMessage this overwrites the String that will be printed on timeout. Can be used for debugging.
@@ -91,7 +92,6 @@ public class NetworkTimeoutThread extends Thread{
 		current = Instant.now();
 		methodToCall = null;
 		this.args = new Object[0];
-		//System.out.println("###Timer ready!");
 	}
 	
 	/**
@@ -120,7 +120,6 @@ public class NetworkTimeoutThread extends Thread{
 	 * likely because the task in question has been completed.
 	 */
 	public void abortTimer() {
-		//System.out.println("###Timer aborted!");
 		state = NetworkTimerState.ABORTED;
 		this.interrupt();
 	}
@@ -149,13 +148,10 @@ public class NetworkTimeoutThread extends Thread{
 	
 	public void run() {
 		if(state == NetworkTimerState.NOT_STARTED) {
-			//System.out.println("###Timer started!");
 			state = NetworkTimerState.RUNNING;
 			while(state == NetworkTimerState.RUNNING) {
-				//System.out.println("###Timer checking!");
 				current = Instant.now();
 				if(Duration.between(startWait, current).toMillis() >= msDuration) {
-					//System.out.println("###Timer ran out!");
 					state = NetworkTimerState.TIMED_OUT;
 					if(!timeoutMessage.equals("")) {
 						System.out.println(timeoutMessage);

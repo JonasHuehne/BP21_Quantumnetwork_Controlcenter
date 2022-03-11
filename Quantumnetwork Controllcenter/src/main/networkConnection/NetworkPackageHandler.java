@@ -44,7 +44,7 @@ public class NetworkPackageHandler {
 		
 		switch (msgType) {
 		case CONNECTION_CONFIRMATION:
-			// Handled in ConnectionEndpoint
+			// Handled in ConnectionEndpointServerHandler
 			break;
 		case CONNECTION_REQUEST:
 			// CESH will respond to this

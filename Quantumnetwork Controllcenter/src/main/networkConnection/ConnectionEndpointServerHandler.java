@@ -5,6 +5,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
+import communicationList.Contact;
+import exceptions.ConnectionAlreadyExistsException;
+import exceptions.IpAndPortAlreadyInUseException;
+import frame.QuantumnetworkControllcenter;
+
 /**Every time a connection to the local Server Socket is created, a new instance of ConnectionEndpointServerHandler is also created.
  * The purpose of each CESH is to wait for the first message from the connecting Party, the TransmissionTypeEnum.CONNECTION_REQUEST
  * and use the information contained in it to create a new local ConnectionEndpoint. This CE is then handed a Socket and the Output- and InputStreams
@@ -31,10 +36,6 @@ public class ConnectionEndpointServerHandler extends Thread{
 	private boolean acceptedRequest = false;
 	/** If a connection request arrives on the input stream of the socket created by the ServerSocket.accept() method, we create a ConnectionEndpoint in response */
 	private ConnectionEndpoint ce = null;
-	/** Will be passed on to the CE created in response to an incoming connection request */
-	private int localPort;
-	/** Will be passed on to the CE created in response to an incoming connection request */
-	private String localIP;
 	/** Will be passed to the CE created in response to an incoming connection request, will be the name the created CE tells its partner in response */
 	private String localName;
 
@@ -46,19 +47,13 @@ public class ConnectionEndpointServerHandler extends Thread{
 	 * 		a client socket created by a ServerSockets .accept() method <br>
 	 * 		the CESH will listen for a connection request on this, 
 	 * 		and if one is received this will be passed on as the client socket for the newly created {@linkplain ConnectionEndpoint}
-	 * @param localIP
-	 * 		local IP that will be passed to the newly created  {@linkplain ConnectionEndpoint}
-	 * @param localPort
-	 * 		local port that will be passed to the newly created {@linkplain ConnectionEndpoint}
 	 * @param localName
 	 * 		local name that will be passed to the newly created {@linkplain ConnectionEndpoint}
 	 * @throws IOException 
 	 * 		if an I/O Exception occurred trying to construct an internal ObjectInputStream from the clientsocket's InputStream
 	 */
-	ConnectionEndpointServerHandler(Socket newClientSocket, String localIP, int localPort, String localName) throws IOException {
+	ConnectionEndpointServerHandler(Socket newClientSocket, String localName) throws IOException {
 		clientSocket = newClientSocket;
-		this.localPort = localPort;
-		this.localIP = localIP;
 		this.localName = localName;
 	}
 	
@@ -80,8 +75,17 @@ public class ConnectionEndpointServerHandler extends Thread{
 						ntt.abortTimer();
 						remoteIP = receivedMessage.getMessageArgs().localIP();
 						remotePort = receivedMessage.getMessageArgs().localPort();
-						String remoteName = receivedMessage.getMessageArgs().userName();
-						ce = new ConnectionEndpoint(remoteName, "", clientSocket, serverOut, serverIn, remoteIP, remotePort, localPort, localName);
+
+						//Check if ContactDB contains the IP:PORT Pair already. If so, the Name and Sig is taken from the DB.
+						String remoteName;
+						Contact dbEntry = QuantumnetworkControllcenter.communicationList.query(remoteIP, remotePort);
+						if(dbEntry != null && !remoteIP.equals("127.0.0.1") && !remoteIP.equals("localhost")) {
+							System.out.println("Found pre-existing DB Entry that had matching IP:PORT to new connection request. Using Name and Sig from DB.");
+							remoteName = dbEntry.getName();
+						}else {
+							remoteName = receivedMessage.getMessageArgs().userName();
+						}
+						ce = QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(remoteName, clientSocket, serverOut, serverIn, remoteIP, remotePort);		
 						ce.setRemoteName(remoteName);
 						settingUp = false;
 						acceptedRequest = true;
@@ -95,6 +99,10 @@ public class ConnectionEndpointServerHandler extends Thread{
 		} catch (NoSuchMethodException e) {
 			e.printStackTrace();
 		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (ConnectionAlreadyExistsException e) {
+			e.printStackTrace();
+		} catch (IpAndPortAlreadyInUseException e) {
 			e.printStackTrace();
 		}
 	}

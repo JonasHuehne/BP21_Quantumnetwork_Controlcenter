@@ -1,9 +1,3 @@
-import communicationList.CommunicationList;
-import communicationList.SQLiteCommunicationList;
-import communicationList.Contact;
-import frame.Configuration;
-import messengerSystem.SHA256withRSAAuthentication;
-
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -11,6 +5,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import communicationList.CommunicationList;
+import communicationList.Contact;
+import communicationList.SQLiteCommunicationList;
+import frame.Configuration;
+import messengerSystem.SHA256withRSAAuthentication;
 
 /**
  * automated tests for interacting with the communication list db

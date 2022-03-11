@@ -7,19 +7,12 @@ import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.LinkedList;
 
-import encryptionDecryption.FileCrypter;
 import exceptions.EndpointIsNotConnectedException;
-import exceptions.ManagerHasNoSuchEndpointException;
-import graphicalUserInterface.GenericWarningMessage;
-import graphicalUserInterface.MessageGUI;
 import keyGeneration.KeyGenerator;
 import messengerSystem.MessageSystem;
-import messengerSystem.SHA256withRSAAuthentication;
 
 
 /**Represents a single connection endpoint at a given port, that can connect to a single other connection endpoint on the same machine, in the same local network or via the Internet.
@@ -56,6 +49,8 @@ public class ConnectionEndpoint implements Runnable{
 	private String remoteName;
 	/** When establishing a connection with another connection endpoint, this CE sends this name to be set as the "remote name" on the other end */
 	private String localName;
+	/** public key for verifying messages received on this CE */
+	private String publicKey;
 	
 	//Communication Channels
 	/** Outgoing messages to the other CE are sent along this channel */
@@ -84,7 +79,7 @@ public class ConnectionEndpoint implements Runnable{
 	
 	/**
 	 * Used when creating a ConnectionEndpoint as a response to a ConnectionRequest.
-	 * Called by {@linkplain ConnectionEndpointServerHandler}. 
+	 * Called by {@linkplain ConnectionEndpointServerHandler}. Not intended to be called from anywhere else.
 	 * @param connectionName
 	 * 		name of the partner that this connection request came from <br>
 	 * 		will be the {@link #connectionID} of this endpoint, and the {@link #remoteName}
@@ -136,10 +131,10 @@ public class ConnectionEndpoint implements Runnable{
 	}
 	
 	/**
-	 * Used when creating a ConnectionEndpoint that tries to connect to another ConnectionEndpoint by sending a request.
-	 * @param connectionName
-	 * 		name of the partner that this connection request came from <br>
-	 * 		will be the {@link #connectionID} of this endpoint, and the {@link #remoteName}
+	 * Used when creating a ConnectionEndpoint that tries to connect to another ConnectionEndpoint by sending a request. <br>
+	 * Outside of testing, this is only intended to be called by the {@linkplain ConnectionManager} class.
+	 * @param connectionID
+	 * 		a unique ID for this endpoint, used to identify it in the manager
 	 * @param targetIP
 	 * 		IP of the partner that sent the connection request
 	 * @param targetPort
@@ -150,10 +145,12 @@ public class ConnectionEndpoint implements Runnable{
 	 * 		our server port, that we receive messages on (this is the port we tell the remote endpoint to send messages to)
 	 * @param localName
 	 * 		when establishing a connection with another CE, this is the name that we give them
+	 * @param pk
+	 * 		public key that will be used to sign messages sent to this endpoint
 	 */
-	public ConnectionEndpoint(String connectionName, String targetIP, int targetPort, String localIP, int localPort, String localName) {
-		System.out.println("---A new CE has been created! I am named: "+ connectionName +" and my own IP is: "+ localAddress +" and I am going to connect to :"+ targetIP+":"+targetPort +".--");
-		connectionID = connectionName;
+	public ConnectionEndpoint(String connectionID, String targetIP, int targetPort, String localIP, int localPort, String localName, String pk) {
+		System.out.println("---A new CE has been created! I am named: "+ connectionID +" and my own IP is: "+ localAddress +" and I am going to connect to :"+ targetIP+":"+targetPort +".--");
+		this.connectionID = connectionID;
 		this.keyGen = new KeyGenerator(this);
 
 		this.localAddress = localIP;
@@ -287,6 +284,22 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public void setRemoteName(String remoteName) {
 		this.remoteName = remoteName;
+	}
+	
+	/**
+	 * @return 
+	 * 		the public key that will be used when verifying messages received on this CE
+	 */
+	public String getPublicKey() {
+		return publicKey;
+	}
+
+	/**
+	 * @param publicKey
+	 * 		the public key that will be used when verifying messages received on this CE
+	 */
+	public void setPublicKey(String publicKey) {
+		this.publicKey = publicKey;
 	}
 	
 	//-------------//

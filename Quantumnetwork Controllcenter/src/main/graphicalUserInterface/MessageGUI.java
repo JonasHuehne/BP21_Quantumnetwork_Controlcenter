@@ -1,47 +1,31 @@
 package graphicalUserInterface;
 
-import java.awt.BorderLayout;
-import java.awt.EventQueue;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextPane;
+import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
-import org.w3c.dom.css.RGBColor;
-
 import exceptions.CouldNotSendMessageException;
-import exceptions.EndpointIsNotConnectedException;
-import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
-
-import javax.swing.JSplitPane;
-import java.awt.FlowLayout;
 import net.miginfocom.swing.MigLayout;
 import networkConnection.ConnectionState;
-import networkConnection.NetworkPackage;
-import networkConnection.TransmissionTypeEnum;
-
-import javax.swing.JTextPane;
-import javax.swing.Box;
-import javax.swing.JButton;
-import javax.swing.JTextArea;
-import javax.swing.JScrollPane;
-import java.awt.Component;
-import javax.swing.BoxLayout;
-import javax.swing.JTextField;
-import javax.swing.JLabel;
-import javax.swing.SwingConstants;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.AbstractMap.SimpleEntry;
-import java.awt.event.ActionEvent;
 
 /**This GUI contains a chatLog that visualizes the MessageLog of a connectionEndpoint.
  * It allows for sending plain-text Messages and for sending Files.
  * 
- * @author Jonas Huehne
+ * @author Jonas Huehne, Sasha Petri
  *
  */
 public class MessageGUI extends JFrame {
@@ -166,5 +150,4 @@ public class MessageGUI extends JFrame {
 			loggedMessagesAmount = logSize;
 		}
 	}
-	
 }

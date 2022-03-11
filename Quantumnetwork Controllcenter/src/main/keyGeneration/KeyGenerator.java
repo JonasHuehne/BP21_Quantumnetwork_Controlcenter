@@ -11,7 +11,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
 
 import exceptions.ConnectionAlreadyExistsException;
 import exceptions.EndpointIsNotConnectedException;
@@ -138,7 +137,10 @@ public class KeyGenerator implements Runnable{
 		//Create connection to Source Server
 		String sourceServerConnectionName = "SourceServer_" + MessageSystem.generateRandomMessageID();
 		try {
-			MessageSystem.conMan.createNewConnectionEndpoint(sourceServerConnectionName, Configuration.getProperty("SourceIP"), Integer.valueOf(Configuration.getProperty("SourcePort")));
+			String sourceIP = Configuration.getProperty("SourceIP");
+			int sourcePort = Integer.valueOf(Configuration.getProperty("SourcePort"));
+			String sourcePK = Configuration.getProperty("SourceSignature");
+			MessageSystem.conMan.createNewConnectionEndpoint(sourceServerConnectionName, sourceIP, sourcePort, sourcePK);
 		} catch (ConnectionAlreadyExistsException | IpAndPortAlreadyInUseException e) {
 			// If a connection the the source already exists, there is no problem
 		}
@@ -209,7 +211,7 @@ public class KeyGenerator implements Runnable{
 		Instant current;
 		//Wait for Answer
 		while(true) {
-			//Wait for authenticated Transmission of KeyGenResponse(message and signature == 2)
+			//Wait for KeyGenResponse
 			if(hasBeenAccepted != 0) {
 				break;
 			}
@@ -305,7 +307,7 @@ public class KeyGenerator implements Runnable{
 	 */
 	private void transferData() {
 		if(keyGenRunning) {
-			System.out.println("Error: Key Gen Thread was already running, could not start a second one!");
+			System.err.println("Error: Key Gen Thread was already running, could not start a second one!");
 		}
 		transferThread = new Thread(this, getOwnerID() + "_transferThread");
 		keyGenRunning = true;

@@ -1,12 +1,13 @@
 package networkConnection;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -119,7 +120,7 @@ public class ConnectionManager {
 					
 					ConnectionEndpointServerHandler cesh; 
 					try { // Construct a CESH for the socket that just connected to our server socket
-						cesh = new ConnectionEndpointServerHandler(clientSocket, localAddress, localPort, localName);
+						cesh = new ConnectionEndpointServerHandler(clientSocket, localName);
 						System.out.println("Created CESH for newly received client socket.");
 					} catch (IOException e) {
 						System.err.println("An I/O Exception occurred while trying to construct the ConnectionEndpointServerHandler "
@@ -157,8 +158,8 @@ public class ConnectionManager {
 	
 	 /**Creates a new ConnectionEndpoint and stores the Connection-Name and Endpoint-Ref.
 	 * 
-	 * This version of the method should be used if the CE is being created because of the local users intentions and not as part of the response to a connection request
-	 * from an external source.
+	 * This version of the method should be used if the CE is being created because of 
+	 * a local users actions, and <i>not</i> in response to an external connection request.
 	 * 
 	 * The CE will attempt to connect to the targetIP and Port as soon as it is created.
 	 * 
@@ -168,6 +169,9 @@ public class ConnectionManager {
 	 *		IP of the {@linkplain ConnectionEndpoint} that the newly created CE should connect to
 	 *	@param targetPort 	
 	 *		server port of the {@linkplain ConnectionEndpoint} that the newly created CE should connect to
+	 *  @param pk
+	 *  	public key used to verify messages received from the newly created endpoint <br>
+	 *  	may be "" or null if not needed or unknown
 	 *	@return ConnectionEndpoint
 	 *		the newly created {@linkplain ConnectionEndpoint} <br>
 	 *		can also be accessed via {@linkplain #getConnectionEndpoint(String)} with argument {@code endpointName}
@@ -176,17 +180,63 @@ public class ConnectionManager {
 	 * @throws IpAndPortAlreadyInUseException 
 	 * 		if a connection with the same IP and Port pairing is already in this ConnectionManager
 	 */
-	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort) 
+	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort, String pk) 
 		throws ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException {
 		if(!connections.containsKey(endpointName)) {
 			// no two connections to the same IP / Port pairing
 			if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
 			System.out.println("---Received new request for a CE. Creating it now. It will connect to the Server at "+ targetIP +":"+ targetPort +".---");
-			connections.put(endpointName, new ConnectionEndpoint(endpointName, targetIP, targetPort, localAddress, localPort, localName));
+			connections.put(endpointName, new ConnectionEndpoint(endpointName, targetIP, targetPort, localAddress, localPort, localName, pk));
 			return connections.get(endpointName);
 		} else {
 			throw new ConnectionAlreadyExistsException(endpointName);
 		}
+	}
+	
+	/**Creates a new ConnectionEndpoint and stores the Connection-Name and Endpoint-Ref.
+	 * 
+	 * This version of the method should be used if the CE is being created 
+	 * as part of the response to a connection request from an external source.
+	 * 
+	 * The CE is given an already connected Socket and In-/Output Streams.
+	 * 
+	 *	@param endpointName 	
+	 *		the identifier for a connection. This name can be used to access it later
+	 *	@param clientSocket
+	 *		the Socket that was created for this CE when the external Client 
+	 *		connected to the local Server. It was created by the {@linkplain ConnectionEndpointServerHandler}.
+	 *	@param streamOut
+	 *		the OutStream for this CE. It was created by the 
+	 *		{@linkplain ConnectionEndpointServerHandler} and will be used to send messages.
+	 *	@param streamIn
+	 *		the InStream for this CE. It was created by the 
+	 *		{@linkplain ConnectionEndpointServerHandler} and will be used to receive messages.
+	 *	@param targetIP 
+	 *		IP of the {@linkplain ConnectionEndpoint} that the newly created CE is connect to
+	 *	@param targetPort 	
+	 *		server port of the {@linkplain ConnectionEndpoint} that the newly created CE is connect to
+	 *	@return ConnectionEndpoint
+	 *		the newly created {@linkplain ConnectionEndpoint} <br>
+	 *		can also be accessed via {@linkplain #getConnectionEndpoint(String)} with argument {@code endpointName}
+	 * 	@throws ConnectionAlreadyExistsException 
+	 * 		if a connection with the specified name is already managed by this ConnectionManager
+	 * @throws IpAndPortAlreadyInUseException 
+	 * 		if a connection with the same IP and Port pairing is already in this ConnectionManager
+	 */
+	public ConnectionEndpoint createNewConnectionEndpoint (String endpointName, Socket clientSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, int targetPort) 
+			throws ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException {
+			if(!connections.containsKey(endpointName)) {
+				// no two connections to the same IP / Port pairing
+				if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) 
+					throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
+				System.out.println("---Received new request for a CE. Creating it now. It will connect to the Server at "+ targetIP +":"+ targetPort +".---");
+				ConnectionEndpoint ce 
+					= new ConnectionEndpoint(endpointName, getLocalAddress(), clientSocket, streamOut, streamIn, targetIP, targetPort, getLocalPort(), getLocalName());
+				connections.put(endpointName, ce);
+				return ce;
+			} else {
+				throw new ConnectionAlreadyExistsException(endpointName);
+			}
 	}
 	
 	/**

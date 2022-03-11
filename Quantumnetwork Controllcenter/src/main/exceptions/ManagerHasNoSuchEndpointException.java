@@ -6,7 +6,7 @@ import networkConnection.ConnectionManager;
 /**
  * Intended for use in the {@linkplain ConnectionManager} class.
  * Throw this if you wish to indicate that a method did not execute as expected, 
- * <i>because</i> a specified {@linkplain ConnectionEndpoint} could not be found in the {@linkplain ConnectionManager}. <br>
+ * because a specified {@linkplain ConnectionEndpoint} could not be found in the {@linkplain ConnectionManager}. <br>
  * @author Sasha Petri
  */
 public class ManagerHasNoSuchEndpointException extends Exception {
