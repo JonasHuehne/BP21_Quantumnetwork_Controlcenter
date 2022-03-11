@@ -235,7 +235,7 @@ public class NetworkTests {
 			
 			// assert the message arrived correctly
 			ConnectionEndpoint BobsConnectionToAlice = BobCM.getConnectionEndpoint("Alice");
-			assertEquals(1, BobsConnectionToAlice.getLoggedMessagesOfType(TransmissionTypeEnum.TEXT_MESSAGE).size());
+			assertEquals(1, BobsConnectionToAlice.getLoggedPackagesOfType(TransmissionTypeEnum.TEXT_MESSAGE).size());
 			assertArrayEquals(transmittedBytes, BobsConnectionToAlice.getPackageLog().get(0).getContent());
 		}
 		
