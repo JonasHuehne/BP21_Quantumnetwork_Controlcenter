@@ -35,6 +35,8 @@ import exceptions.EndpointIsNotConnectedException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import frame.QuantumnetworkControllcenter;
+import keyStore.KeyStoreDbManager;
+import keyStore.KeyStoreObject;
 import net.miginfocom.swing.MigLayout;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
@@ -54,7 +56,7 @@ public final class GUIMainWindow implements Runnable{
             "Target Port",
             "Signature"};
 	
-	private JFrame frame;
+	private CustomClosingFrame frame;
 	private JTable contactTable;
 	private Box connectionEndpointVerticalBox;
 	private HashMap<String, JPanel> representedConnectionEndpoints = new HashMap<String, JPanel>();
@@ -82,13 +84,15 @@ public final class GUIMainWindow implements Runnable{
 	public GUIMainWindow() {
 		initialize();
 		startUpdateService();
+		
+		
 	}
 
 	/**
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
-		frame = new JFrame();
+		frame = new CustomClosingFrame();
 		getFrame().setBounds(100, 100, 1120, 567);
 		getFrame().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
@@ -457,6 +461,15 @@ public final class GUIMainWindow implements Runnable{
 		connectionTypeCB.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				conType.put(connectionName, (ConnectionType) connectionTypeCB.getSelectedItem());
+				
+				//Check if Key exists
+				if(connectionTypeCB.getSelectedItem() == ConnectionType.ENCRYPTED) {
+					KeyStoreObject kSO = KeyStoreDbManager.getEntryFromKeyStore(connectionName);
+					if(kSO == null) {
+						new SourceSignatureQueryDialog(connectionName);
+						connectionTypeCB.setSelectedItem(ConnectionType.AUTHENTICATED);
+					}
+				}
 			}
 		});
 		connectionTypeCB.setModel(new DefaultComboBoxModel<ConnectionType>(ConnectionType.values()));
@@ -487,6 +500,14 @@ public final class GUIMainWindow implements Runnable{
 	private void startUpdateService() {
 		ceUpdateThread = new Thread(this, "_ceUpdateThread");
 		ceUpdateThread.start();
+	}
+	
+	
+	/**
+	 * Interrupts the thread used to update the representation of the connections in the right table.
+	 */
+	public void shutdownUpdateService() {
+		ceUpdateThread.interrupt();
 	}
 	
 	
@@ -558,8 +579,7 @@ public final class GUIMainWindow implements Runnable{
 			try {
 				TimeUnit.MILLISECONDS.sleep(200);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				//Ignore Exception as this is only triggered when intentionally shutting down the thread.
 			}
 			prevActiveConnection = activeConnection;
 		}

@@ -173,8 +173,9 @@ public class ConnectionAddDialog extends JDialog {
 							String ceName = textFieldContactName.getText();
 							String ceIP = textFieldContactIpAddr.getText();
 							int cePort =  Integer.valueOf(textFieldContactPort.getText());
+							String sig = textFieldContactPK.getText();
 							try {
-								QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(ceName, ceIP, cePort);
+								QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(ceName, ceIP, cePort, sig);
 								System.out.println("Created new CE: " + textFieldContactName.getText());
 							} catch (ConnectionAlreadyExistsException e1) {
 								new GenericWarningMessage("Could not create connection with that name. Such a connection already exists.");
@@ -194,7 +195,7 @@ public class ConnectionAddDialog extends JDialog {
 							String sig = getPkOfSelectedContact();
 							
 							try {
-								QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(name, ip, port);
+								QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(name, ip, port, sig);
 								System.out.println("Created new CE: " + name);
 							} catch (ConnectionAlreadyExistsException e1) {
 								new GenericWarningMessage("Could not create connection with that name. Such a connection already exists.");
@@ -272,7 +273,7 @@ public class ConnectionAddDialog extends JDialog {
 	private Integer getPortOfSelectedContact() {
 		int selectedRow = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
 		if (selectedRow == -1) return 0;
-		return (Integer) QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedRow, QuantumnetworkControllcenter.guiWindow.getContactDBPortIndex());
+		return (Integer) Integer.valueOf((String) QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedRow, QuantumnetworkControllcenter.guiWindow.getContactDBPortIndex()).toString());
 	}
 	
 	/**

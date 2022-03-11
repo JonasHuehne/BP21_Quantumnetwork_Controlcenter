@@ -55,9 +55,10 @@ public class NetworkPackage implements Serializable{
 	
 	/**Returns the signature of the transmission. May be "" for non-authenticated messages.
 	 * 
-	 * @return the signature of the transmission
+	 * @return the signature of the transmission.
 	 */
 	public byte[] getSignature() {
 		return signature;
 	}
+	
 }

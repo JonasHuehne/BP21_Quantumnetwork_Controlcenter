@@ -26,7 +26,6 @@ import networkConnection.TransmissionTypeEnum;
  */
 public class MessageSystem {
 	
-	private static final String ENCODING_STANDARD = Configuration.getProperty("Encoding");
 	
 	/** Contains the ConnectionEndpoints for which the MessageSystem handles the high-level messaging. <br>
 	 * 	Generally, this is set once when initializing the program, however, for automated tests it may be needed to set this multiple times to simulate different users. */
@@ -40,6 +39,7 @@ public class MessageSystem {
 	 * @param argument the type-specific argument.
 	 * @param message the message to be sent.
 	 * @param sig the signature of an authenticated message. May be null for non-authenticated messages.
+	 * @param confID the ID used to check if the message was received by the other party. May be "" if no confirmation is expected.
 	 * @throws ManagerHasNoSuchEndpointException 
 	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
 	 * @throws EndpointIsNotConnectedException 
@@ -70,6 +70,7 @@ public class MessageSystem {
 	 * @param argument the type-specific argument. Look at TransmissionTypeEnum for more information.
 	 * @param message the message to be sent.
 	 * @param sig the signature of an authenticated message. May be null for non-authenticated messages.
+	 * @param confID the ID used to check if the message was received by the other party. May be "" if no confirmation is expected.
 	 * @throws ManagerHasNoSuchEndpointException 
 	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
 	 * @throws EndpointIsNotConnectedException 
@@ -101,88 +102,6 @@ public class MessageSystem {
 	public static String readMessageAsString(NetworkPackage transmission) {
 		return byteArrayToString(transmission.getContent());
 	}
-
-
-	/**This sends a message and requests the recipient to send back a confirmation.
-	 * A confirmation is an empty message of type {@linkplain TransmissionTypeEnum#RECEPTION_CONFIRMATION_RESPONSE}.
-	 *
-	 * @param connectionID the name of the ConnectionEndpoint to send the message from.
-	 * @param message the message to be sent.
-	 * @param sig optional signature used by authenticated messages.
-	 * @return returns True if the confirmation of the message has been received, False if it times out.
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
-	 * @throws EndpointIsNotConnectedException 
-	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
-	 */
-	public static boolean sendConfirmedMessage(String connectionID, byte[] message, byte[] sig) 
-			throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		
-		ConnectionState state = QuantumnetworkControllcenter.conMan.getConnectionState(connectionID);
-		
-		//Check if ConnectionEndpoint is connected to something
-		if(state == ConnectionState.CONNECTED) {
-			
-			//Send message:
-			
-			//Get unique msgID, used for identifying the confirmation response
-			String msgID = generateRandomMessageID();
-			while(QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getConfirmations().contains(msgID)){
-				msgID = generateRandomMessageID();
-			}
-
-			//Send the actual message with type RECEPTION_CONFIRMATION_REQUEST asking for an answer confirming the messages reception.
-			sendMessage(connectionID, TransmissionTypeEnum.RECEPTION_CONFIRMATION_REQUEST, msgID, message, sig);
-			
-			//Start Timeout-Wait for the confirmation
-			boolean waitForConfirmation = true;
-			Instant startWait = Instant.now();
-			Instant current;
-			
-			//Wait for confirmation
-			while(waitForConfirmation) {
-				current = Instant.now();
-				
-				//Accept response
-				if(Duration.between(startWait, current).toSeconds() <= 10 && QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getConfirmations().contains(msgID)) {
-					waitForConfirmation = false;
-					//System.out.println("[" + connectionID + "]: Message Confirmation received!");
-					QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).clearConfirmation(msgID);
-					System.out.println("[" + connectionID + "]: Registered confirmation response for messageID " + msgID);
-					return true;
-				}
-				
-				//Timeout if waited for more than 10 seconds without a reception confirmation arriving
-				else if (Duration.between(startWait, current).toSeconds() > 10) {
-					System.err.println("[" + connectionID + "]: Timed-out while waiting for reception-confirmation of messageID:" + msgID + "!");
-					waitForConfirmation = false;
-					return false;
-				}
-			}
-			return false;
-		}
-		else {
-			System.err.println("[" + connectionID + "]: Sending of Confirm-Message: " + message + " aborted, because the ConnectionEndpoint was not connected to anything!");
-		}
-		return false;
-
-	}
-	
-	/**This sends a message and the recipient is going to echo the message back to us.
-	 *
-	 * @param connectionID the name of the ConnectionEndpoint to send the message from.
-	 * @param message the message to be sent.
-	 * @param sig optional signature used by authenticated messages.
-	 * @return returns True if the confirmation of the message has been received, False if it times out.
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
-	 * @throws EndpointIsNotConnectedException 
-	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
-	 */
-	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) 
-			throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		return sendConfirmedMessage(connectionID, stringToByteArray(message), stringToByteArray(sig));
-	}
 	
 	
 	/**This generates a random MessageID that can be used to identify a message reception confirmation when using sendConfirmedMessage().
@@ -192,42 +111,6 @@ public class MessageSystem {
 	public static String generateRandomMessageID() {
 		Random randomGen = new Random();
 	    return randomGen.ints(48, 123).filter(i -> (i<=57||i>=65) && (i<=90||i>=97)).limit(16).collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
-	}
-
-
-	
-	/**Sends a signed and confirmed Message.
-	 * Signing requires valid keys.
-	 * 
-	 * @param connectionID 
-	 * 		 the name of the ConnectionEndpoint to send the message from.
-	 * @param message the actual message as a byte[].
-	 * @return returns true if the message was confirmed to have been received.
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
-	 * @throws EndpointIsNotConnectedException 
-	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
-	 */
-	public static boolean sendAuthenticatedMessage(String connectionID, final byte[] message) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		// TODO: add check for valid key pair
-		byte[] signature;
-		signature = QuantumnetworkControllcenter.authentication.sign(message);
-		return sendConfirmedMessage(connectionID, message, signature);
-	}
-	
-	/**Sends a signed and confirmed Message.
-	 * Signing requires valid keys.
-	 * 
-	 * @param connectionID  the name of the ConnectionEndpoint to send the message from.
-	 * @param message the actual message as a String.
-	 * @return returns true if the message was confirmed to have been received.
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
-	 * @throws EndpointIsNotConnectedException 
-	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
-	 */
-	public static boolean sendAuthenticatedMessage(String connectionID, final String message) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		return sendAuthenticatedMessage(connectionID, stringToByteArray(message));
 	}
 	
 	/**Sends a signed unconfirmed Message.
@@ -244,9 +127,9 @@ public class MessageSystem {
 	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
 	 */
 	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final byte[] message) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		// TODO: add check for valid key pair
 		byte[] signature;
 		signature = QuantumnetworkControllcenter.authentication.sign(message);
+		//sendConfirmedMessage(connectionID, type, argument, message, signature);
 		sendMessage(connectionID, type, argument, message, signature);
 		return true;
 	}
@@ -297,7 +180,7 @@ public class MessageSystem {
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
 	 */
-	public static boolean sendEncryptedMessage(String connectionID, final String message) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
+	public static boolean sendEncryptedMessage(String connectionID, TransmissionTypeEnum type, String argument, final String message) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
 		
 		byte[] byteKey;
 		if(connectionID.equals("42debugging42") || connectionID.equals("41debugging41") ) {
@@ -324,7 +207,7 @@ public class MessageSystem {
 		
 		String encrypted = AES256.encrypt(message, byteKey);
 		
-		return sendAuthenticatedMessage(connectionID, encrypted);		
+		return sendAuthenticatedMessage(connectionID, type, argument, encrypted);		
 	}
 	
 	/**
@@ -373,10 +256,13 @@ public class MessageSystem {
 	 * @return	the resulting String, may be null if the encoding failed.
 	 */
 	public static String byteArrayToString(byte[] arr) {
+		if(arr == null) {
+			return null;
+		}
 		try {
-			return new String(arr, ENCODING_STANDARD);
+			return new String(arr, Configuration.getProperty("Encoding"));
 		} catch (UnsupportedEncodingException e) {
-			System.err.println("Error: unsupported Encoding: " + ENCODING_STANDARD + "!");
+			System.err.println("Error: unsupported Encoding: " + Configuration.getProperty("Encoding") + "!");
 			e.printStackTrace();
 			return null;
 		}
@@ -390,10 +276,13 @@ public class MessageSystem {
 	 * @return	the resulting byte[], may be null if the encoding failed.
 	 */
 	public static byte[] stringToByteArray(String str) {
+		if(str == null || str.equals("")) {
+			return null;
+		}
 		try {
-			return str.getBytes(ENCODING_STANDARD);
+			return str.getBytes(Configuration.getProperty("Encoding"));
 		} catch (UnsupportedEncodingException e) {
-			System.err.println("Error: unsupported Encoding: " + ENCODING_STANDARD + "!");
+			System.err.println("Error: unsupported Encoding: " + Configuration.getProperty("Encoding") + "!");
 			e.printStackTrace();
 			return null;
 		}

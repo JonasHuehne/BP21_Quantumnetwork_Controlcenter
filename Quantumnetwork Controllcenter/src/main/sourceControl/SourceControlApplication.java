@@ -1,13 +1,24 @@
 package sourceControl;
 
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
+import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.PortIsInUseException;
+import frame.Configuration;
 import messengerSystem.Authentication;
+import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionManager;
+import networkConnection.NetworkPackage;
 
 
 /**This is the Photon Source API
@@ -42,6 +53,10 @@ public class SourceControlApplication {
 		port = Integer.valueOf(args[1]);
 		System.out.println("Starting the Source Control on IP: " + ip + " and Port: " + String.valueOf(port) + "!");
 		
+		/*
+		 *TODO: Check if Sig files exist and if not, generate them!
+		 */
+		
 		try {
 			conMan = new ConnectionManager(ip,port);
 		} catch (IOException e) {
@@ -61,6 +76,29 @@ public class SourceControlApplication {
 		authentication = new SHA256withRSAAuthentication();
 		
 		
+	}
+	
+	public static void writeSignalFile(NetworkPackage transmission, String senderID) {
+
+		String fileName = transmission.getTypeArg();
+		String sourceInfo = MessageSystem.byteArrayToString(transmission.getContent());
+		Writer inWriter;
+		Path inFilePath = Path.of(System.getProperty("user.dir") + File.separator + "Signals" + File.separator + fileName + ".txt");
+		try {
+			inWriter = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(inFilePath), Configuration.getProperty("Encoding")));
+			inWriter.write(sourceInfo);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		try {
+			conMan.destroyConnectionEndpoint(senderID);
+		} catch (ManagerHasNoSuchEndpointException e) {
+			e.printStackTrace();
+		}
+
 	}
 
 }

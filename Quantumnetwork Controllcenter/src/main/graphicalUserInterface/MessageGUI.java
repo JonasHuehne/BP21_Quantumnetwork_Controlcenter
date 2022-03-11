@@ -101,9 +101,9 @@ public class MessageGUI extends JFrame {
 
 				try {
 					switch(QuantumnetworkControllcenter.guiWindow.conType.get(connectionID)) {
-					case AUTHENTICATED: MessageSystem.sendAuthenticatedMessage(connectionID, msg);
+					case AUTHENTICATED: MessageSystem.sendAuthenticatedMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg);
 						break;
-					case ENCRYPTED: MessageSystem.sendEncryptedMessage(connectionID, msg);
+					case ENCRYPTED: MessageSystem.sendEncryptedMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg);
 						break;
 					case UNSAFE: MessageSystem.sendMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg, null);
 						break;
@@ -141,7 +141,7 @@ public class MessageGUI extends JFrame {
 	 * @param msg the message content that will be added to the log.
 	 */
 	private void logSentMessage(String msg) {
-		MessageSystem.conMan.getConnectionEndpoint(connectionID).logMessage(MessageSystem.conMan.getConnectionEndpoint(connectionID).getMessageLog() + "\n" + "You wrote: \n" + msg);
+		MessageSystem.conMan.getConnectionEndpoint(connectionID).appendMessageToLog( "\n" + "You wrote: \n" + msg);
 		refreshMessageLog();
 	}
 	
