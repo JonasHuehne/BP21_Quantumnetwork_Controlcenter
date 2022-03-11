@@ -1,6 +1,5 @@
 package messengerSystem;
 
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.InvalidKeyException;
@@ -15,6 +14,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.regex.Pattern;
 import communicationList.Contact;
+import communicationList.SQLiteCommunicationList;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import qnccLogger.Log;
@@ -25,17 +25,6 @@ import qnccLogger.LogSensitivity;
  * @author Sarah Schumann
  */
 public class SHA256withRSAAuthentication implements SignatureAuthentication {
-
-    /**
-     * The path to the folder for the property files, incl a file separator at the end
-     */
-    private static final String PROPERTIES_PATH = System.getProperty("user.dir")
-            + File.separator + "properties" + File.separator;
-
-    /**
-     * Name of the properties file for Strings
-     */
-    private static final String STRINGS_FILE_NAME = "strings.xml";
 
     /**
      * Default name for generating signature key files, without file name extension
@@ -230,18 +219,16 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
     @Override
     public boolean setPrivateKey (String keyFileName) {
         String currentPath = Configuration.getBaseDirPath();
-        if (keyFileName == null) {
-            privateKeyFile = "";
-        } else if (keyFileName.equals("")
-                || Files.exists(Path.of(currentPath + Utils.KEY_PATH + keyFileName))) {
+        if (keyFileName == null || keyFileName.equals("")) {
+            privateKeyFile = SQLiteCommunicationList.NO_KEY;
+        } else if (Files.exists(Path.of(currentPath + Utils.KEY_PATH + keyFileName))) {
             privateKeyFile = keyFileName;
         } else {
             log.logWarning("Error while setting the private key: "
                     + "File does not exist.");
             return false;
         }
-        Configuration.setProperty(PRIVATE_KEY_PROP_NAME, privateKeyFile);
-        return true;
+        return Configuration.setProperty(PRIVATE_KEY_PROP_NAME, privateKeyFile);
     }
 
     /**

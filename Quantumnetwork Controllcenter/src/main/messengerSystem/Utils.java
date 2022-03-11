@@ -34,7 +34,6 @@ public class Utils {
      * @return the key from the file as a string (without the beginning and end lines like "-----BEGIN-----"), null if error
      */
     public static String readKeyStringFromFile(String fileName) {
-        String keyPath = Configuration.getBaseDirPath();
         try {
             if(!Pattern.matches(KEY_FILENAME_SYNTAX, fileName)) {
                 System.err.println("Error while creating a key string from the input file: "
