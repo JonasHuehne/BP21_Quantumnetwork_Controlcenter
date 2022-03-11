@@ -84,16 +84,12 @@ public class KeyGenerator implements Runnable{
 	
 	/**Generate a Key by using the python scripts and acting as a middleman between both involved parties,
 	 *  by handling the network side of the key generation as well as storing the key in the KeyDB.
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} in the {@linkplain MessageSystem} does not contain the {@linkplain ConnectionEndpoint} that this KeyGenerator belongs to
-	 * @throws NumberFormatException 
-	 * 		if the value saved in the config file under "SourcePort" is not an Integer
 	 * @throws KeyGenRequestTimeoutException 
 	 * 		if a timeout occurs, i.e. the communication partner does not respond in time to the request
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
-	public void generateKey() throws NumberFormatException, ManagerHasNoSuchEndpointException, KeyGenRequestTimeoutException, EndpointIsNotConnectedException {
+	public void generateKey() throws KeyGenRequestTimeoutException, EndpointIsNotConnectedException {
 		System.out.println("[" + getOwnerID() + "]: Starting KeyGenProcess!");
 		//Check if everything is ready
 		System.out.println("[" + getOwnerID() + "]: Performing preGenChecks!");
@@ -135,14 +131,10 @@ public class KeyGenerator implements Runnable{
 	
 	/**Method for signaling the source API.
 	 * This will sent an authenticated Message to the Source Server.
-	 * @throws NumberFormatException 
-	 * 		if the value saved in the config file under "SourcePort" is not an Integer
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} in the {@linkplain MessageSystem} does not contain the {@linkplain ConnectionEndpoint} that this KeyGenerator belongs to
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
-	private void signalSourceAPI() throws NumberFormatException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
+	private void signalSourceAPI() throws EndpointIsNotConnectedException {
 		//Create connection to Source Server
 		String sourceServerConnectionName = "SourceServer_" + MessageSystem.generateRandomMessageID();
 		try {
@@ -199,12 +191,10 @@ public class KeyGenerator implements Runnable{
 	 * @return true means the other party agreed and is checked and ready.
 	 * @throws KeyGenRequestTimeoutException 
 	 * 		if a timeout occurs, i.e. the communication partner does not respond in time to the request
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} in the {@linkplain MessageSystem} does not contain the {@linkplain ConnectionEndpoint} that this KeyGenerator belongs to
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
-	private boolean preGenSync() throws KeyGenRequestTimeoutException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
+	private boolean preGenSync() throws KeyGenRequestTimeoutException, EndpointIsNotConnectedException {
 		System.out.println("[" + getOwnerID() + "]: Sending Sync Request via " + getOwnerID() + " !");
 		//Send Sync Request
 		//MessageSystem.conMan.getConnectionEndpoint(connectionID).pushMessage(TransmissionTypeEnum.KEYGEN_SYNC_REQUEST, "", "");
@@ -248,14 +238,10 @@ public class KeyGenerator implements Runnable{
 	 * It will ask the user if the keyGenProcess should be started and sends the appropriated message back.
 	 * @param msg
 	 * 		the received message
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} in the {@linkplain MessageSystem} does not contain the {@linkplain ConnectionEndpoint} that this KeyGenerator belongs to
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
-	 * @throws NumberFormatException 
-	 * 		if the value saved in the config file under "SourcePort" is not an Integer
 	 */
-	public void keyGenSyncResponse(NetworkPackage msg) throws NumberFormatException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
+	public void keyGenSyncResponse(NetworkPackage msg) throws EndpointIsNotConnectedException {
 		// verify the received message
 		boolean verified = msg.verify(authenticator, getOwnerID());
 		if (!verified)  {
@@ -370,12 +356,10 @@ public class KeyGenerator implements Runnable{
 	
 	/**Transfers the contents of a key.txt file to the DB.
 	 * Needs to be adjusted if the DB is not changed to use Byte[].
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} in the {@linkplain MessageSystem} does not contain the {@linkplain ConnectionEndpoint} that this KeyGenerator belongs to
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
-	private void transferKeyFileToDB() throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
+	private void transferKeyFileToDB() throws EndpointIsNotConnectedException {
 		//Read Key from File
 		byte[] key = null;
 		Path keyFilePath = connectionPath.resolve(expectedKeyFilename);
@@ -422,12 +406,10 @@ public class KeyGenerator implements Runnable{
 	 * 
 	 * @param relay if True, this will cause a network Message to be sent.
 	 * @param informPython if True, the shutdown originates from inside this program and not from a key- or shudownfile. As such, the pythonScript needs to me notified about this via an expectedPythonTerm-file.
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} in the {@linkplain MessageSystem} does not contain the {@linkplain ConnectionEndpoint} that this KeyGenerator belongs to
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
-	public void shutdownKeyGen(boolean relay, boolean informPython) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
+	public void shutdownKeyGen(boolean relay, boolean informPython) throws EndpointIsNotConnectedException {
 		
 		System.out.println("[" + getOwnerID() + "]: Shutting down the KeyGen of " + getOwnerID());
 		keyGenRunning = false;
@@ -539,14 +521,9 @@ public class KeyGenerator implements Runnable{
 		} catch (UnsupportedEncodingException e) {
 			System.err.println("ERROR - Key Generation was unsuccessful. The Encoding specified in the Configuration file was not valid.");
 			e.printStackTrace();
-		} catch (ManagerHasNoSuchEndpointException e) {
-			System.err.println("ERROR - Key Generation was unsuccessful. "
-					+ "The current ConnectionManager of the MessageSystem does not contain the endpoint with ID " + getOwnerID() + ". "
-					+ "This resulted in an inability to send a message from that endpoint. See the stacktrace for details on where a message could not be sent. ");
-			e.printStackTrace();
 		} catch (EndpointIsNotConnectedException e) {
 			System.err.println("ERROR - Key Generation was unsuccessful. "
-					+ "The current endpoint " + getOwnerID() + " is not connected to its partner at the moment. "
+					+ "The endpoint " + getOwnerID() + " is not connected to its partner at the moment. "
 					+ "This resulted in an inability to send a message from that endpoint. See the stacktrace for details on where a message could not be sent. ");
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -558,7 +535,7 @@ public class KeyGenerator implements Runnable{
 				// Always shut down the key generator if it is still running
 				try {
 					shutdownKeyGen(false, true);
-				} catch (ManagerHasNoSuchEndpointException | EndpointIsNotConnectedException e) {
+				} catch (EndpointIsNotConnectedException e) {
 					System.err.println("A " + e.getClass().getCanonicalName() + " occured trying to shut down the key generator. "
 							+ "The keyGenRunning variable has been manually set to false, but the key generator may be in an unstable state.");
 					keyGenRunning = false;
