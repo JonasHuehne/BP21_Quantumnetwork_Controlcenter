@@ -1,6 +1,8 @@
 package networkConnection;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -112,8 +114,9 @@ public class ConnectionManager {
 					
 					ConnectionEndpointServerHandler cesh; 
 					try { // Construct a CESH for the socket that just connected to our server socket
-						cesh = new ConnectionEndpointServerHandler(clientSocket, localAddress, localPort);
+						cesh = new ConnectionEndpointServerHandler(clientSocket);
 						System.out.println("Created CESH for newly received client socket.");
+						cesh.run();
 					} catch (IOException e) {
 						System.err.println("An I/O Exception occurred while trying to construct the ConnectionEndpointServerHandler "
 								+ "with local IP " + localAddress + " and server port " + localPort + ". Accepting connections is being shut down.");
@@ -121,14 +124,8 @@ public class ConnectionManager {
 						isAcceptingConnections = false;
 						break;
 					}
-					
-					cesh.run();
-					if (cesh.acceptedRequest() == true) { // if it is, and a connection request came in time, add the new CE to our set of CE's
-						ConnectionEndpoint ce = cesh.getCE();
-						connections.put(ce.getRemoteName(), ce);
-						System.out.println("Received a CR from " + ce.getRemoteName() + " and accepted it.");
-					} 
-				}
+
+					}
 			});
 			submittedTaskOnce = true;
 		}
@@ -169,18 +166,58 @@ public class ConnectionManager {
 	 * @throws IpAndPortAlreadyInUseException 
 	 * 		if a connection with the same IP and Port pairing is already in this ConnectionManager
 	 */
-	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort) 
+	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort, String sig) 
 		throws ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException {
 		if(!connections.containsKey(endpointName)) {
 			// no two connections to the same IP / Port pairing
 			if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
 			System.out.println("---Received new request for a CE. Creating it now. It will connect to the Server at "+ targetIP +":"+ targetPort +".---");
-			connections.put(endpointName, new ConnectionEndpoint(endpointName, targetIP, targetPort, localAddress, localPort));
+			connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, localPort, sig, targetIP, targetPort));
 			return connections.get(endpointName);
 		} else {
 			throw new ConnectionAlreadyExistsException(endpointName);
 		}
 	}
+	
+	/**Creates a new ConnectionEndpoint and stores the Connection-Name and Endpoint-Ref.
+	 * 
+	 * This version of the method should be used if the CE is being created as part of the response to a connection request from an external source.
+	 * 
+	 * The CE is given an already connected Socket and In-/Output Streams.
+	 * 
+	 *	@param endpointName 	
+	 *		the identifier for a connection. This name can be used to access it later
+	 *	@param clientSocket
+	 *		the Socket that was created for this CE when the external Client connected to the local Server. It was created by the {@linkplain ConnectionEndpointServerHandler}.
+	 *	@param streamOut
+	 *		the OutStream for this CE. It was created by the {@linkplain ConnectionEndpointServerHandler} and will be used to send messages.
+	 *	@param streamIn
+	 *		the InStream for this CE. It was created by the {@linkplain ConnectionEndpointServerHandler} and will be used to receive messages.
+	 *	@param targetIP 
+	 *		IP of the {@linkplain ConnectionEndpoint} that the newly created CE is connect to
+	 *	@param targetPort 	
+	 *		server port of the {@linkplain ConnectionEndpoint} that the newly created CE is connect to
+	 *	@return ConnectionEndpoint
+	 *		the newly created {@linkplain ConnectionEndpoint} <br>
+	 *		can also be accessed via {@linkplain #getConnectionEndpoint(String)} with argument {@code endpointName}
+	 * 	@throws ConnectionAlreadyExistsException 
+	 * 		if a connection with the specified name is already managed by this ConnectionManager
+	 * @throws IpAndPortAlreadyInUseException 
+	 * 		if a connection with the same IP and Port pairing is already in this ConnectionManager
+	 */
+	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, Socket clientSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, int targetPort) 
+			throws ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException {
+			if(!connections.containsKey(endpointName)) {
+				// no two connections to the same IP / Port pairing
+				if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
+				System.out.println("---Received new request for a CE. Creating it now. It will connect to the Server at "+ targetIP +":"+ targetPort +".---");
+				//connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, localPort, targetIP, targetPort));
+				connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, localPort, clientSocket, streamOut, streamIn, targetIP, targetPort));
+				return connections.get(endpointName);
+			} else {
+				throw new ConnectionAlreadyExistsException(endpointName);
+			}
+		}
 	
 	/**
 	 * Utility method. Used to check if an IP/Port pairing is not used by any connection in the manager at the moment.
@@ -226,8 +263,9 @@ public class ConnectionManager {
 	 * @param connectionID	the Identifier of the intended connectionEndpoint.
 	 * @param type the type of the transmission expressed as a TransmissionTypeEnum
 	 * @param typeArgument an additional String that some transmission types use. Can be "" if not needed.
-	 * @param sig the optional signature, used by authenticated messages
 	 * @param message the String Message that is supposed to be sent via the designated ConnectionEndpoint.
+	 * @param sig the optional signature, used by authenticated messages
+	 * @param confID the optional ID used to confirm that the message has been received.
 	 * @throws ManagerHasNoSuchEndpointException 
 	 * 		if no connection of that name could be found in the connection manager
 	 * @throws EndpointIsNotConnectedException 

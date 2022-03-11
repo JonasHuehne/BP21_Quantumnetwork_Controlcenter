@@ -138,10 +138,11 @@ public class KeyGenerator implements Runnable{
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
 	private void signalSourceAPI() throws NumberFormatException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
+		
 		//Create connection to Source Server
 		String sourceServerConnectionName = "SourceServer_" + MessageSystem.generateRandomMessageID();
 		try {
-			MessageSystem.conMan.createNewConnectionEndpoint(sourceServerConnectionName, Configuration.getProperty("SourceIP"), Integer.valueOf(Configuration.getProperty("SourcePort")));
+			MessageSystem.conMan.createNewConnectionEndpoint(sourceServerConnectionName, Configuration.getProperty("SourceIP"), Integer.valueOf(Configuration.getProperty("SourcePort")), Configuration.getProperty("SourceSignature"));
 		} catch (ConnectionAlreadyExistsException | IpAndPortAlreadyInUseException e) {
 			// If a connection to the source already exists, there is no problem
 		}
@@ -155,6 +156,7 @@ public class KeyGenerator implements Runnable{
 							+ owner.getRemoteAddress() 
 							+ "_" + owner.getRemotePort();
 		MessageSystem.sendAuthenticatedMessage(sourceServerConnectionName, TransmissionTypeEnum.KEYGEN_SOURCE_SIGNAL, filename, sourceInfo);
+		
 	}
 
 	
@@ -195,7 +197,7 @@ public class KeyGenerator implements Runnable{
 	private boolean preGenSync() throws KeyGenRequestTimeoutException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
 		System.out.println("[" + getOwnerID() + "]: Sending Sync Request via " + getOwnerID() + " !");
 		//Send Sync Request
-		MessageSystem.sendAuthenticatedMessage(getOwnerID(), TransmissionTypeEnum.KEYGEN_SYNC_REQUEST, "","");
+		MessageSystem.sendAuthenticatedMessage(getOwnerID(), TransmissionTypeEnum.KEYGEN_SYNC_REQUEST, "", "KEYGEN_SYNC_REQUEST");
 		
 		
 		System.out.println("[" + getOwnerID() + "]: Starting to wait for response...");
@@ -285,7 +287,7 @@ public class KeyGenerator implements Runnable{
 	 */
 	private void transferData() {
 		if(keyGenRunning) {
-			System.out.println("Error: Key Gen Thread was already running, could not start a second one!");
+			System.err.println("Error: Key Gen Thread was already running, could not start a second one!");
 		}
 		transferThread = new Thread(this, getOwnerID() + "_transferThread");
 		keyGenRunning = true;
@@ -408,7 +410,7 @@ public class KeyGenerator implements Runnable{
 			Files.deleteIfExists(connectionPath.resolve(expectedTermination + ".lock"));
 			
 			if(relay) {
-				MessageSystem.sendAuthenticatedMessage(getOwnerID(), TransmissionTypeEnum.KEYGEN_TERMINATION, "", "");
+				MessageSystem.sendAuthenticatedMessage(getOwnerID(), TransmissionTypeEnum.KEYGEN_TERMINATION, "", "KEYGEN_TERMINATION");
 			}
 			if(informPython) {
 				//Signal the local python script that the other end of the connection has terminated the KeyGen Process

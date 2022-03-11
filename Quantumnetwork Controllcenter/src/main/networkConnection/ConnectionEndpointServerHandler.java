@@ -5,6 +5,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
+import communicationList.Contact;
+import exceptions.ConnectionAlreadyExistsException;
+import exceptions.IpAndPortAlreadyInUseException;
+import frame.QuantumnetworkControllcenter;
+
 /**Every time a connection to the local Server Socket is created, a new instance of ConnectionEndpointServerHandler is also created.
  * The purpose of each CESH is to wait for the first message from the connecting Party, the TransmissionTypeEnum.CONNECTION_REQUEST
  * and use the information contained in it to create a new local ConnectionEndpoint. This CE is then handed a Socket and the Output- and InputStreams
@@ -29,8 +34,6 @@ public class ConnectionEndpointServerHandler extends Thread{
 	
 	private boolean acceptedRequest = false;
 	private ConnectionEndpoint ce = null;
-	private int localPort;
-	private String localIP;
 
 	
 	/**
@@ -47,10 +50,8 @@ public class ConnectionEndpointServerHandler extends Thread{
 	 * @throws IOException 
 	 * 		if an I/O Exception occurred trying to construct an internal ObjectInputStream from the clientsocket's InputStream
 	 */
-	ConnectionEndpointServerHandler(Socket newClientSocket, String localIP, int localPort) throws IOException {
+	ConnectionEndpointServerHandler(Socket newClientSocket) throws IOException {
 		clientSocket = newClientSocket;
-		this.localPort = localPort;
-		this.localIP = localIP;
 	}
 	
 	public void run() {
@@ -71,8 +72,17 @@ public class ConnectionEndpointServerHandler extends Thread{
 						ntt.abortTimer();
 						remoteIP = receivedMessage.getTypeArg().split(":::")[0];
 						remotePort = Integer.valueOf(receivedMessage.getTypeArg().split(":::")[1]);
-						String remoteName = receivedMessage.getTypeArg().split(":::")[2];
-						ce = new ConnectionEndpoint(remoteName, "", clientSocket, serverOut, serverIn, remoteIP, remotePort, localPort);
+						
+						//Check if ContactDB contains the IP:PORT Pair already. If so, the Name and Sig is taken from the DB.
+						String remoteName;
+						Contact dbEntry = QuantumnetworkControllcenter.communicationList.query(remoteIP, remotePort);
+						if(dbEntry != null && !remoteIP.equals("127.0.0.1") && !remoteIP.equals("localhost")) {
+							System.out.println("Found pre-existing DB Entry that had matching IP:PORT to new connection request. Using Name and Sig from DB.");
+							remoteName = dbEntry.getName();
+						}else {
+							remoteName = receivedMessage.getTypeArg().split(":::")[2];
+						}
+						ce = QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(remoteName, clientSocket, serverOut, serverIn, remoteIP, remotePort);
 						ce.setRemoteName(remoteName);
 						settingUp = false;
 						acceptedRequest = true;
@@ -86,6 +96,10 @@ public class ConnectionEndpointServerHandler extends Thread{
 		} catch (NoSuchMethodException e) {
 			e.printStackTrace();
 		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (ConnectionAlreadyExistsException e) {
+			e.printStackTrace();
+		} catch (IpAndPortAlreadyInUseException e) {
 			e.printStackTrace();
 		}
 	}

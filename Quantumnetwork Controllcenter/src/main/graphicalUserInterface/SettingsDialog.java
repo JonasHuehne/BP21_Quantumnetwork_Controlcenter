@@ -5,6 +5,9 @@ import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
+import java.awt.Desktop;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -15,7 +18,12 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
 import frame.Configuration;
+import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
+import messengerSystem.SHA256withRSAAuthentication;
+
+import javax.swing.JComboBox;
+import javax.swing.DefaultComboBoxModel;
 
 /**This Dialog contains settings such as the own ServerIP/Port
  * 
@@ -30,14 +38,16 @@ public class SettingsDialog extends JDialog {
 	private JTextField ownPortTextField;
 	private JTextField sourceIPTextField;
 	private JTextField sourcePortTextField;
-	private JTextField encodingTextField;
+	private JComboBox<String> encodingComboBox;
 	
 	private static String name = null;
 	private static String ip = null;
 	private static String port = null;
 	private static String sourceIP = null;
 	private static String sourcePort = null;
+	private static String sourceSig = null;
 	private static String enc = null;
+	private JTextField sourceSigTextField;
 	
 
 
@@ -49,7 +59,7 @@ public class SettingsDialog extends JDialog {
 		setTitle("Settings");
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setVisible(true);
-		setBounds(100, 100, 350, 304);
+		setBounds(100, 100, 350, 390);
 		getContentPane().setLayout(new BorderLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
@@ -135,18 +145,58 @@ public class SettingsDialog extends JDialog {
 		{
 			JLabel encodingLabel = new JLabel("Preferred Encoding:");
 			encodingLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
-			encodingLabel.setBounds(10, 172, 161, 20);
+			encodingLabel.setBounds(10, 203, 161, 20);
 			contentPanel.add(encodingLabel);
 			encodingLabel.setToolTipText("The Encoding used when transferring Strings to bytes. If some characters are not correctly transmitted, you can change the encoding to one that supports the characters in question.");
 		}
+		
+		encodingComboBox = new JComboBox<String>();
+		encodingComboBox.setEditable(true);
+		encodingComboBox.setModel(new DefaultComboBoxModel<String>(new String[] {"ISO-8859-1", "UTF-8", "UTF-16"}));
+		encodingComboBox.setBounds(181, 204, 140, 22);
+		contentPanel.add(encodingComboBox);
+		
+		JLabel signatureFilesLabel = new JLabel("Signature Files:");
+		signatureFilesLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
+		signatureFilesLabel.setBounds(10, 234, 161, 18);
+		contentPanel.add(signatureFilesLabel);
+		
+		JButton openSigFileFolderButton = new JButton("Open Signature Folder");
+		openSigFileFolderButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				String sigPath  = Configuration.getBaseDirPath() + File.separator + "SignatureKeys" + File.separator;
+				try {
+					Desktop.getDesktop().open(new File(sigPath));
+				} catch (IOException e1) {
+					System.err.println("Error while attempting to open the Folder containing the SignatureFiles. Folder Path: " + sigPath);
+					e1.printStackTrace();
+				}
+			}
+		});
+		openSigFileFolderButton.setBounds(181, 234, 140, 23);
+		contentPanel.add(openSigFileFolderButton);
+		
+		JButton reGenerateSigButton = new JButton("Regenerate Signature");
+		reGenerateSigButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				SHA256withRSAAuthentication.generateSignatureKeyPair ();
+				new GenericWarningMessage("New Signature Files have been created.");
+			}
+		});
+		reGenerateSigButton.setBounds(181, 268, 140, 23);
+		contentPanel.add(reGenerateSigButton);
 		{
-			encodingTextField = new JTextField();
-			encodingTextField.setBounds(181, 172, 140, 20);
-			contentPanel.add(encodingTextField);
-			encodingTextField.setToolTipText("The Encoding used when transferring Strings to bytes. If some characters are not correctly transmitted, you can change the encoding to one that supports the characters in question.");
-			encodingTextField.setText("ISO-8859-1");
-			encodingTextField.setColumns(10);
+			JLabel sourceSigLabel = new JLabel("Photon Source Sig:");
+			sourceSigLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
+			sourceSigLabel.setBounds(10, 172, 140, 20);
+			contentPanel.add(sourceSigLabel);
 		}
+		
+		sourceSigTextField = new JTextField();
+		sourceSigTextField.setToolTipText("The public Signature Key used by the Photon Source Server.");
+		sourceSigTextField.setBounds(181, 172, 140, 20);
+		contentPanel.add(sourceSigTextField);
+		sourceSigTextField.setColumns(10);
 		{
 			JPanel buttonPane = new JPanel();
 			buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
@@ -222,6 +272,12 @@ public class SettingsDialog extends JDialog {
 			sourcePort = Configuration.getProperty("SourcePort");
 		}
 		
+		sourceSig = Configuration.getProperty("SourceSignature");
+		if(sourceSig == null) {
+			Configuration.setProperty("Not configured!", "SourceSignature");
+			sourceSig = Configuration.getProperty("SourceSignature");
+		}
+		
 		enc = Configuration.getProperty("Encoding");
 		if(enc == null) {
 			Configuration.setProperty("Encoding", "ISO-8859-1");
@@ -243,7 +299,9 @@ public class SettingsDialog extends JDialog {
 		
 		sourcePortTextField.setText(sourcePort);
 		
-		encodingTextField.setText(enc);
+		sourceSigTextField.setText(sourceSig);
+		
+		encodingComboBox.setSelectedItem(enc);
 	}
 	
 	/**This method reads the text from the textFields and writes them into the config file.
@@ -264,6 +322,7 @@ public class SettingsDialog extends JDialog {
 		Configuration.setProperty("UserPort", ownPortTextField.getText());
 		Configuration.setProperty("SourceIP", sourceIPTextField.getText());
 		Configuration.setProperty("SourcePort", sourcePortTextField.getText());
-		Configuration.setProperty("Encoding", encodingTextField.getText());
+		Configuration.setProperty("SourceSignature", sourceSigTextField.getText());
+		Configuration.setProperty("Encoding", (String) encodingComboBox.getSelectedItem());
 	}
 }

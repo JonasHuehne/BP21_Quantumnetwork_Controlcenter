@@ -19,7 +19,7 @@ import ui.ConsoleUI;
 /**
  * Main Class of QuantumnetworkControllcenter
  * 
- * @author Lukas Dentler, Sasha Petri
+ * @author Lukas Dentler, Sasha Petri, Jonas Huehne
  */
 public class QuantumnetworkControllcenter {
 	
@@ -28,22 +28,29 @@ public class QuantumnetworkControllcenter {
 	public static Authentication authentication;
 	public static GUIMainWindow guiWindow;
 	
-	/*
-	 * This could be done via args as well.
-	 */
-	static final boolean LAUNCH_GUI = true;  // launch GUI
-	static final boolean LAUNCH_CUI = false; // launch console UI
+	static boolean LAUNCH_GUI = true;  // launch GUI
+	static boolean LAUNCH_CUI = false; // launch console UI
 
 	/**
 	 * Method to initialize a Quantumnetwork Controllcenter
 	 * @param args <br>
 	 * 		args[0] local IP used by the ConnectionManager in this launch, also sets the corresponding entry "UserIP" in the config file
 	 * 		args[1] local port used by the ConnectionManager in this launch, also sets the corresponding entry "UserPort" in the config file
+	 * 		args[2] if the 3rd param is "noGUI", the console will be used instead of the GUI.
 	 * 		may be null, in this case the Properties file is not modified
 	 */
 	public static void initialize(String[] args) {
 		
 		//TODO add initialization of further Classes
+		
+		//Open GUI or CUI
+		if(args != null && args.length == 3 && args[2].equals("noGUI")) {
+			LAUNCH_GUI = false;
+			LAUNCH_CUI = true;
+		}else {
+			LAUNCH_GUI = true;
+			LAUNCH_CUI = false;
+		}
 
 		// Configuration Init
 		try {
@@ -62,6 +69,10 @@ public class QuantumnetworkControllcenter {
 			Configuration.setProperty("UserPort", args[1]);
 		}
 		
+		
+		/*
+		 *TODO: Check if Sig files exist and if not, generate them!
+		 */
 		
 		String ip = Configuration.getProperty("UserIP");
 		int port = Integer.valueOf(Configuration.getProperty("UserPort"));
@@ -84,6 +95,8 @@ public class QuantumnetworkControllcenter {
 
 		// Authentication Init
 		authentication = new SHA256withRSAAuthentication();
+		
+		
 		
 		System.out.println("QuantumnetworkControllcenter initialized");
 	}

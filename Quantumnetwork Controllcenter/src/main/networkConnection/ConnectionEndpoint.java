@@ -12,11 +12,13 @@ import java.util.LinkedList;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
+import frame.QuantumnetworkControllcenter;
 import graphicalUserInterface.GenericWarningMessage;
 import graphicalUserInterface.MessageGUI;
 import keyGeneration.KeyGenerator;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
+import sourceControl.SourceControlApplication;
 
 
 /**Represents a single connection endpoint at a given port, that can connect to a single other connection endpoint on the same machine, in the same local network or via the Internet.
@@ -34,6 +36,8 @@ public class ConnectionEndpoint implements Runnable{
 	private String connectionID; // TODO Possibly refactor connectionID and remoteName to be the same
 	/** a private instance of KeyGenerator that will be used if this particular ConnectionEndpoint is generating a new Key. */
 	private KeyGenerator keyGen;
+	
+	private String signature = ""; //This is the public signature of the ConnectionEndpoint that this CE is connected to.
 	
 	//Addresses, Sockets and Ports
 	/** Our local IP, sent when trying to establish a connection, so that the partner knows which IP to connect to */
@@ -80,22 +84,22 @@ public class ConnectionEndpoint implements Runnable{
 	
 	/**
 	 * Used when creating a ConnectionEndpoint as a response to a ConnectionRequest.
-	 * Called by {@linkplain ConnectionEndpointServerHandler}. 
+	 * Called by {@linkplain ConnectionManager}. Do not call from anywhere else!
 	 * @param connectionName
 	 * 		name of the partner that this connection request came from <br>
 	 * 		will be the {@link #connectionID} of this endpoint, and the {@link #remoteName}
 	 * @param localAddress
 	 * 		our local IP address
+	 * @param localPort
+	 * 		our server port, that we receive messages on
 	 * @param localSocket
 	 * 		socket created by ServerSocket.accept(), must be connected, may not be closed
 	 * @param targetIP
 	 * 		IP of the partner that sent the connection request
 	 * @param targetPort
 	 * 		server port of the partner that sent the connection request, outgoing messages will be sent to this port
-	 * @param localPort
-	 * 		our server port, that we receive messages on
 	 */
-	public ConnectionEndpoint(String connectionName, String localAddress, Socket localSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, int targetPort, int localPort) {
+	public ConnectionEndpoint(String connectionName, String localAddress, int localPort, Socket localSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, int targetPort) {
 		this.connectionID = connectionName;
 		this.keyGen = new KeyGenerator(this);
 		this.localAddress = localAddress;
@@ -126,25 +130,27 @@ public class ConnectionEndpoint implements Runnable{
 	
 	/**
 	 * Used when creating a ConnectionEndpoint that tries to connect to another ConnectionEndpoint by sending a request.
+	 * Called by {@linkplain ConnectionManager}. Do not call from anywhere else!
 	 * @param connectionName
 	 * 		name of the partner that this connection request came from <br>
 	 * 		will be the {@link #connectionID} of this endpoint, and the {@link #remoteName}
-	 * @param targetIP
-	 * 		IP of the partner that sent the connection request
-	 * @param targetPort
-	 * 		server port of the partner that sent the connection request, outgoing messages will be sent to this port
 	 * @param localIP
 	 * 		our local IP address (this is the IP we tell the remote endpoint to send messages back to)
 	 * @param localPort
 	 * 		our server port, that we receive messages on (this is the port we tell the remote endpoint to send messages to)
+	 * @param targetIP
+	 * 		IP of the partner that sent the connection request
+	 * @param targetPort
+	 * 		server port of the partner that sent the connection request, outgoing messages will be sent to this port
 	 */
-	public ConnectionEndpoint(String connectionName, String targetIP, int targetPort, String localIP, int localPort) {
+	public ConnectionEndpoint(String connectionName, String localIP, int localPort, String sig, String targetIP, int targetPort) {
 		System.out.println("---A new CE has been created! I am named: "+ connectionName +" and my own IP is: "+ localAddress +" and I am going to connect to :"+ targetIP+":"+targetPort +".--");
 		connectionID = connectionName;
 		this.keyGen = new KeyGenerator(this);
 
 		this.localAddress = localIP;
 		this.localServerPort = localPort;
+		this.signature = sig;
 		
 		remoteIP = targetIP;
 		remotePort = targetPort;
@@ -164,6 +170,22 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public String getID() {
 		return this.connectionID;
+	}
+	
+	/**This method returns the public Signature of the connected CE. It is used to sign a message to that CE.
+	 * 
+	 * @return the signature. May be "" if it has not been set so far. Use the setSignatureGUI to ask the user to set it in this case.
+	 */
+	public String getSig() {
+		return signature;
+	}
+	
+	/**This method sets the signature that is used when sending authenticated Messages.
+	 * 
+	 * @param sig
+	 */
+	public void setSig(String sig) {
+		signature = sig;
 	}
 	
 	/**Reports the current State of this Endpoints Connection.
@@ -489,6 +511,7 @@ public class ConnectionEndpoint implements Runnable{
 
 		System.out.println("[" + connectionID + "]: Received Message, starting processing!: " + transmission.getHead() + " - " + transmission.getTypeArg() + " - " + transmission.getContent());
 		//Chose processing based on transmissionType in the NetworkPackage head.
+		
 		switch(transmission.getHead()){
 		
 		case CONNECTION_CONFIRMATION:
@@ -511,24 +534,8 @@ public class ConnectionEndpoint implements Runnable{
 			receiveFile(transmission);
 			return;
 			
-		case RECEPTION_CONFIRMATION_REQUEST:	//This works similar to the regular Transmission but it indicates the sender is waiting for a reception confirmation. This sends this confirmation back.
-			receiveMessage(transmission);
-			try {
-				pushMessage(TransmissionTypeEnum.RECEPTION_CONFIRMATION_RESPONSE, transmission.getTypeArg(), null, null);
-			} catch (EndpointIsNotConnectedException e1) {
-				// this will not happen unless there was a control flow error / programming mistake. otherwise, the CE could not have received the message if it wasn't connected
-				// <Sasha> TODO when the message confirmation is reworked, this should become semi-obsolete
-				e1.printStackTrace();
-			}
-			return;
-			
-		case RECEPTION_CONFIRMATION_RESPONSE:	//This is received if the local CE has sent a confirmedMessage and is waiting for the confirmation. Once received the confirmation in the form of the messageID is added to the pendingConfirmations.
-			registerConfirmation(transmission.getTypeArg());
-			return;
-			
 		case KEYGEN_SYNC_REQUEST:	//This is received if another ConnectionEndpoint that is connected to this one is intending to start a KeyGeneration Process and is asking for a response(accept/reject).
-			SHA256withRSAAuthentication authenticator = new SHA256withRSAAuthentication();
-			if (authenticator.verify(transmission.getContent(), transmission.getSignature(), connectionID)) {
+			if (((SHA256withRSAAuthentication)QuantumnetworkControllcenter.authentication).verify(transmission.getContent(), transmission.getSignature(), connectionID)) {
 				try {
 					keyGen.keyGenSyncResponse();
 				} catch (ManagerHasNoSuchEndpointException | NumberFormatException | EndpointIsNotConnectedException e) {
@@ -559,6 +566,7 @@ public class ConnectionEndpoint implements Runnable{
 			
 		case KEYGEN_SOURCE_SIGNAL:	//This is only used for signaling the source server to start sending photons. 
 			//TODO: Add source logic. It just needs to drop a file containing the message content as Text in a special folder where the source is waiting for the file.
+			SourceControlApplication.writeSignalFile(transmission, connectionID);
 			return;
 			
 		case KEYGEN_TERMINATION:	//This is received if the connected ConnectionEndpoint intends to terminate the KeyGen Process. This will cause a local shutdown in response.
@@ -624,6 +632,7 @@ public class ConnectionEndpoint implements Runnable{
 		
 		
 		if(transmission.getTypeArg().split(":::")[0] == "encrypted") {
+			System.out.println("Message is encrypted...");
 			//Handle Encrypted Messages
 			msg = MessageSystem.readEncryptedMessage(connectionID, transmission);
 			if(msg == null) {
@@ -634,6 +643,7 @@ public class ConnectionEndpoint implements Runnable{
 		}
 		
 		if(transmission.getSignature() != null) {
+			System.out.println("Message is signed...");
 			//Handle Authenticated Messages
 			msg = MessageSystem.byteArrayToString(MessageSystem.readAuthenticatedMessage(connectionID, transmission));
 			if(msg == null) {
@@ -642,6 +652,7 @@ public class ConnectionEndpoint implements Runnable{
 			}
 			
 		}else {
+			System.out.println("Message is unsafe...");
 			//Handle Unsafe Messages
 			msg = MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission));
 		}
@@ -673,6 +684,10 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public String getMessageLog() {
 		return messageLog;
+	}
+	
+	public void appendMessageToLog(String newMessage) {
+		logMessage(getMessageLog() + newMessage);
 	}
 
 }
