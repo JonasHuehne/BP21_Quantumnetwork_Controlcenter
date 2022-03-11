@@ -466,7 +466,7 @@ public final class GUIMainWindow implements Runnable{
 				if(connectionTypeCB.getSelectedItem() == ConnectionType.ENCRYPTED) {
 					KeyStoreObject kSO = KeyStoreDbManager.getEntryFromKeyStore(connectionName);
 					if(kSO == null) {
-						new SourceSignatureQueryDialog(connectionName);
+						new GenericWarningMessage("Warning: no valid Key was found for " + connectionName + "! Please generate a Key before using encrypted communication.");
 						connectionTypeCB.setSelectedItem(ConnectionType.AUTHENTICATED);
 					}
 				}

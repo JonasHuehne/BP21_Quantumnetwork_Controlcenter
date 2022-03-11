@@ -8,7 +8,6 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
-import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 
 import java.awt.event.ActionListener;
@@ -23,9 +22,10 @@ import java.awt.Font;
  * @author Jonas Huehne
  *
  */
-public class SourceSignatureQueryDialog extends JDialog {
+public class CESignatureQueryDialog extends JDialog {
 
 	private final JPanel contentPanel = new JPanel();
+	private String connectionID;
 	private JTextField textField;
 	JLabel titleNewLabel;
 
@@ -33,7 +33,7 @@ public class SourceSignatureQueryDialog extends JDialog {
 	/**
 	 * Create the dialog.
 	 */
-	public SourceSignatureQueryDialog() {
+	public CESignatureQueryDialog(String connectionID) {
 		setBounds(100, 100, 450, 150);
 		getContentPane().setLayout(new BorderLayout());
 		contentPanel.setLayout(new FlowLayout());
@@ -43,8 +43,8 @@ public class SourceSignatureQueryDialog extends JDialog {
 			Box verticalBox = Box.createVerticalBox();
 			contentPanel.add(verticalBox);
 			{
-				titleNewLabel = new JLabel("Please enter the public signature key of the Photon Source:");
-				titleNewLabel.setToolTipText("Please enter the public signature key of the Photon Source.");
+				titleNewLabel = new JLabel("Please enter the public signature key of the connected Party:");
+				titleNewLabel.setToolTipText("Please enter the public signature key of the connected Party.");
 				titleNewLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
 				verticalBox.add(titleNewLabel);
 			}
@@ -63,7 +63,7 @@ public class SourceSignatureQueryDialog extends JDialog {
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						if(textField.getText() != null && !textField.getText().equals("")) {
-							Configuration.setProperty(textField.getText(), "SourceSignature");
+							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).setSig(textField.getText());
 						}
 					}
 				});
@@ -83,6 +83,10 @@ public class SourceSignatureQueryDialog extends JDialog {
 				buttonPane.add(cancelButton);
 			}
 		}
+		
+		
+		this.connectionID = connectionID;
+		titleNewLabel.setText("Please enter the public signature key of " + QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getRemoteName() + "_" + QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getRemoteAddress() + "_" + QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getRemotePort());
 		
 	}
 
