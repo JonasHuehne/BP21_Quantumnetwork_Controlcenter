@@ -4,75 +4,188 @@ package networkConnection;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.ServerSocket;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+
+import exceptions.EndpointIsNotConnectedException;
+import exceptions.ManagerHasNoSuchEndpointException;
+import frame.Configuration;
+import frame.QuantumnetworkControllcenter;
+import graphicalUserInterface.GenericWarningMessage;
+import graphicalUserInterface.MessageGUI;
 import keyGeneration.KeyGenerator;
+import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
+import sourceControl.SourceControlApplication;
 
 
-/**Represents a single connection endpoint at a given port, that can connect to a single other connection endpoint on the same machine, in the same local network or via the internet.
+/**Represents a single connection endpoint at a given port, that can connect to a single other connection endpoint on the same machine, in the same local network or via the Internet.
  * Handles connection management and low-level transmissions. Use waitForConnection() and establishConnections() to connect 2 endpoints. Do not call pushMessage()
  *  manually unless you know what you are doing. Use connectionManager.sendMessage() at the very least. Ideally you would use one of the methods from MessageSystem to send anything.
  * This class also contains parsing for different message types in processMessage(). This is used to trigger additional functionality from messages that are f.ex. used to close the connection.
  * 
- * @author Jonas Huehne
+ * @author Jonas Huehne, Sasha Petri
  *
  */
 public class ConnectionEndpoint implements Runnable{
 	
 	//Local information
-	private String connectionID;	//the name of the ConnectionEndpoint. Used to identify it when using methods from MessageSystem or when interacting with the ConnectionListDB. Should be named after the target of the connection.
-	private KeyGenerator keyGen;	//a private instance of KeyGenerator that will be used if this particular ConnectionEndpoint is generating a new Key.
+	/** Name of this ConnectionEndpoint, used to identify it, e.g. in {@linkplain MessageSystem}. Generally the same as {@link #remoteName}. */
+	private String connectionID; // TODO Possibly refactor connectionID and remoteName to be the same
+	/** a private instance of KeyGenerator that will be used if this particular ConnectionEndpoint is generating a new Key. */
+	private KeyGenerator keyGen;
+	
+	private String signature = ""; //This is the public signature of the ConnectionEndpoint that this CE is connected to.
 	
 	//Addresses, Sockets and Ports
-	private String localAddress;	//the own IP
-	private ServerSocket localServerSocket; // our own Endpoint that listens on a port and waits for a connection Request from another Endpoints ClientSocket.
-	private int localServerPort;	//the Port of the local Server that other Endpoints can send Messages to.
-	private Socket localClientSocket;	// connects to another Endpoints Serversocket.
-	private Socket remoteClientSocket;	// another Endpoints ClientSocket that messaged out local Server Socket	
-	private String remoteID;	//the IP of the connected Endpoint
-	private int remotePort;		//the Port of the connected Endpoint
+	/** Our local IP, sent when trying to establish a connection, so that the partner knows which IP to connect to */
+	private String localAddress;
+	/** When sending a connection request, our CE tells the other CE that we will be receiving messages on this port
+	 *  generally this will be the port of the ConnectionManager managing this CE */
+	private int localServerPort;
+	/** Connected to the ServerSocket of this CE's partner */
+	public Socket localClientSocket;
+	/** ClientSocket of another CE, set if we accept an incoming connection instead of sending a request */
+	private Socket remoteClientSocket;	
+	/** IP of the partner CE */
+	private String remoteIP;
+	/** Port of the partner CE */
+	private int remotePort;	
+	/** Name of the connected partner, used, for example, in the chat window. Note that this is not the {@link #connectionID} of the partner's CE. */
+	private String remoteName;
 	
 	//Communication Channels
-	private ObjectInputStream serverIn;	//the incoming channel that information from other ConnectionEndpoints is received on.
-	private ObjectOutputStream clientOut;	//the outgoing channel that information from this ConnectionEndpoint is sent to another.
+	/** Outgoing messages to the other CE are sent along this channel */
+	private ObjectOutputStream clientOut;
+	/** Incoming messages from the other CE are received on this channel */
+	private ObjectInputStream clientIn;	
 	
 	//State
-	private boolean listenForMessages = false;
+	/** whether this endpoint is currently listening for incoming messages or not*/
+	private boolean isListeningForMessages = false;
+	/** true if the endpoint is connected to another endpoint, and has received a {@linkplain TransmissionTypeEnum#CONNECTION_CONFIRMATION} */
 	private boolean isConnected = false;
+	/** true if the client socket has connected to a server socket, but a connection between endpoints has not been established yet */
 	private boolean isBuildingConnection = false;
-	private boolean waitingForConnection = false;
-	private boolean waitingForMessage = false;
 	
-	private ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();	//executor used to run waitForConnection() in parallel.
+	private MessageGUI logGUI;//This is a ref to the Chat GUI
+	
 	private Thread messageThread = new Thread(this, connectionID + "_messageThread");	//a parallel thread used to listen for incoming messages while connected to another ConnectionEndpoint.
 	
-	private LinkedList<NetworkPackage> messageStack = new LinkedList<NetworkPackage>();	//this is where received messages are stored in order of reception and are read from via MessageSystems.readReceivedMessage
+	
 	private LinkedList<String> pendingConfirmations = new LinkedList<String>();	//this is where reception confirmations are stored and checked from while a confirmedMessage is waiting for a confirmation.
 	
-	/**A ConnectionEndpoint is created with a unique name, an address, that determines the information exchanged during the creation of a connection and
-	 * a port that this ConnectionEndpoint is listening on for messages.
-	 * 
-	 * @param connectionName the name of the ConnectionEndpoint, also used in the ContactListDB and the MessageSystem methods.
-	 * @param localAddress	the ip that the ConnectionEndpoint is working on. Is sent to the other ConnectionEndpoint when creating a connection.
-	 * @param serverPort	the port this ConnectionEndpoints server is listening on for messages.
+	private String messageLog = " ------ START OF MESSAGE LOG ------ ";
+	/** Timeout in ms when trying to connect to a remote server, 0 is an infinite timeout */
+	private final int CONNECTION_TIMEOUT = 3000;
+	
+	
+	/**
+	 * Used when creating a ConnectionEndpoint as a response to a ConnectionRequest.
+	 * Called by {@linkplain ConnectionManager}. Do not call from anywhere else!
+	 * @param connectionName
+	 * 		name of the partner that this connection request came from <br>
+	 * 		will be the {@link #connectionID} of this endpoint, and the {@link #remoteName}
+	 * @param localAddress
+	 * 		our local IP address
+	 * @param localPort
+	 * 		our server port, that we receive messages on
+	 * @param localSocket
+	 * 		socket created by ServerSocket.accept(), must be connected, may not be closed
+	 * @param targetIP
+	 * 		IP of the partner that sent the connection request
+	 * @param targetPort
+	 * 		server port of the partner that sent the connection request, outgoing messages will be sent to this port
 	 */
-	public ConnectionEndpoint(String connectionName, String localAddress, int serverPort) {
-		connectionID = connectionName;
-		keyGen = new KeyGenerator(connectionID);
+	public ConnectionEndpoint(String connectionName, String localAddress, int localPort, Socket localSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, int targetPort) {
+		this.connectionID = connectionName;
+		this.keyGen = new KeyGenerator(this);
 		this.localAddress = localAddress;
-		localServerPort = serverPort;
+		this.localServerPort = localPort;
+		System.out.println("Initialized local ServerSocket in Endpoint of " + connectionID + " at Port " + String.valueOf(localServerPort));
+		
+		localClientSocket = localSocket;
+		clientOut = streamOut;
+		clientIn = streamIn;
+		remoteIP = targetIP;
+		remotePort = targetPort;
+		System.out.println("+++CE "+ connectionID +" received Socket and Streams!+++");
+		
+		isBuildingConnection = false;
+		isConnected = true;
+		
+		System.out.println("+++CE "+ connectionID +" is sending a message back!+++");
 		try {
-			localServerSocket = new ServerSocket(localServerPort);
-			System.out.println("Initialised local ServerSocket in Endpoint of " + connectionID + " at Port " + String.valueOf(localServerPort));
-		} catch (IOException e) {
-			System.err.println("[" + connectionID + "]: Local Connection Endpoint could not be established! An Error occured while creating the local Client and Server Sockets!");
+			pushMessage(TransmissionTypeEnum.CONNECTION_CONFIRMATION, Configuration.getProperty("UserName"), null, null);
+		} catch (EndpointIsNotConnectedException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		//Wait for greeting
+		//System.out.println("[" + connectionID + "]: Waiting for Greeting from connecting Party");
+		listenForMessage();
+	}
+	
+	/**
+	 * Used when creating a ConnectionEndpoint that tries to connect to another ConnectionEndpoint by sending a request.
+	 * Called by {@linkplain ConnectionManager}. Do not call from anywhere else!
+	 * @param connectionName
+	 * 		name of the partner that this connection request came from <br>
+	 * 		will be the {@link #connectionID} of this endpoint, and the {@link #remoteName}
+	 * @param localIP
+	 * 		our local IP address (this is the IP we tell the remote endpoint to send messages back to)
+	 * @param localPort
+	 * 		our server port, that we receive messages on (this is the port we tell the remote endpoint to send messages to)
+	 * @param targetIP
+	 * 		IP of the partner that sent the connection request
+	 * @param targetPort
+	 * 		server port of the partner that sent the connection request, outgoing messages will be sent to this port
+	 */
+	public ConnectionEndpoint(String connectionName, String localIP, int localPort, String sig, String targetIP, int targetPort) {
+		System.out.println("---A new CE has been created! I am named: "+ connectionName +" and my own IP is: "+ localAddress +" and I am going to connect to :"+ targetIP+":"+targetPort +".--");
+		connectionID = connectionName;
+		this.keyGen = new KeyGenerator(this);
+
+		this.localAddress = localIP;
+		this.localServerPort = localPort;
+		this.signature = sig;
+		
+		remoteIP = targetIP;
+		remotePort = targetPort;
+
+		try {
+
+			establishConnection(targetIP, targetPort);
+		} catch (IOException e) {
+			System.err.println("Error occured while establishing a connection from " + connectionID + " to target ServerSocket @ " + remoteIP + ":" + remotePort + ".");
+			e.printStackTrace();
+		}
+		
+	}
+	
+	/**
+	 * @return the ID of this connection endpoint, used as a unique identifier
+	 */
+	public String getID() {
+		return this.connectionID;
+	}
+	
+	/**This method returns the public Signature of the connected CE. It is used to sign a message to that CE.
+	 * 
+	 * @return the signature. May be "" if it has not been set so far. Use the setSignatureGUI to ask the user to set it in this case.
+	 */
+	public String getSig() {
+		return signature;
+	}
+	
+	/**This method sets the signature that is used when sending authenticated Messages.
+	 * 
+	 * @param sig
+	 */
+	public void setSig(String sig) {
+		signature = sig;
 	}
 	
 	/**Reports the current State of this Endpoints Connection.
@@ -83,16 +196,13 @@ public class ConnectionEndpoint implements Runnable{
 		if(isConnected && !isBuildingConnection) {
 			return ConnectionState.CONNECTED;
 		}
-		if(!isConnected && !isBuildingConnection && !waitingForConnection && !waitingForMessage) {
+		if(!isConnected && !isBuildingConnection && !isListeningForMessages) {
 			return ConnectionState.CLOSED;
 		}
-		if(waitingForConnection && !isConnected && !isBuildingConnection) {
-			return ConnectionState.WAITINGFORCONNECTION;
-		}
-		if(!waitingForConnection && !isConnected && !isBuildingConnection && waitingForMessage) {
+		if(!isConnected && !isBuildingConnection && isListeningForMessages) {
 			return ConnectionState.WAITINGFORMESSAGE;
 		}
-		if(!waitingForConnection && !isConnected && isBuildingConnection) {
+		if(!isConnected && isBuildingConnection) {
 			return ConnectionState.CONNECTING;
 		}
 		return ConnectionState.ERROR;
@@ -107,12 +217,19 @@ public class ConnectionEndpoint implements Runnable{
 	}
 	
 	
-	/**updated the local IP. This is usually called by the ConnectionManager.setLocalAddress()
-	 * 
+	/**
+	 * Updates the local IP address.
+	 * If this CE is connected, the connection is closed. 
+	 * A connection termination transmission will be sent if possible, 
+	 * but if not, the connection will be closed regardless.
 	 * @param newLocalAddress
 	 */
 	public void updateLocalAddress(String newLocalAddress) {
-		closeConnection(true);
+		try {
+			closeWithTerminationRequest();
+		} catch (EndpointIsNotConnectedException e) {
+			forceCloseConnection();
+		}
 		localAddress = newLocalAddress;
 	}
 	
@@ -125,15 +242,21 @@ public class ConnectionEndpoint implements Runnable{
 	}
 	
 	/**Updates the local Port
-	 * 
+	 * If this CE is connected, the connection is closed. 
+	 * A connection termination transmission will be sent if possible, 
+	 * but if not, the connection will be closed regardless.
 	 * @param newPort the new Port
 	 */
 	public void updatePort(int newPort) {
-		closeConnection(true);
+		try {
+			closeWithTerminationRequest();
+		} catch (EndpointIsNotConnectedException e) {
+			forceCloseConnection();
+		}
 		localServerPort = newPort;
 	}
 	
-	/**Returns the int-Portnumber that this ConnectionEndpoint uses to listen to incoming messages.
+	/**Returns the number of the port that this ConnectionEndpoint uses to listen to incoming messages.
 	 * 
 	 * @return the Port Number used by this ConnectionEndpoint as an int.
 	 */
@@ -146,16 +269,48 @@ public class ConnectionEndpoint implements Runnable{
 	 * @return the ip this ConnectionEndpoint is connected to.
 	 */
 	public String getRemoteAddress() {
-		return remoteID;
+		return remoteIP;
 	}
 	
 	/**Works just like getRemoteAddress() but returns the port this ConnectionEndpoint is currently connected to.
-	 * Note: this is the port of the OTHER ConnectionEndpoint, that this one is connected to, not this onews own serverPort.
+	 * Note: this is the port of the OTHER ConnectionEndpoint, that this one is connected to, not this ones own serverPort.
 	 * 
 	 * @return the port we are sending messages to
 	 */
 	public int getRemotePort() {
 		return remotePort;
+	}
+	
+	/**Returns the Name of the Connected User.
+	 * 
+	 * @return the Name of the Connected User.
+	 */
+	public String getRemoteName() {
+		return remoteName;
+	}
+	
+	/**Sets the Name of the Connected User.
+	 * 
+	 * @param remoteName the Name of the connected User.
+	 */
+	public void setRemoteName(String remoteName) {
+		this.remoteName = remoteName;
+	}
+	
+	/**Returns the latest Text-Message Log.
+	 * 
+	 * @return the latest Text-Message Log.
+	 */
+	public MessageGUI getLogGUI() {
+		return logGUI;
+	}
+	
+	/**Use this to Edit the Text-Message Log.
+	 * 
+	 * @param log The new Log.
+	 */
+	public void setLogGUI(MessageGUI log) {
+		logGUI = log;
 	}
 	
 	
@@ -171,39 +326,53 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public void establishConnection(String targetServerIP, int targetServerPort) throws IOException {
 		if(isConnected) {
-			System.out.println("Warning: " + connectionID + " is already connected to " + remoteID + " at Port " + String.valueOf(remotePort) + "! Connection creation aborted!");
+			System.out.println("Warning: " + connectionID + " is already connected to " + remoteIP + " at Port " + remotePort + "! Connection creation aborted!");
 			return;
 		}
 		System.out.println("[" + connectionID + "]: Attempting to connect " + connectionID + " to: " + targetServerIP + " on port " + String.valueOf(targetServerPort) + "!");
 
 		isBuildingConnection = true;
-		remoteID = targetServerIP;
+		remoteIP = targetServerIP;
 		remotePort = targetServerPort;
 		
 		//Try to connect to other Server
 		try {
 			//Connecting own Client Socket to foreign Server Socket
-			localClientSocket = new Socket(remoteID,remotePort);
+			localClientSocket = new Socket();
+			localClientSocket.connect(new InetSocketAddress(remoteIP, remotePort), CONNECTION_TIMEOUT);
+			System.out.println(connectionID + " connected to a server socket.");
 			clientOut = new ObjectOutputStream(localClientSocket.getOutputStream());
-			isConnected = true;
-			
+			System.out.println("Output Stream set for " + connectionID);
+			clientIn = new ObjectInputStream(localClientSocket.getInputStream());
+			System.out.println("Input Stream set for " + connectionID);
 			//Send Message to allow foreign Endpoint to connect with us.
 			System.out.println("[" + connectionID + "]: " + connectionID + " is sending a greeting.");
-			pushMessage(TransmissionTypeEnum.CONNECTION_REQUEST, localAddress + ":::" + localServerPort, "", "");
+			try {
+				pushMessage(TransmissionTypeEnum.CONNECTION_REQUEST, localAddress + ":::" + localServerPort + ":::" + Configuration.getProperty("UserName"), null, null);
+			} catch (EndpointIsNotConnectedException e) {
+				// This will not happen unless a programming mistake was made
+				e.printStackTrace();
+				return;
+			}
 			System.out.println("[" + connectionID + "]: waiting for response");
-			remoteClientSocket = localServerSocket.accept();
-			serverIn = new ObjectInputStream(remoteClientSocket.getInputStream());
-			System.out.println("[" + connectionID + "]: Connected " + connectionID + " to external ID and Port: " + remoteID + ", " + String.valueOf(remotePort) + "!");
-			isBuildingConnection = false;
+	
 			listenForMessage();
-			
+	
 		//Error Messages
 		} catch (UnknownHostException e) {
 			isConnected = false;
-			System.err.println("[" + connectionID + "]: Connection could not be established! An Error occured while trying to reach the other party via " + remoteID + ":" + String.valueOf(remotePort));
+			isBuildingConnection = false;
+			if(!(localClientSocket==null)) {
+				localClientSocket.close();
+			}
+			System.err.println("[" + connectionID + "]: Connection could not be established! An Error occured while trying to reach the other party via " + remoteIP + ":" + String.valueOf(remotePort));
 			e.printStackTrace();
 		} catch (IOException e) {
 			isConnected = false;
+			isBuildingConnection = false;
+			if(!(localClientSocket==null)) {
+				localClientSocket.close();
+			}
 			System.err.println("[" + connectionID + "]: Connection could not be established! An Error occured while connecting to the other Client!");
 			throw e;
 		}
@@ -211,32 +380,16 @@ public class ConnectionEndpoint implements Runnable{
 	}
 	
 	
-	/**Closes the connection to another ConnectionEndpoint. Can also be used to stop a ConnectionEndpoint from waitingForConnection()
-	 * 
-	 * @param localRequest true if the request to close the connection has a local origin, false if the request came as a message from the other Endpoint.
-	 * @throws IOException	This will be thrown if the closing of any of the 3 Sockets fails. Needs to be handled depending on the context of and by the caller.
+	/**Closes the connection to another ConnectionEndpoint. Does not inform the other endpoint! For that, use {@link #closeWithTerminationRequest()}.
+	 * Can also be used to stop a ConnectionEndpoint from waitingForConnection()
+	 * @throws IOException	This will be thrown if the closing of any of the Sockets fails. Needs to be handled depending on the context of and by the caller.
 	 */
-	public void closeConnection(boolean localRequest) {
-		if(isConnected && localRequest) {
-			//If close-request has local origin, message other connectionEndpoint about closing the connection.
-			pushMessage(TransmissionTypeEnum.CONNECTION_TERMINATION, "", "", "");
-		}
+	public void forceCloseConnection(){
 		System.out.println("[" + connectionID + "]: Local Shutdown of ConnectionEndpoint " + connectionID);
 		isConnected = false;
 		isBuildingConnection = false;
-		waitingForConnection = false;
-		waitingForMessage = false;
-		listenForMessages = false;
-		if(localServerSocket != null) {
-			try {
-				localServerSocket.close();
-			} catch (IOException e) {
-				System.err.println("[" + connectionID + "]: Shutdown of localServerSocket failed!");
-				e.printStackTrace();
-			}
-			serverIn = null;
-			localServerSocket = null;
-		}
+		isListeningForMessages = false;
+		
 		if(localClientSocket != null) {
 			try {
 				localClientSocket.close();
@@ -247,6 +400,7 @@ public class ConnectionEndpoint implements Runnable{
 			clientOut = null;
 			localClientSocket = null;
 		}
+		
 		if(remoteClientSocket != null) {
 			try {
 				remoteClientSocket.close();
@@ -258,83 +412,50 @@ public class ConnectionEndpoint implements Runnable{
 		}		
 	}
 	
-	/**Pushes a Message to the connected ConnectionEndpoints ServerSocket via the local clientOut Object.
-	 * 
-	 * @param type the type of message being sent. Regular transmissions should use TransmissionTypeEnum.TRANSMSSION.
-	 * @param typeArgument an additional argument used by some TransmissionTypes to pass on important information. Can be "" if not needed.
-	 * @param message the String Message that should be send to the connected ConnectionEndpoints Server.
+	/**
+	 * Sends a request to the partner CE to close the connection, then closes the connection from this end.
+	 * @throws EndpointIsNotConnectedException 
+	 * 		if the state of this endpoint is not {@linkplain ConnectionState#CONNECTED} <br>
+	 * 		if this is thrown, the state of this endpoint will not have changed
 	 */
-	public void pushMessage(TransmissionTypeEnum type, String typeArgument, String message, String sig) {
+	public void closeWithTerminationRequest() throws EndpointIsNotConnectedException {
+		pushMessage(TransmissionTypeEnum.CONNECTION_TERMINATION, "", null, null);
+		forceCloseConnection();
+	}
+	
+	/**Pushes a Message to the connected ConnectionEndpoints ServerSocket via the local clientOut Object. <br>
+	 * Expects this endpoint to be {@linkplain ConnectionState#CONNECTED} to its partner, unless type is {@linkplain TransmissionTypeEnum#CONNECTION_REQUEST}.
+	 * @param type 
+	 * 		the type of message being sent. Regular transmissions should use TransmissionTypeEnum.TRANSMISSION.
+	 * @param typeArgument 
+	 * 		an additional argument used by some TransmissionTypes to pass on important information. Can be "" if not needed.
+	 * @param message 
+	 * 		the byte[] Message that should be sent to the connected ConnectionEndpoints Server.
+	 * @param sig 
+	 * 		the signature of the Message if it is an authenticated message. If not, set sig to null.
+	 * @throws EndpointIsNotConnectedException 
+	 * 		if this connection endpoint is not {@linkplain ConnectionState#CONNECTED} to its partner <br>
+	 * 		never thrown if type is {@linkplain TransmissionTypeEnum#CONNECTION_REQUEST}
+	 * @implNote Previously, it was allowed to push messages while the Endpoint was still  {@linkplain ConnectionState#CONNECTING},
+	 * however, to prevent unstable behavior this is no longer permitted.
+	 */
+	public void pushMessage(TransmissionTypeEnum type, String typeArgument, byte[] message, byte[] sig) throws EndpointIsNotConnectedException {
 		//Check for existence of connection before attempting so send.
-		if(!isConnected) {
-			System.err.println("[" + connectionID + "]: Warning: Attempted to push a message to another Endpoint while not beeing connected to anything!");
-			return;
+		if (   !type.equals(TransmissionTypeEnum.CONNECTION_REQUEST)	// NetworkPackages are only send if it's either a connection request, or we are connected
+			&& !reportState().equals(ConnectionState.CONNECTED)) {
+			throw new EndpointIsNotConnectedException(connectionID, " push message of type " + type);
 		}
-		//System.out.println("Trying to send package");
-		//System.out.println("[" + connectionID + "]: ConnectionEndpoint of " + connectionID + " is pushing Message: " + message + " to ServerSocket of " + remoteID + ":" + String.valueOf(remotePort) + "!");
+		
+		//Write Message to Stream
 		try {
+			System.out.println(connectionID + " pushed a message of type " + type);
 			clientOut.writeObject(new NetworkPackage(type, typeArgument, message, sig));
 		} catch (IOException e) {
 			System.err.println("[" + connectionID + "]: Failed when sending off a message via clientOut.");
 			e.printStackTrace();
 		}
 	}
-	
-	/**this is usually called during message-processing if the messages has content that needs to be stored in the message queue.
-	 * 
-	 * @param message the message to store in the queue.
-	 */
-	private void addMessageToStack(NetworkPackage message) {
-		messageStack.add(message);
-		//System.out.println("Received the following Message: " + message.getContent());
-	}
 
-	/**This reads the oldest message form the MessageStack and removes the messages from the queue.
-	 * Use peekMessageFromStack if you do not want to remove the messages from the queue.
-	 * May return null if no message was found in the queue.
-	 * @return the oldest message in the queue. It is removed from the queue an can not be accessed again.
-	 */
-	public NetworkPackage readMessageFromStack() {
-		
-		//check if a messages is in the queue before reading it.
-		if (messageStack.size()>0) {
-			return messageStack.pop();
-		}
-		System.err.println("[" + connectionID + "]: Error: Tried to read a messages from the MessageStack, but the queue was empty! Check if a message exists via sizeOfMessageStack() before attempting to read the message.");
-		return null;
-	}
-	
-	/**Returns the content of the oldest message in the queue and returns it without removing it from the queue.
-	 * May return null if no message was found in the queue.
-	 * @return the oldest message in the queue. It is not removed from messageStack by this action.
-	 */
-	public NetworkPackage peekMessageFromStack() {
-		if (messageStack.size()>0) {
-			return messageStack.peekFirst();
-		}
-		System.err.println("[" + connectionID + "]: Error: Tried to read a messages from the MessageStack, but the queue was empty! Check if a message exists via sizeOfMessageStack() before attempting to read the message.");
-		return null;
-	}
-	
-	/**This works just like peekMessageFromStack() but returns the newest message in the queue.
-	 * May return null if no message was found in the queue.
-	 * @return the newest message in the queue. It is not removed from the mesageStack by this action.
-	 */
-	public NetworkPackage peekLatestMessageFromStack() {
-		if (messageStack.size()>0) {
-			return messageStack.peekLast();
-		}
-		System.err.println("[" + connectionID + "]: Error: Tried to read a messages from the MessageStack, but the queue was empty! Check if a message exists via sizeOfMessageStack() before attempting to read the message.");
-		return null;
-	}
-	
-	/**This returns the number of messages in the MessageStack waiting to be read.
-	 * 
-	 * @return the size of the queue.
-	 */
-	public int sizeOfMessageStack() {
-		return messageStack.size();
-	}
 	
 	/**This is called in the message processing step after receiving a transmission if the type was a response to a confirmedMessages.
 	 * This stores the messageID in the pendingConfirmations List where it will be found by the confirmedMessage method waiting for the confirmation this id is representing.
@@ -361,76 +482,22 @@ public class ConnectionEndpoint implements Runnable{
 		pendingConfirmations.remove(messageID);
 	}
 	
-	/**This returns a copy of the messages that are waiting to be read on the messageStack.
-	 * 
-	 * @return a copy of the queue of waiting messages.
-	 */
-	@SuppressWarnings("unchecked")
-	public LinkedList<String> getMessageStack(){
-		return (LinkedList<String>) messageStack.clone();
-	}
 	
 	
 	
 	//-------------//
 	// Server Side //
 	//-------------//	
-	
-	/**Loops non-blocking until a connection has been attempted from the outside.
-	 * Then it helps establish a two-way connection to the outside party.
-	 */
-	public void waitForConnection() {
-		//Checking if State is invalid for starting a new waiting process.
-		if(reportState() == ConnectionState.CONNECTED || reportState() == ConnectionState.CONNECTING || reportState() == ConnectionState.WAITINGFORCONNECTION) {
-			System.err.println("[" + connectionID + "]: Attempted to start a new waitForConnection-process while in invalid state: " + reportState());
-			return;
-		}
 		
-		if(waitingForConnection) {
-			System.err.println("[" + connectionID + "]: Attempted to start a new waitForConnection-process while one was still running!");
-			return;
-		}
-		waitingForConnection = true;
-		connectionExecutor.submit(() -> {
-			System.out.println("[" + connectionID + "]: " + connectionID + " is beginning to wait for a ConnectionAttempt from the outside on Port " + localServerPort + "!");
-			waitingForConnection = true;
-			while(waitingForConnection && !isConnected && !isBuildingConnection) {	
-			
-				//Try accepting ConnectionRequest;
-				try {
-					//Listen for connection attempt
-					remoteClientSocket = localServerSocket.accept();
-					System.out.println("[" + connectionID + "]: A ConnectionRequest has been received at " + connectionID + "s ServerSocket on Port " + localServerPort + "!");
-					
-					//Set ServerCommmChannels
-					serverIn = new ObjectInputStream(remoteClientSocket.getInputStream());
-					waitingForConnection = false;
-					isConnected = true;
-					
-					//Wait for greeting
-					System.out.println("[" + connectionID + "]: Waiting for Greeting from connecting Party");
-					listenForMessage();
-					
-				
-				} catch (IOException e) {
-					System.err.println("Server of ConnectionEndpoint " + connectionID + " failed to accept connection attempt!");
-					e.printStackTrace();
-				}
-			}
-			waitingForConnection = false;
-		});
-	}
-		
-	/**Waits until a message was received and then returns the message. Blocking.
-	 * 
-	 * @return	returns the String of the next received message.
+	/**
+	 * Starts a parallel thread causing this endpoint to listen for incoming messages.
 	 */
-	public void listenForMessage() {
-		if(listenForMessages) {
+	public final void listenForMessage() {
+		if(isListeningForMessages) {
 			System.err.println("[" + connectionID + "]: Already listening for Message, not starting a 2. Thread.");
 			return;
 		}
-		listenForMessages = true;
+		isListeningForMessages = true;
 		//System.out.println("[" + connectionID + "]: Waiting for Message has started!");
 		messageThread.start();
 		return;			
@@ -443,108 +510,189 @@ public class ConnectionEndpoint implements Runnable{
 	private void processMessage(NetworkPackage transmission) {
 
 		System.out.println("[" + connectionID + "]: Received Message, starting processing!: " + transmission.getHead() + " - " + transmission.getTypeArg() + " - " + transmission.getContent());
-		try {
-			//Chose processing based on transmissionType in the NetworkPackage head.
-			switch(transmission.getHead()){
-			
-			case CONNECTION_REQUEST:	//This is received if another ConnectionEndpoint intents to create a connection to this one. The Greeting contains the other CEs IP and PORT to connect back to it.
-				//Parse Greeting
-				String greetingMessage = transmission.getTypeArg();
-				remoteID = greetingMessage.split(":::")[0];
-				remotePort = Integer.parseInt(greetingMessage.split(":::")[1]);
-				//System.out.println("[" + connectionID + "]: Received initial Message: " + greetingMessage);
-			
-				//Use greeting(ip:port) to establish back-connection to the ConnectionAttempt-Sources ServerSocket
-				System.out.println("[" + connectionID + "]: Connecting back to " + remoteID + " at Port: " + remotePort);
-				localClientSocket = new Socket(remoteID, remotePort);
-				clientOut = new ObjectOutputStream(localClientSocket.getOutputStream());
-				System.out.println("[" + connectionID + "]: Connection Completed!");
-				return;
-				
-			case CONNECTION_TERMINATION:	//This is received if the other, connected connectionEndpoint wishes to close the connection. Takes all necessary actions on this local side of the connection.
-				//System.out.println("[" + connectionID + "]: TerminationOrder Received at " + connectionID + "!");
-				closeConnection(false);
-				return;
-				
-			case TRANSMISSION:	//This is received if the connected connectionEndpoint wants to send this CE a transmission containing actual data in the NetworkPackages content field. The transmission is added to the MessageStack.
-				//System.out.println("[" + connectionID + "]: Received Message: " + transmission.getContent() + "!");
-				addMessageToStack( transmission);
-				return;
-				
-			case RECEPTION_CONFIRMATION_REQUEST:	//This works similar to the regular Transmission but it indicates the sender is waiting for a reception confirmation. This sends this confirmation back.
-				//System.out.println("[" + connectionID + "]: Received Confirm-Message: " + transmission.getHead() + "!");
-				addMessageToStack( transmission);
-				pushMessage(TransmissionTypeEnum.RECEPTION_CONFIRMATION_RESPONSE, transmission.getTypeArg(), "", "");
-				return;
-				
-			case RECEPTION_CONFIRMATION_RESPONSE:	//This is received if the local CE has sent a confirmedMessage and is waiting for the confirmation. Once received the confirmation in the form of the messageID is added to the pendingConfirmations.
-				//System.out.println("[" + connectionID + "]: Received Confirm_Back-Message: " + transmission.getHead() + "!");
-				registerConfirmation(transmission.getTypeArg());
-				return;
-				
-			case KEYGEN_SYNC_REQUEST:	//This is received if another ConnectionEndpoint that is connected to this one is intending to start a KeyGeneration Process and is asking for a response(accept/reject).
-				//System.out.println("[" + connectionID + "]: Received KeyGenSync-Message: " + transmission.getHead() + "!");
-				SHA256withRSAAuthentication authenticator = new SHA256withRSAAuthentication();
-				if (authenticator.verify(transmission.getContent(), transmission.getSignature(), connectionID)) {
-					keyGen.keyGenSyncResponse();
-				}
-				return;
-				
-			case KEYGEN_SYNC_ACCEPT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
-				//The SyncConfirm is added to the regular messagesStack and read by the KeyGenerator.
-				//System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
-				addMessageToStack( transmission);
-				return;
-				
-			case KEYGEN_SYNC_REJECT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
-				//The SyncReject is added to the regular messagesStack and read by the KeyGenerator.
-				//System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
-				addMessageToStack( transmission);
-				return;			
-				
-			case KEYGEN_TERMINATION:	//This is received if the connected ConnectionEndpoint intends to terminate the KeyGen Process. This will cause a local shutdown in response.
-				//Terminating Key Gen
-				keyGen.shutdownKeyGen(false, true);
-				return;
-				
-			default:	//This is the fallback if no valid Transmission Type was recognized.
-				System.err.println("ERROR: [" + connectionID + "]: Invalid message prefix in message: " + transmission.getHead());
-				return;
-			
-			
-		}
+		//Chose processing based on transmissionType in the NetworkPackage head.
 		
-		} catch (IOException e) {
-			System.err.println("There was an issue at " + connectionID + " while trying to parse special commands from the latest Message: " + transmission.getHead() + ".");
-			e.printStackTrace();
-		}
-				
-		return;
+		switch(transmission.getHead()){
+		
+		case CONNECTION_CONFIRMATION:
+			System.out.println("[" + connectionID + "]: Connection Confirmation received!");
+			remoteName = transmission.getTypeArg();
+			isBuildingConnection = false;
+			isConnected = true;
+			return;
+			
+		case CONNECTION_TERMINATION:	//This is received if the other, connected connectionEndpoint wishes to close the connection. Takes all necessary actions on this local side of the connection.
+			//System.out.println("[" + connectionID + "]: TerminationOrder Received at " + connectionID + "!");
+			forceCloseConnection();
+			return;
+			
+		case TRANSMISSION:	//This is received if the connected connectionEndpoint wants to send this CE a transmission containing actual data in the NetworkPackages content field. The transmission is added to the MessageStack.
+			receiveMessage(transmission);
+			return;
+			
+		case FILE_TRANSFER:
+			receiveFile(transmission);
+			return;
+			
+		case KEYGEN_SYNC_REQUEST:	//This is received if another ConnectionEndpoint that is connected to this one is intending to start a KeyGeneration Process and is asking for a response(accept/reject).
+			if (((SHA256withRSAAuthentication)QuantumnetworkControllcenter.authentication).verify(transmission.getContent(), transmission.getSignature(), connectionID)) {
+				try {
+					keyGen.keyGenSyncResponse();
+				} catch (ManagerHasNoSuchEndpointException | NumberFormatException | EndpointIsNotConnectedException e) {
+					// TODO Log this
+					/*
+					 *  This occurs if this CE receives a message of type KEYGEN_SYNC_REQUEST while it is not in the 
+					 *  current ConnectionManager of MessageSystem. Outside of test scenarios, this should never occur.
+					 *  NFE occurs if the source port value in Configuration is not a valid Int.
+					 *  Possibly throw a custom Exception here? (e.g. KeyGenFailedException) or something
+					 */
+				}
+			}
+			return;
+			
+		case KEYGEN_SYNC_ACCEPT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
+			//The SyncConfirm is added to the regular messagesStack and read by the KeyGenerator.
+			keyGen.updateAccRejState(1);
+			return;
+			
+		case KEYGEN_SYNC_REJECT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
+			//The SyncReject is added to the regular messagesStack and read by the KeyGenerator.
+			keyGen.updateAccRejState(-1);
+			return;		
+			
+		case KEYGEN_TRANSMISSION:
+			keyGen.writeKeyGenFile(transmission);
+			return;
+			
+		case KEYGEN_SOURCE_SIGNAL:	//This is only used for signaling the source server to start sending photons. 
+			SourceControlApplication.writeSignalFile(transmission, connectionID);
+			return;
+			
+		case KEYGEN_TERMINATION:	//This is received if the connected ConnectionEndpoint intends to terminate the KeyGen Process. This will cause a local shutdown in response.
+			//Terminating Key Gen
+			try {
+				keyGen.shutdownKeyGen(false, true);
+			} catch (ManagerHasNoSuchEndpointException | EndpointIsNotConnectedException e) {
+				// TODO log this
+				/*
+				 *  This occurs if this CE receives a message of type KEYGEN_TERMINATION while it is not in the 
+				 *  current ConnectionManager of MessageSystem. Outside of test scenarios, this should never occur.
+				 */
+			}
+			return;
+			
+		default:	//This is the fallback if no valid Transmission Type was recognized.
+			System.err.println("ERROR: [" + connectionID + "]: Invalid message prefix in message: " + transmission.getHead());
+			return;
+		
+		
+}
 	}
 
 	
-	/**This is the parallel running task that accepts and handles newly received messages.
-	 * This is usually started by listenForMessage().
-	 * 
+	/**
+	 * While the Client is connecting or connected, this will listen for incoming messages if {@link #isListeningForMessages} 
+	 * is true and pass them to {@link #processMessage(NetworkPackage)}. This is usually started by listenForMessage().
+	 * <b> Calling this directly from the outside is discouraged. </b>
 	 */
 	@Override
 	public void run() {
-		waitingForMessage = true;
+		isListeningForMessages = true;
 		NetworkPackage receivedMessage;
-		while(waitingForMessage) {
+		while(isListeningForMessages) {
 			try {
-				if(waitingForMessage && serverIn != null && isConnected && !waitingForConnection && (receivedMessage = (NetworkPackage) serverIn.readObject()) != null) {
+				if(isListeningForMessages && clientIn != null && (isConnected||isBuildingConnection) && (receivedMessage = (NetworkPackage) clientIn.readObject()) != null) {
+					System.out.println( "[" + connectionID + "]:Starting to process Message...");
 					processMessage(receivedMessage);
 
 				}
 			} catch (IOException | ClassNotFoundException e) {
 				if(isConnected) {
 					System.err.println("[" + connectionID + "]: Error while waiting for Message at " + connectionID + "!");
+					try {
+						//If the connection is invalid, terminate the CE
+						QuantumnetworkControllcenter.conMan.destroyConnectionEndpoint(connectionID);
+					} catch (ManagerHasNoSuchEndpointException e1) {
+						e1.printStackTrace();
+					}
 					e.printStackTrace();
 				}
 			}
 		}
-		listenForMessages = false;
+		isListeningForMessages = false;
+	}
+	
+	/**This Method handles all types of Transmissions.
+	 * TRANSMISSION, FILE_TRANSFER and RECEPTION_CONFIRMATION_REQUEST will be handled by this method after being processed.
+	 * 
+	 * @param transmission the new transmission.
+	 */
+	private void receiveMessage(NetworkPackage transmission) {
+		String msg;
+		System.out.println("[" + connectionID + "]: Receiving new Message...");
+		
+		if(transmission.getHead() == TransmissionTypeEnum.FILE_TRANSFER) {
+			//TODO: Implement File Handling! Also add functionality to MessageGUI similar to "Send Message"-logic for "Send File".
+		}
+		
+		System.out.println("TypeArg is: ");
+		if(transmission.getTypeArg().split(":::")[0] == "encrypted") {
+			System.out.println("Message is encrypted...");
+			//Handle Encrypted Messages
+			msg = MessageSystem.readEncryptedMessage(connectionID, transmission);
+			if(msg == null) {
+				System.err.println("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
+				new GenericWarningMessage("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
+			}
+			return;
+		}
+		//TODO: Hier muss sichergestellt werden dass verschlüsselte Nachrichten korrekt anhand des TypeArges "encrypted:::" erkannt werden!!
+		if(transmission.getSignature() != null) {
+			System.out.println("Message is signed...");
+			//Handle Authenticated Messages
+			msg = MessageSystem.byteArrayToString(MessageSystem.readAuthenticatedMessage(connectionID, transmission));
+			if(msg == null) {
+				System.err.println("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
+				new GenericWarningMessage("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
+			}
+			
+		}else {
+			System.out.println("Message is unsafe...");
+			//Handle Unsafe Messages
+			msg = MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission));
+		}
+		
+		//Update Message Log
+		logMessage(messageLog + "\n" + remoteName +" wrote: \n" + msg);
+		
+		if(logGUI != null) {
+			logGUI.refreshMessageLog();
+		}
+	}
+	
+	private void receiveFile(NetworkPackage transmission) {
+		//TODO: Add creation of file here! I assume the Argument of the NetworkPackage will contain the path + filename.filetype!
+	}
+	
+	/**This replaces the message log with a new one.
+	 * Normally the new one also contains the old one.
+	 * 
+	 * @param msg the new message log.
+	 */
+	public void logMessage(String msg) {
+		messageLog = (msg);
+	}
+	
+	/**This returns the MessageLog that contains any plain-text messages of this connection.
+	 * 
+	 * @return the message log
+	 */
+	public String getMessageLog() {
+		return messageLog;
+	}
+	
+	public void appendMessageToLog(String newMessage) {
+		logMessage(getMessageLog() + newMessage);
 	}
 
 }

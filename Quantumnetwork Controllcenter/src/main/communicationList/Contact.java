@@ -1,7 +1,7 @@
 package communicationList;
 
 /**
- * class for bundling information of a sb entry in the communication list
+ * Class for bundling information about a contact in the CommunicationList.
  * @author Sarah Schumann
  */
 public final class Contact {
@@ -16,11 +16,11 @@ public final class Contact {
     private final int lengthSignatureKeyToString = 7;
 
     /**
-     * constructor for DbObject, sets all the final variables
-     * @param n the name of the entry as string
-     * @param i the ip address of the entry as string
-     * @param p the port of the entry as int
-     * @param s the signature key of the entry as string
+     * Constructor.
+     * @param n the name of the contact
+     * @param i the ip address of the contact
+     * @param p the port of the contact as int
+     * @param s the signature key of the contact
      */
     public Contact(final String n, final String i, final int p, final String s) {
         name = n;
@@ -30,32 +30,28 @@ public final class Contact {
     }
 
     /**
-     * getter method for the name
-     * @return the name of the db entry as string
+     * @return the name of the contact as string
      */
     public String getName() {
         return name;
     }
 
     /**
-     * getter method for the ip address
-     * @return the ip address of the db entry as string
+     * @return the ip address of the contact as string
      */
     public String getIpAddress() {
         return ipAddress;
     }
 
     /**
-     * getter method for the port
-     * @return the port of the db entry as int
+     * @return the port of the contact as int
      */
     public int getPort() {
         return port;
     }
 
     /**
-     * getter method for the signature key
-     * @return the signature key of the db entry as string
+     * @return the signature key of the contact as string
      */
     public String getSignatureKey () {
         return signatureKey;

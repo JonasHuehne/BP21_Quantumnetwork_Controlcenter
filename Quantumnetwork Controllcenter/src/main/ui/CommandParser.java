@@ -10,7 +10,10 @@ import java.util.stream.Stream;
  * This class implements methods that can be used to match a text String to a fitting {@link Command},
  * extract a Commands arguments as an array of Strings etc.
  * @author Sasha Petri
- */
+ * @deprecated Due to time concerns, the focus of developement has shifted to the GUI. 
+ * Support for the Console UI may be picked up again later, but at the moment there is no guarantee for it to be up to date or functional.
+*/
+@Deprecated
 public class CommandParser {
 
 	/**

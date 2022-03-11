@@ -1,17 +1,13 @@
 package externalAPI;
 
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+
 import javax.crypto.SecretKey;
 
 import frame.Configuration;
 import keyStore.KeyStoreDbManager;
-import messengerSystem.MessageSystem;
 
 /**
  * An API class for external use to get keys and use the encryption/decryption with or without sending the file.
@@ -33,7 +29,7 @@ public class ExternalAPI {
 		if(communicationPartner.equals("42debugging42")) {
 			return new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32}; 
 		}
-		return KeyStoreDbManager.getEntryFromKeyStore(communicationPartner).getKeyBuffer();
+		return KeyStoreDbManager.getEntryFromKeyStore(communicationPartner).getCompleteKeyBuffer();
 	}
 	
 	/**
@@ -128,53 +124,17 @@ public class ExternalAPI {
 	}
 	
 	/**
-	 * sends a signed message with encrypted text from given .txt file
-	 * 
-	 * @param communicationPartner the ID of the receiver as listed in communicationList
-	 * @param fileName Name of the .txt file containing the suffix ".txt"
+	 * @deprecated This is changed in the US for sending and receiving encrypted files.
 	 */
 	public static boolean sendEncryptedTxtFile(String communicationPartner, String fileName) {
-		Path externalPath = getExternalAPIPath();
-		Path toRead = externalPath.resolve(fileName);
-		
-		String message = "";
-		
-		try {
-		message = Files.readString(toRead);
-		} catch (IOException e) {
-			
-			System.err.println("Error, could not read the given File \n" + e.toString());
-			return false;
-		}
-		
-		return MessageSystem.sendEncryptedMessage(communicationPartner, message);
+		return false;
 	}
 	
 	/**
-	 * receives a signed message with encrypted text, sent from an external source.
-	 * Saves the text decrypted in a .txt file in externalAPI directory, named with the ID of the sender and current Timestamp.
-	 * 
-	 * @param communicationPartner the ID of the sender
+	 * @deprecated This is changed in the US for sending and receiving encrypted files.
 	 */
 	public static void receiveEncryptedTxtFile(String communicationPartner) {
-		Path externalPath = getExternalAPIPath();
-		
-		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu_MM_dd_HH_mm");
-        LocalDateTime now = LocalDateTime.now();
-        String currentDateTime = dateTimeFormatter.format(now);
-		System.out.println(currentDateTime);
-        
-		Path toWrite = externalPath.resolve(currentDateTime + "_" + communicationPartner + ".txt");
-		
-		File decrypted = new File(toWrite.toString());
-		
-		String received = MessageSystem.readEncryptedMessage(communicationPartner);
-		
-		try {
-			Files.writeString(decrypted.toPath(), received);
-		} catch (IOException e) {
-			System.err.println("Error, could not write to the outputfile \n" + e.toString());
-		}
+
 	}
 	
 	/*

@@ -1,26 +1,22 @@
 package messengerSystem;
 
-import communicationList.Contact;
-import frame.Configuration;
-import frame.QuantumnetworkControllcenter;
-
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.KeyPairGenerator;
-import java.security.Signature;
 import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-import java.util.Properties;
 import java.util.regex.Pattern;
+
+import communicationList.Contact;
+import frame.Configuration;
+import frame.QuantumnetworkControllcenter;
 
 /**
  * Class providing the methods necessary for authentication
@@ -30,7 +26,7 @@ import java.util.regex.Pattern;
 public class SHA256withRSAAuthentication implements Authentication {
 
     /**
-     * The path to the folder for the signature keys, incl a file separator at the end
+     * The path to the folder for the signature keys, includes a file separator at the end
      */
     private static final String KEY_PATH = "SignatureKeys" + File.separator;
 
@@ -76,21 +72,17 @@ public class SHA256withRSAAuthentication implements Authentication {
     /**
      * Method to create a signature for a message using the designated private key
      * @param message the message to be signed with the private key
-     * @return the signed message as a String; null if Error
+     * @return the signed message as a byte array; null if Error
      */
     @Override
-    public String sign (final String message) {
+    public byte[] sign (final byte[] message) {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
             // get PrivateKey object from File
             PrivateKey privateKey = getPrivateKeyFromFile();
             signature.initSign(privateKey);
-            // convert message from String to byte array
-            byte[] msg = message.getBytes();
-            signature.update(msg);
-            byte[] sig = signature.sign();
-            // convert signature into 'readable' string
-            return new String(Base64.getEncoder().encode(sig));
+            signature.update(message);
+            return signature.sign();
         } catch (Exception e) {
             System.err.println("Error while signing: " + e.getMessage());
             return null;
@@ -100,14 +92,14 @@ public class SHA256withRSAAuthentication implements Authentication {
     /**
      * Method to verify a message with a signature, given a message, the signature and the sender name
      * (takes the public key from the corresponding entry in the communication list)
-     * @param message the received signed message (only text without the signature)
-     * @param receivedSignature the received signature as String
+     * @param message the received signed message (without the signature)
+     * @param receivedSignature the received signature
      * @param sender the sender of the message, needed to look up the public key in the communication list
      * @return true if the signature matches the message, false otherwise or if Error
      * @throws IllegalArgumentException if sender null or does not exist, or no Signature Key for sender
      */
     @Override
-    public boolean verify (final String message, final String receivedSignature,
+    public boolean verify (final byte[] message, final byte[] receivedSignature,
                            final String sender) {
         try {
             Signature signature = Signature.getInstance("SHA256withRSA");
@@ -124,13 +116,9 @@ public class SHA256withRSAAuthentication implements Authentication {
             // get PublicKey object from String
             PublicKey publicKey = getPublicKeyFromString(pubKey);
             signature.initVerify(publicKey);
-            // convert message from String to byte array
-            byte[] msg = message.getBytes();
-            signature.update(msg);
-            // convert receivedSignature to byte array
-            byte[] recSig = Base64.getDecoder().decode(receivedSignature.getBytes());
+            signature.update(message);
             // return result of verification
-            return signature.verify(recSig);
+            return signature.verify(receivedSignature);
         } catch (Exception e) {
             System.err.println("Error while verifying: " + e.getMessage());
             return false;
@@ -160,6 +148,7 @@ public class SHA256withRSAAuthentication implements Authentication {
     private PrivateKey getPrivateKeyFromFile () {
         try {
             String currentPath = Configuration.getBaseDirPath();
+            System.out.println(currentPath + KEY_PATH + privateKeyFile);
             if(!Files.exists(Path.of(currentPath + KEY_PATH + privateKeyFile))) {
                 System.err.println("Error while creating a private key from the signature key file: "
                         + "no signature key file found");
@@ -243,7 +232,7 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * Method to set the private key file to be used in {@link #sign(String)}
+     * Method to set the private key file to be used in {@link #sign(byte[])}
      * @param keyFileName the name of the key file to set as standard private key
      *                    including the file name extension;
      *                    accepts "" (an empty string) as input for setting it to no key
@@ -266,7 +255,7 @@ public class SHA256withRSAAuthentication implements Authentication {
     }
 
     /**
-     * Method to set the public key to be used by the communication partner in {@link #verify(String, String, String)}
+     * Method to set the public key to be used by the communication partner in {@link #verify(byte[], byte[], String)}
      * @param keyFileName the name of the key file to set as standard public key
      *                    including the file name extension
      *                    accepts "" (an empty string) as input for setting it to no key

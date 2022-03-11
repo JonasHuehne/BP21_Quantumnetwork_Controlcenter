@@ -1,10 +1,17 @@
-import frame.Configuration;
-import org.junit.jupiter.api.*;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+
+import frame.Configuration;
 
 /**
  * Class for testing the Configuration Class
@@ -21,6 +28,33 @@ public class ConfigurationTests {
     private static final String[] DIRECTORY_LIST =
             {"SignatureKeys", "python", "connections", "externalAPI"};
 
+    @BeforeAll
+    static void backUpProperties() {
+    	if(Files.exists(Path.of(System.getProperty("user.dir") + File.separator + "config.xml" ))) {
+            try {
+            	Files.copy(
+            			Path.of(System.getProperty("user.dir") + File.separator + "config.xml" ),
+            			Path.of(System.getProperty("user.dir") + File.separator + "config_backup.xml"));
+            } catch (Exception e) {
+                System.err.println("Error during test setup: " + e);
+            }
+        }
+    }
+    
+    @AfterAll
+    static void restoreProperties() {
+    	if(Files.exists(Path.of(System.getProperty("user.dir") + File.separator + "config_backup.xml"))) {
+            try {
+            	Files.copy(
+            			Path.of(System.getProperty("user.dir") + File.separator + "config_backup.xml"),
+            			Path.of(System.getProperty("user.dir") + File.separator + "config.xml"));
+            	Files.delete(Path.of(System.getProperty("user.dir") + File.separator + "config_backup.xml"));
+            } catch (Exception e) {
+                System.err.println("Error restoring the backup: " + e);
+            }
+        }
+    }
+    
     @BeforeEach
     @AfterEach
     void setupCleanup() {

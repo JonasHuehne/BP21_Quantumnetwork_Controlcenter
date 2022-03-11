@@ -27,8 +27,11 @@ import javax.swing.border.EmptyBorder;
  * The smaller text box allows the user to input text as they would input commands in a terminal, confirming an input with the ENTER key.
  * Entered text is interpreted as a command and processed via the {@link CommandHandler}. The returned String is then presented in the larger text box.
  * @author Sasha Petri
- *
+ * 
+ * @deprecated Due to time concerns, the focus of developement has shifted to the GUI. 
+ * Support for the Console UI may be picked up again later, but at the moment there is no guarantee for it to be up to date or functional.
  */
+@Deprecated
 public class ConsoleUI {
 	
 	private JFrame frmQuantumNetworkControl;

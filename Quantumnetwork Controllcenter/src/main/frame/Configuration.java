@@ -1,12 +1,13 @@
 package frame;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 /**
@@ -17,7 +18,7 @@ import java.util.Properties;
 public class Configuration {
 
     /**
-     * The path to the folder for the program data, incl a file separator at the end
+     * The path to the folder for the program data, includes a file separator at the end
      */
     private static String basePath;
 
@@ -32,7 +33,7 @@ public class Configuration {
     private static final String PATH_CONFIG_NAME = "basePathConfig";
 
     /**
-     * Name of the bade directory at the basePath location
+     * Name of the base directory at the basePath location
      */
     private static final String BASE_DIR_PATH = "QNCC" + File.separator;
 
@@ -59,8 +60,7 @@ public class Configuration {
         if(Files.exists(Path.of(LOCAL_PATH + CONFIG_FILE_NAME))) {
             try {
                 // create an input stream
-                FileInputStream in = new FileInputStream
-                        (LOCAL_PATH + CONFIG_FILE_NAME);
+                InputStream in = Files.newInputStream(Paths.get(LOCAL_PATH, CONFIG_FILE_NAME));
                 // read the properties from file
                 Properties properties = new Properties();
                 properties.loadFromXML(in);
@@ -145,7 +145,7 @@ public class Configuration {
             if (Files.exists(Path.of(LOCAL_PATH + CONFIG_FILE_NAME))) {
                 return true;
             }
-            FileOutputStream out = new FileOutputStream(LOCAL_PATH + CONFIG_FILE_NAME);
+            OutputStream out = Files.newOutputStream(Paths.get(LOCAL_PATH, CONFIG_FILE_NAME));
             Properties properties = new Properties();
             properties.storeToXML(out, null, StandardCharsets.ISO_8859_1);
             out.close();
@@ -165,8 +165,7 @@ public class Configuration {
     public static String getProperty (String propertyKey) {
         try {
             // create an input stream
-            FileInputStream in = new FileInputStream
-                    (LOCAL_PATH + CONFIG_FILE_NAME);
+            InputStream in = Files.newInputStream(Paths.get(LOCAL_PATH, CONFIG_FILE_NAME));
             // read the properties from file
             Properties properties = new Properties();
             properties.loadFromXML(in);
@@ -191,7 +190,7 @@ public class Configuration {
             Properties properties = new Properties();
             if (Files.exists(Path.of(LOCAL_PATH + CONFIG_FILE_NAME))) {
                 // create an input stream
-                FileInputStream in = new FileInputStream(LOCAL_PATH + CONFIG_FILE_NAME);
+                InputStream in = Files.newInputStream(Paths.get(LOCAL_PATH, CONFIG_FILE_NAME));
                 // read the properties from file
                 properties.loadFromXML(in);
                 in.close();
@@ -200,7 +199,7 @@ public class Configuration {
             }
             properties.setProperty(propertyKey, propertyValue);
             // create an output stream
-            FileOutputStream out = new FileOutputStream(LOCAL_PATH + CONFIG_FILE_NAME);
+            OutputStream out = Files.newOutputStream(Paths.get(LOCAL_PATH, CONFIG_FILE_NAME));
             properties.storeToXML(out, null, StandardCharsets.ISO_8859_1);
             out.close();
             return true;

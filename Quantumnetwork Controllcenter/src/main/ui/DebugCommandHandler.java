@@ -11,7 +11,11 @@ import messengerSystem.SHA256withRSAAuthentication;
  * Handles the execution of Debug Commands.
  * Not guaranteed to work, these Commands are intended to be used by developers only.
  * @author Sasha Petri
+ * 
+ * @deprecated Due to time concerns, the focus of developement has shifted to the GUI. 
+ * Support for the Console UI may be picked up again later, but at the moment there is no guarantee for it to be up to date or functional.
  */
+@Deprecated
 public class DebugCommandHandler {
 
 	/**

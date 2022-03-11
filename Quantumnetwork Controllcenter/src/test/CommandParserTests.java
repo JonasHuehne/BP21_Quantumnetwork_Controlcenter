@@ -1,4 +1,6 @@
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -10,7 +12,9 @@ import ui.CommandParser;
 
 /**
  * @author Sasha Petri
+ * @deprecated Console UI is currently not supported.
  */
+@Deprecated
 class CommandParserTests {
 	
 	/*
