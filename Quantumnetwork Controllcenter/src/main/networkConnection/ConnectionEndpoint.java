@@ -565,7 +565,6 @@ public class ConnectionEndpoint implements Runnable{
 			return;
 			
 		case KEYGEN_SOURCE_SIGNAL:	//This is only used for signaling the source server to start sending photons. 
-			//TODO: Add source logic. It just needs to drop a file containing the message content as Text in a special folder where the source is waiting for the file.
 			SourceControlApplication.writeSignalFile(transmission, connectionID);
 			return;
 			

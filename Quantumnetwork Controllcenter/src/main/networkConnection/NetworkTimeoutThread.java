@@ -79,6 +79,9 @@ public class NetworkTimeoutThread extends Thread{
 	 * This Utility can be used to easily setup Timeouts.
      * It needs to be supplied the duration until the timeout is happening
      * and reference to the object that wants to set up the Timeout.
+     * 
+     * To start the timer, create an object of it and then call start() on it.
+     * The timer can be aborted with abortTimer().
 	 * 
 	 * @param ms the duration until the timeout happens in ms.
 	 * @param timeoutMessage this overwrites the String that will be printed on timeout. Can be used for debugging.

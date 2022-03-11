@@ -36,7 +36,6 @@ import networkConnection.TransmissionTypeEnum;
  */
 
 
-//TODO: Add partial Key Usage
 
 public class KeyGenerator implements Runnable{
 	
@@ -542,7 +541,7 @@ public class KeyGenerator implements Runnable{
 		Path inFilePath = connectionPath.resolve(expectedIncomingFilename);
 		
 		//Writing Incoming Files
-		byte[] inFileContent = null;
+		byte[] inFileContent;
 		
 		//Receive Message
 		inFileContent = MessageSystem.readAuthenticatedMessage(getOwnerID(), msg);    
