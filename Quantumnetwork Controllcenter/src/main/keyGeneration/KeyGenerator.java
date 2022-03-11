@@ -137,7 +137,9 @@ public class KeyGenerator implements Runnable{
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
 	private void signalSourceAPI() throws NumberFormatException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
+		//TODO: Source does not respond to connection attempts! Commented-out for now, needs to be fixed. Look at CE.parseMessage() for the SourceSignalType and SourceControlApplication for the issue.
 		
+		/*
 		//Create connection to Source Server
 		String sourceServerConnectionName = "SourceServer_" + MessageSystem.generateRandomMessageID();
 		try {
@@ -155,7 +157,7 @@ public class KeyGenerator implements Runnable{
 							+ owner.getRemoteAddress() 
 							+ "_" + owner.getRemotePort();
 		MessageSystem.sendAuthenticatedMessage(sourceServerConnectionName, TransmissionTypeEnum.KEYGEN_SOURCE_SIGNAL, filename, sourceInfo);
-		
+		*/
 	}
 
 	
@@ -204,7 +206,7 @@ public class KeyGenerator implements Runnable{
 		Instant current;
 		//Wait for Answer
 		while(true) {
-			//Wait for authenticated Transmission of KeyGenResponse(message and signature == 2)
+			//Wait for KeyGenResponse
 			if(hasBeenAccepted != 0) {
 				break;
 			}

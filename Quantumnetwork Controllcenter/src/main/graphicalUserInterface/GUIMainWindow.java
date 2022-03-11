@@ -289,18 +289,18 @@ public final class GUIMainWindow implements Runnable{
 						try {
 							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).getKeyGen().generateKey();
 						} catch (NumberFormatException e1) {
-							new GenericWarningMessage("ERROR - Could not generate key! The value stored as the port of the photon source is not an Integer!");
+							new GenericWarningMessage("ERROR - Could not generate key! The value stored as the port of the photon source is not an Integer!" + e1);
 						} catch (KeyGenRequestTimeoutException e1) {
-							new GenericWarningMessage("A timeout occurred while trying to generate a key with the specified connection.");
+							new GenericWarningMessage("A timeout occurred while trying to generate a key with the specified connection." + e1);
 						} catch (EndpointIsNotConnectedException e1) { // control flow wise, this should not occur, but I'd rather not have an empty catch here
-							new GenericWarningMessage("ERROR - Could not generate key! The endpoint with id " + activeConnection + " is not connected!");
+							new GenericWarningMessage("ERROR - Could not generate key! The endpoint with id " + activeConnection + " is not connected!" + e1);
 						}
 					}else {
 						System.out.println("Warning: Active Connection is not connected to anything!");
 						return;
 					}
 				} catch (ManagerHasNoSuchEndpointException e1) {
-					new GenericWarningMessage("ERROR - Could not remove connection: " + activeConnection + ". No such connection exists.");
+					new GenericWarningMessage("ERROR - Could not remove connection: " + activeConnection + ". No such connection exists." + e1);
 				}
 				
 			}

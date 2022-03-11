@@ -182,7 +182,7 @@ public class MessageSystem {
 	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
 	 */
 	public static boolean sendEncryptedMessage(String connectionID, TransmissionTypeEnum type, String argument, final String message) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		
+		//TODO: Remove Debug in Release?
 		byte[] byteKey;
 		if(connectionID.equals("42debugging42") || connectionID.equals("41debugging41") ) {
 			byteKey = DEBUG_KEY; 
@@ -207,8 +207,8 @@ public class MessageSystem {
 		 */
 		
 		String encrypted = AES256.encrypt(message, byteKey);
-		
-		return sendAuthenticatedMessage(connectionID, type, argument, encrypted);		
+		//Encrypted::: is used in the CE to decide if the message is encrypted and therefore needs to be read with readEncryptedMessage().
+		return sendAuthenticatedMessage(connectionID, type,"encrypted:::" + argument, encrypted);		
 	}
 	
 	/**

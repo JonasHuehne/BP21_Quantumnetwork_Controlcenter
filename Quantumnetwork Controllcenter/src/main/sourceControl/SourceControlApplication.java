@@ -14,6 +14,7 @@ import communicationList.SQLiteCommunicationList;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.PortIsInUseException;
 import frame.Configuration;
+import graphicalUserInterface.SettingsDialog;
 import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
@@ -48,6 +49,17 @@ public class SourceControlApplication {
 	 * 		args[1] local server port
 	 */
 	public static void main(String[] args) {
+		
+		// Configuration Init
+		try {
+			Configuration.findProperties();
+			Configuration.createFolders();
+					
+			//Init ApplicationSettings
+			SettingsDialog.initSettings();
+		} catch (IOException e) {
+			System.err.println("ERROR: Configuration failed: " + e);
+		}
 		
 		ip = args[0];
 		port = Integer.valueOf(args[1]);

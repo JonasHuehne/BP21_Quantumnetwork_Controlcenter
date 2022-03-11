@@ -632,10 +632,10 @@ public class ConnectionEndpoint implements Runnable{
 		System.out.println("[" + connectionID + "]: Receiving new Message...");
 		
 		if(transmission.getHead() == TransmissionTypeEnum.FILE_TRANSFER) {
-			//TODO: Implement File Handling
+			//TODO: Implement File Handling! Also add functionality to MessageGUI similar to "Send Message"-logic for "Send File".
 		}
 		
-		
+		System.out.println("TypeArg is: ");
 		if(transmission.getTypeArg().split(":::")[0] == "encrypted") {
 			System.out.println("Message is encrypted...");
 			//Handle Encrypted Messages
@@ -646,7 +646,7 @@ public class ConnectionEndpoint implements Runnable{
 			}
 			return;
 		}
-		
+		//TODO: Hier muss sichergestellt werden dass verschlüsselte Nachrichten korrekt anhand des TypeArges "encrypted:::" erkannt werden!!
 		if(transmission.getSignature() != null) {
 			System.out.println("Message is signed...");
 			//Handle Authenticated Messages
