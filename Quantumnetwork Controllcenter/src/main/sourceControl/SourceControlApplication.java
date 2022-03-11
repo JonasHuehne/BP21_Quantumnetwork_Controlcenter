@@ -43,7 +43,7 @@ public class SourceControlApplication {
 		System.out.println("Starting the Source Control on IP: " + ip + " and Port: " + String.valueOf(port) + "!");
 		
 		try {
-			conMan = new ConnectionManager(ip,port);
+			conMan = new ConnectionManager(ip,port, "PhotonSource");
 		} catch (IOException e) {
 			System.err.println("A " + e.getClass().getSimpleName() + " occurred trying to create the ConnectionManager for the Photon Source. Shutting down.");
 			e.printStackTrace();

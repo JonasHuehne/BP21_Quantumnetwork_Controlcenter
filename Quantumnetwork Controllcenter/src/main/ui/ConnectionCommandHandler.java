@@ -341,7 +341,7 @@ public class ConnectionCommandHandler {
 	protected static String handleHelloWorld(String connectionID) {
 		
 		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID);
-		
+		/*
 		try {
 			MessageSystem.sendTextMessage(connectionID, "Hello World", false, false, -1);
 		} catch (EndpointIsNotConnectedException e) {
@@ -349,7 +349,7 @@ public class ConnectionCommandHandler {
 		} catch (ManagerHasNoSuchEndpointException e) {
 			return e.getMessage();
 		}
-		
+		*/
 		return "An attempt has been made to send a hello world message.";
 	}
 	
