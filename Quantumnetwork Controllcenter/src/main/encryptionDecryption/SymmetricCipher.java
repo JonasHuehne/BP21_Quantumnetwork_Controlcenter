@@ -129,15 +129,14 @@ public abstract class SymmetricCipher {
 	 * Converts a byte array to a SecretKey object for the algorithm implemented in this class.
 	 * @param key
 	 * 		the byte array to convert <br>
-	 * 		the array must contain enough bits to be sufficient as a key, i.e. key.length * 8 >= {@link #getKeyLength()} <br>
-	 * 		if it contains more bytes than required, only the first {@value #KEY_LENGTH} bytes are used
+	 * 		must be of the same length as the key (i.e. {@link #getKeyLength()} / 8)
 	 * @return
 	 * 		a SecretKey object that can be used for encryption and decryption in this class
 	 */
 	public SecretKey byteArrayToSecretKey(byte[] key) {
-		if (key.length * 8 < KEY_LENGTH) 
+		if (key.length * 8 != KEY_LENGTH) 
 			throw new IllegalArgumentException(
-					"Passed array must be at least the size of the key used by this algorithm, "
+					"Passed array must be the size of the key used by this algorithm, "
 					+ "which is " + getKeyLength() + " bits, or " + KEY_LENGTH / 8 + " bytes.");
 		return new SecretKeySpec(key, 0, key.length, TRANSFORMATION_SIMPLE);
 	};
