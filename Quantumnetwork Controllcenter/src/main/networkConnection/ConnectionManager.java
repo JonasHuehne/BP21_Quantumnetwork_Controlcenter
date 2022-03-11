@@ -314,6 +314,16 @@ public class ConnectionManager {
 	}
 	
 	/**
+	 * Updates the local name that ConnectionEndpoints in this manager use when introducing
+	 * themselves at connection creation.
+	 * @param name
+	 * 		the new name
+	 */
+	public void setLocalName(String name) {
+		this.localName = name;
+	}
+	
+	/**
 	 * @return the local address value currently in use by all {@linkplain ConnectionEndpoint}s.
 	 */
 	public String getLocalAddress() {
@@ -327,6 +337,15 @@ public class ConnectionManager {
 		return localPort;
 	}
 
+	/**
+	 * @return the local name that ConnectionEndpoints in this manager use when introducing
+	 * themselves at connection creation.
+	 */
+	public String getLocalName() {
+		return localName;
+	}
+
+	
 	/**Closes a named connection if existing and open. Does not destroy the connectionEndpoint, use destroyConnectionEndpoint for that. <br>
 	 * @implNote Calls {@linkplain ConnectionEndpoint#closeConnection(boolean)} with the parameter {@code sendTerminationRequest} set to {@code true}.
 	 * If sending the termination request fails (because the endpoint was not connected), it attempts to force close the endpoint instead, by

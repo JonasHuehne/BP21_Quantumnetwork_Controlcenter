@@ -158,6 +158,8 @@ public class SettingsDialog extends JDialog {
 				JButton okButton = new JButton("Apply");
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
+						// TODO Input validation
+						applySettingsToRuntimeComponents();
 						writeSettings();
 						setVisible(false);
 						dispose();
@@ -253,20 +255,34 @@ public class SettingsDialog extends JDialog {
 	 * 
 	 */
 	private void writeSettings() {
-		
 		Configuration.setProperty("UserName", ownNameTextfield.getText());
-		if(!Configuration.getProperty("UserIP").equals(ownIPTextField.getText())) {
-			MessageSystem.conMan.destroyAllConnectionEndpoints();
-			MessageSystem.conMan.setLocalAddress(ownNameTextfield.getText());
-		}
 		Configuration.setProperty("UserIP", ownIPTextField.getText());
-		if(!Configuration.getProperty("UserPort").equals(ownPortTextField.getText())) {
-			MessageSystem.conMan.destroyAllConnectionEndpoints();
-			MessageSystem.conMan.setLocalPort(Integer.valueOf(ownPortTextField.getText()));
-		}
 		Configuration.setProperty("UserPort", ownPortTextField.getText());
 		Configuration.setProperty("SourceIP", sourceIPTextField.getText());
 		Configuration.setProperty("SourcePort", sourcePortTextField.getText());
 		Configuration.setProperty("Encoding", encodingTextField.getText());
+	}
+	
+	/**
+	 * Applies any settings that differ from what is saved in Configuration
+	 * to the relevant runtime components.
+	 */
+	private void applySettingsToRuntimeComponents() {
+		// If local Name was changed
+		if(!Configuration.getProperty("UserName").equals(ownNameTextfield.getText())) {
+			MessageSystem.conMan.setLocalName(ownNameTextfield.getText());
+		}
+		// If local IP was changed
+		if(!Configuration.getProperty("UserIP").equals(ownIPTextField.getText())) {
+			MessageSystem.conMan.destroyAllConnectionEndpoints();
+			MessageSystem.conMan.setLocalAddress(ownNameTextfield.getText());
+		}
+		// If local Port was changed
+		if(!Configuration.getProperty("UserPort").equals(ownPortTextField.getText())) {
+			MessageSystem.conMan.destroyAllConnectionEndpoints();
+			MessageSystem.conMan.setLocalPort(Integer.valueOf(ownPortTextField.getText()));
+		}
+		
+		// TODO Update connection to photon source accordingly if needed
 	}
 }
