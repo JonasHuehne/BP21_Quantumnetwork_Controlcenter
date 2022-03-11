@@ -1,6 +1,8 @@
+
 import java.io.IOException;
 import java.util.ArrayList;
 
+import messengerSystem.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,7 +12,6 @@ import communicationList.CommunicationList;
 import communicationList.Contact;
 import communicationList.SQLiteCommunicationList;
 import frame.Configuration;
-import messengerSystem.SHA256withRSAAuthentication;
 
 /**
  * automated tests for interacting with the communication list db
@@ -173,7 +174,7 @@ class CommunicationListTests {
         String result2 = db.query("test1").toString();
         Assertions.assertEquals("Name: test1, IP Address: 12.12.12.12, Port: 5", result2);
 
-        db.updateSignatureKey("test1", SHA256withRSAAuthentication.readKeyStringFromFile("pkForTesting_1.pub"));
+        db.updateSignatureKey("test1", Utils.readKeyStringFromFile("pkForTesting_1.pub"));
         String result3 = db.query("test1").toString();
         // expects 7 letters of the public key, check needs to be changed if variable in Contact is changed
         Assertions.assertEquals("Name: test1, IP Address: 12.12.12.12, Port: 5, Public Key: MIIBIjA...", result3);
