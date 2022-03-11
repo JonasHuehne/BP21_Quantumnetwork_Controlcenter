@@ -594,4 +594,19 @@ public class ConnectionEndpoint implements Runnable{
 		return packageLog;
 	}
 	
+	/**
+	 * Filters the package log for messages of a certain type.
+	 * @param type
+	 * 		the type of package to filter for
+	 * @return
+	 * 		package of the given type from the log
+	 */
+	public ArrayList<NetworkPackage> getLoggedPackagesOfType(TransmissionTypeEnum type) {
+		ArrayList<NetworkPackage> filtered = new ArrayList<>();
+		for (NetworkPackage np : packageLog) {
+			if (np.getType().equals(type)) filtered.add(np);
+		}
+		return filtered;
+	}
+	
 }
