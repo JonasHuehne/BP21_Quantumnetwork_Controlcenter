@@ -207,6 +207,9 @@ public class SimpleKeyStore {
 	 * @throws NoKeyForContactException 
 	 */
 	public static void deleteUsedKeyBytes(String contactName) throws SQLException, NoKeyForContactException {
+		// TODO this method is actually problematic because using it may result in index X being different points in the key for parties A and B
+		// if A uses it while A has 100 bits used and B uses it when they have 200 bits used, for example. Should either remove the method
+		// or have a "total index" & "original key length" that is set at key gen and remembered, and do some funky calculations with that 
 		try (Connection connection = connect()) {
 			String queryString = "SELECT Key, KeyIndex FROM " + tableName + " WHERE ContactName = ?";
 			PreparedStatement queryStatement = connection.prepareStatement(queryString);
@@ -255,6 +258,31 @@ public class SimpleKeyStore {
 			PreparedStatement deleteStatement = connection.prepareStatement(deleteString);
 			deleteStatement.setString(1, contactName);
 			deleteStatement.executeUpdate();
+		}
+	}
+
+	/**
+	 * Current index of the key shared with that communication partner.
+	 * @param contactName
+	 * 		the ID of the partner
+	 * @return
+	 * 		the current index of the key shared with that parter
+	 * @throws NoKeyForContactException 
+	 * 		if there is no key saved for that contact
+	 * @throws SQLException 
+	 * 		if there was an error connecting to the database, or querying for the key index
+	 */
+	public static int getIndex(String contactName) throws NoKeyForContactException, SQLException {
+		try (Connection connection = connect()) {
+			String queryString = "SELECT KeyIndex FROM " + tableName + " WHERE ContactName = ?";
+			PreparedStatement queryStatement = connection.prepareStatement(queryString);
+			queryStatement.setString(1, contactName);
+			ResultSet rs = queryStatement.executeQuery();
+			if (!rs.isBeforeFirst()) { //if rs is empty
+			 	throw new NoKeyForContactException("No key for contact " + contactName + " in the database.");
+			} else { // if entry for contact is found
+				return rs.getInt(1);
+			}
 		}
 	}
 	
