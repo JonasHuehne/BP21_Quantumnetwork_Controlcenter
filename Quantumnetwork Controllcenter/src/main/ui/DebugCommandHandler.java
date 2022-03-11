@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import communicationList.CommunicationList;
 import communicationList.Contact;
 import frame.QuantumnetworkControllcenter;
-import messengerSystem.SHA256withRSAAuthentication;
 
 /**
  * Handles the execution of Debug Commands.
@@ -24,7 +23,7 @@ public class DebugCommandHandler {
 	 * 		a message whether or not the execution was successful
 	 */
 	static String handleGenSigPair() {
-		boolean b = SHA256withRSAAuthentication.generateSignatureKeyPair();
+		boolean b = QuantumnetworkControllcenter.authentication.generateSignatureKeyPair();
 		String out;
 		if (b) {
 			out = "Successfully generated a key pair for Authentication.";

@@ -23,7 +23,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import communicationList.CommunicationList;
 import communicationList.Contact;
 import frame.QuantumnetworkControllcenter;
-import messengerSystem.SHA256withRSAAuthentication;
+import messengerSystem.Utils;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
@@ -161,7 +161,7 @@ class CommandHandlerTest {
 		@ParameterizedTest
 		@EnumSource(Command.class)
 		void help_for_individual_commands_works(Command c) {
-			assertTrue(CommandHandler.processCommand(help + " " + c.getCommandName()).contains(c.getHelp()));		
+			assertTrue(CommandHandler.processCommand(help + " " + c.getCommandName()).contains(c.getHelp()));
 		}
 		
 		@Test
@@ -311,7 +311,7 @@ class CommandHandlerTest {
 
 			// Assert that pk was properly set
 			Contact Alicia = commList.query("Alicia");
-			assertEquals(SHA256withRSAAuthentication.readKeyStringFromFile("pkForTesting_1.pub"), Alicia.getSignatureKey());
+			assertEquals(Utils.readKeyStringFromFile("pkForTesting_1.pub"), Alicia.getSignatureKey());
 
 			// Now check if pk can be deleted
 			System.out.println(CommandHandler.processCommand(contacts_update + " Alicia pk remove"));
