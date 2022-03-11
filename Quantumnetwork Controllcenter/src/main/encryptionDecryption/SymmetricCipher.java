@@ -132,7 +132,7 @@ public abstract class SymmetricCipher {
 	 * @return
 	 * 		a SecretKey object that can be used for encryption and decryption in this class
 	 */
-	protected SecretKey byteArrayToSecretKey(byte[] key) {
+	public SecretKey byteArrayToSecretKey(byte[] key) {
 		return new SecretKeySpec(key, 0, KEY_LENGTH, TRANSFORMATION_SIMPLE);
 	};
 	
