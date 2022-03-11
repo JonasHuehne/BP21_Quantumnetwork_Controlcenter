@@ -14,7 +14,6 @@ import java.util.LinkedList;
 import encryptionDecryption.FileCrypter;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
-import frame.Configuration;
 import graphicalUserInterface.GenericWarningMessage;
 import graphicalUserInterface.MessageGUI;
 import keyGeneration.KeyGenerator;
@@ -54,6 +53,8 @@ public class ConnectionEndpoint implements Runnable{
 	private int remotePort;	
 	/** Name of the connected partner, used, for example, in the chat window. Note that this is not the {@link #connectionID} of the partner's CE. */
 	private String remoteName;
+	/** When establishing a connection with another connection endpoint, this CE sends this name to be set as the "remote name" on the other end */
+	private String localName;
 	
 	//Communication Channels
 	/** Outgoing messages to the other CE are sent along this channel */
@@ -101,12 +102,17 @@ public class ConnectionEndpoint implements Runnable{
 	 * 		server port of the partner that sent the connection request, outgoing messages will be sent to this port
 	 * @param localPort
 	 * 		our server port, that we receive messages on
+	 * @param localName
+	 * 		our name that we tell the other ConnectionEndpoint in response to the connection request
 	 */
-	public ConnectionEndpoint(String connectionName, String localAddress, Socket localSocket, ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, int targetPort, int localPort) {
+	public ConnectionEndpoint(String connectionName, String localAddress, Socket localSocket, 
+							  ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, 
+							  int targetPort, int localPort, String localName) {
 		this.connectionID = connectionName;
 		this.keyGen = new KeyGenerator(this);
 		this.localAddress = localAddress;
 		this.localServerPort = localPort;
+		this.localName = localName;
 		System.out.println("Initialized local ServerSocket in Endpoint of " + connectionID + " at Port " + String.valueOf(localServerPort));
 		
 		localClientSocket = localSocket;
@@ -121,7 +127,7 @@ public class ConnectionEndpoint implements Runnable{
 		
 		System.out.println("+++CE "+ connectionID +" is sending a message back!+++");
 		try {
-			MessageArgs args = new MessageArgs(Configuration.getProperty("UserName"));
+			MessageArgs args = new MessageArgs(localName);
 			NetworkPackage connectionConfirmation = new NetworkPackage(TransmissionTypeEnum.CONNECTION_CONFIRMATION, args, false);
 			pushMessage(connectionConfirmation);
 		} catch (EndpointIsNotConnectedException e) {
@@ -146,14 +152,17 @@ public class ConnectionEndpoint implements Runnable{
 	 * 		our local IP address (this is the IP we tell the remote endpoint to send messages back to)
 	 * @param localPort
 	 * 		our server port, that we receive messages on (this is the port we tell the remote endpoint to send messages to)
+	 * @param localName
+	 * 		when establishing a connection with another CE, this is the name that we give them
 	 */
-	public ConnectionEndpoint(String connectionName, String targetIP, int targetPort, String localIP, int localPort) {
+	public ConnectionEndpoint(String connectionName, String targetIP, int targetPort, String localIP, int localPort, String localName) {
 		System.out.println("---A new CE has been created! I am named: "+ connectionName +" and my own IP is: "+ localAddress +" and I am going to connect to :"+ targetIP+":"+targetPort +".--");
 		connectionID = connectionName;
 		this.keyGen = new KeyGenerator(this);
 
 		this.localAddress = localIP;
 		this.localServerPort = localPort;
+		this.localName = localName;
 		
 		remoteIP = targetIP;
 		remotePort = targetPort;
@@ -335,8 +344,7 @@ public class ConnectionEndpoint implements Runnable{
 			//Send Message to allow foreign Endpoint to connect with us.
 			System.out.println("[" + connectionID + "]: " + connectionID + " is sending a greeting.");
 			try {
-				String userName = Configuration.getProperty("UserName");
-				MessageArgs args = new MessageArgs(userName, localAddress, localServerPort);
+				MessageArgs args = new MessageArgs(localName, localAddress, localServerPort);
 				NetworkPackage connectionRequest = new NetworkPackage(TransmissionTypeEnum.CONNECTION_REQUEST, args, false);
 				pushMessage(connectionRequest);
 			} catch (EndpointIsNotConnectedException e) {

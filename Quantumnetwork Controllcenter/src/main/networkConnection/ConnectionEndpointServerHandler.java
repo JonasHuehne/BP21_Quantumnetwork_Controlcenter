@@ -27,10 +27,16 @@ public class ConnectionEndpointServerHandler extends Thread{
 	private int remotePort;	//This will be set to the Port of the connection parties ServerSocket based on the contents of the initial message.
 	private boolean settingUp = true;	//As long as this is true, the CESH will keep trying to receive a message that contains the info needed to connect back to the remote CEs ServerSocket.
 	
+	/** For control flow, this flag indicates whether we have accepted an incoming connection request */
 	private boolean acceptedRequest = false;
+	/** If a connection request arrives on the input stream of the socket created by the ServerSocket.accept() method, we create a ConnectionEndpoint in response */
 	private ConnectionEndpoint ce = null;
+	/** Will be passed on to the CE created in response to an incoming connection request */
 	private int localPort;
+	/** Will be passed on to the CE created in response to an incoming connection request */
 	private String localIP;
+	/** Will be passed to the CE created in response to an incoming connection request, will be the name the created CE tells its partner in response */
+	private String localName;
 
 	
 	/**
@@ -44,13 +50,16 @@ public class ConnectionEndpointServerHandler extends Thread{
 	 * 		local IP that will be passed to the newly created  {@linkplain ConnectionEndpoint}
 	 * @param localPort
 	 * 		local port that will be passed to the newly created {@linkplain ConnectionEndpoint}
+	 * @param localName
+	 * 		local name that will be passed to the newly created {@linkplain ConnectionEndpoint}
 	 * @throws IOException 
 	 * 		if an I/O Exception occurred trying to construct an internal ObjectInputStream from the clientsocket's InputStream
 	 */
-	ConnectionEndpointServerHandler(Socket newClientSocket, String localIP, int localPort) throws IOException {
+	ConnectionEndpointServerHandler(Socket newClientSocket, String localIP, int localPort, String localName) throws IOException {
 		clientSocket = newClientSocket;
 		this.localPort = localPort;
 		this.localIP = localIP;
+		this.localName = localName;
 	}
 	
 	public void run() {
@@ -72,7 +81,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 						remoteIP = receivedMessage.getMessageArgs().localIP();
 						remotePort = receivedMessage.getMessageArgs().localPort();
 						String remoteName = receivedMessage.getMessageArgs().userName();
-						ce = new ConnectionEndpoint(remoteName, "", clientSocket, serverOut, serverIn, remoteIP, remotePort, localPort);
+						ce = new ConnectionEndpoint(remoteName, "", clientSocket, serverOut, serverIn, remoteIP, remotePort, localPort, localName);
 						ce.setRemoteName(remoteName);
 						settingUp = false;
 						acceptedRequest = true;

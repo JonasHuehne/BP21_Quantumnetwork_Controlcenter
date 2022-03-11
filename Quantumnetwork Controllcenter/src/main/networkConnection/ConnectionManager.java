@@ -44,6 +44,8 @@ public class ConnectionManager {
 	private String localAddress;
 	/** The port our local server uses to service ConnectionEndpoints connecting to us */
 	private int localPort;
+	/** The local name that connection endpoints in this ConnectionManager introduce themselves as */
+	private String localName;
 	/** This ServerSocket allows other ConnectionEndpoints to connect to us by sending requests to {@link #localAddress}:{@link #localPort}*/
 	private ServerSocket masterServerSocket;
 	/** This thread continuously checks for incoming connection requests */
@@ -67,17 +69,21 @@ public class ConnectionManager {
 	 * @param localPort
 	 * 		the port that this ConnectionManager will be accepting connection requests on, and that contained ConnectionEndpoints will be receiving messages on <br>
 	 * 		must not be in use by any other ConnectionManager
+	 * @param localName
+	 * 		local name that will be passed on to any ConnectionEndpoints in the manager, 
+	 * 		should be the name of this machine / the name you wish to have in the network
 	 * @throws IOException 
 	 * 		if an I/O Exception occurred while trying to open the ServerSocket used for accepting connections
 	 * @throws PortIsInUseException
 	 * 		if the specified port is already in use by another ConnectionManager <br>
 	 * 		ports used by a ConnectionManager remain marked as used until the program is restarted
 	 */
-	public ConnectionManager(String localAddress, int localPort) throws IOException, PortIsInUseException{
+	public ConnectionManager(String localAddress, int localPort, String localName) throws IOException, PortIsInUseException{
 		if (portsInUse.contains(localPort)) throw new PortIsInUseException("Port " + localPort + " is already in use by a ConnectionManager.");
 		
 		this.localAddress = localAddress;
 		this.localPort = localPort;
+		this.localName = localName;
 		
 		masterServerSocket = new ServerSocket(this.localPort);
 		portsInUse.add(localPort);
@@ -113,7 +119,7 @@ public class ConnectionManager {
 					
 					ConnectionEndpointServerHandler cesh; 
 					try { // Construct a CESH for the socket that just connected to our server socket
-						cesh = new ConnectionEndpointServerHandler(clientSocket, localAddress, localPort);
+						cesh = new ConnectionEndpointServerHandler(clientSocket, localAddress, localPort, localName);
 						System.out.println("Created CESH for newly received client socket.");
 					} catch (IOException e) {
 						System.err.println("An I/O Exception occurred while trying to construct the ConnectionEndpointServerHandler "
@@ -176,7 +182,7 @@ public class ConnectionManager {
 			// no two connections to the same IP / Port pairing
 			if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
 			System.out.println("---Received new request for a CE. Creating it now. It will connect to the Server at "+ targetIP +":"+ targetPort +".---");
-			connections.put(endpointName, new ConnectionEndpoint(endpointName, targetIP, targetPort, localAddress, localPort));
+			connections.put(endpointName, new ConnectionEndpoint(endpointName, targetIP, targetPort, localAddress, localPort, localName));
 			return connections.get(endpointName);
 		} else {
 			throw new ConnectionAlreadyExistsException(endpointName);
