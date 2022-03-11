@@ -65,7 +65,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 				ntt.start();
 				
 				if((receivedMessage = (NetworkPackage) serverIn.readObject()) != null) {
-					System.out.println("CESH Received a Message: -.-"+ receivedMessage.getHead().toString() + " - " + receivedMessage.getTypeArg() +"-.-");
+					System.out.println("CESH Received a Message: "+ receivedMessage.getHead().toString());
 					
 					//Create new CE
 					if(receivedMessage.getHead() == TransmissionTypeEnum.CONNECTION_REQUEST) {

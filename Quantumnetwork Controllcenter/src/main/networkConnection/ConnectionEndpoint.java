@@ -609,6 +609,12 @@ public class ConnectionEndpoint implements Runnable{
 			} catch (IOException | ClassNotFoundException e) {
 				if(isConnected) {
 					System.err.println("[" + connectionID + "]: Error while waiting for Message at " + connectionID + "!");
+					try {
+						//If the connection is invalid, terminate the CE
+						QuantumnetworkControllcenter.conMan.destroyConnectionEndpoint(connectionID);
+					} catch (ManagerHasNoSuchEndpointException e1) {
+						e1.printStackTrace();
+					}
 					e.printStackTrace();
 				}
 			}

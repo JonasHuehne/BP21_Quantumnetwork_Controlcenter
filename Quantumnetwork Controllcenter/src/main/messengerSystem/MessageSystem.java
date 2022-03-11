@@ -163,6 +163,7 @@ public class MessageSystem {
 		byte[] message;
 		message = msg.getContent();
 		byte[] signature = msg.getSignature();
+		System.out.println("----Tried to find Sig in DB for: " + connectionID);
 		if(QuantumnetworkControllcenter.authentication.verify(message, signature, connectionID)) {
 			return message;
 		}

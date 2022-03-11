@@ -550,7 +550,14 @@ public final class GUIMainWindow implements Runnable{
 				JButton activeButton = ((JButton) representedConnectionEndpoints.get(k).getComponent(4));
 				JLabel labelCeState = ((JLabel) representedConnectionEndpoints.get(k).getComponent(2));
 				ConnectionEndpoint ce = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(k);
-				ConnectionState state = ce.reportState();
+				ConnectionState state;
+				//If the ce is invalid, switch to ERROR state.
+				if(ce == null) {
+					state = ConnectionState.ERROR;
+				}else {
+					state = ce.reportState();
+				}
+				
 				labelCeState.setText(state.name());
 				labelCeState.revalidate();
 				labelCeState.repaint();
