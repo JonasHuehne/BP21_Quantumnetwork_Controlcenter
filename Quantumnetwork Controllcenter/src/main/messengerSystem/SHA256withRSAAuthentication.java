@@ -173,7 +173,7 @@ public class SHA256withRSAAuthentication implements Authentication {
      * and return it as a string
      * (expects the file name extension to be included in the parameter,
      * accepts the ones included in {@link #KEY_FILENAME_SYNTAX} )
-     * @param fileName the name of the key file
+     * @param fileName the name of the key file in the signature keys folder
      * @return the key from the file as a string (without the beginning and end lines like "-----BEGIN-----"), null if error
      */
     public static String readKeyStringFromFile(String fileName) {
