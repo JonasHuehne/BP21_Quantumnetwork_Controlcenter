@@ -55,13 +55,13 @@ class AuthenticationTests {
             Assertions.assertTrue(result3);
 
             // test method behaviour while file name exists already depending on overwrite
-            boolean result4 = SHA256withRSAAuthentication.generateSignatureKeyPair("signature", true, false, false);
+            boolean result4 = SHA256withRSAAuthentication.generateSignatureKeyPair("signature", true, false);
             Assertions.assertFalse(result4);
-            boolean result5 = SHA256withRSAAuthentication.generateSignatureKeyPair("signature", true, false, true);
+            boolean result5 = SHA256withRSAAuthentication.generateSignatureKeyPair("signature", true, true);
             Assertions.assertTrue(result5);
 
             // test creation with all params as false
-            boolean result6 = SHA256withRSAAuthentication.generateSignatureKeyPair("signatureTest", false, false, false);
+            boolean result6 = SHA256withRSAAuthentication.generateSignatureKeyPair("signatureTest", false, false);
             Assertions.assertTrue(result6);
             boolean result7 = Files.exists(Path.of(currentPath + "SignatureKeys" + File.separator + "signatureTest.key"));
             Assertions.assertTrue(result7);
