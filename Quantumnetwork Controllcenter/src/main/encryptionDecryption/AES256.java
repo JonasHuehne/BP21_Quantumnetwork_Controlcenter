@@ -33,6 +33,7 @@ public class AES256 extends SymmetricCipher {
 	
 	@Override
 	public byte[] encrypt(byte[] plaintext, SecretKey key) throws InvalidKeyException, IllegalBlockSizeException {
+		if (plaintext == null || key == null) throw new NullPointerException();
 		Cipher c = getInitializedInstance(Cipher.ENCRYPT_MODE, key);
 		try {
 			return c.doFinal(plaintext);
@@ -47,6 +48,7 @@ public class AES256 extends SymmetricCipher {
 	
 	@Override
 	public byte[] decrypt(byte[] ciphertext, SecretKey key) throws InvalidKeyException, BadPaddingException {
+		if (ciphertext == null || key == null) throw new NullPointerException();
 		Cipher c = getInitializedInstance(Cipher.DECRYPT_MODE, key);
 		try {
 			return c.doFinal(ciphertext);

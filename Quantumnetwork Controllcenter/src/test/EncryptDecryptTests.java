@@ -336,7 +336,7 @@ class EncryptDecryptTests {
 			/*
 			 * Testing that correct Exception is thrown when using a too long byte array
 			 */
-			public void testStringToSecretKeyAES256ByteArraygTooLong() {
+			public void testByteArrayToSecretKeyAES256ByteArraygTooLong() {
 				assertThrows(IllegalArgumentException.class, () -> {CryptoUtility.byteArrayToSecretKeyAES256(byteKeyLong);});
 			}
 			
@@ -344,7 +344,7 @@ class EncryptDecryptTests {
 			/*
 			 * Testing that correct Exception is thrown when using a too short byte array
 			 */
-			public void testStringToSecretKeyAES256ByteArrayTooShort() {
+			public void testByteArrayToSecretKeyAES256ByteArrayTooShort() {
 				assertThrows(IllegalArgumentException.class, () -> {CryptoUtility.byteArrayToSecretKeyAES256(byteKeyShort);});
 			}
 			
