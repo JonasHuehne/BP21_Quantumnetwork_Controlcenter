@@ -101,13 +101,12 @@ public class NetworkPackageHandler {
 			if (msg.verify(authenticator, ce.getID())) {
 				if (msg.getMessageArgs().keyIndex() != -1) {
 					// if it is encrypted, decrypt it
-					// log the decrypted message
+					// add the decrypted text to the chat log
 				} else { 
-					// otherwise just log it	
+					// otherwise just chat log it	
 				}
 			}
 		}
-		ce.logPackage(msg);
 	}
 	
 	private static void handleFile(ConnectionEndpoint ce, NetworkPackage msg) {
@@ -127,7 +126,6 @@ public class NetworkPackageHandler {
 				// TODO log an error or something here
 			}
 		}
-		ce.logPackage(msg);
 	}
 	
 	
