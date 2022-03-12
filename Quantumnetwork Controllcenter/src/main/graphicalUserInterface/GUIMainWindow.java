@@ -500,6 +500,13 @@ public final class GUIMainWindow implements Runnable{
 		ceUpdateThread.start();
 	}
 	
+	/**
+	 * Interrupts the thread used to update the representation of the connections in the right table.
+	 */
+	public void shutdownUpdateService() {
+		ceUpdateThread.interrupt();
+	}
+	
 	@Override
 	public void run() {
 		

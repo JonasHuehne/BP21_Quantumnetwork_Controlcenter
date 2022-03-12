@@ -63,7 +63,7 @@ public class CESignatureQueryDialog extends JDialog {
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						if(textField.getText() != null && !textField.getText().equals("")) {
-							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).setSig(textField.getText());
+							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).setPublicKey(textField.getText());
 						}
 					}
 				});
