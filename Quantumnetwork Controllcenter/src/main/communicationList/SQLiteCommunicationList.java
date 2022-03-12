@@ -127,8 +127,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return true;
         } catch (Exception e) {
-        	//TODO for CR: Warning or Error?
-            log.logWarning("Problem with inserting data in the CommunicationList Database", e);
+        	log.logError("Problem with inserting data in the CommunicationList Database", e);
             return false;
         }
     }
@@ -141,7 +140,6 @@ public class SQLiteCommunicationList implements CommunicationList {
     @Override
     public boolean delete (final String name) {
         if (name == null) {
-        	//TODO for CR:besser NullPointerException?
             throw new IllegalArgumentException("Input was null");
         }
         try {
@@ -157,8 +155,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return true;
         } catch (Exception e) {
-        	//TODO for CR: Warning or Error?
-            log.logWarning("Problem with deleting data from the CommunicationList Database", e);
+        	log.logError("Problem with deleting data from the CommunicationList Database", e);
             return false;
         }
     }
@@ -191,8 +188,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return true;
         } catch (Exception e) {
-        	//TODO for CR: Warning or Error?
-            log.logWarning("Problem with updating data in the CommunicationList Database", e);
+        	log.logError("Problem with updating data in the CommunicationList Database", e);
             return false;
         }
     }
@@ -227,8 +223,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return true;
         } catch (Exception e) {
-        	//TODO for CR: Warning or Error?
-            log.logWarning("Problem with updating data in the CommunicationList Database", e);
+        	log.logError("Problem with updating data in the CommunicationList Database", e);
             return false;
         }
     }
@@ -261,8 +256,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return true;
         } catch (Exception e) {
-        	//TODO for CR: Warning or Error?
-            log.logWarning("Problem with updating data in the CommunicationList Database", e);
+        	log.logError("Problem with updating data in the CommunicationList Database", e);
             return false;
         }
     }
@@ -289,8 +283,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return true;
         } catch (Exception e) {
-        	//TODO for CR: Warning or Error?
-        	log.logWarning("Problem with updating data in the CommunicationList Database", e);
+        	log.logError("Problem with updating data in the CommunicationList Database", e);
             return false;
         }
     }
@@ -320,8 +313,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             return result;
             }
        catch (Exception e) {
-       		//TODO for CR: Warning or Error?
-    	   	log.logWarning("Problem with query for data in the CommunicationList Database", e);
+       		log.logError("Problem with query for data in the CommunicationList Database", e);
             return null;
         }
     }
@@ -351,7 +343,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return result;
         } catch (Exception e) {
-            log.logWarning("Problem with query for data in the CommunicationList Database", e);
+            log.logError("Problem with query for data in the CommunicationList Database", e);
             return null;
         }
     }
@@ -381,7 +373,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return result;
         } catch (Exception e) {
-            log.logWarning("Problem with query for data in the CommunicationList Database", e);
+            log.logError("Problem with query for data in the CommunicationList Database", e);
             return null;
         }
     }
