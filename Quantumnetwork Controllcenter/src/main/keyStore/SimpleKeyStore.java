@@ -261,4 +261,8 @@ public class SimpleKeyStore {
 		}
 	}
 	
+	/*
+	 * TODO: Method to change the ID of a key
+	 * (e.g. in case of renaming a contact)
+	 */
 }

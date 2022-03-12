@@ -7,10 +7,13 @@ import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Base64;
 
+import exceptions.CouldNotDecryptMessageException;
 import exceptions.EndpointIsNotConnectedException;
+import exceptions.VerificationFailedException;
 import keyGeneration.KeyGenerator;
 import messengerSystem.MessageSystem;
 
@@ -51,6 +54,8 @@ public class ConnectionEndpoint implements Runnable{
 	private String localName;
 	/** public key for verifying messages received on this CE */
 	private String publicKey;
+	/** ID of the key entry in the key store that this CE will use for encryption and decryption */
+	private String keyStoreID;
 	
 	//Communication Channels
 	/** Outgoing messages to the other CE are sent along this channel */
@@ -70,8 +75,8 @@ public class ConnectionEndpoint implements Runnable{
 	
 	/** Log of all packages received by this CE */
 	private ArrayList<NetworkPackage> packageLog = new ArrayList<NetworkPackage>();
-	/** A simple list of text messages received by this CE, for chat log purposes */
-	private ArrayList<String> chatLog = new ArrayList<String>();
+	/** A simple chat log for this CE. Each Entry is of the form (Sender, Message). */
+	private ArrayList<SimpleEntry<String, String>> chatLog = new ArrayList<SimpleEntry<String, String>>();
 	
 	/** Timeout in ms when trying to connect to a remote server, 0 is an infinite timeout */
 	private final int CONNECTION_TIMEOUT = 3000;
@@ -476,9 +481,6 @@ public class ConnectionEndpoint implements Runnable{
 			}
 		}
 		
-		// log the received message
-		logPackage(transmission);
-		
 		//Chose processing based on transmissionType in the NetworkPackage head.
 		if (transmission.getType().equals(TransmissionTypeEnum.CONNECTION_CONFIRMATION)) {
 			System.out.println("[CE " + connectionID + "]: Connection Confirmation received!");
@@ -490,12 +492,20 @@ public class ConnectionEndpoint implements Runnable{
 			try {
 				NetworkPackageHandler.handlePackage(this, transmission);
 			} catch (EndpointIsNotConnectedException e) {
-				// These should both be thrown only during key generation
-				System.err.println();
+				// This should currently only be thrown during key generation
 				// For safety, shut down the key generator
-				e.printStackTrace();
-				// TODO Consider if further error handling should take place, like shutting down the key gen
-			}
+				try { this.keyGen.shutdownKeyGen(false, true); } 
+				catch (EndpointIsNotConnectedException e1) { e1.printStackTrace(); }
+			} catch (CouldNotDecryptMessageException e) {
+				// Only thrown if a message is received that could not be decrypted
+				// TODO log this event
+			} catch (VerificationFailedException e) {
+				// Only thrown if a message is received where the signature was not valid
+				// OR where no pk could be found (currently: checking commlist for entries with name == ID of this CE)
+				// TODO log this event
+			} 
+			// in any case, log the received message
+			logPackage(transmission);
 		}
 	}
 	
@@ -560,9 +570,10 @@ public class ConnectionEndpoint implements Runnable{
 	}
 
 	/**
-	 * @return the current chat log
+	 * @return the current chat log <br>
+	 * the key of each entry is the sender, the value the message
 	 */
-	public ArrayList<String> getChatLog() {
+	public ArrayList<SimpleEntry<String, String>> getChatLog() {
 		return chatLog;
 	}
 
@@ -575,8 +586,24 @@ public class ConnectionEndpoint implements Runnable{
 	 * 		the message to add
 	 */
 	public void appendMessageToChatLog(boolean sent, String message) {
-		String sender = sent ? "You" : remoteName;
-		this.chatLog.add(sender + " wrote: " + message);
+		String sender = sent ? localName + " (You)" : remoteName;
+		this.chatLog.add(new SimpleEntry<>(sender, message));
+	}
+
+	/**
+	 * @return the keyStoreID <br>
+	 * this is the ID of the key in the keystore, which this CE will use for message encryption and decryption
+	 */
+	public String getKeyStoreID() {
+		return keyStoreID;
+	}
+
+	/**
+	 * @param keyStoreID the keyStoreID to set <br>
+	 * this is the ID of the key in the keystore, which this CE will use for message encryption and decryption
+	 */
+	public void setKeyStoreID(String keyStoreID) {
+		this.keyStoreID = keyStoreID;
 	}
 
 }

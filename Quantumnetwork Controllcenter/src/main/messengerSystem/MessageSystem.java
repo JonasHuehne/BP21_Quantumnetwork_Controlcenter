@@ -75,6 +75,13 @@ public class MessageSystem {
 	}
 	
 	/**
+	 * @return the symmetric encryption algorithm used in this class when encryption messages
+	 */
+	public static SymmetricCipher getCipher() {
+		return cipher;
+	}
+	
+	/**
 	 * Constructs a NetworkPackage with the given parameters and sends it to the specified partner. <br>
 	 * Signs the NetworkPackage with the authenticator of this class if desired.
 	 * @param connectionID
@@ -121,7 +128,7 @@ public class MessageSystem {
 			if (encryptFile) { // sending an encrypted file
 				informPartnerAboutKeyUse(); // inform partner for key synchronization purposes
 				// encrypt the file locally
-				byte[] byteKey = SimpleKeyStore.getKeyBytes(connectionID, cipher.getKeyLength());
+				byte[] byteKey = SimpleKeyStore.getNextKeyBytes(connectionID, cipher.getKeyLength());
 				keyIndex = SimpleKeyStore.getIndex(connectionID);
 				SecretKey key = cipher.byteArrayToSecretKey(byteKey);
 				Path pathToEncryptedFile = Paths.get(file.getParent().toString(), "encrypted_" + file.getName());
@@ -190,11 +197,12 @@ public class MessageSystem {
 			// inform partner that you wish to send an encrypted message (to prevent key desync)
 			informPartnerAboutKeyUse();
 			// encrypt the message
+			String keyIDofConnection = conMan.getConnectionEndpoint(connectionID).getKeyStoreID();
 			byte[] msgBytes = stringToByteArray(msgString);
-			byte[] key = SimpleKeyStore.getKeyBytes(msgString, cipher.getKeyLength());
+			byte[] key = SimpleKeyStore.getNextKeyBytes(keyIDofConnection, cipher.getKeyLength() / 8);
 			byte[] encMsgBytes = cipher.encrypt(msgBytes, key);
 			// Provide the index in the message args so receiver knows where to start with decryption
-			int index = SimpleKeyStore.getIndex(connectionID);
+			int index = SimpleKeyStore.getIndex(keyIDofConnection);
 			MessageArgs args = new MessageArgs(index);
 			sendMessage(connectionID, TransmissionTypeEnum.TEXT_MESSAGE, args, encMsgBytes, true, confirm);
 		} catch (EndpointIsNotConnectedException | ManagerHasNoSuchEndpointException | 
