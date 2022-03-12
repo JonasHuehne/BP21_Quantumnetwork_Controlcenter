@@ -37,7 +37,7 @@ public class SimpleKeyStore {
 	private static final String tableName = "KeyStorage";
 	
 	/** Opens the connection to the Database, if it is not open yet 
-	 * @throws SQLException if an error occured trying to connect to the database */
+	 * @throws SQLException if an error occurred trying to connect to the database */
 	public static Connection connect() throws SQLException { // make this private after initial testing
 		try {
 			Class.forName("org.sqlite.JDBC");
@@ -59,12 +59,12 @@ public class SimpleKeyStore {
 		try (Connection connection = connect()) {
 			Statement stmt = connection.createStatement();
 	        String sql = "CREATE TABLE IF NOT EXISTS " + tableName
-	                + "(ContactName VARCHAR UNIQUE, "
+	                + "(KeyID VARCHAR UNIQUE, "
 	                + "Key BLOB NOT NULL, "
 	                + "KeyIndex INTEGER, "
 	                + "Initiative BOOLEAN, " 
 	                + "KeyLength INTEGER, " // not 100% needed, but useful for quicker queries, memory complexity
-	                + "PRIMARY KEY (ContactName));";	
+	                + "PRIMARY KEY (KeyID));";	
 	        stmt.executeUpdate(sql);
 		}
         return;
@@ -72,23 +72,22 @@ public class SimpleKeyStore {
 	
 	/**
 	 * Inserts a new entry into the key storage.
-	 * @param name
-	 * 		name of the contact this is a key for <br>
-	 * 		must be unique (one key per contact)
+	 * @param keyID
+	 * 		unique ID under which this key is to be saved
 	 * @param key
-	 * 		the key to save for that contact
+	 * 		the key to save
 	 * @param iniative
 	 * 		true if you initiated the key generation, false otherwise <br>
 	 * 		used to determine priority when key bits are used
 	 * @throws SQLException
 	 * 		if there was an error connecting to the database, or if the insert failed
 	 */
-	public static void insertEntry(String name, byte[] key, boolean iniative) throws SQLException {
+	public static void insertEntry(String keyID, byte[] key, boolean iniative) throws SQLException {
 		createTableIfNotExists();
 		try (Connection connection = connect()) {
-			String sql = "INSERT INTO " + tableName + "(ContactName, Key, KeyIndex, Initiative, KeyLength) VALUES(?, ?, ?, ?, ?)";
+			String sql = "INSERT INTO " + tableName + "(KeyID, Key, KeyIndex, Initiative, KeyLength) VALUES(?, ?, ?, ?, ?)";
 	        PreparedStatement stmt = connection.prepareStatement(sql);
-	        stmt.setString(1, name);
+	        stmt.setString(1, keyID);
 	        stmt.setBytes(2, key);
 	        stmt.setInt(3, 0);
 	        stmt.setBoolean(4, iniative);
@@ -100,95 +99,117 @@ public class SimpleKeyStore {
 	/**
 	 * Gets the next n bytes of the key for the given contact.
 	 * Does not automatically increment the index.
-	 * @param contactName
-	 * 		the contact to get the key bytes from
+	 * @param keyID
+	 * 		the key to get the bytes from
 	 * @param nbytes
 	 * 		the amount of bytes to get <br>
 	 * 		must be greater than 0
 	 * @return
-	 * 		the next {@code nbytes} bytes of the contacts key
+	 * 		the next {@code nbytes} bytes of the specified key
 	 * @throws SQLException 
 	 * 		if there was an error connecting to the database or querying it (e.g. table does not exist)
 	 * @throws NotEnoughKeyLeftException 
 	 * @throws NoKeyForContactException 
 	 */
-	public static byte[] getKeyBytes(String contactName, int nbytes) throws SQLException, NotEnoughKeyLeftException, NoKeyForContactException {
+	public static byte[] getNextKeyBytes(String keyID, int nbytes) throws SQLException, NotEnoughKeyLeftException, NoKeyForContactException {
+		int index = getIndex(keyID);
+		return getKeyBytesAtIndexN(keyID, nbytes, index);
+	}
+	
+	/**
+	 * Gets the next n bytes of key material for the specified key ID,
+	 * starting at a given index. No guarantee that these bytes have not
+	 * been used yet, so for encryption it is encouraged to use {@link #getNextKeyBytes(String, int)}.
+	 * @param keyID
+	 * 		ID of the key to retrieve the bytes from
+	 * @param nbytes
+	 * 		amount of bytes to retrieve <br>
+	 * 		must be greater than 0
+	 * @param startingIndex
+	 * 		index at which to start retrieving bytes <br>
+	 * 		must be 0 or greater
+	 * @return
+	 * @throws SQLException
+	 * @throws NoKeyForContactException
+	 * @throws NotEnoughKeyLeftException
+	 */
+	public static byte[] getKeyBytesAtIndexN(String keyID, int nbytes, int startingIndex) throws SQLException, NoKeyForContactException, NotEnoughKeyLeftException {
 		if (nbytes <= 0) throw new IllegalArgumentException("Requested byte amount must be at least 1.");
 		try (Connection connection = connect()) {
-			String queryString = "SELECT Key, KeyIndex FROM " + tableName + " WHERE ContactName = ?";
+			// get the specified key
+			String queryString = "SELECT Key FROM " + tableName + " WHERE KeyID = ?";
 			PreparedStatement queryStatement = connection.prepareStatement(queryString);
-			queryStatement.setString(1, contactName);
+			queryStatement.setString(1, keyID);
 			ResultSet rs = queryStatement.executeQuery();	
 			if (!rs.isBeforeFirst()) { // if result set is empty
-				throw new NoKeyForContactException("No key for contact " + contactName + " in the database.");
+				throw new NoKeyForContactException("No key with ID " + keyID + " in the database.");
 			} else {
-				int 	currentIndex = rs.getInt(2);
-				byte[]	key			 = rs.getBytes(1);
+				byte[]	key	= rs.getBytes(1);
 				// check that there are enough bytes left
-				if (key.length - currentIndex < nbytes) {
-					throw new NotEnoughKeyLeftException(contactName, nbytes, key.length - currentIndex);
+				if (key.length - startingIndex < nbytes) {
+					throw new NotEnoughKeyLeftException(keyID, nbytes, key.length - startingIndex);
 				} else {
 					// isolate the first n bytes as the return array
-					byte[] outBytes = Arrays.copyOfRange(key, currentIndex, currentIndex + nbytes);
+					byte[] outBytes = Arrays.copyOfRange(key, startingIndex, startingIndex + nbytes);
 					// return the requested bytes
 					return outBytes;
 				}
-			}
+			}	
 		}
 	}
 	
 	/**
 	 * Increments the key index, marking more of the key bytes as used.
-	 * @param contactName
-	 * 		the contact to increment the key index for
+	 * @param keyID
+	 * 		ID of the key whose index is to be incremented
 	 * @param bytes
 	 * 		how much to increment the index / how many bytes are to be marked as used <br>
 	 * 		if this exceeds the amount of remaining usable key bytes, all key bytes are marked as used
 	 * @throws SQLException 
 	 * 		if an error occured connecting to the database, or while querying or updating it
 	 * @throws NoKeyForContactException 
-	 * 		if the contact specified by {@code contactName} has no key in the database
+	 * 		if the key specified by {@code keyID} has no entry in the database
 	 */
-	public static void incrementIndex(String contactName, int bytes) throws SQLException, NoKeyForContactException {
+	public static void incrementIndex(String keyID, int bytes) throws SQLException, NoKeyForContactException {
 		try (Connection connection = connect()) {
-			// Get current Index for contact
-			String queryStmtStr = "SELECT KeyIndex, KeyLength FROM " + tableName + " WHERE ContactName = ?";
+			// Get current Index for the specified key
+			String queryStmtStr = "SELECT KeyIndex, KeyLength FROM " + tableName + " WHERE KeyID = ?";
 			PreparedStatement queryStmt = connection.prepareStatement(queryStmtStr);
-			queryStmt.setString(1, contactName);
+			queryStmt.setString(1, keyID);
 			ResultSet rs = queryStmt.executeQuery();
 			
-			if (!rs.isBeforeFirst()) { // rs empty ==> no such contact in DB
-				throw new NoKeyForContactException("No key for contact " + contactName + " in the database. Could not increment index.");
+			if (!rs.isBeforeFirst()) { // rs empty ==> no such key in DB
+				throw new NoKeyForContactException("No key with ID " + keyID + " in the database. Could not increment index.");
 			} else {
 				// Increment index to at most keyLength 
 				int index = rs.getInt(1);
 				int keyLengthMax = rs.getInt(2);
 				int newIndex = Math.min(keyLengthMax, index + bytes);
 				// Update
-				String updateStmtStr = "UPDATE " + tableName + " SET KeyIndex = ? WHERE ContactName = ? ";
+				String updateStmtStr = "UPDATE " + tableName + " SET KeyIndex = ? WHERE KeyID = ? ";
 				PreparedStatement updateStmt = connection.prepareStatement(updateStmtStr);
 				updateStmt.setInt(1, newIndex);
-				updateStmt.setString(2, contactName);
+				updateStmt.setString(2, keyID);
 				updateStmt.executeUpdate();
 			}
 		}
 	}
 	
 	/**
-	 * Gets how many bytes of key are left for a contact.
-	 * @param contactName
-	 * 		the contact to check
+	 * Gets how many bytes of key are left.
+	 * @param keyID
+	 * 		the key to check
 	 * @return
-	 * 		how many bytes of unused key are left for this contact <br>
-	 * 		0 if no such contact is in the DB
+	 * 		how many bytes of unused key are left for this key <br>
+	 * 		0 if no key with that ID in the DB
 	 * @throws SQLException 
 	 * 		if an error occurred trying to connect to the DB or while querying it
 	 */
-	public static int getRemainingBytes(String contactName) throws SQLException {
+	public static int getRemainingBytes(String keyID) throws SQLException {
 		try (Connection connection = connect()) {
-			String queryStmtStr = "SELECT KeyIndex, KeyLength FROM " + tableName + " WHERE ContactName = ?";
+			String queryStmtStr = "SELECT KeyIndex, KeyLength FROM " + tableName + " WHERE KeyID = ?";
 			PreparedStatement queryStmt = connection.prepareStatement(queryStmtStr);
-			queryStmt.setString(1, contactName);
+			queryStmt.setString(1, keyID);
 			ResultSet rs = queryStmt.executeQuery();
 			// due to UNIQUE constraint on name, rs may have at most one entry
 			if (!rs.isBeforeFirst()) { // if rs is empty
@@ -200,86 +221,40 @@ public class SimpleKeyStore {
 	}
 	
 	/**
-	 * Deletes the used key bytes for the given contact.
-	 * @param contactName
-	 * 		the contact whose used key bytes are to be removed from the DB
-	 * @throws SQLException 
-	 * @throws NoKeyForContactException 
-	 */
-	public static void deleteUsedKeyBytes(String contactName) throws SQLException, NoKeyForContactException {
-		// TODO this method is actually problematic because using it may result in index X being different points in the key for parties A and B
-		// if A uses it while A has 100 bits used and B uses it when they have 200 bits used, for example. Should either remove the method
-		// or have a "total index" & "original key length" that is set at key gen and remembered, and do some funky calculations with that 
-		try (Connection connection = connect()) {
-			String queryString = "SELECT Key, KeyIndex FROM " + tableName + " WHERE ContactName = ?";
-			PreparedStatement queryStatement = connection.prepareStatement(queryString);
-			queryStatement.setString(1, contactName);
-			ResultSet rs = queryStatement.executeQuery();
-			if (!rs.isBeforeFirst()) { //if rs is empty
-			 	throw new NoKeyForContactException("No key for contact " + contactName + " in the database.");
-			} else { // if entry for contact is found
-				// create a new key array without the first #index bytes, because index is how many bytes were used
-				byte[] key = rs.getBytes(1);
-				int index = rs.getInt(2);
-				byte[] newKey = Arrays.copyOfRange(key, index, key.length); 
-				// update the key entry to be the new key, also update Key Length and set Index to 0 (no bytes of remaining key are used yet)
-				String updateString = "UPDATE " + tableName + " SET Key = ? , KeyIndex = ? , KeyLength = ? WHERE ContactName = ? ";
-				PreparedStatement updateStatement = connection.prepareStatement(updateString);
-				updateStatement.setBytes(1, newKey); // new key
-				updateStatement.setInt(2, 0); // new index
-				updateStatement.setInt(3, newKey.length); // new key length
-				updateStatement.setString(4, contactName);
-				updateStatement.executeUpdate();
-			}
-		}
-	}
-	
-	/**
-	 * Appends the passed bytes to the key stored for the given contact.
-	 * @param contactName
-	 * 		the contact to add additional key bytes for
-	 * @param key
-	 * 		the key bytes to add
-	 */
-	public static void appendKeyBytes(String contactName, byte[] key) {
-		System.err.println("Not implemented yet.");
-	}
-	
-	/**
-	 * Deletes the entry for the specified contact if it exists.
-	 * @param contactName
-	 * 		the contact whose entry is to be deleted
+	 * Deletes the entry for the specified ID if it exists.
+	 * @param keyID
+	 * 		ID of the key to be deleted
 	 * @throws SQLException 
 	 * 		if there was an error connecting to the database, or an error while deleting the entry
 	 */
-	public static void deleteEntryIfExists(String contactName) throws SQLException {
+	public static void deleteEntryIfExists(String keyID) throws SQLException {
 		try (Connection connection = connect()) {
-			String deleteString = "DELETE FROM " + tableName + " WHERE ContactName = ?";
+			String deleteString = "DELETE FROM " + tableName + " WHERE KeyID = ?";
 			PreparedStatement deleteStatement = connection.prepareStatement(deleteString);
-			deleteStatement.setString(1, contactName);
+			deleteStatement.setString(1, keyID);
 			deleteStatement.executeUpdate();
 		}
 	}
 
 	/**
-	 * Current index of the key shared with that communication partner.
-	 * @param contactName
-	 * 		the ID of the partner
+	 * Current index of a key.
+	 * @param keyID
+	 * 		the ID of the key
 	 * @return
-	 * 		the current index of the key shared with that parter
+	 * 		the current index of the specified key
 	 * @throws NoKeyForContactException 
-	 * 		if there is no key saved for that contact
+	 * 		if there is no key saved with that ID
 	 * @throws SQLException 
 	 * 		if there was an error connecting to the database, or querying for the key index
 	 */
-	public static int getIndex(String contactName) throws NoKeyForContactException, SQLException {
+	public static int getIndex(String keyID) throws NoKeyForContactException, SQLException {
 		try (Connection connection = connect()) {
-			String queryString = "SELECT KeyIndex FROM " + tableName + " WHERE ContactName = ?";
+			String queryString = "SELECT KeyIndex FROM " + tableName + " WHERE KeyID = ?";
 			PreparedStatement queryStatement = connection.prepareStatement(queryString);
-			queryStatement.setString(1, contactName);
+			queryStatement.setString(1, keyID);
 			ResultSet rs = queryStatement.executeQuery();
 			if (!rs.isBeforeFirst()) { //if rs is empty
-			 	throw new NoKeyForContactException("No key for contact " + contactName + " in the database.");
+			 	throw new NoKeyForContactException("No key for contact " + keyID + " in the database.");
 			} else { // if entry for contact is found
 				return rs.getInt(1);
 			}

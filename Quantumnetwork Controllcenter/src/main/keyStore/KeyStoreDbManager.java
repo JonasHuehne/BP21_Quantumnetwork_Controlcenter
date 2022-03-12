@@ -18,6 +18,9 @@ import java.util.stream.Collectors;
 /**
  * This class supplies methods for creating, editing, getting and deleting entries from the KeyStore.db which holds all the keys
  * @author Aron Hernandez
+ * @implNote Originally, this class was intended to conform to the ETSI GS QKD 004 standard. This could unfortunately not be
+ * accomplished due to organizational problems, real world issues outside of our control, time constraints and misunderstandings 
+ * during the internship in which the initial version of this program was developed. 
  */
 
 public class KeyStoreDbManager {
