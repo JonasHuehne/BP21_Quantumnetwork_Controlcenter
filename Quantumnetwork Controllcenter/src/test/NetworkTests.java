@@ -49,7 +49,7 @@ public class NetworkTests {
 			String remoteAddr = "127.0.0.1";
 			int	remotePort = 60200;
 			// Create CE that tries to connect to a non-existent CE
-			ConnectionEndpoint Alice = new ConnectionEndpoint("Alice", remoteAddr, remotePort, "127.0.0.1", 60400, "Bob");
+			ConnectionEndpoint Alice = new ConnectionEndpoint("Alice", remoteAddr, remotePort, "127.0.0.1", 60400, "Bob", null);
 			// It should no longer be trying to connect
 			assertEquals(ConnectionState.CLOSED, Alice.reportState(), "CE should have stopped trying to connect. Is the time out set correctly?");
 			
@@ -89,17 +89,17 @@ public class NetworkTests {
 			
 			int localServerPort = 60030; // port bob wishes to offer service on
 			String localIP = "127.0.0.1"; // Bob's IP
-			ConnectionManager conMan = new ConnectionManager(localIP, localServerPort, "Bob");
+			ConnectionManager conMan = new ConnectionManager(localIP, localServerPort, "Bob", null);
 			
 			// Connections can be created (Bob creating connection to Alice)
-			conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200);
+			conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200, null);
 			assertEquals(1, conMan.returnAllConnections().size());
 			assertNotNull(conMan.getConnectionEndpoint("Alice"));
 
 			// Test that no two connections of the same name can be created
 			assertThrows(
 					ConnectionAlreadyExistsException.class, 
-					() -> {conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200);});
+					() -> {conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200, null);});
 			assertEquals(1, conMan.returnAllConnections().size());
 	
 			// Attempting to create the new connection should not have overridden Alice
@@ -121,8 +121,8 @@ public class NetworkTests {
 			assertEquals(ConnectionState.CLOSED, Alice.reportState());
 			
 			// Destroying multiple CE's works
-			conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200);
-			conMan.createNewConnectionEndpoint("Bob", "127.0.0.2", 60200);
+			conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200, null);
+			conMan.createNewConnectionEndpoint("Bob", "127.0.0.2", 60200, null);
 			assertEquals(2, conMan.returnAllConnections().size());
 			conMan.destroyAllConnectionEndpoints();
 			assertEquals(0, conMan.returnAllConnections().size());
@@ -148,11 +148,17 @@ public class NetworkTests {
 			String ipAlice		= "127.0.0.1";
 			String ipBob		= "127.0.0.1";
 			
-			ConnectionManager AliceCM = new ConnectionManager(ipAlice, serverPortAlice, "Alice"); // Used to Model PC of Alice
-			ConnectionManager BobCM	  = new ConnectionManager(ipBob, serverPortBob, "Bob"); // Used to Model PC of Bob
+			ConnectionManager AliceCM = new ConnectionManager(ipAlice, serverPortAlice, "Alice", null); // Used to Model PC of Alice
+			ConnectionManager BobCM	  = new ConnectionManager(ipBob, serverPortBob, "Bob", null); // Used to Model PC of Bob
+			
+			try { // Brief wait period (allow CMs to start up the waiting thread)
+				TimeUnit.MILLISECONDS.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			
 			// Alice attempts to connect to Bob
-			AliceCM.createNewConnectionEndpoint("Bob", ipBob, serverPortBob);
+			AliceCM.createNewConnectionEndpoint("Bob", ipBob, serverPortBob, null);
 			
 			try {
 				TimeUnit.MILLISECONDS.sleep(500);
@@ -208,11 +214,11 @@ public class NetworkTests {
 			String ipAlice		= "127.0.0.1";
 			String ipBob		= "127.0.0.1";
 			
-			ConnectionManager AliceCM = new ConnectionManager(ipAlice, serverPortAlice, "Alice"); // Used to Model PC of Alice
-			ConnectionManager BobCM	  = new ConnectionManager(ipBob, serverPortBob, "Bob"); // Used to Model PC of Bob
+			ConnectionManager AliceCM = new ConnectionManager(ipAlice, serverPortAlice, "Alice", null); // Used to Model PC of Alice
+			ConnectionManager BobCM	  = new ConnectionManager(ipBob, serverPortBob, "Bob", null); // Used to Model PC of Bob
 			
 			// Alice attempts to connect to Bob
-			AliceCM.createNewConnectionEndpoint("Bob", ipBob, serverPortBob);
+			AliceCM.createNewConnectionEndpoint("Bob", ipBob, serverPortBob, null);
 
 			
 			try {
@@ -245,42 +251,42 @@ public class NetworkTests {
 			
 			// Trying to create two CM with the same port
 			assertThrows(PortIsInUseException.class, () -> {
-				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60042, "Alice");
-				ConnectionManager CM2 = new ConnectionManager("127.0.0.1", 60042, "Alice");
+				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60042, "Alice", null);
+				ConnectionManager CM2 = new ConnectionManager("127.0.0.1", 60042, "Alice", null);
 			});
 			
 			// Trying to insert two CEs of the same name into one CM
 			assertThrows(ConnectionAlreadyExistsException.class, () -> {
-				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60043, "Bob");
-				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60040);
-				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60050);
+				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60043, "Bob", null);
+				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60040, null);
+				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60050, null);
 			});
 			
 			// Trying to destroy a non-existant CE 
 			assertThrows(ManagerHasNoSuchEndpointException.class, () -> {
-				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60045, "Alice");
+				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60045, "Alice", null);
 				CM.destroyConnectionEndpoint("Bob");
 			});
 			
 			// Trying to access state of non-existant CE
 			assertThrows(ManagerHasNoSuchEndpointException.class, () -> {
-				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60046, "Alice");
+				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60046, "Alice", null);
 				CM.getConnectionState("Bob");
 			});
 			
 			// Trying to send a message when a CE is not connected
 			assertThrows(EndpointIsNotConnectedException.class, () -> {
-				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60047, "Alice");
-				CM.createNewConnectionEndpoint("Bob", "127.0.0.1", 34341);
+				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60047, "Alice", null);
+				CM.createNewConnectionEndpoint("Bob", "127.0.0.1", 34341, null);
 				CM.sendMessage("Bob", new NetworkPackage(TransmissionTypeEnum.TEXT_MESSAGE, false));
 			});
 			
 			// Trying to insert two CEs connecting to the same IP:Port pair into one CM
 			// will fail in case same IP:Port pair is currently allowed to enable manual testing
 			assertThrows(IpAndPortAlreadyInUseException.class, () -> {
-				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60044, "Charlie");
-				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60043);
-				CM.createNewConnectionEndpoint("Bob", "127.0.0.1", 60043);
+				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60044, "Charlie", null);
+				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60043, null);
+				CM.createNewConnectionEndpoint("Bob", "127.0.0.1", 60043, null);
 			}, "This failure is most likely caused by identical IP:Port pairs being allowed for manual testing purposes.");
 		}
 		
@@ -300,8 +306,8 @@ public class NetworkTests {
 		 */
 		@Test
 		public void restarting_wait_for_connections_works() throws IOException, PortIsInUseException, ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException, ManagerHasNoSuchEndpointException {
-			ConnectionManager CMAlice = new ConnectionManager("127.0.0.1", 60055, "Alice");
-			ConnectionManager CMBob = new ConnectionManager("127.0.0.1", 60056, "Bob");
+			ConnectionManager CMAlice = new ConnectionManager("127.0.0.1", 60055, "Alice", null);
+			ConnectionManager CMBob = new ConnectionManager("127.0.0.1", 60056, "Bob", null);
 			
 			if (!CMAlice.isWaitingForConnections()) CMAlice.waitForConnections();
 			
@@ -312,7 +318,7 @@ public class NetworkTests {
 			assertTrue(CMAlice.isWaitingForConnections());
 			
 			// Bob attempts to connect to Alice
-			CMBob.createNewConnectionEndpoint("Alice", "127.0.0.1", 60055);
+			CMBob.createNewConnectionEndpoint("Alice", "127.0.0.1", 60055, null);
 			// Alice should accept the connection
 			try {
 				TimeUnit.MILLISECONDS.sleep(500);
