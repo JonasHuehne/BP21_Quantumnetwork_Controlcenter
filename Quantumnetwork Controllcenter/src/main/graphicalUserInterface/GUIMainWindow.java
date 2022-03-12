@@ -57,7 +57,7 @@ public final class GUIMainWindow implements Runnable{
             "Target Port",
             "Signature"};
 	
-	private JFrame frame;
+	private CustomClosingFrame frame;
 	private JTable contactTable;
 	private Box connectionEndpointVerticalBox;
 	private HashMap<String, JPanel> representedConnectionEndpoints = new HashMap<String, JPanel>();
@@ -96,7 +96,7 @@ public final class GUIMainWindow implements Runnable{
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() {
-		frame = new JFrame();
+		frame = new CustomClosingFrame();
 		getFrame().setBounds(100, 100, 1120, 567);
 		getFrame().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
