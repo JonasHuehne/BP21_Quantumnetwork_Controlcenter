@@ -24,13 +24,13 @@ class AuthenticationTests {
     private static String currentPath;
 
     @BeforeAll
-    static void setup () {
+    static void setup() {
         QuantumnetworkControllcenter.initialize(new String[]{"127.0.0.1", "8303"});
         currentPath = Configuration.getBaseDirPath();
     }
 
     @AfterEach
-    void cleanUp () {
+    void cleanUp() {
         ArrayList<Contact> entries = QuantumnetworkControllcenter.communicationList.queryAll();
         for (Contact e : entries) {
             QuantumnetworkControllcenter.communicationList.delete(e.getName());
@@ -40,7 +40,7 @@ class AuthenticationTests {
     }
 
     @Nested
-    class testUtilityAndSignatureKeyGeneration {
+    class TestUtilityAndSignatureKeyGeneration {
 
         @Test
         void testSignatureKeyGeneration() {
@@ -147,10 +147,10 @@ class AuthenticationTests {
     }
 
     @Nested
-    class testSignAndVerify {
+    class TestSignAndVerify {
 
         @Test
-        // relies on signature key generation in authentication class
+            // relies on signature key generation in authentication class
         void testSign() {
             QuantumnetworkControllcenter.authentication.generateSignatureKeyPair();
 
@@ -165,7 +165,7 @@ class AuthenticationTests {
         }
 
         @Test
-        // only testable, if signing and signature key generation work
+            // only testable, if signing and signature key generation work
         void testVerifyTrue() {
             QuantumnetworkControllcenter.authentication.generateSignatureKeyPair();
             QuantumnetworkControllcenter.communicationList.insert("self", "127.0.0.1", 2303, Utils.readKeyStringFromFile("signature.pub"));
@@ -176,7 +176,7 @@ class AuthenticationTests {
         }
 
         @Test
-        // only testable, if signing and signature key generation work
+            // only testable, if signing and signature key generation work
         void testVerifyFalse() {
             QuantumnetworkControllcenter.authentication.generateSignatureKeyPair();
 
