@@ -1,6 +1,7 @@
 package communicationList;
 
 import frame.Configuration;
+import qnccLogger.Log;
 
 import java.io.File;
 import java.sql.Connection;
@@ -50,6 +51,8 @@ public class SQLiteCommunicationList implements CommunicationList {
 
     private static final int MIN_PORT_NUMBER = 0;
     private static final int MAX_PORT_NUMBER = 65535;
+    
+    private static Log log = new Log(SQLiteCommunicationList.class.getName());
 
     /**
      * open a connection to the db
@@ -77,7 +80,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return true;
         } catch (Exception e) {
-            System.err.println("Problem connecting to the CommunicationList Database(" + e.getMessage() + ")");
+        	log.logError("Problem connecting to the CommunicationList Database", e);
             return false;
         }
     }
@@ -94,21 +97,23 @@ public class SQLiteCommunicationList implements CommunicationList {
     public boolean insert (final String name, final String ipAddress, final int port, final String signatureKey) {
         try {
             if (connection == null || connection.isClosed()) {
-                connectToDb();
+            	if (connectToDb() == false) {
+                	return false;
+                }
             }
             // check for illegal input
             if (!Pattern.matches(CONTACT_NAME_SYNTAX, name)) {
-                System.err.println("Problem with inserting data in the CommunicationList Database: \""
+                log.logWarning("Problem with inserting data in the CommunicationList Database: \""
                         + name + "\" violates the constraints");
                 return false;
             } else if (!Pattern.matches(CONTACT_IPV4_SYNTAX, ipAddress)
                     && (!Pattern.matches(CONTACT_IPV6_SYNTAX, ipAddress)
                         || Pattern.matches(CONTACT_IPV6_WRONG_SYNTAX, ipAddress))) {
-                System.err.println("Problem with inserting data in the CommunicationList Database: "
+                log.logWarning("Problem with inserting data in the CommunicationList Database: "
                         + "IP Address " + ipAddress + " violates the constraints");
                 return false;
             } else if (port < MIN_PORT_NUMBER || port > MAX_PORT_NUMBER) {
-                System.err.println("Problem with inserting data in the CommunicationList Database: "
+                log.logWarning("Problem with inserting data in the CommunicationList Database: "
                         + "Port " + port + " violates the constraints");
                 return false;
             }
@@ -122,7 +127,8 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return true;
         } catch (Exception e) {
-            System.err.println("Problem with inserting data in the CommunicationList Database (" + e.getMessage() + ")");
+        	//TODO for CR: Warning or Error?
+            log.logWarning("Problem with inserting data in the CommunicationList Database", e);
             return false;
         }
     }
@@ -135,11 +141,14 @@ public class SQLiteCommunicationList implements CommunicationList {
     @Override
     public boolean delete (final String name) {
         if (name == null) {
+        	//TODO for CR:besser NullPointerException?
             throw new IllegalArgumentException("Input was null");
         }
         try {
             if (connection == null || connection.isClosed()) {
-                connectToDb();
+            	if (connectToDb() == false) {
+                	return false;
+                }
             }
             String sql = "DELETE FROM " + TABLE_NAME + " WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
@@ -148,7 +157,8 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return true;
         } catch (Exception e) {
-            System.err.println("Problem with deleting data from the CommunicationList Database (" + e.getMessage() + ")");
+        	//TODO for CR: Warning or Error?
+            log.logWarning("Problem with deleting data from the CommunicationList Database", e);
             return false;
         }
     }
@@ -163,11 +173,13 @@ public class SQLiteCommunicationList implements CommunicationList {
     public boolean updateName (final String oldName, final String newName) {
         try {
             if (connection == null || connection.isClosed()) {
-                connectToDb();
+                if (connectToDb() == false) {
+                	return false;
+                }
             }
             // check for illegal input
             if (!Pattern.matches(CONTACT_NAME_SYNTAX, newName)) {
-                System.err.println("Problem with updating data in the CommunicationList Database: \""
+                log.logWarning("Problem with updating data in the CommunicationList Database: \""
                         + newName + "\" violates the constraints");
                 return false;
             }
@@ -179,7 +191,8 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return true;
         } catch (Exception e) {
-            System.err.println("Problem with updating data in the CommunicationList Database (" + e.getMessage() + ")");
+        	//TODO for CR: Warning or Error?
+            log.logWarning("Problem with updating data in the CommunicationList Database", e);
             return false;
         }
     }
@@ -194,13 +207,15 @@ public class SQLiteCommunicationList implements CommunicationList {
     public boolean updateIP (final String name, final String ipAddress) {
         try {
             if (connection == null || connection.isClosed()) {
-                connectToDb();
+            	if (connectToDb() == false) {
+                	return false;
+                }
             }
             // check for illegal input
             if (!Pattern.matches(CONTACT_IPV4_SYNTAX, ipAddress)
                 && (!Pattern.matches(CONTACT_IPV6_SYNTAX, ipAddress)
                     || Pattern.matches(CONTACT_IPV6_WRONG_SYNTAX, ipAddress))) {
-                System.err.println("Problem with updating data in the CommunicationList Database: "
+                log.logWarning("Problem with updating data in the CommunicationList Database: "
                         + "IP Address " + ipAddress + " violates the constraints");
                 return false;
             }
@@ -212,7 +227,8 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return true;
         } catch (Exception e) {
-            System.err.println("Problem with updating data in the CommunicationList Database (" + e.getMessage() + ")");
+        	//TODO for CR: Warning or Error?
+            log.logWarning("Problem with updating data in the CommunicationList Database", e);
             return false;
         }
     }
@@ -227,11 +243,13 @@ public class SQLiteCommunicationList implements CommunicationList {
     public boolean updatePort (final String name, final int port) {
         try {
             if (connection == null || connection.isClosed()) {
-                connectToDb();
+            	if (connectToDb() == false) {
+                	return false;
+                }
             }
             // check for illegal input
             if(port < MIN_PORT_NUMBER || port > MAX_PORT_NUMBER) {
-                System.err.println("Problem with updating data in the CommunicationList Database: "
+                log.logWarning("Problem with updating data in the CommunicationList Database: "
                         + "Port " + port + " violates the constraints");
                 return false;
             }
@@ -243,7 +261,8 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return true;
         } catch (Exception e) {
-            System.err.println("Problem with updating data in the CommunicationList Database (" + e.getMessage() + ")");
+        	//TODO for CR: Warning or Error?
+            log.logWarning("Problem with updating data in the CommunicationList Database", e);
             return false;
         }
     }
@@ -258,7 +277,9 @@ public class SQLiteCommunicationList implements CommunicationList {
     public boolean updateSignatureKey (final String name, final String signatureKey) {
         try {
             if (connection == null || connection.isClosed()) {
-                connectToDb();
+            	if (connectToDb() == false) {
+                	return false;
+                }
             }
             String sql = "UPDATE " + TABLE_NAME + " SET SignatureKey = ? WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
@@ -268,7 +289,8 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return true;
         } catch (Exception e) {
-            System.err.println("Problem with updating data in the CommunicationList Database (" + e.getMessage() + ")");
+        	//TODO for CR: Warning or Error?
+        	log.logWarning("Problem with updating data in the CommunicationList Database", e);
             return false;
         }
     }
@@ -280,10 +302,13 @@ public class SQLiteCommunicationList implements CommunicationList {
      */
     @Override
     public Contact query (final String name) {
-        try {
-            if (connection == null || connection.isClosed()) {
-                connectToDb();
-            }
+        
+       try {
+           	if (connection == null || connection.isClosed()) {
+           		if (connectToDb() == false) {
+                	return null;
+                }
+           	}
             String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + TABLE_NAME + " WHERE Name = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
@@ -293,8 +318,10 @@ public class SQLiteCommunicationList implements CommunicationList {
             rs.close();
             stmt.close();
             return result;
-        } catch (Exception e) {
-            System.err.println("Problem with query for data in the CommunicationList Database (" + e + ")");
+            }
+       catch (Exception e) {
+       		//TODO for CR: Warning or Error?
+    	   	log.logWarning("Problem with query for data in the CommunicationList Database", e);
             return null;
         }
     }
@@ -309,7 +336,9 @@ public class SQLiteCommunicationList implements CommunicationList {
     public Contact query (final String ipAddress, final int port) {
         try {
             if (connection == null || connection.isClosed()) {
-                connectToDb();
+            	if (connectToDb() == false) {
+                	return null;
+                }
             }
             String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + TABLE_NAME + " WHERE IPAddress = ? AND Port = ?";
             PreparedStatement stmt = connection.prepareStatement(sql);
@@ -322,7 +351,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return result;
         } catch (Exception e) {
-            System.err.println("Problem with query for data in the CommunicationList Database (" + e + ")");
+            log.logWarning("Problem with query for data in the CommunicationList Database", e);
             return null;
         }
     }
@@ -335,7 +364,9 @@ public class SQLiteCommunicationList implements CommunicationList {
     public ArrayList<Contact> queryAll () {
         try {
             if (connection == null || connection.isClosed()) {
-                connectToDb();
+            	if (connectToDb() == false) {
+                	return null;
+                }
             }
             String sql = "SELECT Name, IPAddress, Port, SignatureKey FROM " + TABLE_NAME;
             PreparedStatement stmt = connection.prepareStatement(sql);
@@ -350,7 +381,7 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.close();
             return result;
         } catch (Exception e) {
-            System.err.println("Problem with query for data in the CommunicationList Database (" + e.getMessage() + ")");
+            log.logWarning("Problem with query for data in the CommunicationList Database", e);
             return null;
         }
     }
