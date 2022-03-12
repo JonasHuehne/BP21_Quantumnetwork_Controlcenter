@@ -14,15 +14,15 @@ public class NotEnoughKeyLeftException extends Exception {
 	/**
 	 * Constructor.
 	 * Generates a Message based on the parameters.
-	 * @param contactName
-	 * 		name of the contact with not enough key bits left
+	 * @param keyID
+	 * 		ID of the key with not enough bits left
 	 * @param bitsWanted
 	 * 		amount of key bits wanted
 	 * @param bitsLeft
 	 * 		amount of key bits left
 	 */
-	public NotEnoughKeyLeftException(String contactName, int bitsWanted, int bitsLeft) {
-		super("Could not get " + bitsWanted + " bits of key from the key saved for contact " + contactName + ". Only " + bitsLeft + " key bits remain.");
+	public NotEnoughKeyLeftException(String keyID, int bitsWanted, int bitsLeft) {
+		super("Could not get " + bitsWanted + " bits of key from the key saved for the key with ID " + keyID + ". Only " + bitsLeft + " key bits remain.");
 	}
 	
 	/**
