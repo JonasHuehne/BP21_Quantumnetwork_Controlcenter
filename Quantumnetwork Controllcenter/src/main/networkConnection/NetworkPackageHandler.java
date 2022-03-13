@@ -16,11 +16,11 @@ import javax.crypto.SecretKey;
 import encryptionDecryption.FileCrypter;
 import exceptions.CouldNotDecryptMessageException;
 import exceptions.EndpointIsNotConnectedException;
-import exceptions.NoKeyForContactException;
+import exceptions.NoKeyWithThatIDException;
 import exceptions.NotEnoughKeyLeftException;
 import exceptions.VerificationFailedException;
 import frame.Configuration;
-import keyStore.SimpleKeyStore;
+import keyStore.KeyStoreDbManager;
 import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
 
@@ -118,12 +118,12 @@ public class NetworkPackageHandler {
 		case KEY_USE_ALERT:
 			int encStartIndex = msg.getMessageArgs().keyIndex(); // index at which sender wants to start encrypting
 			try {
-				int ownIndex = SimpleKeyStore.getIndex(ce.getKeyStoreID());
+				int ownIndex = KeyStoreDbManager.getIndex(ce.getKeyStoreID());
 				// check if this >= our own index
 				if (encStartIndex >= ownIndex) {
 					// if it is, everything is good (we set our index to A's index after encryption)
 					int incrementAmount = (encStartIndex + MessageSystem.getCipher().getKeyLength() / 8) - ownIndex;
-					SimpleKeyStore.incrementIndex(ce.getKeyStoreID(), incrementAmount);
+					KeyStoreDbManager.incrementIndex(ce.getKeyStoreID(), incrementAmount);
 					// Send back affirming message
 					NetworkPackage affirmation = new NetworkPackage(TransmissionTypeEnum.KEY_USE_ACCEPT, new MessageArgs(), msg.getID(), false);
 					affirmation.sign(MessageSystem.getAuthenticator());
@@ -136,7 +136,7 @@ public class NetworkPackageHandler {
 					denial.sign(MessageSystem.getAuthenticator());
 					ce.pushMessage(denial);
 				}
-			} catch (NoKeyForContactException e) {
+			} catch (NoKeyWithThatIDException e) {
 				// Control flow wise, this should not occur - a KEY_USE_ALERT should only be able to be sent if there is a mutual key
 				// in any case, log this (TODO)
 			} catch (SQLException e) {
@@ -165,13 +165,16 @@ public class NetworkPackageHandler {
 					int k = rejectedPackage.getMessageArgs().keyIndex();
 					int i = msg.getMessageArgs().keyIndex();
 					int newIndex = Math.max(k, i);
-					SimpleKeyStore.setIndex(ce.getKeyStoreID(), newIndex);
-				} catch (NoKeyForContactException e) {
+					KeyStoreDbManager.changeIndex(ce.getKeyStoreID(), newIndex);
+				} catch (NoKeyWithThatIDException e) {
 					// Control flow wise, this should not occur - a KEY_USE_ALERT should only be able to be sent if there is a mutual key
 					// in any case, log this (TODO)
 				} catch (SQLException e) {
 					// Nothing we can really do here except log it, possible expansion would be a special message type to the partner
 					// TODO log
+				} catch (NotEnoughKeyLeftException e) {
+					// This shouldn't happen unless we were either out-of-bounds already, or B sent us a non-sensical index
+					// in either case TODO log it
 				}
 			}
 			break;
@@ -199,7 +202,7 @@ public class NetworkPackageHandler {
 						String decryptedString	= MessageSystem.byteArrayToString(decryptedMsg);
 						// Log the decrypted text of the message
 						ce.appendMessageToChatLog(false, decryptedString);
-					} catch (SQLException | InvalidKeyException | BadPaddingException | NotEnoughKeyLeftException | NoKeyForContactException e) {
+					} catch (SQLException | InvalidKeyException | BadPaddingException | NotEnoughKeyLeftException | NoKeyWithThatIDException e) {
 						throw new CouldNotDecryptMessageException("Could not decrypt the text message with ID " + Base64.getEncoder().encodeToString(msg.getID()), e);
 					}
 				} 
@@ -241,7 +244,7 @@ public class NetworkPackageHandler {
 						// save decrypted file with the same filename, but prefixed with decrypted_
 						Path pathToDecryptedFile = Paths.get(f.getParent().toString(), "decrypted_" + f.getName()); 
 						FileCrypter.decryptAndSave(outDirectory.resolve(fileName).toFile(), MessageSystem.getCipher(), sk, pathToDecryptedFile);
-					} catch (BadPaddingException | InvalidKeyException | SQLException | NoKeyForContactException | NotEnoughKeyLeftException | IOException e) {
+					} catch (BadPaddingException | InvalidKeyException | SQLException | NoKeyWithThatIDException | NotEnoughKeyLeftException | IOException e) {
 						throw new CouldNotDecryptMessageException("Could not decrypt the text message with ID " + Base64.getEncoder().encodeToString(msg.getID()), e);
 					}
 				} 
@@ -262,10 +265,10 @@ public class NetworkPackageHandler {
 	 * @param msg
 	 * @return
 	 * @throws NotEnoughKeyLeftException 
-	 * @throws NoKeyForContactException 
+	 * @throws NoKeyWithThatIDException 
 	 * @throws SQLException 
 	 */
-	private static byte[] getKey(ConnectionEndpoint ce, NetworkPackage msg) throws SQLException, NoKeyForContactException, NotEnoughKeyLeftException {
+	private static byte[] getKey(ConnectionEndpoint ce, NetworkPackage msg) throws SQLException, NoKeyWithThatIDException, NotEnoughKeyLeftException {
 		// Get the key for decryption
 		if (MessageSystem.getCipher().getKeyLength() % 8 != 0) { // check needed, because SimpleKeyStore only supports byte-sized keys
 			// TODO throw a more appropriate Exception here if possible
@@ -274,7 +277,7 @@ public class NetworkPackageHandler {
 		}
 		String keyID 			= ce.getKeyStoreID(); // ID of key to get
 		int keyLengthInBytes 	= MessageSystem.getCipher().getKeyLength() / 8; // # of key bytes to get
-		byte[] decryptionKey 	= SimpleKeyStore.getKeyBytesAtIndexN(keyID, keyLengthInBytes, msg.getMessageArgs().keyIndex());
+		byte[] decryptionKey 	= KeyStoreDbManager.getKeyBytesAtIndexN(keyID, keyLengthInBytes, msg.getMessageArgs().keyIndex());
 		return decryptionKey;
 	}
 	

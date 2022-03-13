@@ -18,10 +18,10 @@ import encryptionDecryption.SymmetricCipher;
 import exceptions.CouldNotSendMessageException;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
-import exceptions.NoKeyForContactException;
+import exceptions.NoKeyWithThatIDException;
 import exceptions.NotEnoughKeyLeftException;
 import frame.Configuration;
-import keyStore.SimpleKeyStore;
+import keyStore.KeyStoreDbManager;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
 import networkConnection.MessageArgs;
@@ -129,8 +129,8 @@ public class MessageSystem {
 		try {
 			if (encryptFile) { // sending an encrypted file
 				// encrypt the file locally
-				byte[] byteKey = SimpleKeyStore.getNextKeyBytes(connectionID, cipher.getKeyLength() / 8);
-				keyIndex = SimpleKeyStore.getIndex(connectionID);
+				byte[] byteKey = KeyStoreDbManager.getNextNBytes(connectionID, cipher.getKeyLength() / 8, false);
+				keyIndex = KeyStoreDbManager.getIndex(connectionID);
 				SecretKey key = cipher.byteArrayToSecretKey(byteKey);
 				Path pathToEncryptedFile = Paths.get(file.getParent().toString(), "encrypted_" + file.getName());
 				FileCrypter.encryptAndSave(file, cipher, key, pathToEncryptedFile);
@@ -159,7 +159,7 @@ public class MessageSystem {
 			
 		} catch (EndpointIsNotConnectedException | IOException | InvalidKeyException | 
 				IllegalBlockSizeException | SQLException | NotEnoughKeyLeftException | 
-				NoKeyForContactException | SecurityException | ManagerHasNoSuchEndpointException e) {
+				NoKeyWithThatIDException | SecurityException | ManagerHasNoSuchEndpointException e) {
 			throw new CouldNotSendMessageException("Could not send the file " + file.getName() + " along the connection " + connectionID + ".", e);
 		}
 
@@ -207,11 +207,11 @@ public class MessageSystem {
 			// encrypt the message
 			String keyIDofConnection = conMan.getConnectionEndpoint(connectionID).getKeyStoreID();
 			byte[] msgBytes = stringToByteArray(msgString);
-			byte[] key = SimpleKeyStore.getNextKeyBytes(keyIDofConnection, cipher.getKeyLength() / 8);
+			byte[] key = KeyStoreDbManager.getNextNBytes(keyIDofConnection, cipher.getKeyLength() / 8, false);
 			byte[] encMsgBytes = cipher.encrypt(msgBytes, key);
 			
 			// Provide the index in the message args so receiver knows where to start with decryption
-			int index = SimpleKeyStore.getIndex(keyIDofConnection);
+			int index = KeyStoreDbManager.getIndex(keyIDofConnection);
 			
 			messageSystemLog.logInfo("Attempting to send encrypted <" + msgString + "> from CE with ID <" + connectionID + "> | "
 					+ "Started Encryption at Index: " + index + " Confirmed: " + confirm + " |");
@@ -223,7 +223,7 @@ public class MessageSystem {
 			// Tell the other party we wish to send, and queue the message
 			informAndSendOnceConfirmed(connectionID, msg);
 		} catch (EndpointIsNotConnectedException | SQLException | NotEnoughKeyLeftException 
-				| NoKeyForContactException | InvalidKeyException | IllegalBlockSizeException 
+				| NoKeyWithThatIDException | InvalidKeyException | IllegalBlockSizeException 
 				| SecurityException e) {
 			throw new CouldNotSendMessageException("Could not send the encrypted message along the connection " + connectionID + ".", e);
 		}
@@ -266,7 +266,7 @@ public class MessageSystem {
 	}
 	
 	private static void informAndSendOnceConfirmed(String connectionID, NetworkPackage msg) 
-			throws NoKeyForContactException, SQLException, EndpointIsNotConnectedException {
+			throws NoKeyWithThatIDException, SQLException, EndpointIsNotConnectedException {
 		
 		/*
 		 * (Proof of concept)
@@ -275,14 +275,14 @@ public class MessageSystem {
 		// CE A will send this package to CE B to inform them that
 		// A wishes to use bytes of their mutual key, starting at the specified index
 		final ConnectionEndpoint ceA = conMan.getConnectionEndpoint(connectionID);
-		int currentIndex = SimpleKeyStore.getIndex(ceA.getKeyStoreID());
+		int currentIndex = KeyStoreDbManager.getIndex(ceA.getKeyStoreID());
 		final MessageArgs args = new MessageArgs(currentIndex);
 		final NetworkPackage keyUseAlert = new NetworkPackage(TransmissionTypeEnum.KEY_USE_ALERT, args, false);
 		ceA.pushOnceConfirmationReceivedForID(keyUseAlert.getID(), msg); // push the main message once key use is confirmed
 		ceA.pushMessage(keyUseAlert);
 		
 		// After sending this, increment the index because we used those bits now
-		SimpleKeyStore.incrementIndex(connectionID, getCipher().getKeyLength() / 8);
+		KeyStoreDbManager.incrementIndex(connectionID, getCipher().getKeyLength() / 8);
 		
 		/*
 		 * TODO: Asynchronously wait 3 seconds, if no confirmation arrives, delete the package from the queue.
