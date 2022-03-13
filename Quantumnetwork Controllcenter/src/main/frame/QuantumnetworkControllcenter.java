@@ -2,6 +2,8 @@ package frame;
 
 import java.awt.EventQueue;
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.Arrays;
 
 import javax.swing.UIManager;
 
@@ -12,6 +14,7 @@ import encryptionDecryption.SymmetricCipher;
 import exceptions.PortIsInUseException;
 import graphicalUserInterface.GUIMainWindow;
 import graphicalUserInterface.SettingsDialog;
+import keyStore.KeyStoreDbManager;
 import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
@@ -108,6 +111,28 @@ public class QuantumnetworkControllcenter {
 		SymmetricCipher cipher = new AES256();
 		MessageSystem.setEncryption(cipher);
 		
+		try {
+			KeyStoreDbManager.createNewKeyStoreAndTable();
+		} catch (SQLException e) {
+			System.err.println("Could not initialize the Keystore. Shutting down. ");
+			e.printStackTrace();
+			System.exit(0);
+		}
+		
+		// insert artificial key pair for "KeyTesterA" and "KeyTesterB"
+		// so that we can test symmetric encryption
+		byte[] keyToInsert = new byte[1024];
+		Arrays.fill(keyToInsert, (byte) 101);
+		try {
+			KeyStoreDbManager.deleteEntryIfExists("KeyTesterA");
+			KeyStoreDbManager.deleteEntryIfExists("KeyTesterB");
+			KeyStoreDbManager.insertToKeyStore("KeyTesterA", keyToInsert, "", "", false, true);
+			KeyStoreDbManager.insertToKeyStore("KeyTesterB", keyToInsert, "", "", false, true);
+		} catch (SQLException e) {
+			System.err.println("Could not initialize the entries of the keystore. Shutting down. ");
+			e.printStackTrace();
+			System.exit(0);
+		}
 		
 		
 		System.out.println("QuantumnetworkControllcenter initialized");
