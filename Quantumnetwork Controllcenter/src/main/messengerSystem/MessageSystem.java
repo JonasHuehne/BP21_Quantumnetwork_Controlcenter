@@ -27,6 +27,7 @@ import networkConnection.ConnectionManager;
 import networkConnection.MessageArgs;
 import networkConnection.NetworkPackage;
 import networkConnection.TransmissionTypeEnum;
+import qnccLogger.Log;
 
 /**High Level Message System. Contains methods for sending and receiving messages without dealing with low-level things, like signals and prefixes.
  * Send and receiving messages via these methods, the connectionID determines which connectionEndpoint to interact with.
@@ -35,6 +36,8 @@ import networkConnection.TransmissionTypeEnum;
  *
  */
 public class MessageSystem {
+	
+	static Log messageSystemLog = new Log("MessageSystem Log");
 	
 	/** The cipher the message system uses to encrypt / decrypt messages & files */
 	private static SymmetricCipher cipher;
@@ -47,10 +50,6 @@ public class MessageSystem {
 	 * 	Generally, this is set once when initializing the program, however, for automated tests it may be needed to set this multiple times to simulate different users. */
 	public static ConnectionManager conMan;
 	private static final byte[] DEBUGKEY = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
-
-	
-	/** Used to block further calls to methods to send encrypted messages if we are currently communicating about the key index */
-	private static boolean isCurrentlyCorrespondingAboutKeyUse;
 	
 	/**
 	 * Sets the encryption / decryption algorithm to be used by the MessageSystem.
@@ -177,6 +176,7 @@ public class MessageSystem {
 	 */
 	public static void sendTextMessage(String connectionID, String msgString, boolean sign, boolean confirm) throws CouldNotSendMessageException  {
 		MessageArgs args = new MessageArgs();
+		messageSystemLog.logInfo("Attempting to send message <" + msgString + "> from CE with ID <" + connectionID + "> | Signed: " + sign + " Confirmed: " + confirm + " |");
 		try {
 			sendMessage(connectionID, TransmissionTypeEnum.TEXT_MESSAGE, args, stringToByteArray(msgString), sign, confirm);
 		} catch (EndpointIsNotConnectedException | ManagerHasNoSuchEndpointException e) {
@@ -206,6 +206,9 @@ public class MessageSystem {
 			
 			// Provide the index in the message args so receiver knows where to start with decryption
 			int index = SimpleKeyStore.getIndex(keyIDofConnection);
+			
+			messageSystemLog.logInfo("Attempting to send encrypted <" + msgString + "> from CE with ID <" + connectionID + "> | "
+					+ "Started Encryption at Index: " + index + " Confirmed: " + confirm + " |");
 				
 			// Construct the message to send
 			MessageArgs args = new MessageArgs(index);
@@ -283,11 +286,6 @@ public class MessageSystem {
 		// requesting approval, to account for package loss to mitigate the two generals problem
 		// however, as far as I know the transfer via the Sockets is already TCP so that might be redundant
 		
-	}
-
-	
-	public void stopEncryptionCorrespondence() {
-		isCurrentlyCorrespondingAboutKeyUse = false;
 	}
 	
 	/**Utility for converting a byte[] to a String.

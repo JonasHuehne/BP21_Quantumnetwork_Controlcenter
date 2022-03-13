@@ -18,6 +18,7 @@ import exceptions.EndpointIsNotConnectedException;
 import exceptions.VerificationFailedException;
 import keyGeneration.KeyGenerator;
 import messengerSystem.MessageSystem;
+import qnccLogger.Log;
 
 
 /**Represents a single connection endpoint at a given port, that can connect to a single other connection endpoint on the same machine, in the same local network or via the Internet.
@@ -29,6 +30,8 @@ import messengerSystem.MessageSystem;
  *
  */
 public class ConnectionEndpoint implements Runnable{
+	
+	private Log ceLogger;
 	
 	//Local information
 	/** Name of this ConnectionEndpoint, used to identify it, e.g. in {@linkplain MessageSystem}. Generally the same as {@link #remoteName}. */
@@ -114,8 +117,10 @@ public class ConnectionEndpoint implements Runnable{
 	public ConnectionEndpoint(String connectionName, String localAddress, Socket localSocket, 
 							  ObjectOutputStream streamOut, ObjectInputStream streamIn, String targetIP, 
 							  int targetPort, int localPort, String localName) {
-		System.out.println("[CE " + connectionName + "] Creation of CE in response to an incoming connection request has begun. "
-							+ "CE will be connected to " + targetIP + ":" + targetPort + " and is in the CM with port " + localPort);
+		this.ceLogger = new Log("CE Logger [ID " + connectionName + "]");
+		
+		ceLogger.logInfo("[CE " + connectionName + "] Creation of CE in response to an incoming connection request has begun. "
+						+ "CE will be connected to " + targetIP + ":" + targetPort + " and is in the CM with port " + localPort);
 		this.connectionID = connectionName;
 		this.keyGen = new KeyGenerator(this);
 		this.localAddress = localAddress;
@@ -129,7 +134,8 @@ public class ConnectionEndpoint implements Runnable{
 		this.isBuildingConnection = false;
 		this.isConnected = true;
 		
-		System.out.println("[CE " + connectionName + "] Local values have been set. Now sending a connection confirmation to the partner CE. ");
+		ceLogger.logInfo("[CE " + connectionName + "] Local values have been set. Now sending a connection confirmation to the partner CE. ");
+		
 		try {
 			MessageArgs args = new MessageArgs(localName);
 			NetworkPackage connectionConfirmation = new NetworkPackage(TransmissionTypeEnum.CONNECTION_CONFIRMATION, args, false);
@@ -138,7 +144,7 @@ public class ConnectionEndpoint implements Runnable{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		System.out.println("[CE " + connectionName + "] Connection confirmation sent. ");
+		ceLogger.logInfo("[CE " + connectionName + "] Connection confirmation sent. Now listening for messages. ");
 		//Wait for greeting
 		//System.out.println("[" + connectionID + "]: Waiting for Greeting from connecting Party");
 		listenForMessage();
@@ -163,8 +169,11 @@ public class ConnectionEndpoint implements Runnable{
 	 * 		public key that will be used to sign messages sent to this endpoint
 	 */
 	public ConnectionEndpoint(String connectionID, String targetIP, int targetPort, String localIP, int localPort, String localName, String pk) {
-		System.out.println("[CE " + connectionID + "] Creation of CE in response to a local request has begun. "
+		this.ceLogger = new Log("CE Logger [ID " + connectionID + "]");
+		
+		ceLogger.logInfo("[CE " + connectionID + "] Creation of CE in response to a local request has begun. "
 				+ "CE will attempt to connect to " + targetIP + ":" + targetPort + " and is in the CM with port " + localPort);
+		
 		this.connectionID = connectionID;
 		this.keyGen = new KeyGenerator(this);
 		this.localAddress = localIP;
@@ -173,7 +182,7 @@ public class ConnectionEndpoint implements Runnable{
 		this.publicKey = pk;
 		this.remoteIP = targetIP;
 		this.remotePort = targetPort;
-		System.out.println("[CE " + connectionID + "] Local values have been set. Now attempting to establish a connection. ");
+		ceLogger.logInfo("[CE " + connectionID + "] Local values have been set. Now attempting to establish a connection. ");
 		try {
 			establishConnection(targetIP, targetPort);
 		} catch (IOException e) {
@@ -327,10 +336,10 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public void establishConnection(String targetServerIP, int targetServerPort) throws IOException {
 		if(isConnected) {
-			System.out.println("Warning: " + connectionID + " is already connected to " + remoteIP + " at Port " + String.valueOf(remotePort) + "! Connection creation aborted!");
+			ceLogger.logWarning("Warning: " + connectionID + " is already connected to " + remoteIP + " at Port " + String.valueOf(remotePort) + "! Connection creation aborted!");
 			return;
 		}
-		System.out.println("[CE " + connectionID + "] Attempting to connect " + connectionID + " to: " + targetServerIP + " on port " + String.valueOf(targetServerPort) + "!");
+		ceLogger.logInfo("[CE " + connectionID + "] Attempting to connect " + connectionID + " to: " + targetServerIP + " on port " + String.valueOf(targetServerPort) + "!");
 
 		isBuildingConnection = true;
 		remoteIP = targetServerIP;
@@ -341,13 +350,13 @@ public class ConnectionEndpoint implements Runnable{
 			//Connecting own Client Socket to foreign Server Socket
 			localClientSocket = new Socket();
 			localClientSocket.connect(new InetSocketAddress(remoteIP, remotePort), CONNECTION_TIMEOUT);
-			System.out.println("[CE " + connectionID + "] Local Socket connected to a server socket.");
+			ceLogger.logInfo("[CE " + connectionID + "] Local Socket connected to a server socket.");
 			clientOut = new ObjectOutputStream(localClientSocket.getOutputStream());
-			System.out.println("[CE " + connectionID + "] Output Stream set.");
+			ceLogger.logInfo("[CE " + connectionID + "] Output Stream set.");
 			clientIn = new ObjectInputStream(localClientSocket.getInputStream());
-			System.out.println("[CE " + connectionID + "] Input Stream set.");
+			ceLogger.logInfo("[CE " + connectionID + "] Input Stream set.");
 			//Send Message to allow foreign Endpoint to connect with us.
-			System.out.println("[CE " + connectionID + "] Now sending a connection request on the newly established connection.");
+			ceLogger.logInfo("[CE " + connectionID + "] Now sending a connection request on the newly established connection.");
 			try {
 				MessageArgs args = new MessageArgs(localName, localAddress, localServerPort);
 				NetworkPackage connectionRequest = new NetworkPackage(TransmissionTypeEnum.CONNECTION_REQUEST, args, false);
@@ -357,7 +366,7 @@ public class ConnectionEndpoint implements Runnable{
 				e.printStackTrace();
 				return;
 			}
-			System.out.println("[CE " + connectionID + "] Now waiting for a response.");
+			ceLogger.logInfo("[CE " + connectionID + "] Now waiting for a response to the connection request.");
 	
 			listenForMessage();
 	
@@ -368,15 +377,14 @@ public class ConnectionEndpoint implements Runnable{
 			if(!(localClientSocket==null)) {
 				localClientSocket.close();
 			}
-			System.err.println("[CE " + connectionID + "]: Connection could not be established! An Error occurred while trying to reach the other party via " + remoteIP + ":" + String.valueOf(remotePort));
-			e.printStackTrace();
+			ceLogger.logError("[CE " + connectionID + "]: Connection could not be established! An Error occurred while trying to reach the other party via " + remoteIP + ":" + String.valueOf(remotePort), e);
 		} catch (IOException e) {
 			isConnected = false;
 			isBuildingConnection = false;
 			if(!(localClientSocket==null)) {
 				localClientSocket.close();
 			}
-			System.err.println("[CE " + connectionID + "]: Connection could not be established! An Error occured while connecting to the other Client!");
+			ceLogger.logError("[CE " + connectionID + "]: Connection could not be established! An Error occured while connecting to the other Client!", e);
 			throw e;
 		}
 		
@@ -388,7 +396,7 @@ public class ConnectionEndpoint implements Runnable{
 	 * @throws IOException	This will be thrown if the closing of any of the Sockets fails. Needs to be handled depending on the context of and by the caller.
 	 */
 	public void forceCloseConnection(){
-		System.out.println("[CE " + connectionID + "]: Local Shutdown of ConnectionEndpoint " + connectionID);
+		ceLogger.logInfo("[CE " + connectionID + "]: Local Shutdown of ConnectionEndpoint " + connectionID);
 		isConnected = false;
 		isBuildingConnection = false;
 		isListeningForMessages = false;
@@ -397,8 +405,7 @@ public class ConnectionEndpoint implements Runnable{
 			try {
 				localClientSocket.close();
 			} catch (IOException e) {
-				System.err.println("[CE " + connectionID + "]: Shutdown of localClientSocket failed!");
-				e.printStackTrace();
+				ceLogger.logError("[CE " + connectionID + "]: Shutdown of localClientSocket failed!", e);
 			}
 			clientOut = null;
 			localClientSocket = null;
@@ -408,8 +415,7 @@ public class ConnectionEndpoint implements Runnable{
 			try {
 				remoteClientSocket.close();
 			} catch (IOException e) {
-				System.err.println("[" + connectionID + "]: Shutdown of remoteClientSocket failed!");
-				e.printStackTrace();
+				ceLogger.logError("[" + connectionID + "]: Shutdown of remoteClientSocket failed!", e);
 			}
 			remoteClientSocket = null;
 		}		
@@ -437,7 +443,7 @@ public class ConnectionEndpoint implements Runnable{
 	 * 		never thrown if type is {@linkplain TransmissionTypeEnum#CONNECTION_REQUEST}
 	 */
 	public void pushMessage(NetworkPackage message) throws EndpointIsNotConnectedException {
-		System.out.println(("[CE " + connectionID + "]: Pushing message with type " + message.getType()));
+		ceLogger.logInfo(("[CE " + connectionID + "]: Pushing message with type " + message.getType() + " and ID " + Base64.getEncoder().encodeToString(message.getID())));
 		// NetworkPackages are only send if it's either a connection request, or we are connected
 		TransmissionTypeEnum type = message.getType();
 		if (   !type.equals(TransmissionTypeEnum.CONNECTION_REQUEST)	
@@ -449,9 +455,7 @@ public class ConnectionEndpoint implements Runnable{
 			clientOut.writeObject(message);
 		} catch (IOException e) {
 			// TODO Think about how to handle this
-			System.err.println("An I/O Exception occurred trying to push a message to the other endpoint.");
-			System.err.println(e.getClass().getSimpleName() + " : " + e.getMessage());
-			e.printStackTrace();
+			ceLogger.logError("An I/O Exception occurred trying to push a message to the other endpoint.", e);
 		}
 	}
 	
@@ -464,7 +468,7 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public final void listenForMessage() {
 		if(isListeningForMessages) {
-			System.err.println("[CE " + connectionID + "]: Already listening for Message, not starting a 2. Thread.");
+			ceLogger.logWarning("[CE " + connectionID + "]: Already listening for Message, not starting a 2. Thread.");
 			return;
 		}
 		isListeningForMessages = true;
@@ -479,26 +483,30 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	private void processMessage(NetworkPackage transmission) {
 
-		System.out.println("[CE " + connectionID + "]: Received Message, starting processing!: " + transmission.getType() + " - " + transmission.getMessageArgs() + " - " 
-		+ transmission.getContent() + " ID = " + Base64.getEncoder().encodeToString(transmission.getID()));
+		ceLogger.logInfo("[CE " + connectionID + "] Started processing of message with Type = " + transmission.getType() 
+						+ " Arguments = " + transmission.getMessageArgs() + 
+						" ID =  "  +  Base64.getEncoder().encodeToString(transmission.getID()) + 
+						" Confirm Request = " + transmission.expectedToBeConfirmed());
+		
 		// If message sender requested the message to be confirmed, do so
 		if (transmission.expectedToBeConfirmed()) {
 			NetworkPackage confirmation = 
 			new NetworkPackage(TransmissionTypeEnum.RECEPTION_CONFIRMATION, new MessageArgs(), transmission.getID(), false);
 			try {
 				pushMessage(confirmation);
+				ceLogger.logInfo(("[CE " + connectionID + "] Sent confirmation for message with ID "  + Base64.getEncoder().encodeToString(transmission.getID())));
 			} catch (EndpointIsNotConnectedException e) {
 				// Log it if no confirmation could be sent, but otherwise continue processing the message as normal
-				System.err.println("[CE " + connectionID + "] Could not confirm message with ID " + Base64.getEncoder().encodeToString(transmission.getID()) + ".");
+				ceLogger.logError("[CE " + connectionID + "] Could not confirm message with ID " + Base64.getEncoder().encodeToString(transmission.getID()) + ".", e);
 			}
 		}
 		
 		//Chose processing based on transmissionType in the NetworkPackage head.
 		if (transmission.getType().equals(TransmissionTypeEnum.CONNECTION_CONFIRMATION)) {
-			System.out.println("[CE " + connectionID + "]: Connection Confirmation received!");
 			remoteName = transmission.getMessageArgs().userName();
 			isBuildingConnection = false;
 			isConnected = true;
+			ceLogger.logInfo("[CE " + connectionID + "]: Connection Confirmation received! RemoteName = " + remoteName);
 			return;
 		} else {
 			try {
@@ -533,14 +541,13 @@ public class ConnectionEndpoint implements Runnable{
 		while(isListeningForMessages) {
 			try {
 				if(isListeningForMessages && clientIn != null && (isConnected||isBuildingConnection) && (receivedMessage = (NetworkPackage) clientIn.readObject()) != null) {
-					System.out.println( "[CE " + connectionID + "] Received a message of type " + receivedMessage.getType() + " beginning processing now.");
+					ceLogger.logInfo( "[CE " + connectionID + "] Received a message of type " + receivedMessage.getType() + " beginning processing now.");
 					processMessage(receivedMessage);
 
 				}
 			} catch (IOException | ClassNotFoundException e) {
 				if(isConnected) {
-					System.err.println("[CE " + connectionID + "]: Error while waiting for Message at " + connectionID + "!");
-					e.printStackTrace();
+					ceLogger.logError("[CE " + connectionID + "]: Error while waiting for Message at " + connectionID + "!", e);
 				}
 			}
 		}

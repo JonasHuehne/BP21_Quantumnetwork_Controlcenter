@@ -16,6 +16,7 @@ import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionManager;
+import qnccLogger.Log;
 import ui.ConsoleUI;
 
 /**
@@ -33,6 +34,8 @@ public class QuantumnetworkControllcenter {
 	static boolean LAUNCH_GUI = true;  // launch GUI
 	static boolean LAUNCH_CUI = false; // launch console UI
 
+	public static Log logger;
+	
 	/**
 	 * Method to initialize a Quantumnetwork Controllcenter
 	 * @param args <br>
@@ -43,6 +46,8 @@ public class QuantumnetworkControllcenter {
 	 * 		may be null, in this case the Properties file is not modified
 	 */
 	public static void initialize(String[] args) {
+		
+		
 		
 		//TODO add initialization of further Classes
 		
@@ -119,8 +124,9 @@ public class QuantumnetworkControllcenter {
 	public static void main(String[] args) {
 		
 
-		
-		System.out.println("Run QuantumnetworkControllcenter initialisation");
+		logger = new Log("QNCC Logger");
+		logger.loggerShowInfos();
+		logger.logInfo("Run QuantumnetworkControllcenter initialization.");
 		
 		initialize(args);
 		

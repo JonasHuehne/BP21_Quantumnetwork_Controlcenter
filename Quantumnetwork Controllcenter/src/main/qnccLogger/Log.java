@@ -26,7 +26,7 @@ public class Log {
 	public Log(String loggerName) {
 		logger = Logger.getLogger(loggerName);
 		logger.addHandler(fileHandler); 
-		logger.setLevel(Level.WARNING);
+		logger.setLevel(Level.INFO);
 	}
 	
 	/**

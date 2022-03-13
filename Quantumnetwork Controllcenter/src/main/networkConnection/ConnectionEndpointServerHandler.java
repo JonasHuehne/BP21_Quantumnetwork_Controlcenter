@@ -10,6 +10,7 @@ import communicationList.Contact;
 import exceptions.ConnectionAlreadyExistsException;
 import exceptions.IpAndPortAlreadyInUseException;
 import frame.QuantumnetworkControllcenter;
+import qnccLogger.Log;
 
 /**Every time a connection to the local Server Socket is created, a new instance of ConnectionEndpointServerHandler is also created.
  * The purpose of each CESH is to wait for the first message from the connecting Party, the TransmissionTypeEnum.CONNECTION_REQUEST
@@ -24,6 +25,8 @@ import frame.QuantumnetworkControllcenter;
  *
  */
 public class ConnectionEndpointServerHandler extends Thread{
+	
+	Log ceshLog;
 
 	private Socket clientSocket;	//This Socket is the one that will be handed over to the CE after receiving the initial message containing the foreign IP:::PORT of the connection.
 	private ObjectOutputStream serverOut;	//This is the Outgoing Communication Line that will be handed over to the CE.
@@ -59,6 +62,8 @@ public class ConnectionEndpointServerHandler extends Thread{
 		clientSocket = newClientSocket;
 		this.ownerCM = owner;
 		this.localName = owner.getLocalName();
+		
+		this.ceshLog = new Log("CESH Logger (Owner: " + owner.getLocalName() + ":" + owner.getLocalPort() + ")");
 	}
 	
 	public void run() {
@@ -72,7 +77,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 				ntt.start();
 				
 				if((receivedMessage = (NetworkPackage) serverIn.readObject()) != null) {
-					System.out.println("[CESH " + localName + "] Received a Message: -.-"+ receivedMessage.getType().toString() + " - " + receivedMessage.getMessageArgs() +"-.-");
+					ceshLog.logInfo("[CESH " + localName + "] Received a Message: -.-"+ receivedMessage.getType().toString() + " - " + receivedMessage.getMessageArgs() +"-.-");
 					
 					//Create new CE
 					if(receivedMessage.getType() == TransmissionTypeEnum.CONNECTION_REQUEST) {
@@ -90,7 +95,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 							Contact dbEntry = commList.query(remoteIP, remotePort);
 							if(dbEntry != null && !remoteIP.equals("127.0.0.1") && !remoteIP.equals("localhost")) {
 								// Set the values accordingly, if the commlist has an entry for that IP:Port pair
-								System.out.println("Found pre-existing DB Entry that had matching IP:PORT to new connection request. Using Name and Sig from DB.");
+								ceshLog.logInfo("Found pre-existing DB Entry that had matching IP:PORT to new connection request. Using Name and Sig from DB.");
 								remoteName = dbEntry.getName();
 							} else { // otherwise, no pk & set remote name based on message args
 								remoteName = receivedMessage.getMessageArgs().userName();
@@ -125,7 +130,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 	 * This stops the thread.
 	 */
 	public void terminateThread() {
-		System.out.println("Terminating ConnectionEndpointHandlerThread!");
+		ceshLog.logInfo("Terminating ConnectionEndpointHandlerThread!");
 		settingUp = false;
 		this.interrupt();
 	}

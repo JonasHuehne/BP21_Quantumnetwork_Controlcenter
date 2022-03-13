@@ -21,6 +21,7 @@ import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
 import net.miginfocom.swing.MigLayout;
+import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionState;
 
 /**This GUI contains a chatLog that visualizes the MessageLog of a connectionEndpoint.
@@ -140,7 +141,10 @@ public class MessageGUI extends JFrame {
 	 * 
 	 */
 	public void refreshMessageLog() {
-		ArrayList<SimpleEntry<String, String>> log = MessageSystem.conMan.getConnectionEndpoint(connectionID).getChatLog();
+		ConnectionEndpoint ce = MessageSystem.conMan.getConnectionEndpoint(connectionID);
+		if (ce == null) return; // can not update message log for a CE that no longer exists
+		if (ce.getChatLog() == null) return; // can not update a log that does not exist
+		ArrayList<SimpleEntry<String, String>> log = ce.getChatLog();
 		int logSize = log.size(); // measure this once to prevent desync due to multiple threads
 		if (logSize > loggedMessagesAmount) {
 			// add each new message to the log
