@@ -25,6 +25,7 @@ import frame.QuantumnetworkControllcenter;
 import keyStore.KeyStoreDbManager;
 import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
+import qnccLogger.Log;
 
 /**
  * Low level handling of {@linkplain NetworkPackage}s received by a {@linkplain ConnectionEndpoint}. <br>
@@ -33,6 +34,8 @@ import messengerSystem.MessageSystem;
  * @author Sasha Petri, Jonas Hühne
  */
 public class NetworkPackageHandler {
+	
+	static Log nphLogger = new Log("NetworkPackageHandler Logger");
 
 	
 	/** Whether files that do not have a valid signature should be saved to the system */
@@ -159,7 +162,8 @@ public class NetworkPackageHandler {
 			if (rejectedPackage == null) {
 				// If no such package exists, that means we've been sent an unwanted KEY_USE_REJECT
 				// log this as an unusual event (possibly indicates a control flow issue) but otherwise do nothing
-				// TODO log
+				nphLogger.logInfo("[CE " + ce.getID() + " ] Received a message of type " + TransmissionTypeEnum.KEY_USE_REJECT 
+								+ " rejecting the package with ID " + msg.getStringID() + ". However, there was no such package in the queue.");
 			} else {
 				try {
 					// Because we never sent our message, we can actually mark the bits used for encryption
@@ -169,22 +173,40 @@ public class NetworkPackageHandler {
 					int k = rejectedPackage.getMessageArgs().keyIndex();
 					int i = msg.getMessageArgs().keyIndex();
 					int newIndex = Math.max(k, i);
+					nphLogger.logInfo("[CE " + ce.getID() + " ] Received a message of type " + TransmissionTypeEnum.KEY_USE_REJECT 
+							+ " rejecting the package with ID " + msg.getStringID() + ". Adjusting local key index to be " + newIndex + ".");
 					KeyStoreDbManager.changeIndex(ce.getKeyStoreID(), newIndex);
 				} catch (NoKeyWithThatIDException e) {
 					// Control flow wise, this should not occur - a KEY_USE_ALERT should only be able to be sent if there is a mutual key
-					// in any case, log this (TODO)
+					nphLogger.logWarning("[CE " + ce.getID() + " ] Could not adjust key index based on key use rejection message.", e);
 				} catch (SQLException e) {
 					// Nothing we can really do here except log it, possible expansion would be a special message type to the partner
-					// TODO log
+					nphLogger.logWarning("[CE " + ce.getID() + " ] Could not adjust key index based on key use rejection message.", e);
 				} catch (NotEnoughKeyLeftException e) {
 					// This shouldn't happen unless we were either out-of-bounds already, or B sent us a non-sensical index
-					// in either case TODO log it
+					nphLogger.logWarning("[CE " + ce.getID() + " ] Could not adjust key index based on key use rejection message.", e);
 				}
 			}
 			break;
 		default:
 			// TODO log that a message of an invalid type was received
 			break;
+		}
+		
+		// Finally, if message could be properly handled (no Exceptions etc.)
+		// confirm it, if it was requested. We sign the confirmation message
+		// to prove that we (the intended recipient) are actually confirming it.
+		
+		if (msg.expectedToBeConfirmed()) {
+			NetworkPackage confirmation = new NetworkPackage(TransmissionTypeEnum.RECEPTION_CONFIRMATION, new MessageArgs(), msg.getID(), false);
+			confirmation.sign(MessageSystem.getAuthenticator());
+			try {
+				ce.pushMessage(confirmation);
+				nphLogger.logInfo(("[CE " + ce.getID() + "] Sent confirmation for message with ID "  + msg.getStringID()));
+			} catch (EndpointIsNotConnectedException e) {
+				// Log it if no confirmation could be sent, but otherwise continue processing the message as normal
+				nphLogger.logError("[CE " + ce.getID() + "] Could not confirm message with ID " +  msg.getStringID(), e);
+			}
 		}
 
 	}

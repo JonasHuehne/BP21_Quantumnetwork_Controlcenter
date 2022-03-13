@@ -138,6 +138,8 @@ public class MessageSystem {
 				FileCrypter.encryptAndSave(file, cipher, key, pathToEncryptedFile);
 				// read the encrypted file to send
 				fileBytes = Files.readAllBytes(pathToEncryptedFile);
+				// delete encrypted file after reading it to not clutter the machine
+				Files.deleteIfExists(pathToEncryptedFile);
 			} else {
 				// read the file to send
 				fileBytes = Files.readAllBytes(file.toPath());
