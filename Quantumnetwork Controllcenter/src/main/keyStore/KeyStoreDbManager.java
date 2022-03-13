@@ -269,12 +269,12 @@ public class KeyStoreDbManager {
 	 * Displays all entries on the console
 	 *
 	 * @return True if output was displayed correctly, False otherwise
+	 * @throws SQLException 
 	 */
-	public static boolean selectAll() {
-
-		try {
+	public static void selectAll() throws SQLException {
+		
+		try (Connection conn = connect();) {
 			String sql = "SELECT * FROM " + tableName;
-			Connection conn = connect();
 			Statement stmnt = conn.createStatement();
 			ResultSet result = stmnt.executeQuery(sql);
 
@@ -283,15 +283,8 @@ public class KeyStoreDbManager {
 						+ result.getInt("Index_") + "\t" + result.getString("Source_") + "\t"
 						+ result.getString("Destination"));
 			}
-
-			stmnt.close();
-			conn.close();
-			return true;
-		} catch (SQLException e) {
-			System.err.println("Selecting every entry from KeyStore.db failed!");
-			System.err.println(e.toString());
-			return false;
 		}
+			
 	}
 
 	/**
@@ -300,20 +293,16 @@ public class KeyStoreDbManager {
 	 * @return True if operation was successful, False otherwise
 	 * @throws SQLException
 	 */
-	public static boolean deleteEntryIfExists(String keyStreamID) throws SQLException {
+	public static void deleteEntryIfExists(String keyStreamID) throws SQLException {
 
-		String sql = "DELETE FROM " + tableName + " WHERE KeyStreamId= ?";
+		try (Connection conn = connect()) {
+			String sql = "DELETE FROM " + tableName + " WHERE KeyStreamId= ?";
+			PreparedStatement pstmnt = conn.prepareStatement(sql);
 
-		Connection conn = connect();
-		PreparedStatement pstmnt = conn.prepareStatement(sql);
-
-		pstmnt.setString(1, keyStreamID);
-		pstmnt.executeUpdate();
-		System.out.println("Entry from KeyInformation table was deleted successfully!");
-		pstmnt.close();
-		conn.close();
-
-		return true;
+			pstmnt.setString(1, keyStreamID);
+			pstmnt.executeUpdate();
+			System.out.println("Entry from KeyInformation table was deleted successfully!");
+		}
 
 	}
 
@@ -322,8 +311,9 @@ public class KeyStoreDbManager {
 	 *
 	 * @return True if all the used entries are deleted, False if there are non to
 	 *         be deleted
+	 * @throws SQLException 
 	 */
-	public static boolean deleteUsedKeys() {
+	public static boolean deleteUsedKeys() throws SQLException {
 
 		List<String> keyIdList = KeyStoreDbManager.getKeyStoreAsList().stream().filter(obj -> obj.getUsed() == true)
 				.map(obj -> new String(obj.getID())).collect(Collectors.toList());
@@ -334,13 +324,9 @@ public class KeyStoreDbManager {
 		}
 
 		for (String str : keyIdList) {
-			// try/catch block hier überhaupt nötig?
-			try {
-				deleteEntryIfExists(str);
-			} catch (Exception e) {
-				System.err.println(e.toString());
-			}
+			deleteEntryIfExists(str);
 		}
+		
 		return true;
 
 	}
@@ -350,16 +336,15 @@ public class KeyStoreDbManager {
 	 *
 	 * @param keyStreamID reference ID for a Key
 	 * @return true if operation succeeded, false otherwise
+	 * @throws SQLException 
+	 * @throws NoKeyWithThatIDException 
 	 */
-	public static boolean changeKeyToUsed(String keyStreamID) {
+	public static boolean changeKeyToUsed(String keyStreamID) throws SQLException, NoKeyWithThatIDException {
+		
+		if (!doesKeyStreamIdExist(keyStreamID)) 
+			throw new NoKeyWithThatIDException("No key with ID " + keyStreamID + " exists in the keystore.");
 
-		if (!doesKeyStreamIdExist(keyStreamID)) {
-			System.err.println("Unable to update used parameter as there is no Entry with this KeyStreamID" + "\n");
-			return false;
-		}
-
-		try {
-			Connection conn = connect();
+		try (Connection conn = connect()) {
 
 			String sql = "UPDATE " + tableName + " SET Used = 1 WHERE KeyStreamID = ?";
 			PreparedStatement pstmnt = conn.prepareStatement(sql);
@@ -367,16 +352,10 @@ public class KeyStoreDbManager {
 			pstmnt.setString(1, keyStreamID);
 			pstmnt.executeUpdate();
 			System.out.println("Changed key from Unused to Used");
-			pstmnt.close();
-			conn.close();
 
 			return true;
 
-		} catch (SQLException e) {
-			System.err.println("Changing the used Parameter of Entry failed " + "\n");
-			System.err.println(e.toString());
-			return false;
-		}
+		} 
 	}
 
 	/**
@@ -406,8 +385,6 @@ public class KeyStoreDbManager {
 					rs.getInt("Index_"), rs.getString("Source_"), rs.getString("Destination"), rs.getBoolean("Used"),
 					rs.getBoolean("Initiative"));
 
-			stmnt.close();
-			conn.close();
 			// System.out.println("Selecting entry from KeyInformation table was
 			// successful!" + "\n");
 
@@ -423,11 +400,11 @@ public class KeyStoreDbManager {
 	 *
 	 * @return a ArrayList of KeyInformationObject which contain information about
 	 *         the keys currently in storage
+	 * @throws SQLException 
 	 */
-	public static ArrayList<KeyStoreObject> getKeyStoreAsList() {
-		try {
-			Connection conn = connect();
-
+	public static ArrayList<KeyStoreObject> getKeyStoreAsList() throws SQLException {
+		try (Connection conn = connect()) {
+			
 			String sql = "SELECT * FROM " + tableName;
 			PreparedStatement stmnt = conn.prepareStatement(sql);
 			ResultSet rs = stmnt.executeQuery();
@@ -438,18 +415,12 @@ public class KeyStoreDbManager {
 						rs.getBoolean("Used"), rs.getBoolean("Initiative"));
 				result.add(res);
 			}
-			stmnt.close();
-			conn.close();
 
 			// System.out.println("Generating list of KeyInformation table entries was
 			// successful" + "\n");
 
 			return result;
-		} catch (SQLException e) {
-			System.err.println("Generating list of all entries from KeyInformation table failed!");
-			System.err.println(e.toString());
-			return null;
-		}
+		} 
 	}
 
 	/**
@@ -457,8 +428,9 @@ public class KeyStoreDbManager {
 	 *
 	 * @param keyStreamID reference ID to locate a key
 	 * @return true if the keyStreamID exists, false otherwise
+	 * @throws SQLException 
 	 */
-	public static boolean doesKeyStreamIdExist(String keyStreamID) {
+	public static boolean doesKeyStreamIdExist(String keyStreamID) throws SQLException {
 		List<String> keyIdList = KeyStoreDbManager.getKeyStoreAsList().stream().map(obj -> new String(obj.getID()))
 				.collect(Collectors.toList());
 
