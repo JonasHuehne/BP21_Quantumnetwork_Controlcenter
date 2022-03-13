@@ -3,6 +3,7 @@ package networkConnection;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Random;
 
 import messengerSystem.SignatureAuthentication;
@@ -192,4 +193,11 @@ public class NetworkPackage implements Serializable{
 		this.content = new byte[] {};
 	}
 
+	/**
+	 * @return the base 64 encoded version of this packages message ID
+	 */
+	public String getStringID() {
+		return Base64.getEncoder().encodeToString(getID());
+	}
+	
 }
