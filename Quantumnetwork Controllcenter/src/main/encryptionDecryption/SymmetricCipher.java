@@ -137,7 +137,7 @@ public abstract class SymmetricCipher {
 		if (key.length * 8 != KEY_LENGTH) 
 			throw new IllegalArgumentException(
 					"Passed array must be the size of the key used by this algorithm, "
-					+ "which is " + getKeyLength() + " bits, or " + KEY_LENGTH / 8 + " bytes.");
+					+ "which is " + getKeyLength() + " bits, or " + KEY_LENGTH / 8 + " bytes. Was passed array of size " + key.length + ".");
 		return new SecretKeySpec(key, 0, key.length, TRANSFORMATION_SIMPLE);
 	};
 	

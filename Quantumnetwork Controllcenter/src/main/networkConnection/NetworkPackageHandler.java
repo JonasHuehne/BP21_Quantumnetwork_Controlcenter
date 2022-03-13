@@ -1,16 +1,25 @@
 package networkConnection;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.sql.SQLException;
 import java.util.Base64;
+import java.util.Random;
 
 import javax.crypto.BadPaddingException;
+import javax.crypto.SecretKey;
 
+import encryptionDecryption.FileCrypter;
 import exceptions.CouldNotDecryptMessageException;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.NoKeyForContactException;
 import exceptions.NotEnoughKeyLeftException;
 import exceptions.VerificationFailedException;
+import frame.Configuration;
 import keyStore.SimpleKeyStore;
 import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
@@ -25,7 +34,7 @@ public class NetworkPackageHandler {
 
 	
 	/** Whether files that do not have a valid signature should be saved to the system */
-	final static boolean saveUnverifiedFiles = false;
+	final static boolean saveUnverifiedFiles = true;
 	
 	/**
 	 * Processes a NetworkPackage.
@@ -184,21 +193,13 @@ public class NetworkPackageHandler {
 				// If the message is also encrypted, try to decrypt it
 				if (msg.getMessageArgs().keyIndex() != -1) {
 					try {
-						// Get the key for decryption
-						if (MessageSystem.getCipher().getKeyLength() % 8 != 0) { // check needed, because SimpleKeyStore only supports byte-sized keys
-							// TODO throw a more appropriate Exception here if possible
-							throw new RuntimeException("Currently, the simple key store only support byte sized keys. "
-									+ "Keys of a bit size that is not a multiple of 8 can not be retrieved.");
-						}
-						String keyID 			= ce.getKeyStoreID(); // ID of key to get
-						int keyLengthInBytes 	= MessageSystem.getCipher().getKeyLength() / 8; // # of key bytes to get
-						byte[] decryptionKey 	= SimpleKeyStore.getKeyBytesAtIndexN(keyID, keyLengthInBytes, msg.getMessageArgs().keyIndex());
+						byte[] decryptionKey = getKey(ce, msg);
 						// Decrypt
 						byte[] decryptedMsg 	= MessageSystem.getCipher().decrypt(msg.getContent(), decryptionKey);
 						String decryptedString	= MessageSystem.byteArrayToString(decryptedMsg);
 						// Log the decrypted text of the message
 						ce.appendMessageToChatLog(false, decryptedString);
-					} catch (SQLException | InvalidKeyException | BadPaddingException | NoKeyForContactException | NotEnoughKeyLeftException e) {
+					} catch (SQLException | InvalidKeyException | BadPaddingException | NotEnoughKeyLeftException | NoKeyForContactException e) {
 						throw new CouldNotDecryptMessageException("Could not decrypt the text message with ID " + Base64.getEncoder().encodeToString(msg.getID()), e);
 					}
 				} 
@@ -216,24 +217,65 @@ public class NetworkPackageHandler {
 		}
 	}
 	
-	private static void handleFile(ConnectionEndpoint ce, NetworkPackage msg) {
-		if (msg.getSignature() != null) { // if the message is signed, verify it
-			Authentication authenticator = MessageSystem.getAuthenticator(); // the auth currently in use by the message system
-			if (msg.verify(authenticator, ce.getID())) {
+	private static void handleFile(ConnectionEndpoint ce, NetworkPackage msg) throws CouldNotDecryptMessageException {
+		// Save the file if saving unverified files is true, or if it can be verified
+		Path outDirectory = Paths.get("");
+		String fileName = "";
+		if (saveUnverifiedFiles || (msg.getSignature() != null && msg.verify(MessageSystem.getAuthenticator(), ce.getID()))) {
+			// if the file can be verified, save it in a folder named after the connection
+			outDirectory = Paths.get(Configuration.getBaseDirPath(), "ReceivedFiles" , ce.getRemoteName());
+			fileName = msg.getMessageArgs().fileName();
+			try {
+				Files.createDirectories(outDirectory);
+				// if the file name already exists, append a random integer to make it unique
+				Random r = new Random();
+				while (Files.exists(outDirectory.resolve(fileName))) fileName += r.nextInt(0, 10);
+				File f = Files.write(outDirectory.resolve(fileName), msg.getContent()).toFile();
+				
+				// If it is encrypted, decrypt it
 				if (msg.getMessageArgs().keyIndex() != -1) {
 					// if it is encrypted, decrypt and save it
-				} else { 
-					// otherwise just save it
-				}
+					try {
+						byte[] decryptionKey = getKey(ce, msg);
+						SecretKey sk = MessageSystem.getCipher().byteArrayToSecretKey(decryptionKey);
+						// save decrypted file with the same filename, but prefixed with decrypted_
+						Path pathToDecryptedFile = Paths.get(f.getParent().toString(), "decrypted_" + f.getName()); 
+						FileCrypter.decryptAndSave(outDirectory.resolve(fileName).toFile(), MessageSystem.getCipher(), sk, pathToDecryptedFile);
+					} catch (BadPaddingException | InvalidKeyException | SQLException | NoKeyForContactException | NotEnoughKeyLeftException | IOException e) {
+						throw new CouldNotDecryptMessageException("Could not decrypt the text message with ID " + Base64.getEncoder().encodeToString(msg.getID()), e);
+					}
+				} 
+			} catch (IOException e) {
+				// TODO Log & exit
+				return;
 			}
-			
 		} else {
-			if (saveUnverifiedFiles) {
-				
-			} else {
-				// TODO log an error or something here
-			}
+			// TODO Log & Exit
+			return;
 		}
+
+	}
+	
+	/**
+	 * Gets the key to be used to decrypt the passed message.
+	 * @param ce
+	 * @param msg
+	 * @return
+	 * @throws NotEnoughKeyLeftException 
+	 * @throws NoKeyForContactException 
+	 * @throws SQLException 
+	 */
+	private static byte[] getKey(ConnectionEndpoint ce, NetworkPackage msg) throws SQLException, NoKeyForContactException, NotEnoughKeyLeftException {
+		// Get the key for decryption
+		if (MessageSystem.getCipher().getKeyLength() % 8 != 0) { // check needed, because SimpleKeyStore only supports byte-sized keys
+			// TODO throw a more appropriate Exception here if possible
+			throw new RuntimeException("Currently, the simple key store only support byte sized keys. "
+					+ "Keys of a bit size that is not a multiple of 8 can not be retrieved.");
+		}
+		String keyID 			= ce.getKeyStoreID(); // ID of key to get
+		int keyLengthInBytes 	= MessageSystem.getCipher().getKeyLength() / 8; // # of key bytes to get
+		byte[] decryptionKey 	= SimpleKeyStore.getKeyBytesAtIndexN(keyID, keyLengthInBytes, msg.getMessageArgs().keyIndex());
+		return decryptionKey;
 	}
 	
 }

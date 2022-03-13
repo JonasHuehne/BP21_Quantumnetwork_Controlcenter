@@ -1,11 +1,16 @@
+import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -15,10 +20,15 @@ import java.util.concurrent.TimeUnit;
 
 import javax.crypto.IllegalBlockSizeException;
 
+import org.hamcrest.core.IsEqual;
+import org.hamcrest.core.IsNot;
 import org.ietf.jgss.MessageProp;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
@@ -30,8 +40,10 @@ import exceptions.CouldNotSendMessageException;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.IpAndPortAlreadyInUseException;
 import exceptions.NoKeyForContactException;
+import exceptions.NotEnoughKeyLeftException;
 import exceptions.PortIsInUseException;
 import exceptions.VerificationFailedException;
+import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import keyStore.SimpleKeyStore;
 import messengerSystem.Authentication;
@@ -345,8 +357,81 @@ public class MessageSystemTests {
 		
 	}
 	
-	public void test_encrypted_file_transfer() {
-		assertFalse(true, "Not implemented yet.");
+	@ParameterizedTest
+	@ValueSource(strings = { "TestImage.png", "TestODT.odt", "TestPDF.pdf", "TestTXT.txt", "TestZip.zip" })
+	public void test_file_transfer(String fileName) throws CouldNotSendMessageException, IOException {
+		ConnectionEndpoint connectionToAlice = BobCM.getConnectionEndpoint("Alice");  	// Bob's Connection to Alice
+
+		MessageSystem.conMan = AliceCM;
+		File f = Paths.get("ExampleContent", "FilesForTransferTests", fileName).toFile();
+		assertTrue(f.exists(), "The test file for transfer does not exist.");
+		// Delete the file that would result from transfer
+		Path outPath = Paths.get(Configuration.getBaseDirPath(), "ReceivedFiles", connectionToAlice.getRemoteName(), fileName);
+		Files.deleteIfExists(outPath);
+		// Send the file, unencrypted and unverified
+		MessageSystem.sendFile("Bob", f, false, false);
+		waitBriefly();
+		// There should now be a file at the outpath
+		assertTrue(Files.exists(outPath));
+		// it should be identical to the file that was sent
+		byte[] originalFileBytes = Files.readAllBytes(f.toPath());
+		byte[] outPutFileBytes = Files.readAllBytes(outPath);
+		assertArrayEquals(originalFileBytes, outPutFileBytes);
+	}
+	
+	@ParameterizedTest
+	@ValueSource(strings = { "TestImage.png", "TestODT.odt", "TestPDF.pdf", "TestTXT.txt", "TestZip.zip" })
+	public void test_encrypted_file_transfer(String fileName) throws CouldNotSendMessageException, IOException, SQLException, NoKeyForContactException, NotEnoughKeyLeftException, InvalidKeyException, IllegalBlockSizeException {
+		ConnectionEndpoint connectionToAlice = BobCM.getConnectionEndpoint("Alice");  	// Bob's Connection to Alice
+		ConnectionEndpoint connectionToBob = AliceCM.getConnectionEndpoint("Bob");		// Alice Connection to Bob
+
+		/*
+		 * Preparation
+		 */
+		
+		MessageSystem.conMan = AliceCM;
+		
+		// Alice and Bob have generated a mutual key (Alice is the one who had the initiative)
+		byte[] randomKey = new byte[1024];
+		Random r = new Random();
+		r.nextBytes(randomKey);
+				
+		SimpleKeyStore.insertEntry("Alice", randomKey, false); // Bob's entry for his connection to Alice
+		connectionToAlice.setKeyStoreID("Alice");
+				
+		SimpleKeyStore.insertEntry("Bob", randomKey, true); // Alice entry for her connection Bob
+		connectionToBob.setKeyStoreID("Bob");
+		
+		
+		File f = Paths.get("ExampleContent", "FilesForTransferTests", fileName).toFile();
+		// Check that file to transfer exists
+		assertTrue(f.exists(), "The test file for transfer does not exist.");
+		// Delete the file that would result from transfer, if it exists from previous tests
+		Path outPath = Paths.get(Configuration.getBaseDirPath(), "ReceivedFiles", connectionToAlice.getRemoteName(), fileName);
+		Files.deleteIfExists(outPath);
+		// Also delete the decrypted version
+		Path outPathDec = Paths.get(Configuration.getBaseDirPath(), "ReceivedFiles", connectionToAlice.getRemoteName(), "decrypted_" + fileName);
+		Files.deleteIfExists(outPathDec);
+		// Send the file, encrypted
+		MessageSystem.sendEncryptedFile("Bob", f, false);
+		waitBriefly();
+		// There should now be two files, one decrypted and one not
+		assertTrue(Files.exists(outPath));
+		assertTrue(Files.exists(outPathDec));
+		
+		// Decrypted file is identical to original
+		byte[] originalBytes		 = Files.readAllBytes(f.toPath());
+		byte[] decryptedBytesRead	 = Files.readAllBytes(outPathDec);
+		
+		assertArrayEquals(originalBytes, decryptedBytesRead);
+		
+		// Encryption was correct
+		byte[] encryptedBytesRead	= Files.readAllBytes(outPath);
+		byte[] key = SimpleKeyStore.getKeyBytesAtIndexN(connectionToBob.getKeyStoreID(), MessageSystem.getCipher().getKeyLength() / 8, 0);
+		byte[] artificiallyEncryptedBytes = MessageSystem.getCipher().encrypt(originalBytes, key);
+		
+		assertArrayEquals(encryptedBytesRead, artificiallyEncryptedBytes);
+		
 	}
 	
 	@Test
