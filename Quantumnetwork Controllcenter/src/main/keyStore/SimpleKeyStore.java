@@ -13,12 +13,8 @@ import exceptions.NotEnoughKeyLeftException;
 import frame.Configuration;
 
 /**
- * This class supplies methods for creating, editing, getting and deleting entries from the KeyStore.db which holds all the keys
- * @implNote Originally, we attempted to comply with ETSI GS QKD 004 in this paper,
- * however, inexperience and organizational mistakes led to that attempt being messy.
- * We have opted to prioritize a well-structured project over compatibility in this case,
- * and leave adjusting this program to fit the ETSI key delivery standards for the future.
- * @author Sasha Petri, Aron Hernandez
+ * This class supplies methods for creating, editing, getting and deleting entries from a KeyStore.db which holds all the keys
+ * @author Sasha Petri
  *
  */
 public class SimpleKeyStore {
