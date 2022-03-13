@@ -112,8 +112,9 @@ public class NetworkPackageHandler {
 				int ownIndex = SimpleKeyStore.getIndex(ce.getKeyStoreID());
 				// check if this >= our own index
 				if (encStartIndex >= ownIndex) {
-					// if it is, everything is good (we set our index to encStartIndex + KEY_LENGTH_IN_BYTES)
-					SimpleKeyStore.incrementIndex(ce.getKeyStoreID(), encStartIndex + MessageSystem.getCipher().getKeyLength() / 8);
+					// if it is, everything is good (we set our index to A's index after encryption)
+					int incrementAmount = (encStartIndex + MessageSystem.getCipher().getKeyLength() / 8) - ownIndex;
+					SimpleKeyStore.incrementIndex(ce.getKeyStoreID(), incrementAmount);
 					// Send back affirming message
 					NetworkPackage affirmation = new NetworkPackage(TransmissionTypeEnum.KEY_USE_ACCEPT, new MessageArgs(), msg.getID(), false);
 					affirmation.sign(MessageSystem.getAuthenticator());
