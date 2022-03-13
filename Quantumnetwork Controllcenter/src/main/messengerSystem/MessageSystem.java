@@ -135,7 +135,7 @@ public class MessageSystem {
 		try {
 			if (encryptFile) { // sending an encrypted file
 				// encrypt the file locally
-				byte[] byteKey = SimpleKeyStore.getNextKeyBytes(connectionID, cipher.getKeyLength());
+				byte[] byteKey = SimpleKeyStore.getNextKeyBytes(connectionID, cipher.getKeyLength() / 8);
 				keyIndex = SimpleKeyStore.getIndex(connectionID);
 				SecretKey key = cipher.byteArrayToSecretKey(byteKey);
 				Path pathToEncryptedFile = Paths.get(file.getParent().toString(), "encrypted_" + file.getName());
@@ -155,11 +155,17 @@ public class MessageSystem {
 			
 			MessageArgs args = new MessageArgs(file.getName(), keyIndex);
 			NetworkPackage msg = new NetworkPackage(TransmissionTypeEnum.FILE_TRANSFER, args, fileBytes, confirm);
-			msg.sign(authenticator);
-			informAndSendOnceConfirmed(connectionID, msg);
+			if (sign) msg.sign(authenticator);
+			if (encryptFile) {
+				informAndSendOnceConfirmed(connectionID, msg);
+			} else {
+				conMan.sendMessage(connectionID, msg);
+			}
+			
 			
 		} catch (EndpointIsNotConnectedException | IOException | InvalidKeyException | 
-				IllegalBlockSizeException | SQLException | NotEnoughKeyLeftException | NoKeyForContactException | SecurityException e) {
+				IllegalBlockSizeException | SQLException | NotEnoughKeyLeftException | 
+				NoKeyForContactException | SecurityException | ManagerHasNoSuchEndpointException e) {
 			throw new CouldNotSendMessageException("Could not send the file " + file.getName() + " along the connection " + connectionID + ".", e);
 		}
 
