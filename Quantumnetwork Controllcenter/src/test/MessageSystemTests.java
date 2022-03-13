@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.crypto.IllegalBlockSizeException;
 
+import org.ietf.jgss.MessageProp;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -215,7 +216,8 @@ public class MessageSystemTests {
 	}
 	
 	@Test
-	public void test_encrypted_text_message() throws SQLException, CouldNotSendMessageException, InvalidKeyException, IllegalBlockSizeException, NoKeyForContactException {
+	public void test_encrypted_text_message() throws SQLException, CouldNotSendMessageException, InvalidKeyException, 
+	IllegalBlockSizeException, NoKeyForContactException, EndpointIsNotConnectedException, CouldNotDecryptMessageException, VerificationFailedException {
 		
 		// In this test, Alice will send an encrypted text message to Bob
 		
@@ -302,6 +304,45 @@ public class MessageSystemTests {
 		int expectedIndex = MessageSystem.getCipher().getKeyLength() / 8;
 		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToAlice.getKeyStoreID()));
 		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToBob.getKeyStoreID()));
+		
+		
+		/// EDGE CASE 1: A's Index is > B's index ///
+		SimpleKeyStore.incrementIndex(connectionToBob.getKeyStoreID(), 10);
+		MessageSystem.sendEncryptedTextMessage("Bob", secretString + "v2", false);
+		waitBriefly();
+		// Bob should have received the message
+		bobsChatLog = connectionToAlice.getChatLog();
+		assertEquals(secretString + "v2", bobsChatLog.get(bobsChatLog.size() - 1).getValue());
+		// Both should have the same index (KEY_LENGTH_BYTES * 2 + 10) now
+		expectedIndex = (MessageSystem.getCipher().getKeyLength() / 8) * 2 + 10;
+		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToAlice.getKeyStoreID()));
+		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToBob.getKeyStoreID()));
+		
+		
+		
+		/// EDGE CASE 2: A's Index is < B's index ///
+		int bobChatSizePreSend = bobsChatLog.size();
+		SimpleKeyStore.incrementIndex(connectionToAlice.getKeyStoreID(), 10);
+		MessageSystem.sendEncryptedTextMessage("Bob", secretString + "v3", false);
+		waitBriefly();
+		// Bob's chat log should not have increased in size
+		bobsChatLog = connectionToAlice.getChatLog();
+		assertEquals(bobChatSizePreSend, bobsChatLog.size(), "Bob should not have received a new message from Alice, "
+				+ "however, Bob did. The message is " + bobsChatLog.get(bobsChatLog.size() - 1));
+		// Alice should have received a rejection (logged)
+		assertEquals(1, connectionToBob.getLoggedPackagesOfType(TransmissionTypeEnum.KEY_USE_REJECT).size());
+		// Both should now have Bob's index previous to Alice sending the message
+		expectedIndex = (MessageSystem.getCipher().getKeyLength() / 8) * 2 + 20;
+		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToAlice.getKeyStoreID()));
+		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToBob.getKeyStoreID()));
+
+		
+		// Assert that Alice Index doesn't change if she receives a rejection with an index < her own
+		NetworkPackage artificialRejection = new NetworkPackage(TransmissionTypeEnum.KEY_USE_REJECT, new MessageArgs(expectedIndex - 12), false);
+		NetworkPackageHandler.handlePackage(connectionToBob, artificialRejection);
+		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToAlice.getKeyStoreID()));
+		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToBob.getKeyStoreID()));
+		
 	}
 	
 	public void test_encrypted_file_transfer() {
