@@ -9,6 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -360,8 +361,9 @@ public class KeyGenerator implements Runnable{
 	 * Needs to be adjusted if the DB is not changed to use Byte[].
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
+	 * @throws SQLException 
 	 */
-	private void transferKeyFileToDB() throws EndpointIsNotConnectedException {
+	private void transferKeyFileToDB() throws EndpointIsNotConnectedException, SQLException {
 		//Read Key from File
 		byte[] key = null;
 		Path keyFilePath = connectionPath.resolve(expectedKeyFilename);
@@ -395,7 +397,7 @@ public class KeyGenerator implements Runnable{
 		KeyStoreDbManager.createNewKeyStoreAndTable();
 		//Overwrite if Key already exists for connectionID
 		if(KeyStoreDbManager.doesKeyStreamIdExist(getOwnerID())) {
-			KeyStoreDbManager.deleteKeyInformationByID(getOwnerID());
+			KeyStoreDbManager.deleteEntryIfExists(getOwnerID());
 		}
 		KeyStoreDbManager.insertToKeyStore(getOwnerID(), key, ownAddress + ":" + String.valueOf(ownPort), remoteAddress + ":" + String.valueOf(remotePort), false, initiative == 1);
 		
@@ -529,6 +531,10 @@ public class KeyGenerator implements Runnable{
 					+ "This resulted in an inability to send a message from that endpoint. See the stacktrace for details on where a message could not be sent. ");
 			e.printStackTrace();
 		} catch (IOException e) {
+			System.err.println("ERROR - Key Generation was unsuccessful. "
+					+ "A " + e.getClass().getCanonicalName() + " occurred, Message: " + e.getMessage());
+			e.printStackTrace();
+		} catch (SQLException e) { // something going wrong with the keystore
 			System.err.println("ERROR - Key Generation was unsuccessful. "
 					+ "A " + e.getClass().getCanonicalName() + " occurred, Message: " + e.getMessage());
 			e.printStackTrace();
