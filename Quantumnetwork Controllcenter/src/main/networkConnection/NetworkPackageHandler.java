@@ -43,6 +43,14 @@ public class NetworkPackageHandler {
 	 */
 	public static void handlePackage(ConnectionEndpoint ce, NetworkPackage msg) throws EndpointIsNotConnectedException, CouldNotDecryptMessageException, VerificationFailedException {
 		
+		// if it is a signed message, check the signature first 
+		if (msg.getSignature() != null) {
+			if (!msg.verify(MessageSystem.getAuthenticator(), ce.getID())) {
+				throw new VerificationFailedException("Could not verify the text message with ID " 
+						+ Base64.getEncoder().encodeToString(msg.getID()) + " using the public key of " + ce.getID());
+			}
+		}
+		
 		TransmissionTypeEnum msgType = msg.getType();
 		
 		switch (msgType) {
@@ -84,14 +92,56 @@ public class NetworkPackageHandler {
 		case KEYGEN_TRANSMISSION:
 			ce.getKeyGen().writeKeyGenFile(msg);
 			break;
-		case RECEPTION_CONFIRMATION:
-			// TODO think if something special needs to be done here
-			// maybe just making an .isConfirmed(byte[] id) method that checks the message list for Confirmations
-			// for that ID is sufficient to allow outside classes to check if a message was confirmed 
+		case RECEPTION_CONFIRMATION: // content of messages of this type is the ID they are confirming
+			// TODO check if we actually sent out a message with that ID (this will need us to also log which messages we sent...)
+			// TODO theoretically these messages should be verified
+			System.out.println("[" + ce.getID() + "] Received confirmation for message with ID " + Base64.getEncoder().encodeToString(msg.getContent()));
+			// if we did, add the messageID to the list
+			ce.addConfirmationFor(msg.getContent());
+			// if we have been waiting for this ID to be confirmed before pushing a message
+			// (e.g. in-order transfer, key synchronization, ...) push the waiting message now
+			NetworkPackage toPush = ce.removeFromPushQueue(msg.getContent());
+			if (toPush != null) ce.pushMessage(toPush);
 			break;
 		case TEXT_MESSAGE:
 			handleTextMessage(ce, msg);
 			break;
+		case KEY_USE_ALERT:
+			int encStartIndex = msg.getMessageArgs().keyIndex(); // index at which sender wants to start encrypting
+			try {
+				int ownIndex = SimpleKeyStore.getIndex(ce.getKeyStoreID());
+				// check if this >= our own index
+				if (encStartIndex >= ownIndex) {
+					// if it is, everything is good (we set our index to encStartIndex + KEY_LENGTH_IN_BYTES)
+					SimpleKeyStore.incrementIndex(ce.getKeyStoreID(), encStartIndex + MessageSystem.getCipher().getKeyLength() / 8);
+					// Send back affirming message
+					NetworkPackage affirmation = new NetworkPackage(TransmissionTypeEnum.KEY_USE_ACCEPT, new MessageArgs(), msg.getID(), false);
+					affirmation.sign(MessageSystem.getAuthenticator());
+					ce.pushMessage(affirmation);
+				} else {
+					// if it is not, this means the other party would use key bits that we already marked as used
+					// send a message back telling the other party not to use these bits, and what our current index is
+					// (if received, this allows our keys to sync up again)
+					NetworkPackage denial = new NetworkPackage(TransmissionTypeEnum.KEY_USE_REJECT, new MessageArgs(ownIndex), msg.getID(), false);
+					denial.sign(MessageSystem.getAuthenticator());
+					ce.pushMessage(denial);
+				}
+			} catch (NoKeyForContactException e) {
+				// Control flow wise, this should not occur - a KEY_USE_ALERT should only be able to be sent if there is a mutual key
+				// in any case, log this (TODO)
+			} catch (SQLException e) {
+				// Nothing we can really do here except log it, possible expansion would be a special message type to the partner
+				// TODO log
+			}
+			break;
+		case KEY_USE_ACCEPT:
+			// push the package we've been waiting to push
+			NetworkPackage encPackageToPush = ce.removeFromPushQueue(msg.getContent());
+			if (encPackageToPush != null) ce.pushMessage(encPackageToPush);
+		case KEY_USE_REJECT:
+			// remove the package we've been waiting to push
+			ce.removeFromPushQueue(msg.getContent());
+			// update our index to be B's index, if B's is higher
 		default:
 			// TODO log that a message of an invalid type was received
 			break;
@@ -135,8 +185,7 @@ public class NetworkPackageHandler {
 					return;
 				}
 			} else {
-				throw new VerificationFailedException("Could not verify the text message with ID " 
-						+ Base64.getEncoder().encodeToString(msg.getID()) + " using the public key of " + ce.getID());
+				
 			}
 		} else {
 			ce.appendMessageToChatLog(false, MessageSystem.byteArrayToString(msg.getContent()));

@@ -28,6 +28,7 @@ import exceptions.CouldNotDecryptMessageException;
 import exceptions.CouldNotSendMessageException;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.IpAndPortAlreadyInUseException;
+import exceptions.NoKeyForContactException;
 import exceptions.PortIsInUseException;
 import exceptions.VerificationFailedException;
 import frame.QuantumnetworkControllcenter;
@@ -214,7 +215,7 @@ public class MessageSystemTests {
 	}
 	
 	@Test
-	public void test_encrypted_text_message() throws SQLException, CouldNotSendMessageException, InvalidKeyException, IllegalBlockSizeException {
+	public void test_encrypted_text_message() throws SQLException, CouldNotSendMessageException, InvalidKeyException, IllegalBlockSizeException, NoKeyForContactException {
 		
 		// In this test, Alice will send an encrypted text message to Bob
 		
@@ -276,6 +277,7 @@ public class MessageSystemTests {
 		MessageSystem.sendEncryptedTextMessage("Bob", "This is a secret message", false);
 		waitBriefly();
 		
+		
 		// Encrypted Message is in package log
 		ArrayList<NetworkPackage> bobsPackageLog = connectionToAlice.getLoggedPackagesOfType(TransmissionTypeEnum.TEXT_MESSAGE);
 		assertEquals(1, bobsPackageLog.size());
@@ -296,6 +298,10 @@ public class MessageSystemTests {
 		assertEquals(1, bobsChatLog.size());
 		assertEquals(1, aliceChatLog.size());
 		
+		// Key Indexes of both parties are adjusted accordingly
+		int expectedIndex = MessageSystem.getCipher().getKeyLength() / 8;
+		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToAlice.getKeyStoreID()));
+		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToBob.getKeyStoreID()));
 	}
 	
 	public void test_encrypted_file_transfer() {
@@ -309,11 +315,10 @@ public class MessageSystemTests {
 	
 	private static void waitBriefly() {
 		try {
-			TimeUnit.MILLISECONDS.sleep(100);
+			TimeUnit.MILLISECONDS.sleep(200);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
 	}
-	
 
 }
