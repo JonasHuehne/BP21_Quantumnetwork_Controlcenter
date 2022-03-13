@@ -498,19 +498,6 @@ public class ConnectionEndpoint implements Runnable{
 						" ID =  "  +  Base64.getEncoder().encodeToString(transmission.getID()) + 
 						" Confirm Request = " + transmission.expectedToBeConfirmed());
 		
-		// If message sender requested the message to be confirmed, do so
-		if (transmission.expectedToBeConfirmed()) {
-			NetworkPackage confirmation = 
-			new NetworkPackage(TransmissionTypeEnum.RECEPTION_CONFIRMATION, new MessageArgs(), transmission.getID(), false);
-			try {
-				pushMessage(confirmation);
-				ceLogger.logInfo(("[CE " + connectionID + "] Sent confirmation for message with ID "  + Base64.getEncoder().encodeToString(transmission.getID())));
-			} catch (EndpointIsNotConnectedException e) {
-				// Log it if no confirmation could be sent, but otherwise continue processing the message as normal
-				ceLogger.logError("[CE " + connectionID + "] Could not confirm message with ID " + Base64.getEncoder().encodeToString(transmission.getID()) + ".", e);
-			}
-		}
-		
 		//Chose processing based on transmissionType in the NetworkPackage head.
 		if (transmission.getType().equals(TransmissionTypeEnum.CONNECTION_CONFIRMATION)) {
 			remoteName = transmission.getMessageArgs().userName();
