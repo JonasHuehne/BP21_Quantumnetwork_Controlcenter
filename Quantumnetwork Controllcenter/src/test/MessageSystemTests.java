@@ -1,4 +1,3 @@
-import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -13,18 +12,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.sql.SQLException;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.AbstractMap.SimpleEntry;
 import java.util.concurrent.TimeUnit;
 
 import javax.crypto.IllegalBlockSizeException;
 
-import org.hamcrest.core.IsEqual;
-import org.hamcrest.core.IsNot;
-import org.ietf.jgss.MessageProp;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -39,13 +34,13 @@ import exceptions.CouldNotDecryptMessageException;
 import exceptions.CouldNotSendMessageException;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.IpAndPortAlreadyInUseException;
-import exceptions.NoKeyForContactException;
+import exceptions.NoKeyWithThatIDException;
 import exceptions.NotEnoughKeyLeftException;
 import exceptions.PortIsInUseException;
 import exceptions.VerificationFailedException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
-import keyStore.SimpleKeyStore;
+import keyStore.KeyStoreDbManager;
 import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
@@ -132,8 +127,8 @@ public class MessageSystemTests {
 		BobCM.getConnectionEndpoint("Alice").getPackageLog().clear();
 		BobCM.getConnectionEndpoint("Alice").getChatLog().clear();
 		
-		SimpleKeyStore.deleteEntryIfExists("Alice");
-		SimpleKeyStore.deleteEntryIfExists("Bob");
+		KeyStoreDbManager.deleteEntryIfExists("Alice");
+		KeyStoreDbManager.deleteEntryIfExists("Bob");
 	}
 	
 	@Test
@@ -229,7 +224,7 @@ public class MessageSystemTests {
 	
 	@Test
 	public void test_encrypted_text_message() throws SQLException, CouldNotSendMessageException, InvalidKeyException, 
-	IllegalBlockSizeException, NoKeyForContactException, EndpointIsNotConnectedException, CouldNotDecryptMessageException, VerificationFailedException {
+	IllegalBlockSizeException, NoKeyWithThatIDException, EndpointIsNotConnectedException, CouldNotDecryptMessageException, VerificationFailedException {
 		
 		// In this test, Alice will send an encrypted text message to Bob
 		
@@ -245,10 +240,10 @@ public class MessageSystemTests {
 		Random r = new Random();
 		r.nextBytes(randomKey);
 		
-		SimpleKeyStore.insertEntry("Alice", randomKey, false); // Bob's entry for his connection to Alice
+		KeyStoreDbManager.insertToKeyStore("Alice", randomKey, "", "", false, false); // Bob's entry for his connection to Alice
 		connectionToAlice.setKeyStoreID("Alice");
 		
-		SimpleKeyStore.insertEntry("Bob", randomKey, true); // Alice entry for her connection Bob
+		KeyStoreDbManager.insertToKeyStore("Bob", randomKey, "", "", false, true); // Alice entry for her connection Bob
 		connectionToBob.setKeyStoreID("Bob");
 		
 		String secretString = "This is a secret message";
@@ -314,12 +309,12 @@ public class MessageSystemTests {
 		
 		// Key Indexes of both parties are adjusted accordingly
 		int expectedIndex = MessageSystem.getCipher().getKeyLength() / 8;
-		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToAlice.getKeyStoreID()));
-		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToBob.getKeyStoreID()));
+		assertEquals(expectedIndex, KeyStoreDbManager.getIndex(connectionToAlice.getKeyStoreID()));
+		assertEquals(expectedIndex, KeyStoreDbManager.getIndex(connectionToBob.getKeyStoreID()));
 		
 		
 		/// EDGE CASE 1: A's Index is > B's index ///
-		SimpleKeyStore.incrementIndex(connectionToBob.getKeyStoreID(), 10);
+		KeyStoreDbManager.incrementIndex(connectionToBob.getKeyStoreID(), 10);
 		MessageSystem.sendEncryptedTextMessage("Bob", secretString + "v2", false);
 		waitBriefly();
 		// Bob should have received the message
@@ -327,14 +322,14 @@ public class MessageSystemTests {
 		assertEquals(secretString + "v2", bobsChatLog.get(bobsChatLog.size() - 1).getValue());
 		// Both should have the same index (KEY_LENGTH_BYTES * 2 + 10) now
 		expectedIndex = (MessageSystem.getCipher().getKeyLength() / 8) * 2 + 10;
-		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToAlice.getKeyStoreID()));
-		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToBob.getKeyStoreID()));
+		assertEquals(expectedIndex, KeyStoreDbManager.getIndex(connectionToAlice.getKeyStoreID()));
+		assertEquals(expectedIndex, KeyStoreDbManager.getIndex(connectionToBob.getKeyStoreID()));
 		
 		
 		
 		/// EDGE CASE 2: A's Index is < B's index ///
 		int bobChatSizePreSend = bobsChatLog.size();
-		SimpleKeyStore.incrementIndex(connectionToAlice.getKeyStoreID(), 10);
+		KeyStoreDbManager.incrementIndex(connectionToAlice.getKeyStoreID(), 10);
 		MessageSystem.sendEncryptedTextMessage("Bob", secretString + "v3", false);
 		waitBriefly();
 		// Bob's chat log should not have increased in size
@@ -345,15 +340,15 @@ public class MessageSystemTests {
 		assertEquals(1, connectionToBob.getLoggedPackagesOfType(TransmissionTypeEnum.KEY_USE_REJECT).size());
 		// Both should now have Bob's index previous to Alice sending the message
 		expectedIndex = (MessageSystem.getCipher().getKeyLength() / 8) * 2 + 20;
-		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToAlice.getKeyStoreID()));
-		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToBob.getKeyStoreID()));
+		assertEquals(expectedIndex, KeyStoreDbManager.getIndex(connectionToAlice.getKeyStoreID()));
+		assertEquals(expectedIndex, KeyStoreDbManager.getIndex(connectionToBob.getKeyStoreID()));
 
 		
 		// Assert that Alice Index doesn't change if she receives a rejection with an index < her own
 		NetworkPackage artificialRejection = new NetworkPackage(TransmissionTypeEnum.KEY_USE_REJECT, new MessageArgs(expectedIndex - 12), false);
 		NetworkPackageHandler.handlePackage(connectionToBob, artificialRejection);
-		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToAlice.getKeyStoreID()));
-		assertEquals(expectedIndex, SimpleKeyStore.getIndex(connectionToBob.getKeyStoreID()));
+		assertEquals(expectedIndex, KeyStoreDbManager.getIndex(connectionToAlice.getKeyStoreID()));
+		assertEquals(expectedIndex, KeyStoreDbManager.getIndex(connectionToBob.getKeyStoreID()));
 		
 	}
 	
@@ -381,7 +376,7 @@ public class MessageSystemTests {
 	
 	@ParameterizedTest
 	@ValueSource(strings = { "TestImage.png", "TestODT.odt", "TestPDF.pdf", "TestTXT.txt", "TestZip.zip" })
-	public void test_encrypted_file_transfer(String fileName) throws CouldNotSendMessageException, IOException, SQLException, NoKeyForContactException, NotEnoughKeyLeftException, InvalidKeyException, IllegalBlockSizeException {
+	public void test_encrypted_file_transfer(String fileName) throws CouldNotSendMessageException, IOException, SQLException, NoKeyWithThatIDException, NotEnoughKeyLeftException, InvalidKeyException, IllegalBlockSizeException {
 		ConnectionEndpoint connectionToAlice = BobCM.getConnectionEndpoint("Alice");  	// Bob's Connection to Alice
 		ConnectionEndpoint connectionToBob = AliceCM.getConnectionEndpoint("Bob");		// Alice Connection to Bob
 
@@ -396,10 +391,10 @@ public class MessageSystemTests {
 		Random r = new Random();
 		r.nextBytes(randomKey);
 				
-		SimpleKeyStore.insertEntry("Alice", randomKey, false); // Bob's entry for his connection to Alice
+		KeyStoreDbManager.insertToKeyStore("Alice", randomKey, "", "", false, false); // Bob's entry for his connection to Alice
 		connectionToAlice.setKeyStoreID("Alice");
 				
-		SimpleKeyStore.insertEntry("Bob", randomKey, true); // Alice entry for her connection Bob
+		KeyStoreDbManager.insertToKeyStore("Bob", randomKey, "", "", false, true); // Alice entry for her connection Bob
 		connectionToBob.setKeyStoreID("Bob");
 		
 		
@@ -427,7 +422,7 @@ public class MessageSystemTests {
 		
 		// Encryption was correct
 		byte[] encryptedBytesRead	= Files.readAllBytes(outPath);
-		byte[] key = SimpleKeyStore.getKeyBytesAtIndexN(connectionToBob.getKeyStoreID(), MessageSystem.getCipher().getKeyLength() / 8, 0);
+		byte[] key = KeyStoreDbManager.getKeyBytesAtIndexN(connectionToBob.getKeyStoreID(), MessageSystem.getCipher().getKeyLength() / 8, 0);
 		byte[] artificiallyEncryptedBytes = MessageSystem.getCipher().encrypt(originalBytes, key);
 		
 		assertArrayEquals(encryptedBytesRead, artificiallyEncryptedBytes);

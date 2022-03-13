@@ -119,7 +119,7 @@ class KeyStoreDbManagerTest {
 
     @Test
     void deleteEntryByID() {
-        boolean deleteBool = KeyStoreDbManager.deleteKeyInformationByID("nurEineTestID_01");
+        boolean deleteBool = KeyStoreDbManager.deleteEntryIfExists("nurEineTestID_01");
 
         assertEquals(true, deleteBool);
 
@@ -127,7 +127,7 @@ class KeyStoreDbManagerTest {
 
     @Test
     void failedDeletion(){
-        boolean failedDeletionBool = KeyStoreDbManager.deleteKeyInformationByID("nichtVorhandeneID");
+        boolean failedDeletionBool = KeyStoreDbManager.deleteEntryIfExists("nichtVorhandeneID");
         assertEquals(false, failedDeletionBool);
     }
 

@@ -8,7 +8,7 @@ import java.util.Random;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import exceptions.NoKeyForContactException;
+import exceptions.NoKeyWithThatIDException;
 import exceptions.NotEnoughKeyLeftException;
 import keyStore.SimpleKeyStore;
 
@@ -36,7 +36,7 @@ public class SimpleKeyStoreTests {
 	}
 	
 	@Test
-	public void can_insert_and_retrieve() throws SQLException, NotEnoughKeyLeftException, NoKeyForContactException {
+	public void can_insert_and_retrieve() throws SQLException, NotEnoughKeyLeftException, NoKeyWithThatIDException {
 		// random contact name
 		String contactName = "testContact" + r.nextInt();
 		
@@ -49,14 +49,14 @@ public class SimpleKeyStoreTests {
 		SimpleKeyStore.insertEntry(contactName, randomKey, false);
 		
 		// attempt to retrieve it
-		byte[] retrievedKey = SimpleKeyStore.getKeyBytes(contactName, keyLength);
+		byte[] retrievedKey = SimpleKeyStore.getNextKeyBytes(contactName, keyLength);
 		
 		// stored key should be equal to generated key
 		assertArrayEquals(randomKey, retrievedKey);
 	}
 	
 	@Test
-	public void can_retrieve_first_n_bytes() throws SQLException, NotEnoughKeyLeftException, NoKeyForContactException {
+	public void can_retrieve_first_n_bytes() throws SQLException, NotEnoughKeyLeftException, NoKeyWithThatIDException {
 		// random contact name
 		String contactName = "testContact" + r.nextInt();
 		
@@ -69,7 +69,7 @@ public class SimpleKeyStoreTests {
 		SimpleKeyStore.insertEntry(contactName, randomKey, false);
 		
 		// attempt to retrieve the first 8 bytes (actually the "next" 8 bytes, but index is 0 so it's the first)
-		byte[] retrievedKey = SimpleKeyStore.getKeyBytes(contactName, 8);
+		byte[] retrievedKey = SimpleKeyStore.getNextKeyBytes(contactName, 8);
 		
 		// retrieved array should be the first 8 bytes of the inserted key
 		byte[] randomKeySubArray = Arrays.copyOf(randomKey, 8);
@@ -77,7 +77,7 @@ public class SimpleKeyStoreTests {
 	}
 	
 	@Test
-	public void increment_adjusts_remaining_bytes_correctly() throws SQLException, NoKeyForContactException {
+	public void increment_adjusts_remaining_bytes_correctly() throws SQLException, NoKeyWithThatIDException {
 		// random contact name
 		String contactName = "testContact" + r.nextInt();
 				
@@ -96,7 +96,7 @@ public class SimpleKeyStoreTests {
 		assertEquals(12, SimpleKeyStore.getRemainingBytes(contactName));
 	}
 	
-	public void increment_adjust_returned_key_correctly() throws SQLException, NotEnoughKeyLeftException, NoKeyForContactException {
+	public void increment_adjust_returned_key_correctly() throws SQLException, NotEnoughKeyLeftException, NoKeyWithThatIDException {
 		// random contact name
 		String contactName = "testContact" + r.nextInt();
 				
@@ -112,37 +112,11 @@ public class SimpleKeyStoreTests {
 		SimpleKeyStore.incrementIndex(contactName, 4);
 
 		// retrieve the next 8 bytes (key[4] to key[12])
-		byte[] subKey = SimpleKeyStore.getKeyBytes(contactName, 8);
+		byte[] subKey = SimpleKeyStore.getNextKeyBytes(contactName, 8);
 		
 		// assert that they are equal to that sub-array of the key
 		byte[] randomKeySubArray = Arrays.copyOfRange(randomKey, 4, 13);
 		assertArrayEquals(randomKeySubArray, subKey);
 	}
 	
-	public void deleting_used_key_bytes_functions_as_intended() throws SQLException, NotEnoughKeyLeftException, NoKeyForContactException {
-		// random contact name
-		String contactName = "testContact" + r.nextInt();
-				
-		// random key for test contact
-		final int keyLength = 16;
-		byte[] randomKey = new byte[keyLength];
-		(new Random()).nextBytes(randomKey);	
-				
-		// insert key
-		SimpleKeyStore.insertEntry(contactName, randomKey, false);
-		
-		// increment index by 4
-		SimpleKeyStore.incrementIndex(contactName, 4);
-
-		// delete the "used" bytes
-		SimpleKeyStore.deleteUsedKeyBytes(contactName);
-		
-		// now there should be 12 bytes remaining
-		assertEquals(12, SimpleKeyStore.getRemainingBytes(contactName));
-		
-		// make sure they are the correct bytes (last 12 bytes of initially inserted array)
-		byte[] remainingKeyBytes = SimpleKeyStore.getKeyBytes(contactName, 12);
-		byte[] expectedRemainingKeyBytes = Arrays.copyOfRange(randomKey, 4, 16);
-		assertArrayEquals(expectedRemainingKeyBytes, remainingKeyBytes);
-	}
 }

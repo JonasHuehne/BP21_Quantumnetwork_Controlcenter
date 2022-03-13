@@ -9,6 +9,8 @@ import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.sql.SQLException;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
@@ -196,6 +198,7 @@ public class MessageSystem {
 	 * 		connectionID of a {@linkplain ConnectionEndpoint} in the {@linkplain ConnectionManager} of this class <br>
 	 * 		the text message is sent to the connected partner of the specified endpoint
 	 * @param msgString
+	 * 		the message to send
 	 * @param confirm
 	 * 		set this to true if the recipient should send a confirmation message upon receiving the message, false otherwise
 	 * @throws CouldNotSendMessageException
@@ -265,6 +268,26 @@ public class MessageSystem {
 		sendFileInternal(connectionID, file, true, true, confirm);
 	}
 	
+	/**
+	 * Called after encrypting a message. This queues the encrypted message up for sending,
+	 * however, before sending it alerts the other CE that key bytes starting at a certain index
+	 * are used in the encrypted message it wants to send. The other CE can then approve or disapprove
+	 * this (disapprove if this would cause sender to use bytes for encryption that receiver already used)
+	 * and only if the receiver approves, the message is sent. <br>
+	 * If this takes longer than three seconds, no message is sent. <br>
+	 * The timeout happens asynchronously - this method does not block.
+	 * @param connectionID
+	 * 		ID of the CE in the {@linkplain ConnectionManager} from which to send the package
+	 * @param msg
+	 * 		the encrypted message to send
+	 * @throws NoKeyWithThatIDException
+	 * 		if there is no mutual key for the connection given by the specified CE <br>
+	 * 		if this method is called correctly, this should not occurr
+	 * @throws SQLException
+	 * 		if an SQL error occured with the keystore
+	 * @throws EndpointIsNotConnectedException
+	 * 		if the specified endpoint is not connected to their partner
+	 */
 	private static void informAndSendOnceConfirmed(String connectionID, NetworkPackage msg) 
 			throws NoKeyWithThatIDException, SQLException, EndpointIsNotConnectedException {
 		
@@ -285,8 +308,21 @@ public class MessageSystem {
 		KeyStoreDbManager.incrementIndex(connectionID, getCipher().getKeyLength() / 8);
 		
 		/*
-		 * TODO: Asynchronously wait 3 seconds, if no confirmation arrives, delete the package from the queue.
+		 * Asynchronously wait 3 seconds, if no confirmation arrives, delete the package from the queue.
+		 * (This is to avoid cluttering our RAM infinitely with packages)
 		 */
+		TimerTask task = new TimerTask() {
+			@Override
+			public void run() {
+				NetworkPackage removed = conMan.getConnectionEndpoint(connectionID).removeFromPushQueue(keyUseAlert.getID());
+				if (removed != null) { 
+					// if we successfully removed the package, that means it wasn't removed through a KEY_USE_ACCEPT / KEY_USE_REJECT
+					messageSystemLog.logWarning("A timeout occurred while awaiting a confirmation for key use on connection with ID " + connectionID);
+				}
+			}
+		};
+		Timer timer = new Timer("KeySynchro TimeOut Timer");
+		timer.schedule(task, 3000L);
 		
 		// Could be better to have a thread that runs for a few seconds and sends multiple messages
 		// requesting approval, to account for package loss to mitigate the two generals problem

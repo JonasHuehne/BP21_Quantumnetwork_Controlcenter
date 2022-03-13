@@ -8,7 +8,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Arrays;
 
-import exceptions.NoKeyForContactException;
+import exceptions.NoKeyWithThatIDException;
+import exceptions.NoKeyWithThatIDException;
 import exceptions.NotEnoughKeyLeftException;
 import frame.Configuration;
 
@@ -105,9 +106,9 @@ public class SimpleKeyStore {
 	 * @throws SQLException 
 	 * 		if there was an error connecting to the database or querying it (e.g. table does not exist)
 	 * @throws NotEnoughKeyLeftException 
-	 * @throws NoKeyForContactException 
+	 * @throws NoKeyWithThatIDException 
 	 */
-	public static byte[] getNextKeyBytes(String keyID, int nbytes) throws SQLException, NotEnoughKeyLeftException, NoKeyForContactException {
+	public static byte[] getNextKeyBytes(String keyID, int nbytes) throws SQLException, NotEnoughKeyLeftException, NoKeyWithThatIDException {
 		int index = getIndex(keyID);
 		return getKeyBytesAtIndexN(keyID, nbytes, index);
 	}
@@ -126,10 +127,10 @@ public class SimpleKeyStore {
 	 * 		must be 0 or greater
 	 * @return
 	 * @throws SQLException
-	 * @throws NoKeyForContactException
+	 * @throws NoKeyWithThatIDException
 	 * @throws NotEnoughKeyLeftException
 	 */
-	public static byte[] getKeyBytesAtIndexN(String keyID, int nbytes, int startingIndex) throws SQLException, NoKeyForContactException, NotEnoughKeyLeftException {
+	public static byte[] getKeyBytesAtIndexN(String keyID, int nbytes, int startingIndex) throws SQLException, NoKeyWithThatIDException, NotEnoughKeyLeftException {
 		if (nbytes <= 0) throw new IllegalArgumentException("Requested byte amount must be at least 1.");
 		try (Connection connection = connect()) {
 			// get the specified key
@@ -138,7 +139,7 @@ public class SimpleKeyStore {
 			queryStatement.setString(1, keyID);
 			ResultSet rs = queryStatement.executeQuery();	
 			if (!rs.isBeforeFirst()) { // if result set is empty
-				throw new NoKeyForContactException("No key with ID " + keyID + " in the database.");
+				throw new NoKeyWithThatIDException("No key with ID " + keyID + " in the database.");
 			} else {
 				byte[]	key	= rs.getBytes(1);
 				// check that there are enough bytes left
@@ -163,10 +164,10 @@ public class SimpleKeyStore {
 	 * 		if this exceeds the amount of remaining usable key bytes, all key bytes are marked as used
 	 * @throws SQLException 
 	 * 		if an error occured connecting to the database, or while querying or updating it
-	 * @throws NoKeyForContactException 
+	 * @throws NoKeyWithThatIDException 
 	 * 		if the key specified by {@code keyID} has no entry in the database
 	 */
-	public static void incrementIndex(String keyID, int bytes) throws SQLException, NoKeyForContactException {
+	public static void incrementIndex(String keyID, int bytes) throws SQLException, NoKeyWithThatIDException {
 		try (Connection connection = connect()) {
 			// Get current Index for the specified key
 			String queryStmtStr = "SELECT KeyIndex, KeyLength FROM " + tableName + " WHERE KeyID = ?";
@@ -175,7 +176,7 @@ public class SimpleKeyStore {
 			ResultSet rs = queryStmt.executeQuery();
 			
 			if (!rs.isBeforeFirst()) { // rs empty ==> no such key in DB
-				throw new NoKeyForContactException("No key with ID " + keyID + " in the database. Could not increment index.");
+				throw new NoKeyWithThatIDException("No key with ID " + keyID + " in the database. Could not increment index.");
 			} else {
 				// Increment index to at most keyLength 
 				int index = rs.getInt(1);
@@ -238,19 +239,19 @@ public class SimpleKeyStore {
 	 * 		the ID of the key
 	 * @return
 	 * 		the current index of the specified key
-	 * @throws NoKeyForContactException 
+	 * @throws NoKeyWithThatIDException 
 	 * 		if there is no key saved with that ID
 	 * @throws SQLException 
 	 * 		if there was an error connecting to the database, or querying for the key index
 	 */
-	public static int getIndex(String keyID) throws NoKeyForContactException, SQLException {
+	public static int getIndex(String keyID) throws NoKeyWithThatIDException, SQLException {
 		try (Connection connection = connect()) {
 			String queryString = "SELECT KeyIndex FROM " + tableName + " WHERE KeyID = ?";
 			PreparedStatement queryStatement = connection.prepareStatement(queryString);
 			queryStatement.setString(1, keyID);
 			ResultSet rs = queryStatement.executeQuery();
 			if (!rs.isBeforeFirst()) { //if rs is empty
-			 	throw new NoKeyForContactException("No key with ID " + keyID + " in the database.");
+			 	throw new NoKeyWithThatIDException("No key with ID " + keyID + " in the database.");
 			} else { // if entry for contact is found
 				return rs.getInt(1);
 			}
@@ -267,10 +268,10 @@ public class SimpleKeyStore {
 	 * 		the new index will instead be set to the maximum acceptable value (==keylength)
 	 * @throws SQLException 
 	 * 		if there was an error connecting to the Database or querying it
-	 * @throws NoKeyForContactException 
+	 * @throws NoKeyWithThatIDException 
 	 * 		if no key with the given ID exists in the database
 	 */
-	public static void setIndex(String keyID, int index) throws SQLException, NoKeyForContactException {
+	public static void setIndex(String keyID, int index) throws SQLException, NoKeyWithThatIDException {
 		try (Connection connection = connect()) {
 			// Get current Index for the specified key
 			String queryStmtStr = "SELECT KeyLength FROM " + tableName + " WHERE KeyID = ?";
@@ -279,7 +280,7 @@ public class SimpleKeyStore {
 			ResultSet rs = queryStmt.executeQuery();
 			
 			if (!rs.isBeforeFirst()) { // rs empty ==> no such key in DB
-				throw new NoKeyForContactException("No key with ID " + keyID + " in the database. Could not increment index.");
+				throw new NoKeyWithThatIDException("No key with ID " + keyID + " in the database. Could not increment index.");
 			} else {
 				int keyLengthMax = rs.getInt(1);
 				// Update
