@@ -109,15 +109,21 @@ public class MessageSystemTests {
 		commList.delete("Bob");
 		
 		// Generate key pair if none exists
-		SHA256withRSAAuthentication.generateSignatureKeyPair("keys_for_testing_ms", true, false);
+		SHA256withRSAAuthentication.generateSignatureKeyPair("signature", true, false);
 		
 		// Public key used by both parties
-		String pk = SHA256withRSAAuthentication.readKeyStringFromFile("keys_for_testing_ms.pub");
+		String pk = SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub");
 		
 		commList.insert("Alice", "127.0.0.1", 60050, pk);
 		commList.insert("Bob", "127.0.0.2", 60040, pk); 
 		
 		auth = new SHA256withRSAAuthentication();
+		
+		/* <Sasha>
+		 * Signing & Verifying is currently a bit finicky, due to its dependenance on the pk specified in Configurations...
+		 * Well, I guess it's just not possible to really test the MessageSystem with any other (sk, pk) pair
+		 * than the "actual" one in use. But as long as the unit tests work, the program appears to do too.
+		 */
 	}
 	
 	@AfterEach

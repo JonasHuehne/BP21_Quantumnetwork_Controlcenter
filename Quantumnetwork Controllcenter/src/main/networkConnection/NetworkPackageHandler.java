@@ -13,6 +13,7 @@ import java.util.Random;
 import javax.crypto.BadPaddingException;
 import javax.crypto.SecretKey;
 
+import communicationList.Contact;
 import encryptionDecryption.FileCrypter;
 import exceptions.CouldNotDecryptMessageException;
 import exceptions.EndpointIsNotConnectedException;
@@ -20,6 +21,7 @@ import exceptions.NoKeyWithThatIDException;
 import exceptions.NotEnoughKeyLeftException;
 import exceptions.VerificationFailedException;
 import frame.Configuration;
+import frame.QuantumnetworkControllcenter;
 import keyStore.KeyStoreDbManager;
 import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
@@ -55,8 +57,10 @@ public class NetworkPackageHandler {
 		// if it is a signed message, check the signature first 
 		if (msg.getSignature() != null) {
 			if (!msg.verify(MessageSystem.getAuthenticator(), ce.getID())) {
+				Contact c = QuantumnetworkControllcenter.communicationList.query(ce.getID());
 				throw new VerificationFailedException("Could not verify the text message with ID " 
-						+ Base64.getEncoder().encodeToString(msg.getID()) + " using the public key of " + ce.getID());
+						+ Base64.getEncoder().encodeToString(msg.getID()) + " using the public key of " + ce.getID() + 
+						"(" + (c != null ? c.getSignatureKey() : "???")  + ")");
 			}
 		}
 		
