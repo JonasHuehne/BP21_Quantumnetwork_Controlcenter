@@ -38,6 +38,8 @@ import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
+import keyStore.KeyStoreDbManager;
+import keyStore.KeyStoreObject;
 import net.miginfocom.swing.MigLayout;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
@@ -50,6 +52,7 @@ import networkConnection.ConnectionType;
  *
  */
 public final class GUIMainWindow implements Runnable{
+
 
 	private Object[][] contactData = {};
 	String[] contactColumnNames = {"Connection Name",
@@ -74,15 +77,11 @@ public final class GUIMainWindow implements Runnable{
 	/** column of the contacts table in which the public keys are listed */
 	private final int contactDBSigIndex = 3;
 	
-	/** contains the last measured size of our local ConnectionManager, used in updating the list of active connections */
-	private int ceAmountOld = 0;
 	/** used in updating the list of active connections */
 	private ArrayList<String> namesOfConnections = new ArrayList<String>();
 	
 	public HashMap<String,ConnectionType> conType = new HashMap<String,ConnectionType>();
-	
-	/** currently open message GUIs, tracked here so they can be updated */
-	protected ArrayList<MessageGUI> openChatWindows = new ArrayList<>();
+	protected ArrayList<MessageGUI> openChatWindows;
 
 	/**
 	 * Create the application.
@@ -90,6 +89,8 @@ public final class GUIMainWindow implements Runnable{
 	public GUIMainWindow() {
 		initialize();
 		startUpdateService();
+		
+		
 	}
 
 	/**
@@ -194,13 +195,8 @@ public final class GUIMainWindow implements Runnable{
 				//Delete all Entries in the DB first.
 				CommunicationList cl = QuantumnetworkControllcenter.communicationList;
 				ArrayList<Contact> dbContent = cl.queryAll();
-				int entryNumber = dbContent.size();
-				
-				for(int i = 0; i < entryNumber; i++) {
-					cl.delete(dbContent.get(i).getName());			
-				}
-				
-				
+				for (Contact c : dbContent) cl.delete(c.getName());
+		
 				//Create new DBEntries form JTable
 				int rowCount = contactTable.getRowCount();
 				for(int i = 0; i < rowCount; i++) {
@@ -221,7 +217,6 @@ public final class GUIMainWindow implements Runnable{
 		JScrollPane contactScrollPane = new JScrollPane();
 		contactScrollPane.setAlignmentY(Component.TOP_ALIGNMENT);
 		contactsColumn.add(contactScrollPane);
-		//contactTable = new JTable(contactData, contactColumnNames);
 		contactTable = new JTable(new DefaultTableModel(contactColumnNames,0));
 		gatherContacts();
 		contactScrollPane.setViewportView(contactTable);
@@ -299,18 +294,18 @@ public final class GUIMainWindow implements Runnable{
 						try {
 							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection).getKeyGen().generateKey();
 						} catch (NumberFormatException e1) {
-							new GenericWarningMessage("ERROR - Could not generate key! The value stored as the port of the photon source is not an Integer!");
+							new GenericWarningMessage("ERROR - Could not generate key! The value stored as the port of the photon source is not an Integer!" + e1);
 						} catch (KeyGenRequestTimeoutException e1) {
-							new GenericWarningMessage("A timeout occurred while trying to generate a key with the specified connection.");
+							new GenericWarningMessage("A timeout occurred while trying to generate a key with the specified connection." + e1);
 						} catch (EndpointIsNotConnectedException e1) { // control flow wise, this should not occur, but I'd rather not have an empty catch here
-							new GenericWarningMessage("ERROR - Could not generate key! The endpoint with id " + activeConnection + " is not connected!");
+							new GenericWarningMessage("ERROR - Could not generate key! The endpoint with id " + activeConnection + " is not connected!" + e1);
 						}
 					}else {
 						System.out.println("Warning: Active Connection is not connected to anything!");
 						return;
 					}
 				} catch (ManagerHasNoSuchEndpointException e1) {
-					new GenericWarningMessage("ERROR - Could not remove connection: " + activeConnection + ". No such connection exists.");
+					new GenericWarningMessage("ERROR - Could not remove connection: " + activeConnection + ". No such connection exists." + e1);
 				}
 				
 			}
@@ -471,6 +466,15 @@ public final class GUIMainWindow implements Runnable{
 		connectionTypeCB.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				conType.put(connectionName, (ConnectionType) connectionTypeCB.getSelectedItem());
+				
+				//Check if Key exists
+				if(connectionTypeCB.getSelectedItem() == ConnectionType.ENCRYPTED) {
+					KeyStoreObject kSO = KeyStoreDbManager.getEntryFromKeyStore(connectionName);
+					if(kSO == null) {
+						new GenericWarningMessage("Warning: no valid Key was found for " + connectionName + "! Please generate a Key before using encrypted communication.");
+						connectionTypeCB.setSelectedItem(ConnectionType.AUTHENTICATED);
+					}
+				}
 			}
 		});
 		connectionTypeCB.setModel(new DefaultComboBoxModel<ConnectionType>(ConnectionType.values()));
@@ -495,10 +499,14 @@ public final class GUIMainWindow implements Runnable{
 		connectionEndpointVerticalBox.repaint();
 	}
 	
+	/**
+	 * Starts the thread used to update the representation of the connections in the right table.
+	 */
 	private void startUpdateService() {
 		ceUpdateThread = new Thread(this, "_ceUpdateThread");
 		ceUpdateThread.start();
 	}
+	
 	
 	/**
 	 * Interrupts the thread used to update the representation of the connections in the right table.
@@ -507,6 +515,10 @@ public final class GUIMainWindow implements Runnable{
 		ceUpdateThread.interrupt();
 	}
 	
+	
+	/**
+	 * Runs a thread that updates the representation of the connections in the right table of the GUI.
+	 */
 	@Override
 	public void run() {
 		
