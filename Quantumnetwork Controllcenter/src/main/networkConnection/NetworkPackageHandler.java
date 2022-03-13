@@ -139,10 +139,33 @@ public class NetworkPackageHandler {
 			// push the package we've been waiting to push
 			NetworkPackage encPackageToPush = ce.removeFromPushQueue(msg.getContent());
 			if (encPackageToPush != null) ce.pushMessage(encPackageToPush);
+			break;
 		case KEY_USE_REJECT:
 			// remove the package we've been waiting to push
-			ce.removeFromPushQueue(msg.getContent());
-			// update our index to be B's index, if B's is higher
+			NetworkPackage rejectedPackage = ce.removeFromPushQueue(msg.getContent());
+			if (rejectedPackage == null) {
+				// If no such package exists, that means we've been sent an unwanted KEY_USE_REJECT
+				// log this as an unusual event (possibly indicates a control flow issue) but otherwise do nothing
+				// TODO log
+			} else {
+				try {
+					// Because we never sent our message, we can actually mark the bits used for encryption
+					// as unused again, and then set the index to max(k, i), where k is the key index before
+					// we tried encrypting, and i is the index given to us by our partner (the local key index of our partner)
+					// that way, next time we will be starting at an index that is >= our partners (i.e. unused bytes)
+					int k = rejectedPackage.getMessageArgs().keyIndex();
+					int i = msg.getMessageArgs().keyIndex();
+					int newIndex = Math.max(k, i);
+					SimpleKeyStore.setIndex(ce.getKeyStoreID(), newIndex);
+				} catch (NoKeyForContactException e) {
+					// Control flow wise, this should not occur - a KEY_USE_ALERT should only be able to be sent if there is a mutual key
+					// in any case, log this (TODO)
+				} catch (SQLException e) {
+					// Nothing we can really do here except log it, possible expansion would be a special message type to the partner
+					// TODO log
+				}
+			}
+			break;
 		default:
 			// TODO log that a message of an invalid type was received
 			break;

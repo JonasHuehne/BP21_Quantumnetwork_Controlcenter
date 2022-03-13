@@ -254,9 +254,44 @@ public class SimpleKeyStore {
 			queryStatement.setString(1, keyID);
 			ResultSet rs = queryStatement.executeQuery();
 			if (!rs.isBeforeFirst()) { //if rs is empty
-			 	throw new NoKeyForContactException("No key for contact " + keyID + " in the database.");
+			 	throw new NoKeyForContactException("No key with ID " + keyID + " in the database.");
 			} else { // if entry for contact is found
 				return rs.getInt(1);
+			}
+		}
+	}
+	
+	/**
+	 * Sets the index associated with a key to a specific value. <br>
+	 * @param keyID
+	 * 		the ID of the key
+	 * @param index
+	 * 		the new Index <br>
+	 * 		if this is greater than the total lenght of the key, 
+	 * 		the new index will instead be set to the maximum acceptable value (==keylength)
+	 * @throws SQLException 
+	 * 		if there was an error connecting to the Database or querying it
+	 * @throws NoKeyForContactException 
+	 * 		if no key with the given ID exists in the database
+	 */
+	public static void setIndex(String keyID, int index) throws SQLException, NoKeyForContactException {
+		try (Connection connection = connect()) {
+			// Get current Index for the specified key
+			String queryStmtStr = "SELECT KeyLength FROM " + tableName + " WHERE KeyID = ?";
+			PreparedStatement queryStmt = connection.prepareStatement(queryStmtStr);
+			queryStmt.setString(1, keyID);
+			ResultSet rs = queryStmt.executeQuery();
+			
+			if (!rs.isBeforeFirst()) { // rs empty ==> no such key in DB
+				throw new NoKeyForContactException("No key with ID " + keyID + " in the database. Could not increment index.");
+			} else {
+				int keyLengthMax = rs.getInt(1);
+				// Update
+				String updateStmtStr = "UPDATE " + tableName + " SET KeyIndex = ? WHERE KeyID = ? ";
+				PreparedStatement updateStmt = connection.prepareStatement(updateStmtStr);
+				updateStmt.setInt(1, Math.min(keyLengthMax, index));
+				updateStmt.setString(2, keyID);
+				updateStmt.executeUpdate();
 			}
 		}
 	}
