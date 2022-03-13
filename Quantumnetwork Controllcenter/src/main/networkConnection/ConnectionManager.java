@@ -95,7 +95,7 @@ public class ConnectionManager {
 		this.localAddress = localAddress;
 		this.localPort = localPort;
 		this.localName = localName;
-		this.commList = commList;
+		this.commList = commlist;
 		
 		masterServerSocket = new ServerSocket(this.localPort);
 		portsInUse.add(localPort);
