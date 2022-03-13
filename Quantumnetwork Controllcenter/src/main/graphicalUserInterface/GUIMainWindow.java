@@ -81,7 +81,7 @@ public final class GUIMainWindow implements Runnable{
 	private ArrayList<String> namesOfConnections = new ArrayList<String>();
 	
 	public HashMap<String,ConnectionType> conType = new HashMap<String,ConnectionType>();
-	protected ArrayList<MessageGUI> openChatWindows;
+	protected ArrayList<MessageGUI> openChatWindows = new ArrayList<MessageGUI>();
 
 	/**
 	 * Create the application.
