@@ -145,10 +145,11 @@ public class NetworkPackageHandler {
 				}
 			} catch (NoKeyWithThatIDException e) {
 				// Control flow wise, this should not occur - a KEY_USE_ALERT should only be able to be sent if there is a mutual key
-				// in any case, log this (TODO)
+				nphLogger.logWarning("[CE " + ce.getID() + " ] Could not process key use alert. "
+						+ "There is no entry in the keystore with ID " + ce.getKeyStoreID() + ".", e);
 			} catch (SQLException e) {
 				// Nothing we can really do here except log it, possible expansion would be a special message type to the partner
-				// TODO log
+				nphLogger.logWarning("[CE " + ce.getID() + " ] Could not process key use alert due to an issue with the key store.", e);
 			}
 			break;
 		case KEY_USE_ACCEPT:
@@ -189,7 +190,8 @@ public class NetworkPackageHandler {
 			}
 			break;
 		default:
-			// TODO log that a message of an invalid type was received
+			nphLogger.logWarning("[CE " + ce.getID() + " ] A message of type " + msg.getType() + " was received. "
+					+ "No handling is defined for this type. Message ID: " + msg.getStringID());
 			break;
 		}
 		
@@ -279,7 +281,8 @@ public class NetworkPackageHandler {
 				return;
 			}
 		} else {
-			// TODO Log & Exit
+			nphLogger.logInfo("[CE " + ce.getID() + " ] Saving unverified files is disabled, and the message with ID " 
+					+ msg.getStringID() + " did not have a valid signature. So, no file was saved.");
 			return;
 		}
 
