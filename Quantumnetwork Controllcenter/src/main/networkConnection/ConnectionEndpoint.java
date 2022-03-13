@@ -525,15 +525,15 @@ public class ConnectionEndpoint implements Runnable{
 			} catch (EndpointIsNotConnectedException e) {
 				// This should currently only be thrown during key generation
 				// For safety, shut down the key generator
+				ceLogger.logWarning("[CE " + connectionID + "] An Exception occurred.", e);
 				try { this.keyGen.shutdownKeyGen(false, true); } 
 				catch (EndpointIsNotConnectedException e1) { e1.printStackTrace(); }
 			} catch (CouldNotDecryptMessageException e) {
-				// Only thrown if a message is received that could not be decrypted
-				// TODO log this event
+				ceLogger.logWarning("[CE " + connectionID + "] An Exception occurred and a message could not be decrypted.", e);
 			} catch (VerificationFailedException e) {
+				ceLogger.logWarning("[CE " + connectionID + "] An Exception occurred and a message could not be verified.", e);
 				// Only thrown if a message is received where the signature was not valid
 				// OR where no pk could be found (currently: checking commlist for entries with name == ID of this CE)
-				// TODO log this event
 			} 
 			// in any case, log the received message
 			logPackage(transmission);
