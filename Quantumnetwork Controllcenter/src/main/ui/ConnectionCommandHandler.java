@@ -99,20 +99,20 @@ public class ConnectionCommandHandler {
 		
 		// If contact exists, and there is no connection, add the new connection	
 		ConnectionEndpoint localPoint;
-		try {
+		/*try {
 			localPoint = QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(contactName, "", localPort);
 		} catch (ConnectionAlreadyExistsException e) {
 			return "ERROR - Can not create a connection to contact \"" + contactName + "\" - such a connection already exists.";
 		} catch (IpAndPortAlreadyInUseException e) {
 			return "ERROR - Can not create a connection to contact \"" + contactName + "\" - a connection to that port:ip pair already exists.";
-		}	
+		}
 		
-		if (localPoint == null) {
+		if (localPoint == null) {*/
 			return "ERROR - Could not create the specified connection. Something went wrong, please see the system console in case there is an error log. ";
-		} else {
+		/*} else {
 			return "Successfully created connection to contact \"" + contactName + "\", listening on port " + localPort + ". "
 					+ "The connection is still inactive. Use the command \"" + Command.CONNECT_TO.getCommandName() + "\" to open the connection."; 
-		}
+		}*/
 		
 
 	}

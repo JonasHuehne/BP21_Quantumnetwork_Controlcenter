@@ -84,8 +84,15 @@ public final class GUIMainWindow implements Runnable{
 	public GUIMainWindow() {
 		initialize();
 		startUpdateService();
-		
-		
+
+		if(!QuantumnetworkControllcenter.authentication.existsValidKeyPair()) {
+			GenericWarningMessage keyWarning = new GenericWarningMessage("No valid own signature keys set. Please generate a new pair in the Settings window.");
+			// new GenericWarningMessage("No valid own signature keys set. Please generate a new pair in the Settings window, or refer to the user guide for setting a different key pair.");
+			keyWarning.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+			keyWarning.setVisible(true);
+			keyWarning.toFront();
+			keyWarning.setAlwaysOnTop(true);
+		}
 	}
 
 	/**
@@ -95,7 +102,8 @@ public final class GUIMainWindow implements Runnable{
 		frame = new CustomClosingFrame();
 		getFrame().setBounds(100, 100, 1120, 567);
 		getFrame().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
+
+		getFrame().setTitle("QNCC");
 		
 		frame.getContentPane().setLayout(new MigLayout("", "[1088.00px]", "[][528px][]"));
 		

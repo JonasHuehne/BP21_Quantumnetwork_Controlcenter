@@ -13,6 +13,8 @@ import java.util.regex.Pattern;
  */
 public class Utils {
 
+    public static final String NO_KEY = "";
+
     /**
      * accepted file name extensions are:
      * .pub .pem .key .txt or no extension

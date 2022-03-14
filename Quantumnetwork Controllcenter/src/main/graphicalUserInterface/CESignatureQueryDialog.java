@@ -9,6 +9,9 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
 import frame.QuantumnetworkControllcenter;
+import messengerSystem.MessageSystem;
+import messengerSystem.SHA256withRSAAuthentication;
+import networkConnection.NetworkPackage;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -29,11 +32,10 @@ public class CESignatureQueryDialog extends JDialog {
 	private JTextField textField;
 	JLabel titleNewLabel;
 
-
 	/**
 	 * Create the dialog.
 	 */
-	public CESignatureQueryDialog(String connectionID) {
+	public CESignatureQueryDialog(String connectionID, boolean triedBefore) {
 		setBounds(100, 100, 450, 150);
 		getContentPane().setLayout(new BorderLayout());
 		contentPanel.setLayout(new FlowLayout());
@@ -65,6 +67,7 @@ public class CESignatureQueryDialog extends JDialog {
 						if(textField.getText() != null && !textField.getText().equals("")) {
 							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).setSig(textField.getText());
 						}
+						SHA256withRSAAuthentication.continueVerify = true;
 					}
 				});
 				okButton.setActionCommand("OK");
@@ -77,6 +80,17 @@ public class CESignatureQueryDialog extends JDialog {
 					public void actionPerformed(ActionEvent e) {
 						setVisible(false);
 						dispose();
+						if (!triedBefore) {
+							GenericWarningMessage noKeyWarning = new GenericWarningMessage("No public key added.");
+							noKeyWarning.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+							noKeyWarning.setAlwaysOnTop(true);
+							new CESignatureQueryDialog(connectionID, true);
+						} else {
+							GenericWarningMessage noKeyWarning = new GenericWarningMessage("No public key added. Message will be discarded.");
+							noKeyWarning.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+							noKeyWarning.setAlwaysOnTop(true);
+							SHA256withRSAAuthentication.abortVerify = true;
+						}
 					}
 				});
 				cancelButton.setActionCommand("Cancel");

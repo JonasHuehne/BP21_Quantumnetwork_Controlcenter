@@ -15,16 +15,22 @@ import java.util.Base64;
 import java.util.regex.Pattern;
 import communicationList.Contact;
 import communicationList.SQLiteCommunicationList;
+import exceptions.NoValidPublicKeyException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import qnccLogger.Log;
 import qnccLogger.LogSensitivity;
+import graphicalUserInterface.CESignatureQueryDialog;
+import networkConnection.ConnectionEndpoint;
 /**
  * Class providing the methods necessary for authentication
  * using SHA256 with RSA 2048
  * @author Sarah Schumann
  */
 public class SHA256withRSAAuthentication implements SignatureAuthentication {
+
+    public static boolean continueVerify;
+    public static boolean abortVerify;
 
     /**
      * Default name for generating signature key files, without file name extension
@@ -101,20 +107,42 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
     @Override
     public boolean verify (final byte[] message, final byte[] receivedSignature,
                            final String sender) {
-    	// get public key of sender from the db
+        String pubKeyString = null;
         Contact senderEntry = QuantumnetworkControllcenter.communicationList.query(sender);
-        if (senderEntry == null) {
-            throw new IllegalArgumentException("Sender not found in Communication List");
+        if(senderEntry == null
+                || senderEntry.getSignatureKey().equals(Utils.NO_KEY)
+                || senderEntry.getSignatureKey() == null) {
+            ConnectionEndpoint senderCE = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(sender);
+            pubKeyString = senderCE.getSig();
+            if (pubKeyString.equals("")) {
+                continueVerify = false;
+                abortVerify = false;
+                new CESignatureQueryDialog(sender, false);
+                int timer = 0;
+                while (!continueVerify) {
+                    if (abortVerify) {
+                        log.logError("Verification aborted.", new NoValidPublicKeyException(sender));
+                        return false;
+                    } else if (timer < 90) {
+                        try {
+                            Thread.sleep(2000);
+                            timer++;
+                        } catch (InterruptedException e) {
+                            log.logError("Problem while trying too verifying the message.", e);
+                        }
+                    } else {
+                        log.logError("Verification aborted.", new NoValidPublicKeyException(sender));
+                        return false;
+                    }
+                }
+            }
+        } else {
+            pubKeyString = senderEntry.getSignatureKey();
         }
-        String pubKey = senderEntry.getSignatureKey();
-        if (pubKey == null || pubKey.equals("")) {
-            throw new IllegalArgumentException
-                    ("No Public signature Key found in Database for " + sender);
-        }
-    	try {
+        try {
             Signature signature = Signature.getInstance("SHA256withRSA");
             // get PublicKey object from String
-            PublicKey publicKey = getPublicKeyFromString(pubKey);
+            PublicKey publicKey = getPublicKeyFromString(pubKeyString);
             signature.initVerify(publicKey);
             signature.update(message);
             // return result of verification
@@ -220,7 +248,7 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
     public boolean setPrivateKey (String keyFileName) {
         String currentPath = Configuration.getBaseDirPath();
         if (keyFileName == null || keyFileName.equals("")) {
-            privateKeyFile = SQLiteCommunicationList.NO_KEY;
+            privateKeyFile = Utils.NO_KEY;
         } else if (Files.exists(Path.of(currentPath + Utils.KEY_PATH + keyFileName))) {
             privateKeyFile = keyFileName;
         } else {
