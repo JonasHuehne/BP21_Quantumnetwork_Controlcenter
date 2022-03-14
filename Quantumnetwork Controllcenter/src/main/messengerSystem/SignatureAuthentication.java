@@ -9,18 +9,20 @@ import exceptions.NoValidPublicKeyException;
 public interface SignatureAuthentication {
 
     /**
-     * method to sign a message
-     * @param message the message to be signed
-     * @return the signature for the message
+     * Method to create a signature for a message using the designated private key
+     * from the file named in the configurations
+     * @param message the message to be signed with the private key
+     * @return the signed message as a byte array; null if Error
      */
     byte[] sign (final byte[] message);
 
     /**
-     * method to verify a signature for a message
-     * @param message the message
-     * @param receivedSignature the signature
-     * @param sender the sender from whom the message is
-     * @return true if the signature is valid for the message from the sender, false otherwise
+     * Method to verify a message with a signature, given a message, the signature and the sender name
+     * (takes the public key from the corresponding entry in the communication list or the CE)
+     * @param message the received signed message (without the signature)
+     * @param receivedSignature the received signature
+     * @param sender the sender of the message, needed to look up the public key in the communication list
+     * @return true if the signature matches the message, false otherwise or if Error
      */
     boolean verify (final byte[] message, final byte[] receivedSignature, final String sender);
 
