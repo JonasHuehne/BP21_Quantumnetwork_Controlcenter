@@ -1,12 +1,8 @@
 package keyStore;
 
-import java.util.Arrays;
-
 /**
- * Class represents a KeyInformationObject Object. Containing all the necessary
- * Information about a certain key
- * 
- * @author Aron Hernandez
+ * An Object of this type contains the information about a key stored in the keystore databas.e
+ * @author Aron Hernandez, Sasha Petri
  */
 
 public final class KeyStoreObject {
@@ -19,7 +15,24 @@ public final class KeyStoreObject {
 	private final boolean used;
 	private boolean initiative;
 
-	public KeyStoreObject(final String keyStreamID, final byte[] keyBuffer, final int index, final String source,
+	/**
+	 * Constructor.
+	 * @param keyStreamID
+	 * 		ID of the key
+	 * @param keyBuffer
+	 * 		the key itself
+	 * @param index
+	 * 		current index of the key
+	 * @param source      
+	 * 		identifier for the source application
+	 * @param destination 
+	 * 		identifier for the destination application
+	 * @param used
+	 * 		whether the key has been used already
+	 * @param iniative
+	 * 		true for the one who initiated key generation, false for the other party
+	 */
+	protected KeyStoreObject(final String keyStreamID, final byte[] keyBuffer, final int index, final String source,
 			final String destination, boolean used, boolean iniative) {
 		this.keyStreamID = keyStreamID;
 		this.keyBuffer = keyBuffer;
@@ -32,7 +45,6 @@ public final class KeyStoreObject {
 	}
 
 	/**
-	 *
 	 * @return KeyStreamID of the entry
 	 */
 	public String getID() {
@@ -40,7 +52,6 @@ public final class KeyStoreObject {
 	}
 
 	/**
-	 *
 	 * @return byte[] keyBuffer (=key) of the entry This method returns t
 	 */
 
@@ -49,7 +60,6 @@ public final class KeyStoreObject {
 	}
 
 	/**
-	 *
 	 * @return Index of entry
 	 */
 	public int getIndex() {
@@ -57,7 +67,6 @@ public final class KeyStoreObject {
 	}
 
 	/**
-	 *
 	 * @return boolean initiative parameter
 	 */
 	public boolean getInitiative() {
@@ -65,7 +74,6 @@ public final class KeyStoreObject {
 	}
 
 	/**
-	 *
 	 * @return Source of the entry
 	 */
 	public String getSource() {
@@ -73,7 +81,6 @@ public final class KeyStoreObject {
 	}
 
 	/**
-	 *
 	 * @return Destination of the entry
 	 */
 	public String getDestination() {
@@ -81,10 +88,9 @@ public final class KeyStoreObject {
 	}
 
 	/**
-	 *
 	 * @return boolean parameter indicating whether this key has been used already
 	 */
-	public boolean getUsed() {
+	public boolean isUsed() {
 		return used;
 	}
 }

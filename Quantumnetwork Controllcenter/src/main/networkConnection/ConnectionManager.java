@@ -33,6 +33,7 @@ import qnccLogger.Log;
  */
 public class ConnectionManager {
 	
+	/** Logger for this ConnectionManager */
 	static Log conManLog = new Log("ConnectionManager Log");
 	
 	/** Ports in use by any ConnectionManager */

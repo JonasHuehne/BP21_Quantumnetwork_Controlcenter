@@ -37,9 +37,6 @@ public class AES256 extends SymmetricCipher {
 		Cipher c = getInitializedInstance(Cipher.ENCRYPT_MODE, key);
 		try {
 			return c.doFinal(plaintext);
-		} catch (IllegalBlockSizeException e) {
-			// In practicality this is never thrown, due to us using padding
-			throw e;
 		} catch (BadPaddingException e) {
 			// Never thrown, since cipher is initialized in encrypt mode, see documentation of Cipher class
 			throw new RuntimeException("Implementation error, this Exception should not have been thrown.");
@@ -52,8 +49,6 @@ public class AES256 extends SymmetricCipher {
 		Cipher c = getInitializedInstance(Cipher.DECRYPT_MODE, key);
 		try {
 			return c.doFinal(ciphertext);
-		} catch (BadPaddingException e) {
-			throw e;
 		} catch (IllegalBlockSizeException e) {
 			// Never thrown, since cipher is initialized in encrypt mode, see documentation of Cipher class
 			throw new RuntimeException("Implementation error, this Exception should not have been thrown.");

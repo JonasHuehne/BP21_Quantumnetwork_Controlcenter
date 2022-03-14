@@ -2,18 +2,16 @@ package graphicalUserInterface;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.MouseInfo;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
-import javax.swing.border.EmptyBorder;
 import javax.swing.JTextPane;
-import javax.swing.JLabel;
-import java.awt.Font;
-import java.awt.MouseInfo;
-import java.awt.Point;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
 import javax.swing.UIManager;
 
 /**This is a simple generic Warning or Error Dialog Window. It can be used to display important messages to the user.
@@ -25,14 +23,10 @@ public class GenericWarningMessage extends JDialog {
 
 	/**
 	 * Create the dialog.
-	 */
-	
-	/**This is a simple generic Warning or Error Dialog Window. It can be used to display important messages to the user.
-	 * 
+	 * This is a simple generic Warning or Error Dialog Window. 
+	 * It can be used to display important messages to the user.
 	 * @param warningText the content of the warning windows text area.
 	 */
-	
-	
 	public GenericWarningMessage(String warningText) {
 		
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);

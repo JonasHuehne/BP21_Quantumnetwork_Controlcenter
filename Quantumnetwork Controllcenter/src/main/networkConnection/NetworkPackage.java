@@ -1,17 +1,22 @@
 package networkConnection;
 
 import java.io.Serializable;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Random;
 
 import messengerSystem.Authentication;
 
-/**A wrapper for a String Transmission that includes a head String that is used to identify the transmission type/purpose.
- * 
+/**
+ * Information transmitted through the network is transmitted in the form of objects of this class.
+ * NetworkPackages have data content given as a byte array, may be signed, and also have arguments,
+ * which can contain meta-information about the data contained in the package. Such meta information
+ * may, for example, be the name of the file contained in the package, or the key index of the mutual
+ * key to use when decrypting it. Not all packages are used for direct text / file data transfer,
+ * instead, they may also be used to, for example, control connection establishment or key generation.
+ * For this, every package has a type, which can be retrieved via {@linkplain #getType()}. 
+ * This type allows receivers to know what to do with the package, see also {@linkplain NetworkPackageHandler}.
  * @author Jonas Huehne, Sasha Petri
- *
  */
 public class NetworkPackage implements Serializable{
 
@@ -30,7 +35,18 @@ public class NetworkPackage implements Serializable{
 	/** true <==> the recipient is expected to send a package of type {@linkplain TransmissionTypeEnum#CONNECTION_CONFIRMATION} back */
 	private boolean expectConfirmation;
 	
-	
+	/**
+	 * Full constructor, used for packages where the content is relevant.
+	 * @param type
+	 * 		the type of message to send
+	 * @param args
+	 * 		meta-information about the message, e.g. the file name, key index etc, may be null
+	 * @param content
+	 * 		the content, may be null (will result in the content being an empty array)
+	 * @param expectConfirmation
+	 * 		true to tell the receiver to send a confirmation message back <br>
+	 * 		false to tell the receiver to not send a confirmation message back
+	 */
 	public NetworkPackage(TransmissionTypeEnum type, MessageArgs args, byte[] content, boolean expectConfirmation) {
 		this.type 		= type;
 		this.args 		= (args == null) ? new MessageArgs() : args; // to avoid NPE
@@ -179,7 +195,8 @@ public class NetworkPackage implements Serializable{
 
 
 	/**
-	 * @return ID of this package
+	 * @return ID of this package <br>
+	 * not guaranteed to be unique across all runs, but mathematically likely to be
 	 */
 	public byte[] getID() {
 		return packageID;

@@ -44,13 +44,11 @@ public class QuantumnetworkControllcenter {
 	 * @param args <br>
 	 * 		args[0] local IP used by the ConnectionManager in this launch, also sets the corresponding entry "UserIP" in the config file
 	 * 		args[1] local port used by the ConnectionManager in this launch, also sets the corresponding entry "UserPort" in the config file
-	 * 		may be null, in this case the Properties file is no modified
+	 * 		may be null, in this case the Properties file is not modified
 	 * 		args[2] if the 3rd param is "noGUI", the console will be used instead of the GUI.
 	 * 		may be null, in this case the Properties file is not modified
 	 */
 	public static void initialize(String[] args) {
-		
-		
 		
 		//TODO add initialization of further Classes
 		

@@ -1,13 +1,25 @@
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Random;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import exceptions.NoKeyWithThatIDException;
+import exceptions.NotEnoughKeyLeftException;
+import frame.Configuration;
 import keyStore.KeyStoreDbManager;
 import keyStore.KeyStoreObject;
 
@@ -16,216 +28,229 @@ import keyStore.KeyStoreObject;
  *
  *  Tests have to be carried out one by one in order!
  *
- * @author Aron Hernandez
+ * @author Aron Hernandez, Sasha Petri
  */
 
 class KeyStoreDbManagerTest {
 
     //Junit 5.7
 
-    @Test
-    void createNewKeyStoreAndTable() {
-        boolean bool1 = KeyStoreDbManager.createNewKeyStoreAndTable();
-        assertEquals(true, bool1);
-    }
+	@BeforeAll
+	static void destroyKeyStore() throws IOException {
+		Files.deleteIfExists(Paths.get(Configuration.getBaseDirPath(), "KeyStore.db"));
+	}
+	
+	@BeforeEach
+	void clearKeyStore() throws SQLException {
+		if (Files.exists(Paths.get(Configuration.getBaseDirPath(), "KeyStore.db"))) {
+			for (KeyStoreObject o : KeyStoreDbManager.getKeyStoreAsList()) {
+				KeyStoreDbManager.deleteEntryIfExists(o.getID());
+			}
+		}
+		KeyStoreDbManager.createNewKeyStoreAndTable();
+		assertTrue(Files.exists(Paths.get(Configuration.getBaseDirPath(), "KeyStore.db")));
+	}
 
     @Test
-    void insertToDb() {
+    void insert_and_get_works() throws NoKeyWithThatIDException, SQLException {
+    	KeyStoreDbManager.createNewKeyStoreAndTable();
         // 128 bits
         byte[] firstArray = "11111101000010001111111100101111100100101011100111111111001100000101110011101010101011100110011101011100111010001111101000101001".getBytes();
         byte[] secondArray = "11001100010100011010111011110000001011000011000000010100100011110010110100011111110001110001101111100011101010000110101111110111".getBytes();
         byte[] thirdArray = "10011110010000010001101100001001100000010101011110101010101011111111100010010110100110111010001110000010000111101001111111110100".getBytes();
 
-        boolean insertBool1 = KeyStoreDbManager.insertToKeyStore("nurEineTestID_01", firstArray, "vonHier", "nachHier", false, true);
-        boolean insertBool2 = KeyStoreDbManager.insertToKeyStore("nurEineTestID_02", secondArray, "vonHier", "nachHier", false, false);
-        boolean insertBool3 = KeyStoreDbManager.insertToKeyStore("nurEineTestID_03", thirdArray, "vonHier", "nachDort", false, false);
-        assertEquals(true, insertBool1);
-        assertEquals(true, insertBool2);
-        assertTrue(insertBool3);
-        KeyStoreObject testObj = KeyStoreDbManager.getEntryFromKeyStore("nurEineTestID_01");
-        assertEquals(0, testObj.getIndex());
+        String id1 = "nurEineTestID_01";
+        String id2 = "nurEineTestID_02";
+        String id3 = "nurEineTestID_03";
+        
+        KeyStoreDbManager.insertToKeyStore(id1, firstArray, "vonHier", "nachHier", false, true);
+        KeyStoreDbManager.insertToKeyStore(id2, secondArray, "vonHier", "nachHier", false, false);
+        KeyStoreDbManager.insertToKeyStore(id3, thirdArray, "vonHier", "nachDort", false, false);
+        
+        // all entries inserted
+        ArrayList<KeyStoreObject> entries = KeyStoreDbManager.getKeyStoreAsList();
+        assertNotNull(entries);
+        assertEquals(3, entries.size());
+        
+        // retrieving entries individually works
+        KeyStoreObject e1 = KeyStoreDbManager.getEntryFromKeyStore(id1);
+        KeyStoreObject e2 = KeyStoreDbManager.getEntryFromKeyStore(id2);
+        KeyStoreObject e3 = KeyStoreDbManager.getEntryFromKeyStore(id3);
+        
+        assertNotNull(e1);
+        assertNotNull(e2);
+        assertNotNull(e3);
+        
+        // Entries data is set correctly
+        
+        assertEquals(id1, e1.getID());
+        assertEquals(id2, e2.getID());
+        assertEquals(id3, e3.getID());
+        
+        assertArrayEquals(firstArray, e1.getCompleteKeyBuffer());
+        assertArrayEquals(secondArray, e2.getCompleteKeyBuffer());
+        assertArrayEquals(thirdArray, e3.getCompleteKeyBuffer());
+        
+        assertEquals("vonHier", e1.getSource());
+        assertEquals("nachHier", e1.getDestination());
+        
+        assertTrue(e1.getInitiative());
+        assertFalse(e2.getInitiative());
+        
+        assertFalse(e1.isUsed());
+        
     }
 
     @Test
     void failedInsertion(){
-        //KeyStreamID ist bereits in DB
-        boolean failedInsertion = KeyStoreDbManager.insertToKeyStore("nurEineTestID_01", "987364".getBytes(), "100.187.878", "764937", false, true);
-        assertEquals(false, failedInsertion);
+    	// Attempt to insert same data twice
+    	assertThrows(SQLException.class, () -> {
+        	KeyStoreDbManager.insertToKeyStore("Alice", new byte[] {1, 2, 3}, "vonHier", "nachHier", false, true);
+        	KeyStoreDbManager.insertToKeyStore("Alice", new byte[] {1, 2, 3}, "vonHier", "nachHier", false, true);
+    	});
     }
-
+    
     @Test
-    void changeIndexTest(){
-
-        boolean indexChange = KeyStoreDbManager.changeIndex("nurEineTestID_03", 32);
-        KeyStoreObject testObj = KeyStoreDbManager.getEntryFromKeyStore("nurEineTestID_03");
-        int newIndex = testObj.getIndex();
-        assertTrue(indexChange);
-        assertEquals(32, newIndex);
+    void changeIndexTest() throws NoKeyWithThatIDException, SQLException, NotEnoughKeyLeftException{
+    	byte[] AliceKey = new byte[1024];
+    	(new Random()).nextBytes(AliceKey);
+    	KeyStoreDbManager.insertToKeyStore("Alice", AliceKey, "vonHier", "nachHier", false, true);
+    	
+    	// Changing index forwards works
+    	KeyStoreDbManager.changeIndex("Alice", 100);
+    	assertEquals(100, KeyStoreDbManager.getEntryFromKeyStore("Alice").getIndex());
+    	
+    	// Changing index backwards works
+    	KeyStoreDbManager.changeIndex("Alice", 50);
+    	assertEquals(50, KeyStoreDbManager.getEntryFromKeyStore("Alice").getIndex());
+    	
+    	// Changing index to what it is does nothing 
+    	KeyStoreDbManager.changeIndex("Alice", 50);
+    	assertEquals(50, KeyStoreDbManager.getEntryFromKeyStore("Alice").getIndex());
+    	
+    	// Changing index to be > key length throws an exception
+    	assertThrows(NotEnoughKeyLeftException.class, () -> KeyStoreDbManager.changeIndex("Alice", 9001));
+    	
+    	// Changing index of key that doesn't exist throws an exception
+    	assertThrows(NoKeyWithThatIDException.class, () -> KeyStoreDbManager.changeIndex("Charlie", 231));
+    	
     }
-
+    
     @Test
-    void getCorrectKeyPlusIndexChangeTest(){
+    void incrementIndexTest() throws SQLException, NoKeyWithThatIDException {
+     	byte[] AliceKey = new byte[1024];
+    	(new Random()).nextBytes(AliceKey);
+    	KeyStoreDbManager.insertToKeyStore("Alice", AliceKey, "vonHier", "nachHier", false, true);
 
-        KeyStoreObject obj = KeyStoreDbManager.getEntryFromKeyStore("nurEineTestID_03");
-        // method "getKey" updates the index automatically
-        byte[] correctKey = obj.getKey(64);
-
-        assertEquals(64, correctKey.length);
-        //check if index was incremented instantly on object itself
-        assertEquals(96, obj.getIndex());
-    }
-
-    @Test
-    void passiveIndexUpdateTest(){
-        //check if the index actually changed in the DB
-
-        KeyStoreObject obj = KeyStoreDbManager.getEntryFromKeyStore("nurEineTestID_03");
-        assertEquals(96, obj.getIndex());
+    	// Incrementing Index works
+    	KeyStoreDbManager.incrementIndex("Alice", 100);
+    	assertEquals(100, KeyStoreDbManager.getEntryFromKeyStore("Alice").getIndex());
+    	KeyStoreDbManager.incrementIndex("Alice", 40);
+    	assertEquals(140, KeyStoreDbManager.getEntryFromKeyStore("Alice").getIndex());
+    	
+    	// Incrementing index beyond max sets to max instead
+    	KeyStoreDbManager.incrementIndex("Alice", 1337);
+    	assertEquals(1024, KeyStoreDbManager.getEntryFromKeyStore("Alice").getIndex());
+    	
+    	// Can not increment index for key that doesn't exist
+    	assertThrows(NoKeyWithThatIDException.class, () -> KeyStoreDbManager.incrementIndex("Charles", 70));
+    	
+    	// Illegal arguments are illegal
+    	assertThrows(IllegalArgumentException.class, () -> KeyStoreDbManager.incrementIndex("Alice", -1));
+    	assertThrows(IllegalArgumentException.class, () -> KeyStoreDbManager.incrementIndex("Alice", 0));
+    	
     }
 
     @Test
     void failedGetKeyTest() {
-
-        KeyStoreObject obj = KeyStoreDbManager.getEntryFromKeyStore("nurEineTestID_03");
-        byte[] key = obj.getKey(64);
-        //error message should be displayed
-
-        // this test should return null as index is at 96 and a key of size 64 is being requested
-        assertNull(key);
-    }
-
-
-    @Test
-    void changeIndexWithNotEnoughMaterialLeft(){
-
-        // there is not enough keymaterial left to add 265 bits (as byte[] is only of length 128)
-        boolean indexChange = KeyStoreDbManager.changeIndex("nurEineTestID_02", 265);
-        assertFalse(indexChange);
-
-        // check if Entry was updated to used
-        KeyStoreObject obj = KeyStoreDbManager.getEntryFromKeyStore("nurEineTestID_02");
-        assertEquals(true, obj.getUsed());
-
+    	assertThrows(NoKeyWithThatIDException.class, () -> KeyStoreDbManager.getEntryFromKeyStore("Axel"));
     }
 
     @Test
-    void doesKSIdExistTest(){
-        boolean existing = KeyStoreDbManager.doesKeyStreamIdExist("nurEineTestID_01");
+    void doesKSIdExistTest() throws SQLException{
+    	KeyStoreDbManager.insertToKeyStore("Alice", new byte[] {1, 2, 3}, "vonHier", "nachHier", false, true);
+    	
+        boolean existing = KeyStoreDbManager.doesKeyStreamIdExist("Alice");
         assertEquals(true, existing);
 
-        boolean nonExisting = KeyStoreDbManager.doesKeyStreamIdExist("nichtVorhandeneID");
+        boolean nonExisting = KeyStoreDbManager.doesKeyStreamIdExist("Gunther");
         assertEquals(false, nonExisting);
     }
 
     @Test
-    void deleteEntryByID() {
-        boolean deleteBool = KeyStoreDbManager.deleteEntryIfExists("nurEineTestID_01");
+    void deleteEntryByID() throws SQLException {
+    	KeyStoreDbManager.insertToKeyStore("Alice", new byte[] {1, 2, 3}, "vonHier", "nachHier", false, true);
+    	KeyStoreDbManager.deleteEntryIfExists("Alice");
+    	
+    	assertFalse(KeyStoreDbManager.doesKeyStreamIdExist("Alice"));
+    }
 
-        assertEquals(true, deleteBool);
+    @Test
+    void changeKeyBuffer() throws NoKeyWithThatIDException, SQLException{
+     	byte[] oldKey = new byte[1024];
+     	byte[] newKey = new byte[1024];
+     	Random r = new Random();
+     	r.nextBytes(oldKey);
+     	r.nextBytes(newKey);
+     	
+     	KeyStoreDbManager.insertToKeyStore("Alice", oldKey, "vonHier", "nachHier", false, true);
+     	
+     	assertArrayEquals(oldKey, KeyStoreDbManager.getEntryFromKeyStore("Alice").getCompleteKeyBuffer());
+     
+     	KeyStoreDbManager.changeKeyBuffer("Alice", newKey);
+     	
+     	assertArrayEquals(newKey, KeyStoreDbManager.getEntryFromKeyStore("Alice").getCompleteKeyBuffer());
 
     }
 
     @Test
-    void failedDeletion(){
-        boolean failedDeletionBool = KeyStoreDbManager.deleteEntryIfExists("nichtVorhandeneID");
-        assertEquals(false, failedDeletionBool);
-    }
-
-
-
-    @Test
-    void getEntryTest() {
-        KeyStoreObject testObject = KeyStoreDbManager.getEntryFromKeyStore("nurEineTestID_02");
-        assert testObject != null;
-        byte[] testBuffer = testObject.getCompleteKeyBuffer();
-        int testIndex = testObject.getIndex();
-        System.out.println(new String(testBuffer));
-
-
-        assertEquals("11001100010100011010111011110000001011000011000000010100100011110010110100011111110001110001101111100011101010000110101111110111", new String(testBuffer) );
-        assertEquals(0, testIndex);
-
+    void getInitiativeTest() throws NoKeyWithThatIDException, SQLException{
+    	KeyStoreDbManager.insertToKeyStore("Alice", new byte[] {1, 2, 3}, "vonHier", "nachHier", false, true);
+    	KeyStoreDbManager.insertToKeyStore("Bob", new byte[] {1, 2, 3}, "vonHier", "nachHier", false, false);
+        KeyStoreObject alice = KeyStoreDbManager.getEntryFromKeyStore("Alice");
+        KeyStoreObject bob = KeyStoreDbManager.getEntryFromKeyStore("Bob");
+        
+        assertTrue(alice.getInitiative());
+        assertFalse(bob.getInitiative());
+        
     }
 
     @Test
-    void failedGetEntry(){
-        KeyStoreObject obj = KeyStoreDbManager.getEntryFromKeyStore("gibtsNicht");
-        assertNull(obj);
+    void deleteUsedKeysTest() throws SQLException, NoKeyWithThatIDException{
+     	KeyStoreDbManager.insertToKeyStore("Alice", new byte[] {1, 2, 3}, "vonHier", "nachHier", false, false);
+     	KeyStoreDbManager.insertToKeyStore("Bob", new byte[] {1, 2, 3}, "vonHier", "nachHier", false, false);
+     	KeyStoreDbManager.insertToKeyStore("Charles", new byte[] {1, 2, 3}, "vonHier", "nachHier", true, false);
+
+    	KeyStoreDbManager.changeKeyToUsed("Alice");
+    	
+    	assertEquals(3, KeyStoreDbManager.getKeyStoreAsList().size());
+    	
+    	assertTrue(KeyStoreDbManager.deleteUsedKeys());
+    	
+    	assertEquals(1, KeyStoreDbManager.getKeyStoreAsList().size());
+    	
+    	assertTrue(KeyStoreDbManager.doesKeyStreamIdExist("Bob"));
+    	assertFalse(KeyStoreDbManager.doesKeyStreamIdExist("Alice"));
+    	assertFalse(KeyStoreDbManager.doesKeyStreamIdExist("Charles"));
     }
 
     @Test
-    void getEntrysAsListTest(){
-        byte[] keyBufferArray = "123456789".getBytes();
+    void failedDeleteUsedKeys() throws SQLException {
+    	KeyStoreDbManager.insertToKeyStore("Alice", new byte[] {1, 2, 3}, "vonHier", "nachHier", false, false);
+     	KeyStoreDbManager.insertToKeyStore("Bob", new byte[] {1, 2, 3}, "vonHier", "nachHier", false, false);
 
-        // Bei jedem weiteren Durchlauf (nach dem 1.) muss die Zeile kommentiert werden da es nicht zweimal den selben eintrag in der Datenbank geben darf!
-        KeyStoreDbManager.insertToKeyStore("NewEntryID", keyBufferArray, "nirgendwo", "TuDarmstadt", false, true);
-        ArrayList<KeyStoreObject> testList = KeyStoreDbManager.getKeyStoreAsList();
-
-        byte[] newEntryBuffer = testList.get(2).getCompleteKeyBuffer(); // only 3 Entrys in DB
-        assertEquals(new String(keyBufferArray), new String(newEntryBuffer));
+     	assertFalse(KeyStoreDbManager.deleteUsedKeys());
+     	
+     	assertEquals(2, KeyStoreDbManager.getKeyStoreAsList().size());
+       	assertTrue(KeyStoreDbManager.doesKeyStreamIdExist("Alice"));
+       	assertTrue(KeyStoreDbManager.doesKeyStreamIdExist("Bob"));
     }
 
     @Test
-    void addKeyBufferTest(){
-        boolean insertBool = KeyStoreDbManager.insertToKeyStore("KSID_Ohne_Key", null, "München","Darmstadt", false, false );
-        assertEquals(true, insertBool);
-
-        byte[] keyTobeInserted = "0110101".getBytes();
-
-        boolean addKeyBool = KeyStoreDbManager.changeKeyBuffer("KSID_Ohne_Key", keyTobeInserted);
-        assertEquals(true, addKeyBool);
-
-        byte[] neuerKey = KeyStoreDbManager.getEntryFromKeyStore("KSID_Ohne_Key").getCompleteKeyBuffer();
-        assertEquals(new String(keyTobeInserted), new String(neuerKey));
-
+    void can_not_change_non_existant_key() {
+    	assertThrows(NoKeyWithThatIDException.class, () -> KeyStoreDbManager.changeIndex("Max", 100));
+    	assertThrows(NoKeyWithThatIDException.class, () -> KeyStoreDbManager.incrementIndex("Max", 100));
+    	assertThrows(NoKeyWithThatIDException.class, () -> KeyStoreDbManager.changeKeyToUsed("Max"));
     }
-
-    @Test
-    void getInitiativeTest(){
-        KeyStoreObject obj = KeyStoreDbManager.getEntryFromKeyStore("NewEntryID");
-        boolean initiative = obj.getInitiative();
-        assertTrue(initiative);
-    }
-
-    @Test
-    void deleteUsedKeysTest(){
-        List<KeyStoreObject> beforeDeletionList = KeyStoreDbManager.getKeyStoreAsList();
-        // There are 4 entries in the KeyStore
-        assertEquals(4, beforeDeletionList.size());
-
-        boolean deleteBool = KeyStoreDbManager.deleteUsedKeys();
-        assertTrue(deleteBool);
-        // 2 entries are used -> there should be 2 left
-        List<KeyStoreObject> afterDeletionList = KeyStoreDbManager.getKeyStoreAsList();
-        assertEquals(2, afterDeletionList.size());
-    }
-
-    @Test
-    void failedDeleteUsedKeys(){
-        //now there are only 2 (unused) entries in the KeyStore
-        boolean failedDeletionBool = KeyStoreDbManager.deleteUsedKeys();
-        // Error message should be displayed
-        assertFalse(failedDeletionBool);
-    }
-
-    //TODO
-    // unter welchen umständen soll ein keybuffer nicht geändert werden können?
-    /**
-     *
-
-    @Test
-    void failedAddKeyBufferTest(){
-        byte[] testKey = "28736432".getBytes();
-        boolean failedKeyAddition = KeyStoreDbManager.changeKeyBuffer("KSID_Ohne_Key", testKey);
-        assertEquals(false, failedKeyAddition);
-    }
-    */
-
-
-
-
-
-
-
 
 }

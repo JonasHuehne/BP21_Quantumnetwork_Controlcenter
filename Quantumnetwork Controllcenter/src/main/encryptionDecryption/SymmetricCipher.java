@@ -1,12 +1,10 @@
 package encryptionDecryption;
 
 import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -53,7 +51,7 @@ public abstract class SymmetricCipher {
 	 * 		the plaintext to be encrypted <br>
 	 * @param key
 	 * 		the key to encrypt the plaintext with <br>
-	 * 		must be a valid key for the crypto algorihm implemented by this class,
+	 * 		must be a valid key for the crypto algorithm implemented by this class,
 	 * 		e.g. for AES256 it must be a SecretKey object associated with the AES algorithm
 	 * 		and with a key length of 256 bits
 	 * @return
@@ -70,10 +68,10 @@ public abstract class SymmetricCipher {
 	/**
 	 * Decrypts a ciphertext with the cipher implemented by this class.
 	 * @param ciphertext
-	 * 		the ciphertext to be decypted <br>
+	 * 		the ciphertext to be decrypted <br>
 	 * @param key
 	 * 		the key to decrypt the ciphertext with <br>
-	 * 		must be a valid key for the crypto algorihm implemented by this class,
+	 * 		must be a valid key for the crypto algorithm implemented by this class,
 	 * 		e.g. for AES256 it must be a SecretKey object associated with the AES algorithm
 	 * 		and with a key length of 256 bits
 	 * @return
@@ -88,9 +86,9 @@ public abstract class SymmetricCipher {
 	
 	/**
 	 * Encrypts a plaintext with the cipher implemented by this class.
-	 * @param ciphertext
+	 * @param plaintext
 	 * 		the plaintext to be encrypted <br>
-	 * @param key
+	 * @param byteKey
 	 * 		the key to encrypt the plaintext with <br>
 	 * 		the first {@link #KEY_LENGTH} bytes will be used as a secret key for the algorithm implemented by this class
 	 * @return
@@ -109,8 +107,8 @@ public abstract class SymmetricCipher {
 	/**
 	 * Decrypts a ciphertext with the cipher implemented by this class.
 	 * @param ciphertext
-	 * 		the ciphertext to be decypted <br>
-	 * @param key
+	 * 		the ciphertext to be decrypted <br>
+	 * @param byteKey
 	 * 		the key to decrypt the ciphertext with <br>
 	 * 		the first {@link #KEY_LENGTH} bytes will be used as a secret key for the algorithm implemented by this class
 	 * @return
@@ -143,7 +141,8 @@ public abstract class SymmetricCipher {
 	
 	/**
 	 * @param mode
-	 * 		the opmode to initialize the cipher in
+	 * 		the opmode to initialize the cipher in <br>
+	 * 		(Should be either {@linkplain Cipher#ENCRYPT_MODE} or {@linkplain Cipher#DECRYPT_MODE})
 	 * @param key
 	 * 		key used to initialize the cipher with
 	 * @return an instance of the underlying {@linkplain Cipher} used by this encryption algorithm.

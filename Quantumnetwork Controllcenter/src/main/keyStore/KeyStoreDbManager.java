@@ -1,8 +1,5 @@
 package keyStore;
 
-import frame.Configuration;
-
-import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -18,6 +15,7 @@ import java.util.stream.Collectors;
 
 import exceptions.NoKeyWithThatIDException;
 import exceptions.NotEnoughKeyLeftException;
+import frame.Configuration;
 
 /**
  * This class supplies methods for creating, editing, getting and deleting
@@ -25,7 +23,6 @@ import exceptions.NotEnoughKeyLeftException;
  * 
  * @author Aron Hernandez, Sasha Petri
  */
-
 public class KeyStoreDbManager {
 	private static final String dataBaseName = "KeyStore.db";
 	private static final String tableName = "KeyStorage";
@@ -90,7 +87,7 @@ public class KeyStoreDbManager {
 	 * @param destination identifier for the destination application
 	 * @param used        boolean parameter signaling whether a key has been used already
 	 * @param initiative  boolean parameter signaling whether this Entry/Person has the initiative <br>
-	 * 					  an entity has the inititiative if it started the key generation
+	 * 					  an entity has the initiative if it started the key generation
 	 * @throws SQLException 
 	 * 		if there was an error with the database
 	 */
@@ -128,12 +125,12 @@ public class KeyStoreDbManager {
 	 * @param key         
 	 * 		the new Key as a byte[]
 	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
 	 * @throws NoKeyWithThatIDException
+	 * 		if no key with the specified ID could be found in the database
 	 */
 	public static void changeKeyBuffer(String keyStreamID, byte[] key)
 			throws NoKeyWithThatIDException, SQLException {
-
-		KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
 
 		try (Connection conn = connect()) {
 			String sql = "UPDATE " + tableName + " SET KeyBuffer = ? WHERE KeyStreamID = ?";
@@ -148,15 +145,16 @@ public class KeyStoreDbManager {
 	}
 
 	/**
-	 * checks if there is enough key material left, so it can be used (at least 256
-	 * Bits or 32 Byte). If there is not enough key material left, the entry shall
-	 * be marked as used:
-	 *
-	 *
-	 * @param keyStreamID reference ID to locate a key
-	 * @return True if there still is key material that can be used, False otherwise
+	 * Checks if there is a specified amount of key material left for the key with the given ID.
+	 * @param keyStreamID 
+	 * 		reference ID to locate a key
+	 * @param keyLength
+	 * 		how much key material to check for
+	 * @return true if the key has the specified amount of key material left, false otherwise
 	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
 	 * @throws NoKeyWithThatIDException
+	 * 		if no key with the specified ID could be found in the database
 	 */
 	public static boolean enoughKeyMaterialLeft(String keyStreamID, int keyLength)
 			throws NoKeyWithThatIDException, SQLException {
@@ -176,22 +174,25 @@ public class KeyStoreDbManager {
 		if (bitsLeft >= keyLength) {
 			return true;
 		} else {
-
 			return false;
 		}
 	}
 
 	/**
-	 * method for updating/changing the Index parameter of a Keystore entry.
-	 *
+	 * Updates the index parameter of a key stored in the DB.
 	 * @param keyStreamID 
 	 * 		reference ID to locate a key
 	 * @param newIndex   
 	 * 		the new integer value of the index <br>
 	 * 		may not be negative, and may not be greater than the total key length of the specified key
 	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
 	 * @throws NoKeyWithThatIDException
+	 * 		if no key with the specified ID could be found in the database
 	 * @throws NotEnoughKeyLeftException 
+	 * 		if the index is greater than the total key length, 
+	 * 		i.e. setting the index to be the specified value
+	 * 		would result in an invalid key store entry
 	 */
 	public static boolean changeIndex(String keyStreamID, int newIndex) throws NoKeyWithThatIDException, SQLException, NotEnoughKeyLeftException {
 		KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
@@ -234,7 +235,9 @@ public class KeyStoreDbManager {
 	 * @param keyStreamID ID of the key to get the index for
 	 * @return current index for the key associated with the given ID
 	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
 	 * @throws NoKeyWithThatIDException
+	 * 		if no key with the specified ID could be found in the database
 	 */
 	public static int getIndex(String keyStreamID) throws NoKeyWithThatIDException, SQLException {
 		KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
@@ -243,13 +246,15 @@ public class KeyStoreDbManager {
 
 	/**
 	 * Increments the index of the specified key by the given amount. <br>
-	 * If this would exceed the total lenght of the key, the index is instead set to
+	 * If this would exceed the total length of the key, the index is instead set to
 	 * the max key length.
 	 * 
 	 * @param keyStreamID ID of the key whose index should be incremented
 	 * @param increment   how much to increment the index, must be > 0
 	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
 	 * @throws NoKeyWithThatIDException
+	 * 		if no key with the specified ID could be found in the database
 	 */
 	public static void incrementIndex(String keyStreamID, int increment) throws NoKeyWithThatIDException, SQLException {
 		if (increment <= 0)
@@ -269,7 +274,8 @@ public class KeyStoreDbManager {
 	 * Displays all entries on the console
 	 *
 	 * @return True if output was displayed correctly, False otherwise
-	 * @throws SQLException 
+	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
 	 */
 	public static void selectAll() throws SQLException {
 		
@@ -288,10 +294,11 @@ public class KeyStoreDbManager {
 	}
 
 	/**
-	 *
-	 * @param keyStreamID the ID of the key that needs to be deleted from the DB
-	 * @return True if operation was successful, False otherwise
+	 * Deletes an entry in the key store if it exists.
+	 * @param keyStreamID 
+	 * 		the ID of the key that should be deleted from the DB
 	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
 	 */
 	public static void deleteEntryIfExists(String keyStreamID) throws SQLException {
 
@@ -307,15 +314,15 @@ public class KeyStoreDbManager {
 	}
 
 	/**
-	 * Method for deleting all used keys in one go
-	 *
-	 * @return True if all the used entries are deleted, False if there are non to
-	 *         be deleted
-	 * @throws SQLException 
+	 * Deletes all entries in the keystore which are marked as "used".
+	 * @return 	True if all the used entries are deleted, 
+	 * 			False if there are none to delete
+	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
 	 */
 	public static boolean deleteUsedKeys() throws SQLException {
 
-		List<String> keyIdList = KeyStoreDbManager.getKeyStoreAsList().stream().filter(obj -> obj.getUsed() == true)
+		List<String> keyIdList = KeyStoreDbManager.getKeyStoreAsList().stream().filter(obj -> obj.isUsed() == true)
 				.map(obj -> new String(obj.getID())).collect(Collectors.toList());
 
 		if (keyIdList.size() == 0) {
@@ -336,8 +343,10 @@ public class KeyStoreDbManager {
 	 *
 	 * @param keyStreamID reference ID for a Key
 	 * @return true if operation succeeded, false otherwise
-	 * @throws SQLException 
-	 * @throws NoKeyWithThatIDException 
+	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
+	 * @throws NoKeyWithThatIDException
+	 * 		if no key with the specified ID could be found in the database
 	 */
 	public static boolean changeKeyToUsed(String keyStreamID) throws SQLException, NoKeyWithThatIDException {
 		
@@ -359,15 +368,20 @@ public class KeyStoreDbManager {
 	}
 
 	/**
-	 * Get a new KeyInformationObject by the corresponding keyStreamID
-	 *
-	 * @param keyStreamID identifier of the key that needs to be wrapped in a
-	 *                    KeyStoreObject
-	 * @return a new KeyInformationObject containing all the KeyInformation from the
-	 *         Entry with corresponding KeyStreamId
+	 * Gets a {@linkplain KeyStoreObject} corresponding to the specified key.
+	 * Please note that changes to the key store object are not reflected on the database,
+	 * and changes in the database are not reflected in the object, until a new object
+	 * for the key is acquired through re-running this method.
+	 * @param keyStreamID 
+	 * 		identifier of the key that needs to be wrapped in a KeyStoreObject
+	 * @return 
+	 * 		a new KeyInformationObject containing all the KeyInformation from the Entry with corresponding KeyStreamId
 	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
+	 * @throws NoKeyWithThatIDException
+	 * 		if no key with the specified ID could be found in the database 
 	 */
-	public static KeyStoreObject getEntryFromKeyStore(String keyStreamID)
+	public static KeyStoreObject getEntryFromKeyStore(String keyStreamID) // TODO? Could potentially return null instead of NoKeyException, would need minor adjustments elsewhere
 			throws NoKeyWithThatIDException, SQLException {
 		if (!doesKeyStreamIdExist(keyStreamID)) {
 			throw new NoKeyWithThatIDException("There is no key in the keystore with ID " + keyStreamID);
@@ -395,12 +409,12 @@ public class KeyStoreDbManager {
 
 
 	/**
-	 * Stores all the Entries of the KeyInformation table in an ArrayList and
-	 * returns the List
+	 * Returns an ArrayList of {@linkplain KeyStoreObject}s representing all entries in the keystore.
 	 *
-	 * @return a ArrayList of KeyInformationObject which contain information about
-	 *         the keys currently in storage
-	 * @throws SQLException 
+	 * @return an ArrayList of KeyInformationObject which contain information about
+	 *         the keys currently in storage, may be empty
+	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
 	 */
 	public static ArrayList<KeyStoreObject> getKeyStoreAsList() throws SQLException {
 		try (Connection conn = connect()) {
@@ -424,11 +438,13 @@ public class KeyStoreDbManager {
 	}
 
 	/**
-	 * Check whether this keyStreamId exists in the KeyStore or not.
-	 *
-	 * @param keyStreamID reference ID to locate a key
-	 * @return true if the keyStreamID exists, false otherwise
-	 * @throws SQLException 
+	 * Check whether an entry for this keyStreamId exists in the KeyStore or not.
+	 * @param keyStreamID 
+	 * 		reference ID to locate a key
+	 * @return true 
+	 * 		if an entry with the given keyStreamID exists, false otherwise
+	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
 	 */
 	public static boolean doesKeyStreamIdExist(String keyStreamID) throws SQLException {
 		List<String> keyIdList = KeyStoreDbManager.getKeyStoreAsList().stream().map(obj -> new String(obj.getID()))
@@ -443,13 +459,18 @@ public class KeyStoreDbManager {
 	 * Gets the next n bytes of key material of the specified key. May increment it.
 	 * 
 	 * @param keyStreamID the key to retrieve key material from
-	 * @param nbytes      how many bytes of key material to retrieve
-	 * @param increment   true if the key should be incremented (increases index by
-	 *                    n)
+	 * @param nbytes      how many bytes of key material to retrieve, must be >= 0
+	 * @param increment   true if the key should be incremented (increases index by n)
 	 * @return
+	 * 		the next n bytes of the key with the specified ID, 
+	 * 		starting at the current index of the key
 	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
 	 * @throws NoKeyWithThatIDException
+	 * 		if no key with the specified ID could be found in the database 
 	 * @throws NotEnoughKeyLeftException
+	 * 		if there is not enough key material left after the 
+	 * 		current index to return n bytes of key material
 	 */
 	public static byte[] getNextNBytes(String keyStreamID, int nbytes, boolean increment)
 			throws NotEnoughKeyLeftException, NoKeyWithThatIDException, SQLException {
@@ -459,8 +480,31 @@ public class KeyStoreDbManager {
 		return out;
 	}
 
+	/**
+	 * Gets n bytes of key material starting at a specified index in the key
+	 * with the given key stream ID. Use of this to retrieve material for
+	 * encryption is discouraged, instead use {@link #getNextNBytes(String, int, boolean)}.
+	 * This method is intended to be mainly used for getting keys for decryption.
+	 * @param keyStreamID
+	 * 		ID used to identify the key to retrieve bytes from
+	 * @param nbytes
+	 * 		how many bytes to retrieve, must be > 0
+	 * @param index
+	 * 		the index to start at, must be >= 0
+	 * @return
+	 * 		keyBuffer[index] to keyBuffer[index + nbytes] of the specified key
+	 * @throws NotEnoughKeyLeftException
+	 * 		if there is not enough key material left after the 
+	 * 		specified index to return n bytes of key material		
+	 * @throws NoKeyWithThatIDException
+	 * 		if no key with the specified ID could be found in the database 
+	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
+	 */
 	public static byte[] getKeyBytesAtIndexN(String keyStreamID, int nbytes, int index)
 			throws NotEnoughKeyLeftException, NoKeyWithThatIDException, SQLException {
+		if (index < 0) throw new IndexOutOfBoundsException("Index may not be less than 0, but was " + index);
+		if (nbytes <= 0) throw new IllegalArgumentException("Must specify an amount of bytes to get greater than 0, but specified " + nbytes);
 		KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
 
 		if (obj.getCompleteKeyBuffer().length < index + nbytes)

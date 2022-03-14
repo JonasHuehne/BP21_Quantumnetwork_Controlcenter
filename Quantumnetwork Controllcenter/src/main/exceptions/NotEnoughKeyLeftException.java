@@ -28,7 +28,7 @@ public class NotEnoughKeyLeftException extends Exception {
 	/**
 	 * Constructor for Exception with a message.
 	 * @param message
-	 * 		entirely custom message
+	 * 		the detail message. The detail message is saved for later retrieval by the Throwable.getMessage() method.
 	 */
 	public NotEnoughKeyLeftException(String message) {
 		super(message);

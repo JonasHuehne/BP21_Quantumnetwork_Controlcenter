@@ -114,12 +114,20 @@ public class MessageSystem {
 	}
 	
 	/**
-	 * 
+	 * Internal method for sending a file.
 	 * @param connectionID
+	 * 		connectionID of a {@linkplain ConnectionEndpoint} in the {@linkplain ConnectionManager} of this class <br>
+	 * 		the constructed NetworkPackage is sent to the connected partner of the specified endpoint
 	 * @param file
+	 * 		the file to send
 	 * @param encryptFile
+	 * 		true if the file is to be encrypted
 	 * @param sign
+	 * 		true if the file is to be signed <br>
+	 * 		always treated as true if the file is to be encrypted
 	 * @param confirm
+	 * 		true if a message of type {@linkplain TransmissionTypeEnum#RECEPTION_CONFIRMATION}
+	 * 		should be sent in response to this message
 	 * @throws CouldNotSendMessageException
 	 * 		if the file could not be sent <br>
 	 * 		wraps a lower level exception, such as IOException or {@linkplain EndpointIsNotConnectedException}

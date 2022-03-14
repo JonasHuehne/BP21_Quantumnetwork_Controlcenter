@@ -4,7 +4,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
-import java.awt.List;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.SQLException;
@@ -26,7 +25,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JToolBar;
-import javax.swing.Timer;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
@@ -38,7 +36,6 @@ import exceptions.EndpointIsNotConnectedException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.NoKeyWithThatIDException;
-import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import keyStore.KeyStoreDbManager;
 import keyStore.KeyStoreObject;
@@ -515,7 +512,8 @@ public final class GUIMainWindow implements Runnable{
 		JButton openTransferButton = new JButton("Message System");
 		openTransferButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				openChatWindows.add(new MessageGUI(connectionName));
+				openChatWindows.add(new MessageGUI(connectionName)); 
+				// add opened chat to list, so it can be refreshed when needed
 			}
 		});
 		ceFrame.add(openTransferButton);
@@ -554,6 +552,7 @@ public final class GUIMainWindow implements Runnable{
 			
 			/*
 			 * Update which connections are represented in the connections tab of the GUI
+			 * Also updates the displayed state.
 			 */
 			
 			int ceAmountNew = QuantumnetworkControllcenter.conMan.getConnectionsAmount();
@@ -608,14 +607,13 @@ public final class GUIMainWindow implements Runnable{
 			for (MessageGUI c : openChatWindows) c.refreshMessageLog();
 			
 			/*
-			 * Sleep between the updates to save ressources.
+			 * Sleep between the updates to save resources.
 			 */
 			
 			try {
 				TimeUnit.MILLISECONDS.sleep(200);
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				// TODO Log this
 			}
 			prevActiveConnection = activeConnection;
 		}

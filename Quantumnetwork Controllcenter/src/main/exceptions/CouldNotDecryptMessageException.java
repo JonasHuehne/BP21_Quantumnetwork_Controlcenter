@@ -7,12 +7,14 @@ package exceptions;
  */
 public class CouldNotDecryptMessageException extends Exception {
 
+	private static final long serialVersionUID = -9033562097694662689L;
+
 	/**
 	 * Constructor.
 	 * @param message
-	 * 		the message
+	 * 		the detail message. The detail message is saved for later retrieval by the Throwable.getMessage() method.
 	 * @param cause
-	 * 		the cause, may be null if nonexistant / unknown
+	 * 		the cause, may be null if nonexistent / unknown
 	 */
 	public CouldNotDecryptMessageException(String message, Exception cause) {
 		super(message, cause);

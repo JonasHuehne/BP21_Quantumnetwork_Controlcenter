@@ -307,10 +307,10 @@ public class SettingsDialog extends JDialog {
 	 */
 	private void writeSettings() {
 		
-		Configuration.setProperty("UserName", ownNameTextField.getText());
 		if(!Configuration.getProperty("UserName").equals(ownNameTextField.getText())) {
 			MessageSystem.conMan.setLocalName(ownNameTextField.getText());
 		}
+		Configuration.setProperty("UserName", ownNameTextField.getText());
 		if(!Configuration.getProperty("UserIP").equals(ownIPTextField.getText())) {
 			MessageSystem.conMan.destroyAllConnectionEndpoints();
 			MessageSystem.conMan.setLocalAddress(ownNameTextField.getText());

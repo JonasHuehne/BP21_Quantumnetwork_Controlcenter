@@ -34,8 +34,8 @@ public class ConnectionEndpoint implements Runnable{
 	private Log ceLogger;
 	
 	//Local information
-	/** Name of this ConnectionEndpoint, used to identify it, e.g. in {@linkplain MessageSystem}. Generally the same as {@link #remoteName}. */
-	private String connectionID; // TODO Possibly refactor connectionID and remoteName to be the same
+	/** Name of this ConnectionEndpoint, used to identify it, e.g. in {@linkplain MessageSystem}. Often the same as {@link #remoteName}. */
+	private String connectionID; 
 	/** a private instance of KeyGenerator that will be used if this particular ConnectionEndpoint is generating a new Key. */
 	private KeyGenerator keyGen;
 	
@@ -143,8 +143,7 @@ public class ConnectionEndpoint implements Runnable{
 			NetworkPackage connectionConfirmation = new NetworkPackage(TransmissionTypeEnum.CONNECTION_CONFIRMATION, args, false);
 			pushMessage(connectionConfirmation);
 		} catch (EndpointIsNotConnectedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			// this should not occur
 		}
 		ceLogger.logInfo("[CE " + connectionName + "] Connection confirmation sent. Now listening for messages. ");
 		//Wait for greeting
@@ -686,4 +685,5 @@ public class ConnectionEndpoint implements Runnable{
 		String stringID = Base64.getEncoder().encodeToString(id);
 		return pushOnceApproved.remove(stringID);
 	}
+	
 }
