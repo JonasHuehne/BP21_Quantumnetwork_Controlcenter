@@ -19,12 +19,13 @@ import javax.swing.JTextField;
 import java.awt.Font;
 
 /**
- * 
- * @author Jonas Huehne
+ * Dialog to ask for the public signature key for a connection endpoint
+ * @author Jonas Huehne, Sarah Schumann
  *
  */
 public class CESignatureQueryDialog extends JDialog {
 
+	// fields for the dialog
 	private final JPanel contentPanel = new JPanel();
 	private String connectionID;
 	private JTextField textField;

@@ -119,7 +119,6 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
      * @param receivedSignature the received signature
      * @param sender the sender of the message, needed to look up the public key in the communication list
      * @return true if the signature matches the message, false otherwise or if Error
-     * @throws IllegalArgumentException if sender null or does not exist, or no Signature Key for sender
      */
     @Override
     public boolean verify (final byte[] message, final byte[] receivedSignature,
