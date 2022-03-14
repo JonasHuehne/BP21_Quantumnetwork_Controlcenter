@@ -26,7 +26,7 @@ public class ConfigurationTests {
     private static final String TEST_DIR_NAME2 = "testDirTest2";
     // list of directories from the Configuration class; has to be adjusted to changes there
     private static final String[] DIRECTORY_LIST =
-            {"SignatureKeys", "python", "connections", "externalAPI"};
+            {"SignatureKeys", "python", "connections", "externalAPI", "logs"};
 
     @BeforeAll
     static void backUpProperties() {
