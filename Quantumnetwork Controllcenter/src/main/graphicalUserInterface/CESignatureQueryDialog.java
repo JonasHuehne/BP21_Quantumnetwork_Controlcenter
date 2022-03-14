@@ -9,9 +9,7 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
 import frame.QuantumnetworkControllcenter;
-import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
-import networkConnection.NetworkPackage;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -65,7 +63,7 @@ public class CESignatureQueryDialog extends JDialog {
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						if(textField.getText() != null && !textField.getText().equals("")) {
-							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).setSig(textField.getText());
+							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).setSigKey(textField.getText());
 						}
 						SHA256withRSAAuthentication.continueVerify = true;
 					}
