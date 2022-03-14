@@ -22,8 +22,6 @@ import qnccLogger.LogSensitivity;
 import graphicalUserInterface.CESignatureQueryDialog;
 import networkConnection.ConnectionEndpoint;
 
-import javax.swing.*;
-
 /**
  * Class providing the methods necessary for authentication
  * using SHA256 with RSA 2048
@@ -89,6 +87,7 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
 
     /**
      * Method to create a signature for a message using the designated private key
+     * from the file named in the configurations
      * @param message the message to be signed with the private key
      * @return the signed message as a byte array; null if Error
      */
@@ -115,7 +114,7 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
 
     /**
      * Method to verify a message with a signature, given a message, the signature and the sender name
-     * (takes the public key from the corresponding entry in the communication list)
+     * (takes the public key from the corresponding entry in the communication list or the CE)
      * @param message the received signed message (without the signature)
      * @param receivedSignature the received signature
      * @param sender the sender of the message, needed to look up the public key in the communication list
