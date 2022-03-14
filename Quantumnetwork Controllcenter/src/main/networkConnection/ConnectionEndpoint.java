@@ -37,7 +37,7 @@ public class ConnectionEndpoint implements Runnable{
 	/** a private instance of KeyGenerator that will be used if this particular ConnectionEndpoint is generating a new Key. */
 	private KeyGenerator keyGen;
 	
-	private String signature = ""; //This is the public signature of the ConnectionEndpoint that this CE is connected to.
+	private String publicSignatureKey = ""; //This is the public signature key of the ConnectionEndpoint that this CE is connected to.
 	
 	//Addresses, Sockets and Ports
 	/** Our local IP, sent when trying to establish a connection, so that the partner knows which IP to connect to */
@@ -150,7 +150,7 @@ public class ConnectionEndpoint implements Runnable{
 
 		this.localAddress = localIP;
 		this.localServerPort = localPort;
-		this.signature = sig;
+		this.publicSignatureKey = sig;
 		
 		remoteIP = targetIP;
 		remotePort = targetPort;
@@ -172,20 +172,20 @@ public class ConnectionEndpoint implements Runnable{
 		return this.connectionID;
 	}
 	
-	/**This method returns the public Signature of the connected CE. It is used to sign a message to that CE.
+	/**This method returns the public signature key of the connected CE. It is used to sign a message to that CE.
 	 * 
-	 * @return the signature. May be "" if it has not been set so far. Use the setSignatureGUI to ask the user to set it in this case.
+	 * @return the public signature key. May be "" if it has not been set so far. Use the setSignatureGUI to ask the user to set it in this case.
 	 */
-	public String getSig() {
-		return signature;
+	public String getSigKey() {
+		return publicSignatureKey;
 	}
 	
-	/**This method sets the signature that is used when sending authenticated Messages.
+	/**This method sets the public signature key that is used when sending authenticated Messages.
 	 * 
-	 * @param sig
+	 * @param sigKey the public signature key to be set
 	 */
-	public void setSig(String sig) {
-		signature = sig;
+	public void setSigKey(String sigKey) {
+		publicSignatureKey = sigKey;
 	}
 	
 	/**Reports the current State of this Endpoints Connection.

@@ -14,7 +14,6 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.regex.Pattern;
 import communicationList.Contact;
-import communicationList.SQLiteCommunicationList;
 import exceptions.NoValidPublicKeyException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
@@ -113,7 +112,7 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
                 || senderEntry.getSignatureKey().equals(Utils.NO_KEY)
                 || senderEntry.getSignatureKey() == null) {
             ConnectionEndpoint senderCE = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(sender);
-            pubKeyString = senderCE.getSig();
+            pubKeyString = senderCE.getSigKey();
             if (pubKeyString.equals("")) {
                 continueVerify = false;
                 abortVerify = false;
