@@ -73,8 +73,18 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
      * if the needed folders and files exist
      */
     public SHA256withRSAAuthentication() {
-        privateKeyFile = Configuration.getProperty(PRIVATE_KEY_PROP_NAME);
-        publicKeyFile = Configuration.getProperty(PUBLIC_KEY_PROP_NAME);
+        String privateKey = Configuration.getProperty(PRIVATE_KEY_PROP_NAME);
+        if (privateKey == null) {
+            privateKeyFile = Utils.NO_KEY;
+        } else {
+            privateKeyFile = privateKey;
+        }
+        String publicKey = Configuration.getProperty(PUBLIC_KEY_PROP_NAME);
+        if (publicKey == null) {
+            publicKeyFile = Utils.NO_KEY;
+        } else {
+            publicKeyFile = publicKey;
+        }
     }
 
     /**
@@ -116,9 +126,12 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
         String pubKeyString;
         Contact senderEntry = QuantumnetworkControllcenter.communicationList.query(sender);
         if(senderEntry == null
-                || senderEntry.getSignatureKey().equals(Utils.NO_KEY)
-                || senderEntry.getSignatureKey() == null) {
+                || senderEntry.getSignatureKey().equals(Utils.NO_KEY)) {
             ConnectionEndpoint senderCE = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(sender);
+            if (senderCE == null) {
+                // TODO: log
+                return false;
+            }
             pubKeyString = senderCE.getSigKey();
             if (pubKeyString.equals("")) {
                 continueVerify = false;
@@ -137,7 +150,6 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
                         if (publicKey == null) {
                             new CESignatureQueryDialog(sender);
                             GenericWarningMessage noKeyWarning = new GenericWarningMessage("Invalid public key entered.");
-                            noKeyWarning.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
                             noKeyWarning.setAlwaysOnTop(true);
                             continueVerify = false;
                         } else {

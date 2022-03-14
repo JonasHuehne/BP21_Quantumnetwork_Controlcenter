@@ -34,8 +34,10 @@ public class CESignatureQueryDialog extends JDialog {
 	 * Create the dialog.
 	 */
 	public CESignatureQueryDialog(String connectionID) {
-		setBounds(100, 100, 450, 150);
+		setBounds(100, 100, 550, 150);
 		getContentPane().setLayout(new BorderLayout());
+		setVisible(true);
+		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		contentPanel.setLayout(new FlowLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
@@ -63,9 +65,13 @@ public class CESignatureQueryDialog extends JDialog {
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						if(textField.getText() != null && !textField.getText().equals("")) {
+							setVisible(false);
+							dispose();
 							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).setSigKey(textField.getText());
 							SHA256withRSAAuthentication.continueVerify = true;
 						} else {
+							setVisible(false);
+							dispose();
 							new CESignatureQueryDialog(connectionID);
 						}
 					}

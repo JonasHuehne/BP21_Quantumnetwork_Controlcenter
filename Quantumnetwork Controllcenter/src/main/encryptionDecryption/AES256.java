@@ -12,6 +12,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 
 /**
@@ -30,7 +31,7 @@ public class AES256 {
 	private static final int KEY_LENGTH_BYTE = 32;
 	private static final int KEY_LENGTH_BIT = 256;
 	private static final String KEY_WRONG_SIZE = "An invalid key was used. Please use a key of length 256";
-	private static final Log log = new Log(AES256.class.getName());
+	private static final Log log = new Log(AES256.class.getName(), LogSensitivity.WARNING);
 	
 	/**
 	 * Encrypts the given plain text String using the AES-256 CBC algorithm and a suitable key

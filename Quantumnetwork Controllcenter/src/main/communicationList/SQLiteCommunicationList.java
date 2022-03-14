@@ -304,6 +304,10 @@ public class SQLiteCommunicationList implements CommunicationList {
             PreparedStatement stmt = connection.prepareStatement(sql);
             stmt.setString(1, name);
             ResultSet rs = stmt.executeQuery();
+           if (rs.isClosed()) {
+               log.logWarning("Could not find entry with name " + name + " in the database.");
+               return null;
+           }
             Contact result = new Contact(rs.getString("Name"), rs.getString("IPAddress"),
                     rs.getInt("Port"), rs.getString("SignatureKey"));
             rs.close();
@@ -335,6 +339,11 @@ public class SQLiteCommunicationList implements CommunicationList {
             stmt.setString(1, ipAddress);
             stmt.setInt(2, port);
             ResultSet rs = stmt.executeQuery();
+            if (rs.isClosed()) {
+                log.logWarning("Could not find entry with IP address " + ipAddress
+                        + " and port " + port + " in the database.");
+                return null;
+            }
             Contact result = new Contact(rs.getString("Name"), rs.getString("IPAddress"),
                     rs.getInt("Port"), rs.getString("SignatureKey"));
             rs.close();
