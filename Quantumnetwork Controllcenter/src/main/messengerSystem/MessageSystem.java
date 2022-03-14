@@ -8,8 +8,10 @@ import java.util.Random;
 import encryptionDecryption.AES256;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
+import exceptions.NoValidPublicKeyException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
+import graphicalUserInterface.CESignatureQueryDialog;
 import keyStore.KeyStoreDbManager;
 import keyStore.KeyStoreObject;
 import networkConnection.ConnectionEndpoint;
@@ -17,6 +19,8 @@ import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
 import networkConnection.NetworkPackage;
 import networkConnection.TransmissionTypeEnum;
+
+import javax.swing.*;
 
 /**High Level Message System. Contains methods for sending and receiving messages without dealing with low-level things, like signals and prefixes.
  * Send and receiving messages via these methods, the connectionID determines which connectionEndpoint to interact with.
@@ -160,8 +164,7 @@ public class MessageSystem {
 	 */
 	public static byte[] readAuthenticatedMessage(String connectionID, NetworkPackage transmission) {
 		NetworkPackage msg = transmission;
-		byte[] message;
-		message = msg.getContent();
+		byte[] message = msg.getContent();
 		byte[] signature = msg.getSignature();
 		System.out.println("----Tried to find Sig in DB for: " + connectionID);
 		if(QuantumnetworkControllcenter.authentication.verify(message, signature, connectionID)) {

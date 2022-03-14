@@ -1,5 +1,7 @@
 package messengerSystem;
 
+import exceptions.NoValidPublicKeyException;
+
 /**
  * Interface for the general Methods to authenticate a message or communication chanel
  * @author Sarah Schumann

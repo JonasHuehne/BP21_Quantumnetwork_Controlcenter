@@ -18,8 +18,6 @@ import java.util.regex.Pattern;
  */
 public class SQLiteCommunicationList implements CommunicationList {
 
-    public static final String NO_KEY = "";
-
     private Connection connection;
 
     private static final String TABLE_NAME = "CommunicationList";
