@@ -1,11 +1,13 @@
 package graphicalUserInterface;
 
-import messengerSystem.SHA256withRSAAuthentication;
+import messengerSystem.SHA256withRSAAuthenticationGUI;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 /**
  * This is a dialog to ask the user whether to discard a message that could not be authenticated
@@ -36,12 +38,11 @@ public class DiscardMessageDialog extends JDialog {
                 public void actionPerformed(ActionEvent e) {
                     setVisible(false);
                     dispose();
-                    SHA256withRSAAuthentication.abortVerify = true;
+                    SHA256withRSAAuthenticationGUI.abortVerify = true;
                 }
             });
             readButton.setActionCommand("Read");
             buttonPane.add(readButton);
-            getRootPane().setDefaultButton(readButton);
         }
         {
             JButton discardButton = new JButton("Discard");
@@ -49,11 +50,12 @@ public class DiscardMessageDialog extends JDialog {
                 public void actionPerformed(ActionEvent e) {
                     setVisible(false);
                     dispose();
-                    SHA256withRSAAuthentication.discardMessage = true;
+                    SHA256withRSAAuthenticationGUI.discardMessage = true;
                 }
             });
             discardButton.setActionCommand("Discard");
             buttonPane.add(discardButton);
+            getRootPane().setDefaultButton(discardButton);
         }
 
         JTextPane warningTextField = new JTextPane();
@@ -64,5 +66,14 @@ public class DiscardMessageDialog extends JDialog {
                 + "because there is no valid public key set for connection to " + connectionID
                 + ". Do you want to discard the message, or read it without being authenticated?");
         getContentPane().add(warningTextField, BorderLayout.CENTER);
+
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                setVisible(false);
+                dispose();
+                SHA256withRSAAuthenticationGUI.discardMessage = true;
+            }
+        });
     }
 }

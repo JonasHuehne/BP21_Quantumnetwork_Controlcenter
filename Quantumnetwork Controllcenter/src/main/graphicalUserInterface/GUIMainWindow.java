@@ -54,7 +54,7 @@ public final class GUIMainWindow implements Runnable{
 	String[] contactColumnNames = {"Connection Name",
             "IP Address",
             "Target Port",
-            "Signature"};
+            "Public Signature Key"};
 	
 	private CustomClosingFrame frame;
 	private JTable contactTable;
@@ -71,7 +71,7 @@ public final class GUIMainWindow implements Runnable{
 	/** column of the contacts table in which the ports are listed */
 	private final int contactDBPortIndex = 2;
 	/** column of the contacts table in which the public keys are listed */
-	private final int contactDBSigIndex = 3;
+	private final int contactDBPubSigKeyIndex = 3;
 	
 	/** used in updating the list of active connections */
 	private ArrayList<String> namesOfConnections = new ArrayList<String>();
@@ -207,7 +207,7 @@ public final class GUIMainWindow implements Runnable{
 					String ip = (String) contactTable.getValueAt(i, contactDBIPIndex);
 					String portString = String.valueOf(contactTable.getValueAt(i, contactDBPortIndex));
 					int port = Integer.valueOf(portString);
-					String sig = (String) contactTable.getValueAt(i, contactDBSigIndex);
+					String sig = (String) contactTable.getValueAt(i, contactDBPubSigKeyIndex);
 					cl.insert(name, ip, port, sig);
 				}
 				
@@ -366,8 +366,8 @@ public final class GUIMainWindow implements Runnable{
 		return contactDBPortIndex;
 	}
 	
-	public int getContactDBSigIndex() {
-		return contactDBSigIndex;
+	public int getContactDBPubSigKeyIndex() {
+		return contactDBPubSigKeyIndex;
 	}
 	
 	
@@ -416,8 +416,11 @@ public final class GUIMainWindow implements Runnable{
 	void addRowToContactTable(String name, String ip, int port, String sig) {
 		
 		DefaultTableModel model = (DefaultTableModel)contactTable.getModel();
-		QuantumnetworkControllcenter.communicationList.insert(name, ip, port, sig);
-		model.addRow(new Object[]{name, ip, port, sig});
+		if(QuantumnetworkControllcenter.communicationList.insert(name, ip, port, sig)) {
+			model.addRow(new Object[]{name, ip, port, sig});
+		} else {
+			new GenericWarningMessage("Contact could not be added. Please refer to the log for details");
+		}
 	}
 	
 
