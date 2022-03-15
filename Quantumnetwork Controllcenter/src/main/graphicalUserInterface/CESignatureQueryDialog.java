@@ -7,6 +7,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 import frame.QuantumnetworkControllcenter;
+import messengerSystem.SigKeyQueryInteractionObject;
 import messengerSystem.SHA256withRSAAuthenticationGUI;
 
 import java.awt.event.ActionListener;
@@ -31,7 +32,7 @@ public class CESignatureQueryDialog extends JFrame {
 	/**
 	 * Create the dialog.
 	 */
-	public CESignatureQueryDialog(String connectionID) {
+	public CESignatureQueryDialog(String connectionID, SigKeyQueryInteractionObject sigKeyQuery) {
 		setBounds(100, 100, 550, 150);
 		getContentPane().setLayout(new BorderLayout());
 		setVisible(true);
@@ -67,11 +68,11 @@ public class CESignatureQueryDialog extends JFrame {
 							setVisible(false);
 							dispose();
 							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).setSigKey(textField.getText());
-							SHA256withRSAAuthenticationGUI.continueVerify = true;
+							sigKeyQuery.setContinueVerify(true);
 						} else {
 							setVisible(false);
 							dispose();
-							new CESignatureQueryDialog(connectionID);
+							new CESignatureQueryDialog(connectionID, sigKeyQuery);
 						}
 					}
 				});
@@ -85,7 +86,7 @@ public class CESignatureQueryDialog extends JFrame {
 					public void actionPerformed(ActionEvent e) {
 						setVisible(false);
 						dispose();
-						new DiscardMessageDialog(connectionID);
+						new DiscardMessageDialog(connectionID, sigKeyQuery);
 					}
 				});
 				cancelButton.setActionCommand("Cancel");
@@ -98,7 +99,7 @@ public class CESignatureQueryDialog extends JFrame {
 			public void windowClosing(WindowEvent e) {
 				setVisible(false);
 				dispose();
-				new DiscardMessageDialog(connectionID);
+				new DiscardMessageDialog(connectionID, sigKeyQuery);
 			}
 		});
 		

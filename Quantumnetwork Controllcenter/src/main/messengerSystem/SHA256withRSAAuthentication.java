@@ -27,7 +27,7 @@ import networkConnection.ConnectionEndpoint;
  * using SHA256 with RSA 2048
  * @author Sarah Schumann
  */
-public class SHA256withRSAAuthentication implements SignatureAuthentication {
+public class SHA256withRSAAuthentication extends SignatureAuthentication {
 
     /**
      * Default name for generating signature key files, without file name extension

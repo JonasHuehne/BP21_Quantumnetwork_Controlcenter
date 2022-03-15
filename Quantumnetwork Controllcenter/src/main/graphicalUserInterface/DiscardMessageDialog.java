@@ -1,6 +1,7 @@
 package graphicalUserInterface;
 
 import messengerSystem.SHA256withRSAAuthenticationGUI;
+import messengerSystem.SigKeyQueryInteractionObject;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,7 +18,7 @@ import java.awt.event.WindowEvent;
  */
 public class DiscardMessageDialog extends JDialog {
 
-    public DiscardMessageDialog(String connectionID) {
+    public DiscardMessageDialog(String connectionID, SigKeyQueryInteractionObject sigKeyQuery) {
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         setVisible(true);
 
@@ -38,7 +39,7 @@ public class DiscardMessageDialog extends JDialog {
                 public void actionPerformed(ActionEvent e) {
                     setVisible(false);
                     dispose();
-                    SHA256withRSAAuthenticationGUI.abortVerify = true;
+                    sigKeyQuery.setAbortVerify(true);
                 }
             });
             readButton.setActionCommand("Read");
@@ -50,7 +51,7 @@ public class DiscardMessageDialog extends JDialog {
                 public void actionPerformed(ActionEvent e) {
                     setVisible(false);
                     dispose();
-                    SHA256withRSAAuthenticationGUI.discardMessage = true;
+                    sigKeyQuery.setDiscardMessage(true);
                 }
             });
             discardButton.setActionCommand("Discard");
@@ -72,7 +73,7 @@ public class DiscardMessageDialog extends JDialog {
             public void windowClosing(WindowEvent e) {
                 setVisible(false);
                 dispose();
-                SHA256withRSAAuthenticationGUI.discardMessage = true;
+                sigKeyQuery.setDiscardMessage(true);
             }
         });
     }

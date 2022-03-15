@@ -1,12 +1,10 @@
 package messengerSystem;
 
-import exceptions.NoValidPublicKeyException;
-
 /**
- * Interface for the general Methods to authenticate a message or communication chanel
+ * Abstract class for the general Methods to authenticate a message or communication chanel
  * @author Sarah Schumann
  */
-public interface SignatureAuthentication {
+public abstract class SignatureAuthentication {
 
     /**
      * Method to create a signature for a message using the designated private key
@@ -14,7 +12,7 @@ public interface SignatureAuthentication {
      * @param message the message to be signed with the private key
      * @return the signed message as a byte array; null if Error
      */
-    byte[] sign (final byte[] message);
+    public abstract byte[] sign (final byte[] message);
 
     /**
      * Method to verify a message with a signature, given a message, the signature and the sender name
@@ -24,7 +22,7 @@ public interface SignatureAuthentication {
      * @param sender the sender of the message, needed to look up the public key in the communication list
      * @return true if the signature matches the message, false otherwise or if Error
      */
-    boolean verify (final byte[] message, final byte[] receivedSignature, final String sender);
+    public abstract boolean verify (final byte[] message, final byte[] receivedSignature, final String sender);
 
     /**
      * Generates a key pair for signing messages
@@ -35,7 +33,7 @@ public interface SignatureAuthentication {
      * deletes the currently set standard keys (even if they don't have the default file name)
      * @return true if it worked, false if error
      */
-    boolean generateSignatureKeyPair ();
+    public abstract boolean generateSignatureKeyPair ();
 
     /**
      * Generates a key pair for signing messages, using the chosen name for the key files
@@ -46,44 +44,44 @@ public interface SignatureAuthentication {
      * @param overwrite if true, any existing file with the same name will be overwritten
      * @return true if it worked, false if error
      */
-    boolean generateSignatureKeyPair (String keyFileName, boolean setAsKeyFile,
+    public abstract boolean generateSignatureKeyPair (String keyFileName, boolean setAsKeyFile,
                                                     boolean deleteCurrent, boolean overwrite);
 
     /**
      * Method to delete the key pair currently set as default key file
      * @return true if the deleting worked or already no default file set, false if error
      */
-    boolean deleteSignatureKeys();
+    public abstract boolean deleteSignatureKeys();
 
     /**
      * Method to delete the key file with the given file
      * @param keyFileName the name of the key file to be deleted
      * @return true if the deleting worked or the file didn't exist, false if error
      */
-    boolean deleteSignatureKey(String keyFileName);
+    public abstract boolean deleteSignatureKey(String keyFileName);
 
     /**
-     * Method to set the private key file to be used in {@link #sign(String)}
+     * Method to set the private key file to be used in {@link #sign(byte[])}
      * @param keyFileName the name of the key file to set as standard private key
      *                    including the file name extension;
      *                    accepts "" (an empty string) as input for setting it to no key
      * @return true if it worked, false otherwise
      */
-    boolean setPrivateKey (String keyFileName);
+    public abstract boolean setPrivateKey (String keyFileName);
 
     /**
-     * Method to set the public key to be used by the communication partner in {@link #verify(String, String, String)}
+     * Method to set the public key to be used by the communication partner in {@link #verify(byte[], byte[], String)}
      * @param keyFileName the name of the key file to set as standard public key
      *                    including the file name extension
      *                    accepts "" (an empty string) as input for setting it to no key
      * @return true if it worked, false otherwise
      */
-    boolean setPublicKey (String keyFileName);
+    public abstract boolean setPublicKey (String keyFileName);
 
     /**
      * Method to check if a valid key pair is currently set
      * @return true if there currently is a valid key pair set, false if not or error
      */
-    boolean existsValidKeyPair();
+    public abstract boolean existsValidKeyPair();
 
 }
