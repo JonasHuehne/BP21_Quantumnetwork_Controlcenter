@@ -7,6 +7,8 @@ package exceptions;
  */
 public class NoValidPublicKeyException extends Exception {
 
+    private static final long serialVersionUID = 7915002759966285257L;
+
     /**
      * Throws an exception with the given name
      * @param name the name of the concerned connection endpoint
