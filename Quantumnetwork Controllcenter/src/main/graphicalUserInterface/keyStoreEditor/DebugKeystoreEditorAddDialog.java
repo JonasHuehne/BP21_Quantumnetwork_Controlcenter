@@ -17,6 +17,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.awt.event.ActionEvent;
 
+/**
+ * Debug Window for inserting an entry into the keystore.
+ * @author Sasha Petri
+ */
 public class DebugKeystoreEditorAddDialog extends JFrame {
 	private JTextField textFieldID;
 	private JTextField textFieldIndex;
