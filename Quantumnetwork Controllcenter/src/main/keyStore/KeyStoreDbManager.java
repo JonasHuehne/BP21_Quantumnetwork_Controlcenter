@@ -41,7 +41,6 @@ public class KeyStoreDbManager {
 			String currentPath = Configuration.getBaseDirPath();
 
 			con = DriverManager.getConnection("jdbc:sqlite:" + currentPath + dataBaseName); // connect to our db
-			// System.out.println("Connection to database was succesfull!");
 
 		} catch (ClassNotFoundException | SQLException e) {
 
@@ -56,7 +55,7 @@ public class KeyStoreDbManager {
 	/**
 	 * Creates a new Database and table in the current project directory folder,
 	 * if they do not already exist.
-	 * @returns True if Database and table were created successfully, False
+	 * @return True if Database and table were created successfully, False
 	 *          otherwise
 	 * @throws SQLException if there was an error connecting to the database or creating the table
 	 */
@@ -139,7 +138,6 @@ public class KeyStoreDbManager {
 			pstmnt.setString(2, keyStreamID);
 			pstmnt.executeUpdate();
 
-			System.out.println("Renaming entry in KeyInformation table succeeded.\" + \"\\n\"");
 		}
 
 	}
@@ -166,11 +164,9 @@ public class KeyStoreDbManager {
 		}
 
 		int totalBits = currentObject.getCompleteKeyBuffer().length;
-		// System.out.println("total bytes = " + totalBits );
 
 		int bitsLeft = totalBits - index;
-		// System.out.println("bitsLeft = " + bitsLeft);
-
+	
 		if (bitsLeft >= keyLength) {
 			return true;
 		} else {
@@ -263,8 +259,6 @@ public class KeyStoreDbManager {
 		int newIndex = Math.min(obj.getIndex() + increment, obj.getCompleteKeyBuffer().length); // new index is at most == key length
 		try {
 			changeIndex(keyStreamID, newIndex);
-		} catch (SQLException | NoKeyWithThatIDException e) {
-			throw e;
 		} catch (NotEnoughKeyLeftException e) {
 			// never thrown
 		}
@@ -399,8 +393,6 @@ public class KeyStoreDbManager {
 					rs.getInt("Index_"), rs.getString("Source_"), rs.getString("Destination"), rs.getBoolean("Used"),
 					rs.getBoolean("Initiative"));
 
-			// System.out.println("Selecting entry from KeyInformation table was
-			// successful!" + "\n");
 
 			return object;
 
@@ -430,8 +422,6 @@ public class KeyStoreDbManager {
 				result.add(res);
 			}
 
-			// System.out.println("Generating list of KeyInformation table entries was
-			// successful" + "\n");
 
 			return result;
 		} 

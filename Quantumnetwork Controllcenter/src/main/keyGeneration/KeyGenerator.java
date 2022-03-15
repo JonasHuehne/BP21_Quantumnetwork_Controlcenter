@@ -145,7 +145,7 @@ public class KeyGenerator implements Runnable{
 			String sourcePK = Configuration.getProperty("SourceSignature");
 			MessageSystem.conMan.createNewConnectionEndpoint(sourceServerConnectionName, sourceIP, sourcePort, sourcePK);
 		} catch (ConnectionAlreadyExistsException | IpAndPortAlreadyInUseException e) {
-			// If a connection the source already exists, there is no problem
+			// If a connection to the source already exists, there is no problem
 		}
 
 		//File name will be UserName_Date_RandomString 

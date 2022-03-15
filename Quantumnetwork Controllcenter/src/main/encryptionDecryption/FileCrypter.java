@@ -46,7 +46,7 @@ public class FileCrypter {
 	public static File encryptAndSave(File toEncrypt, SymmetricCipher cipher, SecretKey key, Path outPath) 
 			throws InvalidKeyException, IllegalBlockSizeException, IOException {
 		try {
-			return encryptDecryptAndSave(toEncrypt, cipher, key, outPath, Cipher.ENCRYPT_MODE);
+			return applyCipherAndSave(toEncrypt, cipher, key, outPath, Cipher.ENCRYPT_MODE);
 		} catch (BadPaddingException e) { 
 			// Never thrown, see documentation
 			throw new RuntimeException("Code error - this type of Exception should never be thrown here.");
@@ -65,7 +65,7 @@ public class FileCrypter {
 	 * 		the key to decrypt the file with
 	 * @param outPath
 	 * 		path to the output file that is to be written <br>
-	 * 		must be different than the path of the input file
+	 * 		must be different from the path of the input file
 	 * @return
 	 * 		the decrypted file
 	 * @throws InvalidKeyException
@@ -79,7 +79,7 @@ public class FileCrypter {
 	public static File decryptAndSave(File toDecrypt, SymmetricCipher cipher, SecretKey key, Path outPath) 
 			throws InvalidKeyException, BadPaddingException, IOException {
 		try {
-			return encryptDecryptAndSave(toDecrypt, cipher, key, outPath, Cipher.DECRYPT_MODE);
+			return applyCipherAndSave(toDecrypt, cipher, key, outPath, Cipher.DECRYPT_MODE);
 		} catch (IllegalBlockSizeException e) {
 			// Never thrown, see documentation
 			throw new RuntimeException("Code error - this type of Exception should never be thrown here.");
@@ -100,7 +100,7 @@ public class FileCrypter {
 	 * 		the key to be used for encryption / decryption
 	 * @param outPath
 	 * 		path to the output file that is to be written <br>
-	 * 		must be different than the path of the input file
+	 * 		must be different from the path of the input file
 	 * @param mode
 	 * 		{@value Cipher#ENCRYPT_MODE} for encryption, {@value Cipher#DECRYPT_MODE} for decryption
 	 * @return
@@ -114,7 +114,7 @@ public class FileCrypter {
 	 * @throws IllegalBlockSizeException 
 	 * 		thrown only in encryption mode, for details see {@linkplain Cipher#doFinal()}
 	 */
-	private static File encryptDecryptAndSave(File input, SymmetricCipher sc, SecretKey key, Path outPath, int mode) 
+	private static File applyCipherAndSave(File input, SymmetricCipher sc, SecretKey key, Path outPath, int mode) 
 			throws InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException {
 		if (input.toPath().equals(outPath)) 
 			throw new IllegalArgumentException("Received " + input.toString() + " as both the input and output path. "
