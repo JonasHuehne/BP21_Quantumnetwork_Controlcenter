@@ -1,9 +1,18 @@
 
-import static org.junit.jupiter.api.Assertions.*;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
@@ -12,10 +21,13 @@ import exceptions.EndpointIsNotConnectedException;
 import exceptions.IpAndPortAlreadyInUseException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.PortIsInUseException;
+import messengerSystem.MessageSystem;
 import frame.Configuration;
+import frame.QuantumnetworkControllcenter;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
+import networkConnection.NetworkPackage;
 import networkConnection.TransmissionTypeEnum;
 
 /**
@@ -26,10 +38,10 @@ import networkConnection.TransmissionTypeEnum;
  */
 public class NetworkTests {
 	
+	@Nested
 	/**
 	 * Low Level Tests directly testing the {@link ConnectionEndpoint} class.
 	 */
-	@Nested
 	class ConnectionEndpointTests {
 		
 		@Test
@@ -37,7 +49,7 @@ public class NetworkTests {
 			String remoteAddr = "127.0.0.1";
 			int	remotePort = 60200;
 			// Create CE that tries to connect to a non-existent CE
-			ConnectionEndpoint Alice = new ConnectionEndpoint("Alice", remoteAddr, remotePort, "127.0.0.1", 60400);
+			ConnectionEndpoint Alice = new ConnectionEndpoint("Alice", remoteAddr, remotePort, "127.0.0.1", 60400, "Bob", null);
 			// It should no longer be trying to connect
 			assertEquals(ConnectionState.CLOSED, Alice.reportState(), "CE should have stopped trying to connect. Is the time out set correctly?");
 			
@@ -50,12 +62,13 @@ public class NetworkTests {
 		
 	}
 	
+	@Nested
 	/**
 	 * Tests for the {@link ConnectionManager} class and the classes it uses to establish and manage connections.
 	 */
-	@Nested
 	class ConnectionManagerTests {
 		
+		@Test
 		/**
 		 * None of this code should trigger any Exceptions.
 		 * @throws IOException
@@ -63,13 +76,12 @@ public class NetworkTests {
 		 * @throws PortIsInUseException
 		 * 		tried to create a CM which uses a port already used by another CM
 		 * @throws ManagerHasNoSuchEndpointException
-		 * 		attempted sensitive access of a non-existent CE in a CM
+		 * 		attempted sensitive access of a non-existant CE in a CM
 		 * @throws ConnectionAlreadyExistsException
 		 * 		attempted to create a CE with a non-unique ID in a CM
 		 * @throws IpAndPortAlreadyInUseException
 		 * 		attempted to create a CE with a non-unique IP:Port pair in a CM
 		 */
-		@Test
 		public void basic_functionality_of_CM_works() throws ConnectionAlreadyExistsException, IOException, PortIsInUseException, IpAndPortAlreadyInUseException {
 			/*
 			 * In this test we are "Bob", our partner is "Alice"
@@ -77,17 +89,17 @@ public class NetworkTests {
 			
 			int localServerPort = 60030; // port bob wishes to offer service on
 			String localIP = "127.0.0.1"; // Bob's IP
-			ConnectionManager conMan = new ConnectionManager(localIP, localServerPort);
+			ConnectionManager conMan = new ConnectionManager(localIP, localServerPort, "Bob", null);
 			
 			// Connections can be created (Bob creating connection to Alice)
-			conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200);
+			conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200, null);
 			assertEquals(1, conMan.returnAllConnections().size());
 			assertNotNull(conMan.getConnectionEndpoint("Alice"));
 
 			// Test that no two connections of the same name can be created
 			assertThrows(
 					ConnectionAlreadyExistsException.class, 
-					() -> {conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200);});
+					() -> {conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200, null);});
 			assertEquals(1, conMan.returnAllConnections().size());
 	
 			// Attempting to create the new connection should not have overridden Alice
@@ -109,13 +121,14 @@ public class NetworkTests {
 			assertEquals(ConnectionState.CLOSED, Alice.reportState());
 			
 			// Destroying multiple CE's works
-			conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200);
-			conMan.createNewConnectionEndpoint("Bob", "127.0.0.2", 60200);
+			conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 60200, null);
+			conMan.createNewConnectionEndpoint("Bob", "127.0.0.2", 60200, null);
 			assertEquals(2, conMan.returnAllConnections().size());
 			conMan.destroyAllConnectionEndpoints();
 			assertEquals(0, conMan.returnAllConnections().size());
 		}
 		
+		@Test
 		/**
 		 * None of this code should trigger any Exceptions.
 		 * @throws IOException
@@ -123,24 +136,29 @@ public class NetworkTests {
 		 * @throws PortIsInUseException
 		 * 		tried to create a CM which uses a port already used by another CM
 		 * @throws ManagerHasNoSuchEndpointException
-		 * 		attempted sensitive access of a non-existent CE in a CM
+		 * 		attempted sensitive access of a non-existant CE in a CM
 		 * @throws ConnectionAlreadyExistsException
 		 * 		attempted to create a CE with a non-unique ID in a CM
 		 * @throws IpAndPortAlreadyInUseException
 		 * 		attempted to create a CE with a non-unique IP:Port pair in a CM
 		 */
-		@Test
 		public void can_create_cyclical_connection_and_close_them() throws IOException, PortIsInUseException, ConnectionAlreadyExistsException, ManagerHasNoSuchEndpointException, IpAndPortAlreadyInUseException {
 			int serverPortAlice = 60020;
 			int serverPortBob	= 60040;
 			String ipAlice		= "127.0.0.1";
 			String ipBob		= "127.0.0.1";
 			
-			ConnectionManager AliceCM = new ConnectionManager(ipAlice, serverPortAlice); // Used to Model PC of Alice
-			ConnectionManager BobCM	  = new ConnectionManager(ipBob, serverPortBob); // Used to Model PC of Bob
+			ConnectionManager AliceCM = new ConnectionManager(ipAlice, serverPortAlice, "Alice", null); // Used to Model PC of Alice
+			ConnectionManager BobCM	  = new ConnectionManager(ipBob, serverPortBob, "Bob", null); // Used to Model PC of Bob
+			
+			try { // Brief wait period (allow CMs to start up the waiting thread)
+				TimeUnit.MILLISECONDS.sleep(100);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			
 			// Alice attempts to connect to Bob
-			AliceCM.createNewConnectionEndpoint("Bob", ipBob, serverPortBob);
+			AliceCM.createNewConnectionEndpoint("Bob", ipBob, serverPortBob, null);
 			
 			try {
 				TimeUnit.MILLISECONDS.sleep(500);
@@ -153,13 +171,12 @@ public class NetworkTests {
 			assertEquals(1, BobCM.returnAllConnections().size());
 			
 			assertNotNull(AliceCM.getConnectionEndpoint("Bob"));
-			// The Name of Bob's partner is set based on Configuration, because his endpoint is automatically created
-			String nameOfBobsPartner = Configuration.getProperty("UserName");
-			assertNotNull(BobCM.getConnectionEndpoint(nameOfBobsPartner));
+			// The Name of Bob's partner should be Alice, because that's the name of Alice CM
+			assertNotNull(BobCM.getConnectionEndpoint("Alice"));
 			
 			// Both Connection should have state connected
 			assertEquals(ConnectionState.CONNECTED, AliceCM.getConnectionState("Bob"));
-			assertEquals(ConnectionState.CONNECTED, BobCM.getConnectionState(nameOfBobsPartner));
+			assertEquals(ConnectionState.CONNECTED, BobCM.getConnectionState("Alice"));
 			
 			// Closing one connection also closes the other
 			AliceCM.closeConnection("Bob");
@@ -169,10 +186,11 @@ public class NetworkTests {
 				e.printStackTrace();
 			}
 			assertEquals(ConnectionState.CLOSED, AliceCM.getConnectionState("Bob"));
-			assertEquals(ConnectionState.CLOSED, BobCM.getConnectionState(nameOfBobsPartner));
+			assertEquals(ConnectionState.CLOSED, BobCM.getConnectionState("Alice"));
 			
 		}
 		
+		@Test
 		/**
 		 * None of this code should trigger any exceptions.
 		 * @throws IOException
@@ -180,7 +198,7 @@ public class NetworkTests {
 		 * @throws PortIsInUseException
 		 * 		tried to create a CM which uses a port already used by another CM
 		 * @throws ManagerHasNoSuchEndpointException
-		 * 		attempted sensitive access of a non-existent CE in a CM
+		 * 		attempted sensitive access of a non-existant CE in a CM
 		 * @throws ConnectionAlreadyExistsException
 		 * 		attempted to create a CE with a non-unique ID in a CM
 		 * @throws IpAndPortAlreadyInUseException
@@ -188,7 +206,6 @@ public class NetworkTests {
 		 * @throws EndpointIsNotConnectedException
 		 * 		if trying to send a message from an endpoint that is not connected
 		 */
-		@Test
 		public void can_send_messages_along_cyclical_connection() 
 				throws 	IOException, PortIsInUseException, ManagerHasNoSuchEndpointException, ConnectionAlreadyExistsException, 
 						IpAndPortAlreadyInUseException, EndpointIsNotConnectedException {
@@ -197,11 +214,11 @@ public class NetworkTests {
 			String ipAlice		= "127.0.0.1";
 			String ipBob		= "127.0.0.1";
 			
-			ConnectionManager AliceCM = new ConnectionManager(ipAlice, serverPortAlice); // Used to Model PC of Alice
-			ConnectionManager BobCM	  = new ConnectionManager(ipBob, serverPortBob); // Used to Model PC of Bob
+			ConnectionManager AliceCM = new ConnectionManager(ipAlice, serverPortAlice, "Alice", null); // Used to Model PC of Alice
+			ConnectionManager BobCM	  = new ConnectionManager(ipBob, serverPortBob, "Bob", null); // Used to Model PC of Bob
 			
 			// Alice attempts to connect to Bob
-			AliceCM.createNewConnectionEndpoint("Bob", ipBob, serverPortBob);
+			AliceCM.createNewConnectionEndpoint("Bob", ipBob, serverPortBob, null);
 
 			
 			try {
@@ -213,7 +230,8 @@ public class NetworkTests {
 			// Alice tries sending a message
 			
 			byte[] transmittedBytes = new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9};
-			AliceCM.sendMessage("Bob", TransmissionTypeEnum.TRANSMISSION, "", transmittedBytes, null);
+			NetworkPackage examplePackage = new NetworkPackage(TransmissionTypeEnum.TEXT_MESSAGE, null, transmittedBytes, false);
+			AliceCM.sendMessage("Bob", examplePackage);
 			
 			try {
 				TimeUnit.MILLISECONDS.sleep(500);
@@ -221,56 +239,54 @@ public class NetworkTests {
 				e.printStackTrace();
 			}
 			
-			// TODO check messages
-			/*
-			 * <Sasha> How would I do this? The message queue has been removed, as far as I can see.
-			 */
+			// assert the message arrived correctly
+			ConnectionEndpoint BobsConnectionToAlice = BobCM.getConnectionEndpoint("Alice");
+			assertEquals(1, BobsConnectionToAlice.getLoggedPackagesOfType(TransmissionTypeEnum.TEXT_MESSAGE).size());
+			assertArrayEquals(transmittedBytes, BobsConnectionToAlice.getPackageLog().get(0).getContent());
 		}
 		
 		
-		// TODO once proper Exception Handling is implemented
 		@Test
 		public void methods_throw_appropriate_exceptions() {
 			
 			// Trying to create two CM with the same port
 			assertThrows(PortIsInUseException.class, () -> {
-				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60042);
-				ConnectionManager CM2 = new ConnectionManager("127.0.0.1", 60042);
+				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60042, "Alice", null);
+				ConnectionManager CM2 = new ConnectionManager("127.0.0.1", 60042, "Alice", null);
 			});
 			
 			// Trying to insert two CEs of the same name into one CM
 			assertThrows(ConnectionAlreadyExistsException.class, () -> {
-				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60043);
-				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60040);
-				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60050);
+				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60043, "Bob", null);
+				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60040, null);
+				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60050, null);
 			});
 			
-			// Trying to destroy a non-existent CE 
+			// Trying to destroy a non-existant CE 
 			assertThrows(ManagerHasNoSuchEndpointException.class, () -> {
-				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60045);
+				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60045, "Alice", null);
 				CM.destroyConnectionEndpoint("Bob");
 			});
 			
-			// Trying to access state of non-existent CE
+			// Trying to access state of non-existant CE
 			assertThrows(ManagerHasNoSuchEndpointException.class, () -> {
-				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60046);
+				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60046, "Alice", null);
 				CM.getConnectionState("Bob");
 			});
 			
 			// Trying to send a message when a CE is not connected
 			assertThrows(EndpointIsNotConnectedException.class, () -> {
-				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60047);
-				CM.createNewConnectionEndpoint("Bob", "127.0.0.1", 34341);
-				CM.sendMessage("Bob", TransmissionTypeEnum.TRANSMISSION, "", null, null);
-				
+				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60047, "Alice", null);
+				CM.createNewConnectionEndpoint("Bob", "127.0.0.1", 34341, null);
+				CM.sendMessage("Bob", new NetworkPackage(TransmissionTypeEnum.TEXT_MESSAGE, false));
 			});
 			
 			// Trying to insert two CEs connecting to the same IP:Port pair into one CM
 			// will fail in case same IP:Port pair is currently allowed to enable manual testing
 			assertThrows(IpAndPortAlreadyInUseException.class, () -> {
-				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60044);
-				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60043);
-				CM.createNewConnectionEndpoint("Bob", "127.0.0.1", 60043);
+				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60044, "Charlie", null);
+				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60043, null);
+				CM.createNewConnectionEndpoint("Bob", "127.0.0.1", 60043, null);
 			}, "This failure is most likely caused by identical IP:Port pairs being allowed for manual testing purposes.");
 		}
 		
@@ -282,7 +298,7 @@ public class NetworkTests {
 		 * @throws PortIsInUseException
 		 * 		tried to create a CM which uses a port already used by another CM
 		 * @throws ManagerHasNoSuchEndpointException
-		 * 		attempted sensitive access of a non-existent CE in a CM
+		 * 		attempted sensitive access of a non-existant CE in a CM
 		 * @throws ConnectionAlreadyExistsException
 		 * 		attempted to create a CE with a non-unique ID in a CM
 		 * @throws IpAndPortAlreadyInUseException
@@ -290,8 +306,8 @@ public class NetworkTests {
 		 */
 		@Test
 		public void restarting_wait_for_connections_works() throws IOException, PortIsInUseException, ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException, ManagerHasNoSuchEndpointException {
-			ConnectionManager CMAlice = new ConnectionManager("127.0.0.1", 60055);
-			ConnectionManager CMBob = new ConnectionManager("127.0.0.1", 60056);
+			ConnectionManager CMAlice = new ConnectionManager("127.0.0.1", 60055, "Alice", null);
+			ConnectionManager CMBob = new ConnectionManager("127.0.0.1", 60056, "Bob", null);
 			
 			if (!CMAlice.isWaitingForConnections()) CMAlice.waitForConnections();
 			
@@ -302,7 +318,7 @@ public class NetworkTests {
 			assertTrue(CMAlice.isWaitingForConnections());
 			
 			// Bob attempts to connect to Alice
-			CMBob.createNewConnectionEndpoint("Alice", "127.0.0.1", 60055);
+			CMBob.createNewConnectionEndpoint("Alice", "127.0.0.1", 60055, null);
 			// Alice should accept the connection
 			try {
 				TimeUnit.MILLISECONDS.sleep(500);
@@ -321,10 +337,10 @@ public class NetworkTests {
 		
 	}
 	
+	@Nested
 	/**
 	 * Tests for some of the other functionalities provided by classes in the networkConnection package.
 	 */
-	@Nested
 	class MiscNetworkTests {
 		
 		// TODO Add some tests here where appropriate

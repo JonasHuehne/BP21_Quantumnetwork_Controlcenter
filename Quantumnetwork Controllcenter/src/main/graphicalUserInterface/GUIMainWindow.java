@@ -6,6 +6,7 @@ import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,7 +35,9 @@ import communicationList.Contact;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
+import exceptions.NoKeyWithThatIDException;
 import frame.QuantumnetworkControllcenter;
+import graphicalUserInterface.keyStoreEditor.DebugKeystoreEditor;
 import keyStore.KeyStoreDbManager;
 import keyStore.KeyStoreObject;
 import net.miginfocom.swing.MigLayout;
@@ -49,6 +52,7 @@ import networkConnection.ConnectionType;
  *
  */
 public final class GUIMainWindow implements Runnable{
+
 
 	private Object[][] contactData = {};
 	String[] contactColumnNames = {"Connection Name",
@@ -77,6 +81,7 @@ public final class GUIMainWindow implements Runnable{
 	private ArrayList<String> namesOfConnections = new ArrayList<String>();
 	
 	public HashMap<String,ConnectionType> conType = new HashMap<String,ConnectionType>();
+	protected ArrayList<MessageGUI> openChatWindows = new ArrayList<MessageGUI>();
 
 	/**
 	 * Create the application.
@@ -344,6 +349,40 @@ public final class GUIMainWindow implements Runnable{
 		});
 		connectionDebug.setToolTipText("Used for debugging purposes by the developers. Displays some information about connections to the console.");
 		frame.getContentPane().add(connectionDebug, "cell 0 0");
+		
+		JButton debugButton2 = new JButton("Debug Button 2 (CE Info)");
+		debugButton2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (activeConnection != null) {
+					ConnectionEndpoint active = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection);
+					StringBuilder info = new StringBuilder();
+					info.append("ID: " 				+ active.getID() + System.lineSeparator());
+					info.append("Remote Name: " 	+ active.getRemoteName() + System.lineSeparator());
+					info.append("PK: " 				+ active.getPublicKey() + System.lineSeparator());
+					info.append("KeyID: " 			+ active.getKeyStoreID() + System.lineSeparator());
+					try {
+						info.append("Keystore has an entry for this keyID == " 
+									+ KeyStoreDbManager.doesKeyStreamIdExist(active.getKeyStoreID())
+									+ System.lineSeparator());
+					} catch (SQLException e1) {
+						info.append("Can not reach Keystore. SQL Exception." + System.lineSeparator());
+					}
+					new GenericWarningMessage(info.toString(), 600, 300);
+				}
+			}
+		});
+		debugButton2.setToolTipText("Displays some information about the currently selected CE.");
+		frame.getContentPane().add(debugButton2, "cell 0 0");
+		
+		JButton buttonDebugKeystoreEditor = new JButton("Debug Button 3 (KS Editor)");
+		buttonDebugKeystoreEditor.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				DebugKeystoreEditor dialog = new DebugKeystoreEditor();
+				dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				dialog.setVisible(true);
+			}
+		});
+		frame.getContentPane().add(buttonDebugKeystoreEditor, "cell 0 0");
 	}
 
 	public JFrame getFrame() {
@@ -475,8 +514,10 @@ public final class GUIMainWindow implements Runnable{
 				
 				//Check if Key exists
 				if(connectionTypeCB.getSelectedItem() == ConnectionType.ENCRYPTED) {
-					KeyStoreObject kSO = KeyStoreDbManager.getEntryFromKeyStore(connectionName);
-					if(kSO == null) {
+					KeyStoreObject kSO;
+					try {
+						kSO = KeyStoreDbManager.getEntryFromKeyStore(connectionName);
+					} catch (NoKeyWithThatIDException | SQLException e1) {
 						new GenericWarningMessage("Warning: no valid Key was found for " + connectionName + "! Please generate a Key before using encrypted communication.");
 						connectionTypeCB.setSelectedItem(ConnectionType.AUTHENTICATED);
 					}
@@ -493,7 +534,8 @@ public final class GUIMainWindow implements Runnable{
 		JButton openTransferButton = new JButton("Message System");
 		openTransferButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				new MessageGUI(connectionName);
+				openChatWindows.add(new MessageGUI(connectionName)); 
+				// add opened chat to list, so it can be refreshed when needed
 			}
 		});
 		ceFrame.add(openTransferButton);
@@ -532,6 +574,7 @@ public final class GUIMainWindow implements Runnable{
 			
 			/*
 			 * Update which connections are represented in the connections tab of the GUI
+			 * Also updates the displayed state.
 			 */
 			
 			int ceAmountNew = QuantumnetworkControllcenter.conMan.getConnectionsAmount();
@@ -553,7 +596,6 @@ public final class GUIMainWindow implements Runnable{
 			
 			/*
 			 * Update which connection is the "selected" one and color it accordingly
-			 * Also updates the displayed state
 			 */
 			
 			representedConnectionEndpoints.forEach((k,v)->{
@@ -561,14 +603,7 @@ public final class GUIMainWindow implements Runnable{
 				JButton activeButton = ((JButton) representedConnectionEndpoints.get(k).getComponent(4));
 				JLabel labelCeState = ((JLabel) representedConnectionEndpoints.get(k).getComponent(2));
 				ConnectionEndpoint ce = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(k);
-				ConnectionState state;
-				//If the ce is invalid, switch to ERROR state.
-				if(ce == null) {
-					state = ConnectionState.ERROR;
-				}else {
-					state = ce.reportState();
-				}
-				
+				ConnectionState state = ce.reportState();
 				labelCeState.setText(state.name());
 				labelCeState.revalidate();
 				labelCeState.repaint();
@@ -590,6 +625,9 @@ public final class GUIMainWindow implements Runnable{
 				
 			});
 			
+			// Update any open chat window
+			for (MessageGUI c : openChatWindows) c.refreshMessageLog();
+			
 			/*
 			 * Sleep between the updates to save resources.
 			 */
@@ -597,7 +635,7 @@ public final class GUIMainWindow implements Runnable{
 			try {
 				TimeUnit.MILLISECONDS.sleep(200);
 			} catch (InterruptedException e) {
-				//Ignore Exception as this is only triggered when intentionally shutting down the thread.
+				// TODO Log this
 			}
 			prevActiveConnection = activeConnection;
 		}

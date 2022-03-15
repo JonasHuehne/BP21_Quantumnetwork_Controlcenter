@@ -49,7 +49,7 @@ public class SQLiteCommunicationList implements CommunicationList {
 
     private static final int MIN_PORT_NUMBER = 0;
     private static final int MAX_PORT_NUMBER = 65535;
-    
+
     private static Log log = new Log(SQLiteCommunicationList.class.getName(), LogSensitivity.WARNING);
 
     /**
@@ -293,7 +293,7 @@ public class SQLiteCommunicationList implements CommunicationList {
      */
     @Override
     public Contact query (final String name) {
-        
+
        try {
            	if (connection == null || connection.isClosed()) {
            		if (connectToDb() == false) {

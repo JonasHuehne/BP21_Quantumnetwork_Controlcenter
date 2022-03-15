@@ -5,10 +5,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
+import communicationList.CommunicationList;
 import communicationList.Contact;
 import exceptions.ConnectionAlreadyExistsException;
 import exceptions.IpAndPortAlreadyInUseException;
-import frame.QuantumnetworkControllcenter;
+import qnccLogger.Log;
 
 /**Every time a connection to the local Server Socket is created, a new instance of ConnectionEndpointServerHandler is also created.
  * The purpose of each CESH is to wait for the first message from the connecting Party, the TransmissionTypeEnum.CONNECTION_REQUEST
@@ -23,18 +24,33 @@ import frame.QuantumnetworkControllcenter;
  *
  */
 public class ConnectionEndpointServerHandler extends Thread{
-
-	private Socket clientSocket;	//This Socket is the one that will be handed over to the CE after receiving the initial message containing the foreign IP:::PORT of the connection.
-	private ObjectOutputStream serverOut;	//This is the Outgoing Communication Line that will be handed over to the CE.
-	private ObjectInputStream serverIn;	//This is the Incoming Communication Line that will be used to receive the initial message and is then handed over to the CE.
-	private NetworkPackage receivedMessage;	//This variable is used to hold the initial message once it has been received.
-	private String remoteIP;	//This will be set to the IP Address of the connecting parties ServerSocket based on the contents of the initial message.
-	private int remotePort;	//This will be set to the Port of the connection parties ServerSocket based on the contents of the initial message.
-	private boolean settingUp = true;	//As long as this is true, the CESH will keep trying to receive a message that contains the info needed to connect back to the remote CEs ServerSocket.
 	
-	private boolean acceptedRequest = false;
-	private ConnectionEndpoint ce = null;
+	/** Logger for this CESH */
+	Log ceshLog;
 
+	/** This Socket is the one that will be handed over to the CE after receiving the initial message containing the foreign IP:::PORT of the connection. */
+	private Socket clientSocket;	
+	/** This is the Outgoing Communication Line that will be handed over to the CE. */
+	private ObjectOutputStream serverOut;	
+	/** This is the Incoming Communication Line that will be used to receive the initial message and is then handed over to the CE. */
+	private ObjectInputStream serverIn;	
+	/** This variable is used to hold the initial message once it has been received. */
+	private NetworkPackage receivedMessage;
+	/** This will be set to the IP Address of the connecting parties ServerSocket based on the contents of the initial message. */
+	private String remoteIP;	
+	/** This will be set to the Port of the connection parties ServerSocket based on the contents of the initial message. */
+	private int remotePort;	
+	/** As long as this is true, the CESH will keep trying to receive a message that contains the info needed to connect back to the remote CEs ServerSocket. */
+	private boolean settingUp = true;	
+	
+	/** For control flow, this flag indicates whether we have accepted an incoming connection request */
+	private boolean acceptedRequest = false;
+	/** If a connection request arrives on the input stream of the socket created by the ServerSocket.accept() method, we create a ConnectionEndpoint in response */
+	private ConnectionEndpoint ce = null;
+	/** Will be passed to the CE created in response to an incoming connection request, will be the name the created CE tells its partner in response */
+	private String localName;
+	/** The {@linkplain ConnectionManager} that created this CESH */
+	private ConnectionManager ownerCM;
 	
 	/**
 	 * Constructor.
@@ -43,17 +59,21 @@ public class ConnectionEndpointServerHandler extends Thread{
 	 * 		a client socket created by a ServerSockets .accept() method <br>
 	 * 		the CESH will listen for a connection request on this, 
 	 * 		and if one is received this will be passed on as the client socket for the newly created {@linkplain ConnectionEndpoint}
-	 * @param localIP
-	 * 		local IP that will be passed to the newly created  {@linkplain ConnectionEndpoint}
-	 * @param localPort
-	 * 		local port that will be passed to the newly created {@linkplain ConnectionEndpoint}
+	 * @param owner
+	 * 		the {@linkplain ConnectionManager} that this CESH was created in <br>
+	 * 		may not be null
 	 * @throws IOException 
 	 * 		if an I/O Exception occurred trying to construct an internal ObjectInputStream from the clientsocket's InputStream
 	 */
-	ConnectionEndpointServerHandler(Socket newClientSocket) throws IOException {
+	ConnectionEndpointServerHandler(Socket newClientSocket, ConnectionManager owner) throws IOException {
 		clientSocket = newClientSocket;
+		this.ownerCM = owner;
+		this.localName = owner.getLocalName();
+		
+		this.ceshLog = new Log("CESH Logger (Owner: " + owner.getLocalName() + ":" + owner.getLocalPort() + ")");
 	}
 	
+	@Override
 	public void run() {
 		try {
 			serverOut = new ObjectOutputStream(clientSocket.getOutputStream());
@@ -65,24 +85,34 @@ public class ConnectionEndpointServerHandler extends Thread{
 				ntt.start();
 				
 				if((receivedMessage = (NetworkPackage) serverIn.readObject()) != null) {
-					System.out.println("CESH Received a Message: "+ receivedMessage.getHead().toString());
+					ceshLog.logInfo("[CESH " + localName + "] Received a Message: -.-"+ receivedMessage.getType().toString() + " - " + receivedMessage.getMessageArgs() +"-.-");
 					
 					//Create new CE
-					if(receivedMessage.getHead() == TransmissionTypeEnum.CONNECTION_REQUEST) {
+					if(receivedMessage.getType() == TransmissionTypeEnum.CONNECTION_REQUEST) {
 						ntt.abortTimer();
-						remoteIP = receivedMessage.getTypeArg().split(":::")[0];
-						remotePort = Integer.valueOf(receivedMessage.getTypeArg().split(":::")[1]);
-						
-						//Check if ContactDB contains the IP:PORT Pair already. If so, the Name and Sig is taken from the DB.
+						remoteIP = receivedMessage.getMessageArgs().localIP();
+						remotePort = receivedMessage.getMessageArgs().localPort();
+
+						/*
+						 * Set the remote name and pk associated with the CE.
+						 */
 						String remoteName;
-						Contact dbEntry = QuantumnetworkControllcenter.communicationList.query(remoteIP, remotePort);
-						if(dbEntry != null && !remoteIP.equals("127.0.0.1") && !remoteIP.equals("localhost")) {
-							System.out.println("Found pre-existing DB Entry that had matching IP:PORT to new connection request. Using Name and Sig from DB.");
-							remoteName = dbEntry.getName();
-						}else {
-							remoteName = receivedMessage.getTypeArg().split(":::")[2];
+						// If the owner CM has a commlist, check it
+						CommunicationList commList = ownerCM.getCommList();
+						if (commList != null) {
+							Contact dbEntry = commList.query(remoteIP, remotePort);
+							if(dbEntry != null && !remoteIP.equals("127.0.0.1") && !remoteIP.equals("localhost")) {
+								// Set the values accordingly, if the commlist has an entry for that IP:Port pair
+								ceshLog.logInfo("Found pre-existing DB Entry that had matching IP:PORT to new connection request. Using Name and Sig from DB.");
+								remoteName = dbEntry.getName();
+							} else { // otherwise, no pk & set remote name based on message args
+								remoteName = receivedMessage.getMessageArgs().userName();
+							}
+						} else {
+							remoteName = receivedMessage.getMessageArgs().userName();
 						}
-						ce = QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(remoteName, clientSocket, serverOut, serverIn, remoteIP, remotePort);
+
+						ce = ownerCM.createNewConnectionEndpoint(remoteName, clientSocket, serverOut, serverIn, remoteIP, remotePort);
 						ce.setRemoteName(remoteName);
 						settingUp = false;
 						acceptedRequest = true;
@@ -108,7 +138,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 	 * This stops the thread.
 	 */
 	public void terminateThread() {
-		System.out.println("Terminating ConnectionEndpointHandlerThread!");
+		ceshLog.logInfo("Terminating ConnectionEndpointHandlerThread!");
 		settingUp = false;
 		this.interrupt();
 	}
@@ -119,12 +149,6 @@ public class ConnectionEndpointServerHandler extends Thread{
 	public boolean acceptedRequest() {
 		return acceptedRequest;
 	}
-	
-	/**
-	 * @return the ConnectionEndpoint created by this CESH accepting a request, may be null if no request was accepted
-	 */
-	public ConnectionEndpoint getCE() {
-		return ce;
-	}
+
 	
 }

@@ -1,16 +1,19 @@
 package graphicalUserInterface;
 
 import java.awt.BorderLayout;
+import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.awt.Desktop;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -18,19 +21,15 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
 import frame.Configuration;
-import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
-
-import javax.swing.JComboBox;
-import javax.swing.DefaultComboBoxModel;
 
 /**This Dialog contains settings such as the own ServerIP/Port
  * 
  * @author Jonas Huehne, Sasha Petri
  *
  */
-public class SettingsDialog extends JDialog {
+public class SettingsDialog extends JFrame {
 
 	private final JPanel contentPanel = new JPanel();
 	private JTextField ownNameTextField;
@@ -309,6 +308,9 @@ public class SettingsDialog extends JDialog {
 	 */
 	private void writeSettings() {
 		
+		if(!Configuration.getProperty("UserName").equals(ownNameTextField.getText())) {
+			MessageSystem.conMan.setLocalName(ownNameTextField.getText());
+		}
 		Configuration.setProperty("UserName", ownNameTextField.getText());
 		if(!Configuration.getProperty("UserIP").equals(ownIPTextField.getText())) {
 			MessageSystem.conMan.destroyAllConnectionEndpoints();

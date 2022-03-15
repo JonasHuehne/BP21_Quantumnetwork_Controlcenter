@@ -101,10 +101,10 @@ public class CESignatureQueryDialog extends JFrame {
 				new DiscardMessageDialog(connectionID);
 			}
 		});
-		
+
 		this.connectionID = connectionID;
 		titleNewLabel.setText("Please enter the public signature key of " + QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getRemoteName() + "_" + QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getRemoteAddress() + "_" + QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getRemotePort());
-		
+
 	}
 
 }

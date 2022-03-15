@@ -8,6 +8,7 @@ import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.Alignment;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -21,7 +22,7 @@ import net.miginfocom.swing.MigLayout;
  *
  */
 
-public class ContactAddDialog extends JDialog {
+public class ContactAddDialog extends JFrame {
 	private JTextField nameTextField;
 	private JTextField ipTextField;
 	private JTextField portTextField;

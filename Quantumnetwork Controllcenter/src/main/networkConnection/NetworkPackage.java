@@ -1,48 +1,163 @@
 package networkConnection;
 
 import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Random;
 
-/**A wrapper for a String Transmission that includes a head String that is used to identify the transmission type/purpose.
- * 
- * @author Jonas Huehne
- *
+import messengerSystem.Authentication;
+
+/**
+ * Information transmitted through the network is transmitted in the form of objects of this class.
+ * NetworkPackages have data content given as a byte array, may be signed, and also have arguments,
+ * which can contain meta-information about the data contained in the package. Such meta information
+ * may, for example, be the name of the file contained in the package, or the key index of the mutual
+ * key to use when decrypting it. Not all packages are used for direct text / file data transfer,
+ * instead, they may also be used to, for example, control connection establishment or key generation.
+ * For this, every package has a type, which can be retrieved via {@linkplain #getType()}. 
+ * This type allows receivers to know what to do with the package, see also {@linkplain NetworkPackageHandler}.
+ * @author Jonas Huehne, Sasha Petri
  */
 public class NetworkPackage implements Serializable{
 
-	private static final long serialVersionUID = -6406450845229886762L;
-	private TransmissionTypeEnum head;
-	private String typeArgument; 
+	private static final long serialVersionUID = -6406450845229886763L;
+	/** Transmission type of the Network Package, used when parsing it to identify what to do with the package */
+	private TransmissionTypeEnum type;
+	/** Content of the package, relevant for data transfer (e.g. text messages, file transfer) */
 	private byte[] content;
+	/** Signature of the package, used to verify the authenticity and integrity of the package */
 	private byte[] signature;
 	
-	/**Supply the newly created NetworkPackage with a TransmissionType, an Argument depending on the type and the actual content of the package.
-	 * 
-	 * @param head	the type of the transmission
-	 * @param typeArgument	additional argument depending on the transmission type
-	 * @param content	the actual content of the transmission
-	 * @param sig	the signature if the NetworkPackage is used for authenticated communication
+	/** meta information about the message being sent */
+	private MessageArgs args;
+	/** ID for the package */
+	private byte[] packageID;
+	/** true <==> the recipient is expected to send a package of type {@linkplain TransmissionTypeEnum#CONNECTION_CONFIRMATION} back */
+	private boolean expectConfirmation;
+	
+	/**
+	 * Full constructor, used for packages where the content is relevant.
+	 * @param type
+	 * 		the type of message to send
+	 * @param args
+	 * 		meta-information about the message, e.g. the file name, key index etc, may be null
+	 * @param content
+	 * 		the content, may be null (will result in the content being an empty array)
+	 * @param expectConfirmation
+	 * 		true to tell the receiver to send a confirmation message back <br>
+	 * 		false to tell the receiver to not send a confirmation message back
 	 */
-	public NetworkPackage(TransmissionTypeEnum head, String typeArgument, byte[] content, byte[] sig) {
-		this.head = head;
-		this.typeArgument = typeArgument;
-		this.content = content;
-		this.signature = sig;
+	public NetworkPackage(TransmissionTypeEnum type, MessageArgs args, byte[] content, boolean expectConfirmation) {
+		this.type 		= type;
+		this.args 		= (args == null) ? new MessageArgs() : args; // to avoid NPE
+		this.content 	= (content == null) ? new byte[] {} : content; // to avoid any issues with getTotalData()
+		this.packageID 	= new byte[32];
+		generatePackageID();
+		this.expectConfirmation = expectConfirmation;
+	}
+	
+	/**
+	 * Used for messages that have no content, e.g. connection termination requests.
+	 * @param type
+	 * 		the type of message to send
+	 * @param args
+	 * 		meta-information about the message, necessary for some types (such as connection requests)
+	 * @param expectConfirmation
+	 * 		true to tell the receiver to send a confirmation message back <br>
+	 * 		false to tell the receiver to not send a confirmation message back
+	 */
+	public NetworkPackage(TransmissionTypeEnum type, MessageArgs args, boolean expectConfirmation) {
+		this(type, args, null, expectConfirmation);
+	}
+	
+	/**
+	 * Used for messages that have no content and no relevant message arguments.
+	 * @param type
+	 * 		the type of message to send
+	 * @param expectConfirmation
+	 * 		true to tell the receiver to send a confirmation message back <br>
+	 * 		false to tell the receiver to not send a confirmation message back	
+	 */
+	public NetworkPackage(TransmissionTypeEnum type, boolean expectConfirmation) {
+		this(type, new MessageArgs(), null, expectConfirmation);
+	}
+	
+	/**
+	 * Signs the NetworkPackage. <br>
+	 * Signs not only the content, but also the meta-data, specifically: <br>
+	 *  - the type {@link #getType()} <br>
+	 *  - the arguments {@link #getMessageArgs()} <br>
+	 *  - the flag on whether confirmation is expected {@link #expectedToBeConfirmed()} <br>
+	 *  - the package id <br>
+	 *  Sets the signature, which can be retrieved with {@link #getSignature()}.
+	 *  @param auth
+	 *  		the authenticator to use
+	 */
+	public void sign(Authentication auth) {
+		/*
+		 * For the integrity of a NetworkPackage, not only the content is important,
+		 * but also the type, arguments, and whether a confirmation is expected.
+		 * All of this needs to be signed so that if they are changed along the way the recipient can spot it.
+		 * Unfortunately, we can't have two seperate signatures for the meta data and content (see: replay attack)
+		 * so we have to create a new, large array in memory. Because of this it is discouraged
+		 * to create especially large NetworkPackages.
+		 */
+		this.signature = auth.sign(getTotalData());
+	}
+	
+	/**
+	 * Verifies this NetworkPackage. <br>
+	 * Verifies not only the content, but also the meta-data, specifically: <br>
+	 *  - the type {@link #getType()} <br>
+	 *  - the arguments {@link #getMessageArgs()} <br>
+	 *  - the flag on whether confirmation is expected {@link #expectedToBeConfirmed()} <br>
+	 *  - the package id <br>
+	 * @param auth
+	 * 		the authenticator to use, needs to be the same as was used for the signature
+	 * 		for the verification to be successful
+	 * @param sender
+	 * 		the sender of the message, will be needed to look up the public key
+	 * @return
+	 * 		true if the signature is valid, false if otherwise
+	 */
+	public boolean verify(Authentication auth, String sender) {
+		return auth.verify(getTotalData(), signature, sender);
+	}
+	
+	/**
+	 * @return the total data of the message as a single byte array, used for authentication
+	 */
+	private byte[] getTotalData() {
+		byte[] byteArgs = args.toString().getBytes(StandardCharsets.ISO_8859_1);
+		byte[] bytesForType = type.toString().getBytes(StandardCharsets.ISO_8859_1);
+		byte byteExpectConfirm = expectConfirmation ? (byte) 1 : (byte) 0;
+		
+		int metaDataLength = byteArgs.length + bytesForType.length + 1 + packageID.length;
+		
+		byte[] totalData = new byte[metaDataLength + content.length];
+		System.arraycopy(byteArgs, 		0, totalData, 	0, 										byteArgs.length);
+		System.arraycopy(bytesForType, 	0, totalData, 	byteArgs.length, 						bytesForType.length);
+		System.arraycopy(packageID, 	0, totalData,  	byteArgs.length + bytesForType.length, 	packageID.length);
+		totalData[metaDataLength - 1] = byteExpectConfirm;
+		System.arraycopy(content, 0, totalData, metaDataLength, content.length);
+		
+		return totalData;
 	}
 	
 	/**Returns the type of this NetworkPackage.
 	 * 
 	 * @return the TransmissionTypeEnum that describes this NetworkPackages type.
 	 */
-	public TransmissionTypeEnum getHead() {
-		return head;
+	public TransmissionTypeEnum getType() {
+		return type;
 	}
 	
-	/**Returns the argument of this transmission, may be "" depending on the transmissionType.
-	 * 
-	 * @return the argument String
+	/**
+	 * @return the arguments of this message <br>
+	 * for many message types, they will not be relevant
 	 */
-	public String getTypeArg() {
-		return typeArgument;
+	public MessageArgs getMessageArgs() {
+		return args;
 	}
 	
 	/**Returns the content of the transmission. May be "".
@@ -55,10 +170,51 @@ public class NetworkPackage implements Serializable{
 	
 	/**Returns the signature of the transmission. May be "" for non-authenticated messages.
 	 * 
-	 * @return the signature of the transmission.
+	 * @return the signature of the transmission
 	 */
 	public byte[] getSignature() {
 		return signature;
+	}
+	
+	/**
+	 * Used to generate an ID for a package.
+	 * Not guaranteed to be unique, but mathematically likely to.
+	 */
+	private void generatePackageID() {
+		new Random().nextBytes(packageID);
+	}
+
+
+	/**
+	 * @return true if this message is expected to be confirmed by the receiver <br>
+	 * 		   false otherwise
+	 */
+	public boolean expectedToBeConfirmed() {
+		return expectConfirmation;
+	}
+
+
+	/**
+	 * @return ID of this package <br>
+	 * not guaranteed to be unique across all runs, but mathematically likely to be
+	 */
+	public byte[] getID() {
+		return packageID;
+	}
+	
+	/**
+	 * Used to reduce the size of the message for logging purposes.
+	 * Deletes the contents of the message.
+	 */
+	public void clearContents() {
+		this.content = new byte[] {};
+	}
+
+	/**
+	 * @return the base 64 encoded version of this packages message ID
+	 */
+	public String getStringID() {
+		return Base64.getEncoder().encodeToString(getID());
 	}
 	
 }
