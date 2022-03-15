@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.awt.event.ActionEvent;
 
+/**
+ * Debug Window for viewing and editing the keystore.
+ * @author Sasha Petri
+ */
 public class DebugKeystoreEditor extends JFrame {
 	private JTable table;
 	public DebugKeystoreEditor() {
@@ -73,6 +77,9 @@ public class DebugKeystoreEditor extends JFrame {
 	}
 	
 	
+	/**
+	 * Clears the entries of the table.
+	 */
 	private void clearTable() {
 		DefaultTableModel model = (DefaultTableModel) table.getModel();
 		int rc = model.getRowCount();
@@ -81,6 +88,9 @@ public class DebugKeystoreEditor extends JFrame {
 		}
 	}
 	
+	/**
+	 * Updates the entries in the table.
+	 */
 	protected void updateTable() {
 		clearTable();
 		ArrayList<KeyStoreObject> keys = new ArrayList<>();
