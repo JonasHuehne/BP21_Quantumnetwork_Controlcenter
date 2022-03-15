@@ -25,6 +25,10 @@ import messengerSystem.MessageSystem;
 import net.miginfocom.swing.MigLayout;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionState;
+import networkConnection.ConnectionType;
+import networkConnection.MessageArgs;
+import networkConnection.NetworkPackage;
+import networkConnection.TransmissionTypeEnum;
 
 /**This GUI contains a chatLog that visualizes the MessageLog of a connectionEndpoint.
  * It allows for sending plain-text Messages and for sending Files.
@@ -42,6 +46,8 @@ public class MessageGUI extends JFrame {
 
 	/** Used for chat refreshing */
 	private int loggedMessagesAmount = 0;
+	/** Used for chat refreshing, specifically, logging received files */
+	private int loggedFilesAmount = 0;
 	
 	/**
 	 * Create the frame.
@@ -137,7 +143,8 @@ public class MessageGUI extends JFrame {
 				if (choice == fc.APPROVE_OPTION) {
 					// If user has approved of sending this file, send it with the currently selected security setting
 					try {
-					switch (QuantumnetworkControllcenter.guiWindow.conType.get(connectionID)) {
+						ConnectionType t = QuantumnetworkControllcenter.guiWindow.conType.get(connectionID);
+					switch (t) {
 						case AUTHENTICATED: MessageSystem.sendFile(connectionID, f, true, true);
 							break;
 						case ENCRYPTED: MessageSystem.sendEncryptedFile(connectionID, f, true);
@@ -145,8 +152,9 @@ public class MessageGUI extends JFrame {
 						case UNSAFE: MessageSystem.sendFile(connectionID, f, false, false);
 							break;
 						default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selected!");
-							break;
+							return;
 						}
+						MessageSystem.conMan.getConnectionEndpoint(connectionID).appendMessageToChatLog(true, false, "Sent the file " + f.toString() + " in " + t + " mode.");
 					} catch (CouldNotSendMessageException e1) {
 						new GenericWarningMessage("ERROR - Could not send File! An Exception occurred. Please see the log for details.");
 					}
@@ -165,15 +173,57 @@ public class MessageGUI extends JFrame {
 		ConnectionEndpoint ce = MessageSystem.conMan.getConnectionEndpoint(connectionID);
 		if (ce == null) return; // can not update message log for a CE that no longer exists
 		if (ce.getChatLog() == null) return; // can not update a log that does not exist
+		// log text messages
 		ArrayList<SimpleEntry<String, String>> log = ce.getChatLog();
 		int logSize = log.size(); // measure this once to prevent desync due to multiple threads
 		if (logSize > loggedMessagesAmount) {
 			// add each new message to the log
 			for (int i = 0; i < logSize - loggedMessagesAmount; i++) {
 				SimpleEntry<String, String> msgToLog = log.get(loggedMessagesAmount + i);
-				chatLogTextPane.setText(chatLogTextPane.getText() + System.lineSeparator() + msgToLog.getKey() + " wrote: " + msgToLog.getValue());
+				chatLogTextPane.setText(chatLogTextPane.getText() + System.lineSeparator() + msgToLog.getKey() + " : " + msgToLog.getValue());
 			}
 			loggedMessagesAmount = logSize;
+		}
+
+		addReceivedFilesToMessageLog(ce);
+	}
+	
+	/**
+	 * Checks if new files have been received on the CE, and if they have, adds an appropriate message to the chat log.
+	 * @param ce
+	 * 		ConnectionEndpoint for which this is the message GUI
+	 */
+	private void addReceivedFilesToMessageLog(ConnectionEndpoint ce) {
+		// for each received file, add an appropriate chat message
+		ArrayList<NetworkPackage> filesLog = ce.getLoggedPackagesOfType(TransmissionTypeEnum.FILE_TRANSFER);
+		if (filesLog == null)  {
+			return;
+		} else {
+			if (filesLog.size() > loggedFilesAmount) {
+				// add an entry for each new received file to the chat
+				for (int i = 0; i < filesLog.size() - loggedFilesAmount; i++) {
+					NetworkPackage nextFileToLog = filesLog.get(loggedFilesAmount + i);
+					MessageArgs filePackageArgs = nextFileToLog.getMessageArgs();
+					
+					String securityLevel = "UNKNOWN"; // security level at which the file was sent/received
+					if (filePackageArgs.keyIndex() >= 0) {
+						securityLevel = ConnectionType.ENCRYPTED.toString();
+					} else {
+						if (nextFileToLog.getSignature() != null) {
+							securityLevel =  ConnectionType.AUTHENTICATED.toString();
+						} else {
+							securityLevel = ConnectionType.UNSAFE.toString();
+						}
+					}
+		
+					String fileName = filePackageArgs.fileName();
+					
+					String appendToChat = ce.getID() + " : Sent the file " + fileName + " in security mode " + securityLevel + ".";
+					
+					chatLogTextPane.setText(chatLogTextPane.getText() + System.lineSeparator() + appendToChat);
+				}
+				loggedFilesAmount = filesLog.size();
+			}
 		}
 	}
 }
