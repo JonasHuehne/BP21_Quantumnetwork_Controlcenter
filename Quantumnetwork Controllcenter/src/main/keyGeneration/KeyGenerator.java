@@ -137,7 +137,7 @@ public class KeyGenerator implements Runnable{
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
 	private void signalSourceAPI() throws EndpointIsNotConnectedException {
-		//Create connection to Source Server
+		/*//Create connection to Source Server
 		String sourceServerConnectionName = "SourceServer_" + MessageSystem.generateRandomMessageID();
 		try {
 			String sourceIP = Configuration.getProperty("SourceIP");
@@ -162,7 +162,7 @@ public class KeyGenerator implements Runnable{
 		MessageArgs sourceSignalArgs = new MessageArgs(filename, -1);
 		NetworkPackage signalToSource = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SOURCE_SIGNAL, sourceSignalArgs, sourceInfoAsBytes, false);
 		signalToSource.sign(authenticator);
-		owner.pushMessage(signalToSource);
+		owner.pushMessage(signalToSource); */
 	}
 
 	

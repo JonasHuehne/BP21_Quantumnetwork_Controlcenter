@@ -142,7 +142,7 @@ public class MessageGUI extends JFrame {
 							break;
 						case ENCRYPTED: MessageSystem.sendEncryptedFile(connectionID, f, true);
 							break;
-						case UNSAFE: MessageSystem.sendFile(connectionID, f, false, true);
+						case UNSAFE: MessageSystem.sendFile(connectionID, f, false, false);
 							break;
 						default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selected!");
 							break;

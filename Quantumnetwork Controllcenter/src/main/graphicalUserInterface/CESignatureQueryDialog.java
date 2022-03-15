@@ -5,6 +5,7 @@ import java.awt.FlowLayout;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 
@@ -22,7 +23,7 @@ import java.awt.Font;
  * @author Jonas Huehne
  *
  */
-public class CESignatureQueryDialog extends JDialog {
+public class CESignatureQueryDialog extends JFrame {
 
 	private final JPanel contentPanel = new JPanel();
 	private String connectionID;

@@ -13,6 +13,7 @@ import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -28,7 +29,7 @@ import messengerSystem.SHA256withRSAAuthentication;
  * @author Jonas Huehne, Sasha Petri
  *
  */
-public class SettingsDialog extends JDialog {
+public class SettingsDialog extends JFrame {
 
 	private final JPanel contentPanel = new JPanel();
 	private JTextField ownNameTextField;

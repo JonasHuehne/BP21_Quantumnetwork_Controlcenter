@@ -7,6 +7,7 @@ import java.awt.event.ActionListener;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
@@ -22,7 +23,7 @@ import net.miginfocom.swing.MigLayout;
  * @author Jonas Huehne, Sasha Petri
  *
  */
-public class ConnectionAddDialog extends JDialog {
+public class ConnectionAddDialog extends JFrame {
 	private JTextField textFieldContactName;
 	private JTextField textFieldContactIpAddr;
 	private JTextField textFieldContactPort;
