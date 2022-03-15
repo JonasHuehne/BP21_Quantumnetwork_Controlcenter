@@ -37,6 +37,7 @@ import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.NoKeyWithThatIDException;
 import frame.QuantumnetworkControllcenter;
+import graphicalUserInterface.keyStoreEditor.DebugKeystoreEditor;
 import keyStore.KeyStoreDbManager;
 import keyStore.KeyStoreObject;
 import net.miginfocom.swing.MigLayout;
@@ -364,6 +365,16 @@ public final class GUIMainWindow implements Runnable{
 		});
 		debugButton2.setToolTipText("Displays some information about the currently selected CE.");
 		frame.getContentPane().add(debugButton2, "cell 0 0");
+		
+		JButton buttonDebugKeystoreEditor = new JButton("Debug Button 3 (KS Editor)");
+		buttonDebugKeystoreEditor.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				DebugKeystoreEditor dialog = new DebugKeystoreEditor();
+				dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				dialog.setVisible(true);
+			}
+		});
+		frame.getContentPane().add(buttonDebugKeystoreEditor, "cell 0 0");
 	}
 
 	public JFrame getFrame() {
