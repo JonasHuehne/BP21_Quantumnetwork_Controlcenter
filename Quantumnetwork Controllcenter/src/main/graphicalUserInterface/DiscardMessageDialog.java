@@ -1,14 +1,22 @@
 package graphicalUserInterface;
 
-import messengerSystem.SHA256withRSAAuthenticationGUI;
-import messengerSystem.SigKeyQueryInteractionObject;
-
-import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.MouseInfo;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+
+import javax.swing.JButton;
+import javax.swing.JDialog;
+import javax.swing.JPanel;
+import javax.swing.JTextPane;
+import javax.swing.UIManager;
+
+import messengerSystem.SigKeyQueryInteractionObject;
 
 /**
  * This is a dialog to ask the user whether to discard a message that could not be authenticated

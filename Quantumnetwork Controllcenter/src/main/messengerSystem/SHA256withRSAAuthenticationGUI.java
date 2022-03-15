@@ -1,20 +1,15 @@
 package messengerSystem;
 
-import communicationList.Contact;
 import exceptions.NoValidPublicKeyException;
-import frame.QuantumnetworkControllcenter;
 import graphicalUserInterface.CESignatureQueryDialog;
 import graphicalUserInterface.GenericWarningMessage;
-import networkConnection.ConnectionEndpoint;
 import qnccLogger.Log;
 import qnccLogger.LogSensitivity;
-
-import java.security.PublicKey;
 
 /**
  * A subclass to handle the interaction between the gui and the authentication process where necessary
  *
- * @author Sarah Schumann
+ * @author Sarah Schumann, Sasha Petri
  */
 public class SHA256withRSAAuthenticationGUI extends SHA256withRSAAuthentication {
 
@@ -32,43 +27,43 @@ public class SHA256withRSAAuthenticationGUI extends SHA256withRSAAuthentication 
      * @param sender the sender of the message, needed to look up the public key in the communication list
      * @return true if the signature matches the message, false otherwise or if Error
      */
-    @Override
-    public boolean verify (final byte[] message, final byte[] receivedSignature,
+    @Override // synchronized is needed for wait(..) to work
+    public synchronized boolean verify (final byte[] message, final byte[] receivedSignature,
                            final String sender) {
-        Contact senderEntry = QuantumnetworkControllcenter.communicationList.query(sender);
-        if(senderEntry == null
-                || senderEntry.getSignatureKey().equals(Utils.NO_KEY)) {
-            ConnectionEndpoint senderCE = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(sender);
-            if (senderCE == null) {
-                log.logError("Error: No connection endpoint for " + sender + " found.", new RuntimeException());
-                return false;
-            }
-            String pubKeyString = senderCE.getSigKey();
-            if (pubKeyString.equals("")) {
-                SigKeyQueryInteractionObject sigKeyQuery = new SigKeyQueryInteractionObject();
-                boolean invalidKey = true;
-                new CESignatureQueryDialog(sender, sigKeyQuery);
-                while (invalidKey) {
-                    if (sigKeyQuery.isAbortVerify()) {
-                        log.logWarning("Verification aborted, message will be shown unauthenticated.", new NoValidPublicKeyException(sender));
-                        return true;
-                    } else if (sigKeyQuery.isDiscardMessage()) {
-                        log.logError("Verification aborted, message will be discarded.", new NoValidPublicKeyException(sender));
-                        return false;
-                    } else if (sigKeyQuery.isContinueVerify()) {
-                        PublicKey publicKey = getPublicKeyFromString(senderCE.getSigKey());
-                        if (publicKey == null) {
-                            new CESignatureQueryDialog(sender, sigKeyQuery);
-                            GenericWarningMessage noKeyWarning = new GenericWarningMessage("Invalid public key entered.");
-                            noKeyWarning.setAlwaysOnTop(true);
-                            sigKeyQuery.setContinueVerify(false);
-                        } else {
-                            invalidKey = false;
-                        }
-                    }
+            String pubKeyString = Utils.getPkIfPossible(sender);
+            if (pubKeyString == null) {
+                SigKeyQueryInteractionObject skq = new SigKeyQueryInteractionObject();
+                new CESignatureQueryDialog(sender, skq);
+                while (!(skq.isAbortVerify() || skq.isContinueVerify() || skq.isDiscardMessage())) { 
+                	try { // wait for a bit between each check to not eat up the CPU
+						wait(100);
+					} catch (InterruptedException e) {
+						// this happens if the message waiting thread is interrupted
+						// <Sasha> as far as I know this shouldn't happen, but if it does
+						// the verification fails and the event is logged
+						log.logError("Verification aborted due to interrupt, message will be discarded.", e);
+	                    return false;
+					}
+                }
+                if (skq.isContinueVerify()) { // User has selected "ok" after entering a key
+                	if (Utils.getPkIfPossible(sender) == null) { // if key was null or empty, repeat prompt
+                		GenericWarningMessage noKeyWarning = new GenericWarningMessage("Invalid public key entered.");
+                        noKeyWarning.setAlwaysOnTop(true);
+                        return this.verify(message, receivedSignature, sender);
+                	} else { // if valid key was entered, verify
+                		return super.verify(message, receivedSignature, sender);
+                	}
+                } else if(skq.isDiscardMessage()) { // user discards the message
+                	log.logError("Verification aborted, message will be discarded.", new NoValidPublicKeyException(sender));
+                    return false;
+                } else if(skq.isAbortVerify()) { // user wants to read message even though unverified
+                	log.logWarning("Verification aborted, message will be shown unauthenticated.", new NoValidPublicKeyException(sender));
+                    return true;
                 }
             }
-        }
-        return super.verify(message, receivedSignature, sender);
-    }
+            // if a pk exists, use it to verify
+            return super.verify(message, receivedSignature, sender);
+     }
+       
 }
+    

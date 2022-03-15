@@ -37,7 +37,7 @@ public class CESignatureQueryDialog extends JFrame {
 		getContentPane().setLayout(new BorderLayout());
 		setVisible(true);
 		toFront();
-		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		contentPanel.setLayout(new FlowLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
