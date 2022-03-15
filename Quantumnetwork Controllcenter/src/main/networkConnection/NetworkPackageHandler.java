@@ -23,7 +23,7 @@ import exceptions.VerificationFailedException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import keyStore.KeyStoreDbManager;
-import messengerSystem.Authentication;
+import messengerSystem.SignatureAuthentication;
 import messengerSystem.MessageSystem;
 import qnccLogger.Log;
 
@@ -219,7 +219,7 @@ public class NetworkPackageHandler {
 	
 	private static void handleTextMessage(ConnectionEndpoint ce, NetworkPackage msg) throws CouldNotDecryptMessageException, VerificationFailedException {
 		if (msg.getSignature() != null) { // if the message is signed, verify it
-			Authentication authenticator = MessageSystem.getAuthenticator(); // the auth currently in use by the message system
+			SignatureAuthentication authenticator = MessageSystem.getAuthenticator(); // the auth currently in use by the message system
 			if (msg.verify(authenticator, ce.getID())) {
 				// If the message is also encrypted, try to decrypt it
 				if (msg.getMessageArgs().keyIndex() != -1) {

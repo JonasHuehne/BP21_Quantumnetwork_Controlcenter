@@ -34,7 +34,7 @@ public class SHA256withRSAAuthenticationGUI extends SHA256withRSAAuthentication 
                 log.logError("Error: No connection endpoint for " + sender + " found.", new RuntimeException());
                 return false;
             }
-            String pubKeyString = senderCE.getSigKey();
+            String pubKeyString = senderCE.getPublicKey();
             if (pubKeyString.equals("")) {
                 continueVerify = false;
                 abortVerify = false;
@@ -49,7 +49,7 @@ public class SHA256withRSAAuthenticationGUI extends SHA256withRSAAuthentication 
                         log.logError("Verification aborted, message will be discarded.", new NoValidPublicKeyException(sender));
                         return false;
                     } else if (continueVerify) {
-                        PublicKey publicKey = getPublicKeyFromString(senderCE.getSigKey());
+                        PublicKey publicKey = getPublicKeyFromString(senderCE.getPublicKey());
                         if (publicKey == null) {
                             new CESignatureQueryDialog(sender);
                             GenericWarningMessage noKeyWarning = new GenericWarningMessage("Invalid public key entered.");

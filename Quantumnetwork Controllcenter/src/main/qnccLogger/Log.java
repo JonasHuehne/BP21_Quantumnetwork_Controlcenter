@@ -14,6 +14,8 @@ public class Log {
 	private Logger logger;
 	private FileHandler fileHandler = new SingleFileHandler().getFileHandler();
 	
+	public static final LogSensitivity DEFAULT_LEVEL = LogSensitivity.WARNING;
+	
 	/**
 	 * creates the logger with a given Name <br>
 	 * parameter loggerName appears after "[at]: " in log file <br>
@@ -37,6 +39,16 @@ public class Log {
 		default:
 			logger.setLevel(Level.WARNING);
 		}
+	}
+	
+	/**
+	 * Creates the logger with the given name,
+	 * with the default severity level of {@link #DEFAULT_LEVEL}.
+	 * @param loggerName
+	 * 		the name of the logger
+	 */
+	public Log(String loggerName) {
+		this(loggerName, DEFAULT_LEVEL);
 	}
 	
 	/**

@@ -5,7 +5,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Random;
 
-import messengerSystem.Authentication;
+import messengerSystem.SignatureAuthentication;
 
 /**
  * Information transmitted through the network is transmitted in the form of objects of this class.
@@ -93,7 +93,7 @@ public class NetworkPackage implements Serializable{
 	 *  @param auth
 	 *  		the authenticator to use
 	 */
-	public void sign(Authentication auth) {
+	public void sign(SignatureAuthentication auth) {
 		/*
 		 * For the integrity of a NetworkPackage, not only the content is important,
 		 * but also the type, arguments, and whether a confirmation is expected.
@@ -120,7 +120,7 @@ public class NetworkPackage implements Serializable{
 	 * @return
 	 * 		true if the signature is valid, false if otherwise
 	 */
-	public boolean verify(Authentication auth, String sender) {
+	public boolean verify(SignatureAuthentication auth, String sender) {
 		return auth.verify(getTotalData(), signature, sender);
 	}
 	

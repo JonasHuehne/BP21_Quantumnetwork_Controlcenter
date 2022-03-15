@@ -37,9 +37,9 @@ import exceptions.NotEnoughKeyLeftException;
 import exceptions.PortIsInUseException;
 import frame.Configuration;
 import keyStore.KeyStoreDbManager;
-import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
+import messengerSystem.SignatureAuthentication;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
 
@@ -276,7 +276,7 @@ public class ExternalAPI {
 		CommunicationList commList = new SQLiteCommunicationList();
 		conMan = new ConnectionManager(localAddress, localPort, localName, commList);
 		
-		Authentication auth = new SHA256withRSAAuthentication();
+		SignatureAuthentication auth = new SHA256withRSAAuthentication();
 		// if there is no (sk, pk) pair create it
 		// TODO (easier once Sarah's PR is done)
 		cipher = new AES256();

@@ -12,18 +12,15 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
 
-import exceptions.ConnectionAlreadyExistsException;
 import exceptions.EndpointIsNotConnectedException;
-import exceptions.IpAndPortAlreadyInUseException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.VerificationFailedException;
 import frame.Configuration;
 import keyStore.KeyStoreDbManager;
-import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
+import messengerSystem.SignatureAuthentication;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
@@ -62,7 +59,7 @@ public class KeyGenerator implements Runnable{
 	private int hasBeenAccepted = 0; //This controls the waiting period while waiting for the KeyGenPartner to Accept(1) or Reject(-1).
 
 	/** Key Generation uses authenticated messages only */
-	Authentication authenticator;
+	SignatureAuthentication authenticator;
 	
 	/**
 	 * Constructor. <br>

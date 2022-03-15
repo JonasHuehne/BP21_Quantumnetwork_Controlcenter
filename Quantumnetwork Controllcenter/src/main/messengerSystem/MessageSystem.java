@@ -20,7 +20,9 @@ import encryptionDecryption.SymmetricCipher;
 import exceptions.CouldNotSendMessageException;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
+import exceptions.NoKeyWithThatIDException;
 import exceptions.NoValidPublicKeyException;
+import exceptions.NotEnoughKeyLeftException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import graphicalUserInterface.CESignatureQueryDialog;
@@ -47,7 +49,7 @@ public class MessageSystem {
 	/** The cipher the message system uses to encrypt / decrypt messages & files */
 	private static SymmetricCipher cipher;
 	/** The authenticator the message system uses to sign / verify messages & files */
-	private static Authentication authenticator;
+	private static SignatureAuthentication authenticator;
 
 	private static final String ENCODING_STANDARD = Configuration.getProperty("Encoding");
 
@@ -70,14 +72,14 @@ public class MessageSystem {
 	 * @param authentication
 	 * 		the algorithm to use
 	 */
-	public static void setAuthenticationAlgorithm(Authentication authentication) {
+	public static void setAuthenticationAlgorithm(SignatureAuthentication authentication) {
 		MessageSystem.authenticator = authentication;
 	}
 
 	/**
 	 * @return the message authenticator currently in use by the MessageSystem
 	 */
-	public static Authentication getAuthenticator() {
+	public static SignatureAuthentication getAuthenticator() {
 		return authenticator;
 	}
 

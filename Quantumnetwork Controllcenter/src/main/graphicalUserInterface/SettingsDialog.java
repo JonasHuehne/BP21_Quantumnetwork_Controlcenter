@@ -21,6 +21,7 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
 import frame.Configuration;
+import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
 

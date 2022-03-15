@@ -66,7 +66,7 @@ public class CESignatureQueryDialog extends JFrame {
 						if(textField.getText() != null && !textField.getText().equals("")) {
 							setVisible(false);
 							dispose();
-							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).setSigKey(textField.getText());
+							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).setPublicKey(textField.getText());
 							SHA256withRSAAuthenticationGUI.continueVerify = true;
 						} else {
 							setVisible(false);

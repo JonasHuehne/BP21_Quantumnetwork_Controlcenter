@@ -123,7 +123,7 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
                 log.logError("Error: No connection endpoint for " + sender + " found.", new RuntimeException());
                 return false;
             }
-            pubKeyString = senderCE.getSigKey();
+            pubKeyString = senderCE.getPublicKey();
         } else {
             pubKeyString = senderEntry.getSignatureKey();
         }

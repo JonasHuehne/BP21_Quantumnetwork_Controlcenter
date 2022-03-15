@@ -1,13 +1,5 @@
 package frame;
 
-import communicationList.CommunicationList;
-import communicationList.SQLiteCommunicationList;
-import graphicalUserInterface.GUIMainWindow;
-import graphicalUserInterface.SettingsDialog;
-import messengerSystem.SHA256withRSAAuthenticationGUI;
-import messengerSystem.SignatureAuthentication;
-import networkConnection.ConnectionManager;
-import ui.ConsoleUI;
 import java.awt.EventQueue;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -23,9 +15,9 @@ import exceptions.PortIsInUseException;
 import graphicalUserInterface.GUIMainWindow;
 import graphicalUserInterface.SettingsDialog;
 import keyStore.KeyStoreDbManager;
-import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
+import messengerSystem.SignatureAuthentication;
 import networkConnection.ConnectionManager;
 import qnccLogger.Log;
 import ui.ConsoleUI;
