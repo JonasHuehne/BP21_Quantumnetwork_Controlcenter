@@ -34,9 +34,6 @@ import networkConnection.TransmissionTypeEnum;
  * @author Jonas Huehne, Sasha Petri
  *
  */
-
-
-
 public class KeyGenerator implements Runnable{
 	
 	/** Owner of this KeyGenerator */

@@ -564,6 +564,7 @@ public class ConnectionEndpoint implements Runnable{
 			SourceControlApplication.writeSignalFile(transmission, connectionID);
 			return;
 			
+			
 		case KEYGEN_TERMINATION:	//This is received if the connected ConnectionEndpoint intends to terminate the KeyGen Process. This will cause a local shutdown in response.
 			//Terminating Key Gen
 			try {
