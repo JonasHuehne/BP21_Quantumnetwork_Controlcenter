@@ -2,6 +2,8 @@ package graphicalUserInterface;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.AbstractMap.SimpleEntry;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -164,13 +166,13 @@ public class MessageGUI extends JFrame {
 	 * 
 	 */
 	public void refreshMessageLog() {
-		ArrayList<String> log = MessageSystem.conMan.getConnectionEndpoint(connectionID).getChatLog();
+		ArrayList<SimpleEntry<String, String>> log = MessageSystem.conMan.getConnectionEndpoint(connectionID).getChatLog();
 		int logSize = log.size(); // measure this once to prevent desync due to multiple threads
 		if (logSize > loggedMessagesAmount) {
 			// add each new message to the log
 			for (int i = 0; i < logSize - loggedMessagesAmount; i++) {
-				String messageToLog = log.get(loggedMessagesAmount + i);
-				chatLogTextPane.setText(chatLogTextPane.getText() + System.lineSeparator() + messageToLog);
+				SimpleEntry<String, String> msgToLog = log.get(loggedMessagesAmount + i);
+				chatLogTextPane.setText(chatLogTextPane.getText() + System.lineSeparator() + msgToLog.getKey() + " wrote: " + msgToLog.getValue());
 			}
 			loggedMessagesAmount = logSize;
 		}

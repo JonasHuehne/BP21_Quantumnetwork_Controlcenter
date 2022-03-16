@@ -1,12 +1,19 @@
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.security.InvalidKeyException;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Random;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.concurrent.TimeUnit;
+
+import javax.crypto.IllegalBlockSizeException;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -17,11 +24,14 @@ import communicationList.SQLiteCommunicationList;
 import encryptionDecryption.AES256;
 import encryptionDecryption.SymmetricCipher;
 import exceptions.ConnectionAlreadyExistsException;
+import exceptions.CouldNotDecryptMessageException;
 import exceptions.CouldNotSendMessageException;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.IpAndPortAlreadyInUseException;
 import exceptions.PortIsInUseException;
+import exceptions.VerificationFailedException;
 import frame.QuantumnetworkControllcenter;
+import keyStore.SimpleKeyStore;
 import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
@@ -102,9 +112,14 @@ public class MessageSystemTests {
 	}
 	
 	@AfterEach
-	public void resetLogs() {
+	public void reset() throws SQLException {
 		AliceCM.getConnectionEndpoint("Bob").getPackageLog().clear();
+		AliceCM.getConnectionEndpoint("Bob").getChatLog().clear();
 		BobCM.getConnectionEndpoint("Alice").getPackageLog().clear();
+		BobCM.getConnectionEndpoint("Alice").getChatLog().clear();
+		
+		SimpleKeyStore.deleteEntryIfExists("Alice");
+		SimpleKeyStore.deleteEntryIfExists("Bob");
 	}
 	
 	@Test
@@ -118,11 +133,11 @@ public class MessageSystemTests {
 		MessageSystem.sendTextMessage("Bob", aliceMessageToBob, false, false);
 		waitBriefly();
 		// Check states of both of their package stacks
-		ArrayList<NetworkPackage> textMessagesReceivedByBob 	= connectionToAlice.getLoggedPackagesOfType(TransmissionTypeEnum.TEXT_MESSAGE);
-		ArrayList<NetworkPackage> textMessagesReceivedByAlice 	= connectionToBob.getLoggedPackagesOfType(TransmissionTypeEnum.TEXT_MESSAGE);
-		assertEquals(1, textMessagesReceivedByBob.size());			// Bob received a message
-		assertEquals(0, textMessagesReceivedByAlice.size());		// Alice did not receive a message
-		assertEquals(aliceMessageToBob, MessageSystem.byteArrayToString(textMessagesReceivedByBob.get(0).getContent())); // Bob received exactly the message sent
+		ArrayList<SimpleEntry<String, String>> textMessagesReceivedByBob 	= connectionToAlice.getChatLog();
+		ArrayList<SimpleEntry<String, String>> textMessagesReceivedByAlice 	= connectionToBob.getChatLog();
+		assertEquals(1, textMessagesReceivedByBob.size());								// Bob received a message
+		assertEquals(0, textMessagesReceivedByAlice.size());							// Alice did not receive a message
+		assertEquals(aliceMessageToBob, textMessagesReceivedByBob.get(0).getValue()); 	// Bob received exactly the message sent
 		
 		// Bob sends Message to Alice
 		MessageSystem.conMan = BobCM;
@@ -130,16 +145,16 @@ public class MessageSystemTests {
 		MessageSystem.sendTextMessage("Alice", bobMessageToAlice, false, false);
 		waitBriefly();
 		// Check states of both of their package stacks
-		textMessagesReceivedByBob 		= connectionToAlice.getLoggedPackagesOfType(TransmissionTypeEnum.TEXT_MESSAGE);
-		textMessagesReceivedByAlice 	= connectionToBob.getLoggedPackagesOfType(TransmissionTypeEnum.TEXT_MESSAGE);
-		assertEquals(1, textMessagesReceivedByBob.size());			// Bob still has exactly one message received
-		assertEquals(1, textMessagesReceivedByAlice.size());		// Alice received a message now
-		assertEquals(bobMessageToAlice, MessageSystem.byteArrayToString(textMessagesReceivedByAlice.get(0).getContent())); // Alice received exactly the message sent
+		textMessagesReceivedByBob 	= connectionToAlice.getChatLog();
+		textMessagesReceivedByAlice 	= connectionToBob.getChatLog();
+		assertEquals(1, textMessagesReceivedByBob.size());								// Bob still has exactly one message received
+		assertEquals(1, textMessagesReceivedByAlice.size());							// Alice received a message now
+		assertEquals(bobMessageToAlice, textMessagesReceivedByAlice.get(0).getValue()); // Alice received exactly the message sent
 		
 	}
 	
 	@Test
-	public void test_authenticated_messaging() throws CouldNotSendMessageException, EndpointIsNotConnectedException {
+	public void test_authenticated_messaging() throws CouldNotSendMessageException, EndpointIsNotConnectedException, CouldNotDecryptMessageException {
 		
 		ConnectionEndpoint connectionToAlice = BobCM.getConnectionEndpoint("Alice"); 
 		ConnectionEndpoint connectionToBob = AliceCM.getConnectionEndpoint("Bob");
@@ -187,19 +202,100 @@ public class MessageSystemTests {
 		waitBriefly();
 		
 		// Check that message arrived and was added to Bob's received messages
-		ArrayList<NetworkPackage> bobsTextMessages = connectionToAlice.getLoggedPackagesOfType(TransmissionTypeEnum.TEXT_MESSAGE);
+		ArrayList<SimpleEntry<String, String>> bobsTextMessages = connectionToAlice.getChatLog();
 		assertEquals(1, bobsTextMessages.size(), "Bob should have received exactly one text message.");
-		NetworkPackage msgReceivedByBob = bobsTextMessages.get(0);
-		assertArrayEquals(aliceMessageToBob, msgReceivedByBob.getContent());
+		assertEquals(messageString, bobsTextMessages.get(0).getValue());
 		
 		// Attempt to pass Bob the altered message
-		NetworkPackageHandler.handlePackage(connectionToAlice, alteredMessagePackage);
+		assertThrows(VerificationFailedException.class, () -> NetworkPackageHandler.handlePackage(connectionToAlice, alteredMessagePackage));
+		
 		// No new message should have arrived
 		assertEquals(1, bobsTextMessages.size(), "Bob should have received exactly one text message.");
 	}
 	
-	public void test_encrypted_text_message() {
-		assertFalse(true, "Not implemented yet.");
+	@Test
+	public void test_encrypted_text_message() throws SQLException, CouldNotSendMessageException, InvalidKeyException, IllegalBlockSizeException {
+		
+		// In this test, Alice will send an encrypted text message to Bob
+		
+		/*
+		 * Preparation
+		 */
+
+		ConnectionEndpoint connectionToAlice = BobCM.getConnectionEndpoint("Alice");  	// Bob's Connection to Alice
+		ConnectionEndpoint connectionToBob = AliceCM.getConnectionEndpoint("Bob");		// Alice Connection to Bob
+
+		// Alice and Bob have generated a mutual key (Alice is the one who had the initiative)
+		byte[] randomKey = new byte[1024];
+		Random r = new Random();
+		r.nextBytes(randomKey);
+		
+		SimpleKeyStore.insertEntry("Alice", randomKey, false); // Bob's entry for his connection to Alice
+		connectionToAlice.setKeyStoreID("Alice");
+		
+		SimpleKeyStore.insertEntry("Bob", randomKey, true); // Alice entry for her connection Bob
+		connectionToBob.setKeyStoreID("Bob");
+		
+		String secretString = "This is a secret message";
+		
+		// Construct the package that Alice should send to Bob (message encrypted with the first KEY_LENGTH / 8 bytes of the mutual key)
+		byte[] initialKeyUsed = new byte[MessageSystem.getCipher().getKeyLength() / 8];
+		System.arraycopy(randomKey, 0, initialKeyUsed, 0, initialKeyUsed.length);
+		byte[] encryptedBytes = MessageSystem.getCipher().encrypt(MessageSystem.stringToByteArray(secretString), initialKeyUsed);
+		MessageArgs args = new MessageArgs(0);
+		NetworkPackage encryptedPackage = new NetworkPackage(TransmissionTypeEnum.TEXT_MESSAGE, args, encryptedBytes, false);
+		encryptedPackage.sign(auth); // all encrypted packages are signed
+		
+		// Also construct a corrupted package that has been altered along the way, invalidating the signature
+		NetworkPackage alteredPackage = new NetworkPackage(TransmissionTypeEnum.TEXT_MESSAGE, args, encryptedBytes, false);
+		alteredPackage.sign(auth);
+		
+		// Alter the contents of the message (using reflection)
+		try {
+			byte[] alteredContents = new byte[encryptedBytes.length];
+			System.arraycopy(encryptedBytes, 0, alteredContents, 0, alteredContents.length);
+			alteredContents[0] = (byte) (alteredContents[0] + 1);
+			
+			Field messageContents = alteredPackage.getClass().getDeclaredField("content");
+			messageContents.setAccessible(true);
+			messageContents.set(alteredPackage, alteredContents);
+			// assert that the alteration was successful
+			assertArrayEquals(alteredPackage.getContent(), alteredContents, "Failed to alter contents of altered message.");
+			// signature should now be invalid
+			assertFalse(alteredPackage.verify(auth, "Alice"));
+		} catch (Exception e) {
+			e.printStackTrace();
+			assertTrue(false, "Something went wrong, most likely with reflection.");
+		}
+		
+		/*
+		 * Communication
+		 */
+		MessageSystem.conMan = AliceCM;
+		// Alice will send a message to Bob
+		MessageSystem.sendEncryptedTextMessage("Bob", "This is a secret message", false);
+		waitBriefly();
+		
+		// Encrypted Message is in package log
+		ArrayList<NetworkPackage> bobsPackageLog = connectionToAlice.getLoggedPackagesOfType(TransmissionTypeEnum.TEXT_MESSAGE);
+		assertEquals(1, bobsPackageLog.size());
+		assertArrayEquals(encryptedBytes, bobsPackageLog.get(0).getContent());
+		
+		// Decrypted Message is in chat log for both Bob and Alice
+		ArrayList<SimpleEntry<String, String>> bobsChatLog = connectionToAlice.getChatLog();
+		assertEquals(secretString, bobsChatLog.get(0).getValue());
+		ArrayList<SimpleEntry<String, String>> aliceChatLog = connectionToAlice.getChatLog();
+		assertEquals(secretString, aliceChatLog.get(0).getValue());
+		
+		// Altered message fails verification
+		assertThrows(VerificationFailedException.class, () -> NetworkPackageHandler.handlePackage(connectionToAlice, alteredPackage));
+		
+		// Altered message does not result in anything more being chat-logged by Bob
+		bobsChatLog = connectionToAlice.getChatLog();
+		aliceChatLog = connectionToAlice.getChatLog();
+		assertEquals(1, bobsChatLog.size());
+		assertEquals(1, aliceChatLog.size());
+		
 	}
 	
 	public void test_encrypted_file_transfer() {

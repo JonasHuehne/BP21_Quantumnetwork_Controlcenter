@@ -1,8 +1,17 @@
 package networkConnection;
 
-import encryptionDecryption.SymmetricCipher;
+import java.security.InvalidKeyException;
+import java.sql.SQLException;
+import java.util.Base64;
+
+import javax.crypto.BadPaddingException;
+
+import exceptions.CouldNotDecryptMessageException;
 import exceptions.EndpointIsNotConnectedException;
-import exceptions.ManagerHasNoSuchEndpointException;
+import exceptions.NoKeyForContactException;
+import exceptions.NotEnoughKeyLeftException;
+import exceptions.VerificationFailedException;
+import keyStore.SimpleKeyStore;
 import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
 
@@ -27,8 +36,12 @@ public class NetworkPackageHandler {
 	 * @throws EndpointIsNotConnectedException 
 	 * 		can be thrown during key generation <br>
 	 * 		when processing a message would lead to sending a message back, but this endpoint is not connected to their partner
+	 * @throws CouldNotDecryptMessageException 
+	 * 		thrown if an encrypted message is received and it could not be decrypted for some reason
+	 * @throws VerificationFailedException 
+	 * 		thrown if a signed message is received, but the signature was not valid for the message (verification failed)
 	 */
-	public static void handlePackage(ConnectionEndpoint ce, NetworkPackage msg) throws EndpointIsNotConnectedException {
+	public static void handlePackage(ConnectionEndpoint ce, NetworkPackage msg) throws EndpointIsNotConnectedException, CouldNotDecryptMessageException, VerificationFailedException {
 		
 		TransmissionTypeEnum msgType = msg.getType();
 		
@@ -90,20 +103,44 @@ public class NetworkPackageHandler {
 	 * The two methods below could theoretically go into MessageSystem with some refactoring?
 	 */
 	
-	private static void handleTextMessage(ConnectionEndpoint ce, NetworkPackage msg) {
+	private static void handleTextMessage(ConnectionEndpoint ce, NetworkPackage msg) throws CouldNotDecryptMessageException, VerificationFailedException {
 		if (msg.getSignature() != null) { // if the message is signed, verify it
 			Authentication authenticator = MessageSystem.getAuthenticator(); // the auth currently in use by the message system
 			if (msg.verify(authenticator, ce.getID())) {
+				// If the message is also encrypted, try to decrypt it
 				if (msg.getMessageArgs().keyIndex() != -1) {
-					// if it is encrypted, decrypt it
-					// add the decrypted text to the chat log
-				} else { 
-					// otherwise just chat log it	
+					try {
+						// Get the key for decryption
+						if (MessageSystem.getCipher().getKeyLength() % 8 != 0) { // check needed, because SimpleKeyStore only supports byte-sized keys
+							// TODO throw a more appropriate Exception here if possible
+							throw new RuntimeException("Currently, the simple key store only support byte sized keys. "
+									+ "Keys of a bit size that is not a multiple of 8 can not be retrieved.");
+						}
+						String keyID 			= ce.getKeyStoreID(); // ID of key to get
+						int keyLengthInBytes 	= MessageSystem.getCipher().getKeyLength() / 8; // # of key bytes to get
+						byte[] decryptionKey 	= SimpleKeyStore.getKeyBytesAtIndexN(keyID, keyLengthInBytes, msg.getMessageArgs().keyIndex());
+						// Decrypt
+						byte[] decryptedMsg 	= MessageSystem.getCipher().decrypt(msg.getContent(), decryptionKey);
+						String decryptedString	= MessageSystem.byteArrayToString(decryptedMsg);
+						// Log the decrypted text of the message
+						ce.appendMessageToChatLog(false, decryptedString);
+					} catch (SQLException | InvalidKeyException | BadPaddingException | NoKeyForContactException | NotEnoughKeyLeftException e) {
+						throw new CouldNotDecryptMessageException("Could not decrypt the text message with ID " + Base64.getEncoder().encodeToString(msg.getID()), e);
+					}
+				} 
+				// If the message is not encrypted
+				else { 
+					// It has already been verified, so we just log it
 					ce.appendMessageToChatLog(false, MessageSystem.byteArrayToString(msg.getContent()));
+					return;
 				}
+			} else {
+				throw new VerificationFailedException("Could not verify the text message with ID " 
+						+ Base64.getEncoder().encodeToString(msg.getID()) + " using the public key of " + ce.getID());
 			}
+		} else {
+			ce.appendMessageToChatLog(false, MessageSystem.byteArrayToString(msg.getContent()));
 		}
-		ce.appendMessageToChatLog(false, MessageSystem.byteArrayToString(msg.getContent()));
 	}
 	
 	private static void handleFile(ConnectionEndpoint ce, NetworkPackage msg) {
@@ -125,6 +162,5 @@ public class NetworkPackageHandler {
 			}
 		}
 	}
-	
 	
 }
