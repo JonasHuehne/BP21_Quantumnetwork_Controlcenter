@@ -107,19 +107,22 @@ public class MessageGUI extends JFrame {
 									+ " Message will not be sent.");
 							break;
 						}
-						MessageSystem.sendAuthenticatedMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg);
+						MessageSystem.sendTextMessage(connectionID, msg, true, true, -1);
 						break;
-					case ENCRYPTED: MessageSystem.sendEncryptedMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg);
+					case ENCRYPTED: 
+						// MessageSystem.sendEncryptedMessage(connectionID, msg);
 						break;
-					case UNSAFE: MessageSystem.sendMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg, null);
+					case UNSAFE: 
+						MessageSystem.sendTextMessage(connectionID, msg, false, false, -1);
 						break;
 					default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selected!");
 						break;
 					}
-				} catch (ManagerHasNoSuchEndpointException e1) {
-					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". No such connection exists.");
 				} catch (EndpointIsNotConnectedException e1) {
 					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". You are not connected.");
+				} catch (ManagerHasNoSuchEndpointException e1) {
+					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". "
+							+ "This connection is not managed by the ConnectionManager of the MessageSystem.");
 				}
 				
 				logSentMessage(msg);

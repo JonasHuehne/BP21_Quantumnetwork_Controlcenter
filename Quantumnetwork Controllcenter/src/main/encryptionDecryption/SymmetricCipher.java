@@ -148,5 +148,10 @@ public abstract class SymmetricCipher {
 	 */
 	protected abstract Cipher getInitializedInstance(int mode, SecretKey key) throws InvalidKeyException;
 	
-	
+	/**
+	 * Expected key length for the {@linkplain Cipher} implemented by this class.
+	 */
+	public final int getKeyLength() {
+		return KEY_LENGTH;
+	}
 }

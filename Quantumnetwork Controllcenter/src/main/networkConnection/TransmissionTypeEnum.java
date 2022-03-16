@@ -14,15 +14,13 @@ public enum TransmissionTypeEnum {
 	CONNECTION_CONFIRMATION,	
 	/** This type of transmission indicates the sender will close the connection. Used to inform the receiver so they can also close their connection. */
 	CONNECTION_TERMINATION,	//This type of transmission signals that the connection is going to be closed from the senders end and the receiver should do the same.
-	/** Default transmission type for text messages. */
-	TRANSMISSION,
+	/** Transmission type for simple text (string) messages. */
+	TEXT_MESSAGE,
 	/** Transmission type for the transfer of files rather than text messages. 
 	 * @implNote The {@code typeArgument} of the {@linkplain NetworkPackage} is expected to contain the metadata about the file.*/ 
-	/*
-	 *  TODO: Make special constructor for file networkpackages that calls a private method that transforms some meta-data strings into the correct typeargs
-	 *  and then also add a method that interprets these typeargs.
-	 */
-	FILE_TRANSFER,	
+	FILE_TRANSFER,
+	/** Confirms that a message was received. Messages of this type contain the messageID of the received message as their content. */
+	RECEPTION_CONFIRMATION,
 	/** This is sent to another {@linkplain ConnectionEndpoint} to ask if that CE wants to generate a common key for encrypted communication. */
 	KEYGEN_SYNC_REQUEST,
 	/** This is a positive response to KEYGEN_SYNC_REQUEST and will continue the key-generation process. */

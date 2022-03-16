@@ -68,8 +68,9 @@ public class ConnectionEndpointServerHandler extends Thread{
 					//Create new CE
 					if(receivedMessage.getHead() == TransmissionTypeEnum.CONNECTION_REQUEST) {
 						ntt.abortTimer();
-						remoteIP = receivedMessage.getTypeArg().split(":::")[0];
-						remotePort = Integer.valueOf(receivedMessage.getTypeArg().split(":::")[1]);
+
+						remoteIP = receivedMessage.getMessageArgs().localIP();
+						remotePort = receivedMessage.getMessageArgs().localPort();
 
 						//Check if ContactDB contains the IP:PORT Pair already. If so, the Name and Sig is taken from the DB.
 						String remoteName;
@@ -78,9 +79,10 @@ public class ConnectionEndpointServerHandler extends Thread{
 							System.out.println("Found pre-existing DB Entry that had matching IP:PORT to new connection request. Using Name and Sig from DB.");
 							remoteName = dbEntry.getName();
 						}else {
-							remoteName = receivedMessage.getTypeArg().split(":::")[2];
+							remoteName = receivedMessage.getMessageArgs().userName();
 						}
-						ce = QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(remoteName, clientSocket, serverOut, serverIn, remoteIP, remotePort);
+
+						ce = new ConnectionEndpoint(remoteName, "", clientSocket, serverOut, serverIn, remoteIP, remotePort, localPort);
 						ce.setRemoteName(remoteName);
 						settingUp = false;
 						acceptedRequest = true;

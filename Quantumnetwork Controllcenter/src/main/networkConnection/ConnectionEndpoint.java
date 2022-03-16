@@ -7,8 +7,11 @@ import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedList;
 
+import encryptionDecryption.FileCrypter;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
@@ -76,7 +79,11 @@ public class ConnectionEndpoint implements Runnable{
 	
 	private LinkedList<String> pendingConfirmations = new LinkedList<String>();	//this is where reception confirmations are stored and checked from while a confirmedMessage is waiting for a confirmation.
 	
+	@Deprecated
 	private String messageLog = " ------ START OF MESSAGE LOG ------ ";
+	
+	private ArrayList<NetworkPackage> packageLog = new ArrayList<NetworkPackage>();
+	
 	/** Timeout in ms when trying to connect to a remote server, 0 is an infinite timeout */
 	private final int CONNECTION_TIMEOUT = 3000;
 	
@@ -116,7 +123,9 @@ public class ConnectionEndpoint implements Runnable{
 		
 		System.out.println("+++CE "+ connectionID +" is sending a message back!+++");
 		try {
-			pushMessage(TransmissionTypeEnum.CONNECTION_CONFIRMATION, Configuration.getProperty("UserName"), null, null);
+			MessageArgs args = new MessageArgs(Configuration.getProperty("UserName"));
+			NetworkPackage connectionConfirmation = new NetworkPackage(TransmissionTypeEnum.CONNECTION_CONFIRMATION, args, false);
+			pushMessage(connectionConfirmation);
 		} catch (EndpointIsNotConnectedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -346,7 +355,10 @@ public class ConnectionEndpoint implements Runnable{
 			//Send Message to allow foreign Endpoint to connect with us.
 			System.out.println("[" + connectionID + "]: " + connectionID + " is sending a greeting.");
 			try {
-				pushMessage(TransmissionTypeEnum.CONNECTION_REQUEST, localAddress + ":::" + localServerPort + ":::" + Configuration.getProperty("UserName"), null, null);
+				String userName = Configuration.getProperty("UserName");
+				MessageArgs args = new MessageArgs(userName, localAddress, localServerPort);
+				NetworkPackage connectionRequest = new NetworkPackage(TransmissionTypeEnum.CONNECTION_REQUEST, args, false);
+				pushMessage(connectionRequest);
 			} catch (EndpointIsNotConnectedException e) {
 				// This will not happen unless a programming mistake was made
 				e.printStackTrace();
@@ -415,71 +427,38 @@ public class ConnectionEndpoint implements Runnable{
 	 * 		if this is thrown, the state of this endpoint will not have changed
 	 */
 	public void closeWithTerminationRequest() throws EndpointIsNotConnectedException {
-		pushMessage(TransmissionTypeEnum.CONNECTION_TERMINATION, "", null, null);
+		NetworkPackage terminationRequest = new NetworkPackage(TransmissionTypeEnum.CONNECTION_TERMINATION, new MessageArgs(), false);
+		pushMessage(terminationRequest);
 		forceCloseConnection();
 	}
-	
-	/**Pushes a Message to the connected ConnectionEndpoints ServerSocket via the local clientOut Object. <br>
+
+	/**
+	 * Pushes a message through to the endpoint connected to this one.
 	 * Expects this endpoint to be {@linkplain ConnectionState#CONNECTED} to its partner, unless type is {@linkplain TransmissionTypeEnum#CONNECTION_REQUEST}.
-	 * @param type 
-	 * 		the type of message being sent. Regular transmissions should use TransmissionTypeEnum.TRANSMISSION.
-	 * @param typeArgument 
-	 * 		an additional argument used by some TransmissionTypes to pass on important information. Can be "" if not needed.
 	 * @param message
-	 * 		the byte[] Message that should be sent to the connected ConnectionEndpoints Server.
-	 * @param sig 
-	 * 		the signature of the Message if it is an authenticated message. If not, set sig to null.
+	 * 		the message to send
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if this connection endpoint is not {@linkplain ConnectionState#CONNECTED} to its partner <br>
 	 * 		never thrown if type is {@linkplain TransmissionTypeEnum#CONNECTION_REQUEST}
-	 * @implNote Previously, it was allowed to push messages while the Endpoint was still  {@linkplain ConnectionState#CONNECTING},
-	 * however, to prevent unstable behavior this is no longer permitted.
 	 */
-	public void pushMessage(TransmissionTypeEnum type, String typeArgument, byte[] message, byte[] sig) throws EndpointIsNotConnectedException {
-		//Check for existence of connection before attempting so send.
-		if (   !type.equals(TransmissionTypeEnum.CONNECTION_REQUEST)	// NetworkPackages are only send if it's either a connection request, or we are connected
-			&& !reportState().equals(ConnectionState.CONNECTED)) {
-			throw new EndpointIsNotConnectedException(connectionID, " push message of type " + type);
+	public void pushMessage(NetworkPackage message) throws EndpointIsNotConnectedException {
+		// NetworkPackages are only send if it's either a connection request, or we are connected
+		TransmissionTypeEnum type = message.getHead();
+		if (   !type.equals(TransmissionTypeEnum.CONNECTION_REQUEST)	
+				&& !reportState().equals(ConnectionState.CONNECTED)) {
+				throw new EndpointIsNotConnectedException(connectionID, " push message of type " + type);
 		}
 
 		//Write Message to Stream
 		try {
-			System.out.println(connectionID + " pushed a message of type " + type);
-			clientOut.writeObject(new NetworkPackage(type, typeArgument, message, sig));
+			clientOut.writeObject(message);
 		} catch (IOException e) {
-			System.err.println("[" + connectionID + "]: Failed when sending off a message via clientOut.");
+			// TODO Think about how to handle this
+			System.err.println("An I/O Exception occurred trying to push a message to the other endpoint.");
+			System.err.println(e.getClass().getSimpleName() + " : " + e.getMessage());
 			e.printStackTrace();
 		}
 	}
-
-	
-	/**This is called in the message processing step after receiving a transmission if the type was a response to a confirmedMessages.
-	 * This stores the messageID in the pendingConfirmations List where it will be found by the confirmedMessage method waiting for the confirmation this id is representing.
-	 * @param messageID the id that was originally sent as part of the confirmedMessage() Method and was returned back here as the reception confirmation.
-	 */
-	public void registerConfirmation(String messageID) {
-		pendingConfirmations.add(messageID);
-	}
-	
-	/**This returns a clone of the confirmationList. Used to check if a reception confirmation has arrived for the confiremMessage of a given ID.
-	 * 
-	 * @return a copy of all received confirmations.
-	 */
-	@SuppressWarnings("unchecked")
-	public LinkedList<String> getConfirmations(){
-		return (LinkedList<String>) pendingConfirmations.clone();
-	}
-	
-	/**This is called by the waiting confirmMessage Method after the ID it has been waiting for was entered into the pendingConfirmations.
-	 * 
-	 * @param messageID the id to remove from the pendingConfirmations.
-	 */
-	public void clearConfirmation(String messageID){
-		pendingConfirmations.remove(messageID);
-	}
-	
-	
-	
 	
 	//-------------//
 	// Server Side //
@@ -505,89 +484,34 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	private void processMessage(NetworkPackage transmission) {
 
-		System.out.println("[" + connectionID + "]: Received Message, starting processing!: " + transmission.getHead() + " - " + transmission.getTypeArg() + " - " + transmission.getContent());
+		System.out.println("[" + connectionID + "]: Received Message, starting processing!: " + transmission.getHead() + " - " + transmission.getMessageArgs() + " - " + transmission.getContent());
+		// If message sender requested the message to be confirmed, do so
+		if (transmission.expectedToBeConfirmed()) {
+			NetworkPackage confirmation = 
+			new NetworkPackage(TransmissionTypeEnum.RECEPTION_CONFIRMATION, new MessageArgs(), transmission.getID(), false);
+			try {
+				pushMessage(confirmation);
+			} catch (EndpointIsNotConnectedException e) {
+				// Log it if no confirmation could be sent, but otherwise continue processing the message as normal
+				System.err.println("Could not confirm message with ID " + Base64.getEncoder().encodeToString(transmission.getID()) + ".");
+			}
+		}
+		
+		// log the received message
+		logPackage(transmission);
+		
 		//Chose processing based on transmissionType in the NetworkPackage head.
-		
-		switch(transmission.getHead()){
-		
-		case CONNECTION_CONFIRMATION:
+		if (transmission.getHead().equals(TransmissionTypeEnum.CONNECTION_CONFIRMATION)) {
 			System.out.println("[" + connectionID + "]: Connection Confirmation received!");
-			remoteName = transmission.getTypeArg();
+			remoteName = transmission.getMessageArgs().userName();
 			isBuildingConnection = false;
 			isConnected = true;
 			return;
-			
-		case CONNECTION_TERMINATION:	//This is received if the other, connected connectionEndpoint wishes to close the connection. Takes all necessary actions on this local side of the connection.
-			//System.out.println("[" + connectionID + "]: TerminationOrder Received at " + connectionID + "!");
-			forceCloseConnection();
-			return;
-			
-		case TRANSMISSION:	//This is received if the connected connectionEndpoint wants to send this CE a transmission containing actual data in the NetworkPackages content field. The transmission is added to the MessageStack.
-			receiveMessage(transmission);
-			return;
-			
-		case FILE_TRANSFER:
-			receiveFile(transmission);
-			return;
 
-		case KEYGEN_SYNC_REQUEST:	//This is received if another ConnectionEndpoint that is connected to this one is intending to start a KeyGeneration Process and is asking for a response(accept/reject).
-			if (QuantumnetworkControllcenter.authentication.verify(transmission.getContent(), transmission.getSignature(), connectionID)) {
-				try {
-					keyGen.keyGenSyncResponse();
-				} catch (ManagerHasNoSuchEndpointException | NumberFormatException | EndpointIsNotConnectedException e) {
-					// TODO Log this
-					/*
-					 *  This occurs if this CE receives a message of type KEYGEN_SYNC_REQUEST while it is not in the 
-					 *  current ConnectionManager of MessageSystem. Outside of test scenarios, this should never occur.
-					 *  NFE occurs if the source port value in Configuration is not a valid Int.
-					 *  Possibly throw a custom Exception here? (e.g. KeyGenFailedException) or something
-					 */
-				}
-			}
-			return;
-			
-		case KEYGEN_SYNC_ACCEPT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
-			//The SyncConfirm is added to the regular messagesStack and read by the KeyGenerator.
-			//System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
-			//addMessageToQueue( transmission);
-			keyGen.updateAccRejState(1);
-			return;
-			
-		case KEYGEN_SYNC_REJECT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
-			//The SyncReject is added to the regular messagesStack and read by the KeyGenerator.
-			keyGen.updateAccRejState(-1);
-			return;		
-			
-		case KEYGEN_TRANSMISSION:
-			keyGen.writeKeyGenFile(transmission);
-			return;
-			
-		case KEYGEN_SOURCE_SIGNAL:	//This is only used for signaling the source server to start sending photons.
-			SourceControlApplication.writeSignalFile(transmission, connectionID);
-			return;
-
-			
-		case KEYGEN_TERMINATION:	//This is received if the connected ConnectionEndpoint intends to terminate the KeyGen Process. This will cause a local shutdown in response.
-			//Terminating Key Gen
-			try {
-				keyGen.shutdownKeyGen(false, true);
-			} catch (ManagerHasNoSuchEndpointException | EndpointIsNotConnectedException e) {
-				// TODO log this
-				/*
-				 *  This occurs if this CE receives a message of type KEYGEN_TERMINATION while it is not in the 
-				 *  current ConnectionManager of MessageSystem. Outside of test scenarios, this should never occur.
-				 */
-			}
-			return;
-			
-		default:	//This is the fallback if no valid Transmission Type was recognized.
-			System.err.println("ERROR: [" + connectionID + "]: Invalid message prefix in message: " + transmission.getHead());
-			return;
-		
-		
-}
+		} else {
+			NetworkPackageHandler.handlePackage(this, transmission);
+		}
 	}
-
 	
 	/**
 	 * While the Client is connecting or connected, this will listen for incoming messages if {@link #isListeningForMessages} 
@@ -620,144 +544,34 @@ public class ConnectionEndpoint implements Runnable{
 		}
 		isListeningForMessages = false;
 	}
-	
-	/**This Method handles all types of Transmissions.
-	 * TRANSMISSION, FILE_TRANSFER and RECEPTION_CONFIRMATION_REQUEST will be handled by this method after being processed.
-	 * 
-	 * @param transmission the new transmission.
-	 */
-	private void receiveMessage(NetworkPackage transmission) {
-		String msg;
-		System.out.println("[" + connectionID + "]: Receiving new Message...");
-		
-		if(transmission.getHead() == TransmissionTypeEnum.FILE_TRANSFER) {
-			//TODO: Implement File Handling! Also add functionality to MessageGUI similar to "Send Message"-logic for "Send File".
-		}
-		
-		System.out.println("TypeArg is: ");
-		if(transmission.getTypeArg().split(":::")[0] == "encrypted") {
-			System.out.println("Message is encrypted...");
-			//Handle Encrypted Messages
-			msg = MessageSystem.readEncryptedMessage(connectionID, transmission);
-			if(msg == null) {
-				System.err.println("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
-				new GenericWarningMessage("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
-			}
-			return;
-		}
-		//TODO: Hier muss sichergestellt werden dass verschlüsselte Nachrichten korrekt anhand des TypeArges "encrypted:::" erkannt werden!!
-		if(transmission.getSignature() != null) {
-			System.out.println("Message is signed...");
-			//Handle Authenticated Messages
-			msg = MessageSystem.byteArrayToString(MessageSystem.readAuthenticatedMessage(connectionID, transmission));
-			if(msg == null) {
-				System.err.println("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
-				new GenericWarningMessage("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
-			}
-			
-		}else {
-			System.out.println("Message is unsafe...");
-			//Handle Unsafe Messages
-			msg = MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission));
-		}
-		
-		//Update Message Log
-		logMessage(messageLog + "\n" + remoteName +" wrote: \n" + msg);
-		
-		if(logGUI != null) {
-			logGUI.refreshMessageLog();
-		}
-	}
-	
-	private void receiveFile(NetworkPackage transmission) {
-		//TODO: Add creation of file here! I assume the Argument of the NetworkPackage will contain the path + filename.filetype!
-	}
-	
-	/**This replaces the message log with a new one.
-	 * Normally the new one also contains the old one.
-	 * 
-	 * @param msg the new message log.
-	 */
+
+	@Deprecated
 	public void logMessage(String msg) {
 		messageLog = (msg);
 	}
 	
-	/**This returns the MessageLog that contains any plain-text messages of this connection.
-	 * 
-	 * @return the message log
-	 */
-	public String getMessageLog() {
-		return messageLog;
-	}
-	
-	public void appendMessageToLog(String newMessage) {
-		logMessage(getMessageLog() + newMessage);
-	}
-	
-	/**This Method handles all types of Transmissions.
-	 * TRANSMISSION, FILE_TRANSFER and RECEPTION_CONFIRMATION_REQUEST will be handled by this method after being processed.
-	 * 
-	 * @param transmission the new transmission.
-	 */
-	private void receiveMessage(NetworkPackage transmission) {
-		String msg;
-		System.out.println("[" + connectionID + "]: Receiving new Message...");
-		
-		if(transmission.getHead() == TransmissionTypeEnum.FILE_TRANSFER) {
-			//TODO: Implement File Handling
-		}
-		
-		
-		if(transmission.getTypeArg().split(":::")[0] == "encrypted") {
-			//Handle Encrypted Messages
-			msg = MessageSystem.readEncryptedMessage(connectionID, transmission);
-			if(msg == null) {
-				System.err.println("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
-				new GenericWarningMessage("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
-			}
-			return;
-		}
-		
-		if(transmission.getSignature() != null) {
-			//Handle Authenticated Messages
-			msg = MessageSystem.byteArrayToString(MessageSystem.readAuthenticatedMessage(connectionID, transmission));
-			if(msg == null) {
-				System.err.println("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
-				new GenericWarningMessage("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
-			}
-			
-		}else {
-			//Handle Unsafe Messages
-			msg = MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission));
-		}
-		
-		//Update Message Log
-		logMessage(messageLog + "\n" + remoteName +" wrote: \n" + msg);
-		
-		if(logGUI != null) {
-			logGUI.refreshMessageLog();
-		}
-	}
-	
-	private void receiveFile(NetworkPackage transmission) {
-		//TODO: Add creation of file here! I assume the Argument of the NetworkPackage will contain the path + filename.filetype!
-	}
-	
-	/**This replaces the message log with a new one.
-	 * Normally the new one also contains the old one.
-	 * 
-	 * @param msg the new message log.
-	 */
-	public void logMessage(String msg) {
-		messageLog = (msg);
-	}
-	
-	/**This returns the MessageLog that contains any plain-text messages of this connection.
-	 * 
-	 * @return the message log
-	 */
+	@Deprecated
 	public String getMessageLog() {
 		return messageLog;
 	}
 
+	/**
+	 * Adds a message / package to the log.
+	 * If it is a NetworkPackage, its contents will be cleared.
+	 * @param msg
+	 * 		the message to add
+	 */
+	public void logPackage(NetworkPackage msg) {
+		if(msg.getHead().equals(TransmissionTypeEnum.FILE_TRANSFER)) msg.clearContents();
+		packageLog.add(msg);
+	}
+	
+	/**@return
+	 * Network packages received by this ConnectionEndpoint.
+	 * For packages of type FILE_TRANSFER the content will be empty.
+	 */
+	public ArrayList<NetworkPackage> getPackageLog() {
+		return packageLog;
+	}
+	
 }

@@ -20,10 +20,12 @@ import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
 import keyStore.KeyStoreDbManager;
+import messengerSystem.SignatureAuthentication;
 import messengerSystem.MessageSystem;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
+import networkConnection.MessageArgs;
 import networkConnection.NetworkPackage;
 import networkConnection.TransmissionTypeEnum;
 
@@ -53,6 +55,8 @@ public class KeyGenerator implements Runnable{
 	private boolean keyGenRunning;
 	private int hasBeenAccepted = 0; //This controls the waiting period while waiting for the KeyGenPartner to Accept(1) or Reject(-1).
 
+	/** Key Generation uses authenticated messages only */
+	SignatureAuthentication authenticator;
 	
 	/**
 	 * Constructor. <br>
@@ -64,6 +68,7 @@ public class KeyGenerator implements Runnable{
 	 */
 	public KeyGenerator(ConnectionEndpoint owner) {
 		this.owner = owner;
+		this.authenticator = MessageSystem.getAuthenticator();
 	}
 	
 	/**
@@ -145,16 +150,22 @@ public class KeyGenerator implements Runnable{
 			// If a connection to the source already exists, there is no problem
 		}
 
-		//File name will be UserName_Date_RandomString
-		String filename = Configuration.getProperty("UserName") + "_" + new Date().toString() + "_" + MessageSystem.generateRandomMessageID();
+		//File name will be UserName_Date_RandomString ((This can just be determined at the source))
+		// (OLD) String filename = Configuration.getProperty("UserName") + "_" + new Date().toString() + "_" + MessageSystem.generateRandomMessageID();
 		
 		//Message will be OwnServerIP_OwnServerPort_RemoteServerIP_RemoteServerPort
 		String sourceInfo = Configuration.getProperty("UserIP") + "_" 
 							+ Configuration.getProperty("UserPort") + "_" 
 							+ owner.getRemoteAddress() 
 							+ "_" + owner.getRemotePort();
-		MessageSystem.sendAuthenticatedMessage(sourceServerConnectionName, TransmissionTypeEnum.KEYGEN_SOURCE_SIGNAL, filename, sourceInfo);
-		*/
+		
+		// (OLD) MessageSystem.sendAuthenticatedMessage(sourceServerConnectionName, TransmissionTypeEnum.KEYGEN_SOURCE_SIGNAL, filename, sourceInfo);
+		
+		byte[] sourceInfoAsBytes = MessageSystem.stringToByteArray(sourceInfo);
+		MessageArgs sourceSignalArgs = new MessageArgs();
+		NetworkPackage signalToSource = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SOURCE_SIGNAL, sourceSignalArgs, sourceInfoAsBytes, false);
+		signalToSource.sign(authenticator);
+		owner.pushMessage(signalToSource);*/
 	}
 
 	
@@ -195,8 +206,12 @@ public class KeyGenerator implements Runnable{
 	private boolean preGenSync() throws KeyGenRequestTimeoutException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
 		System.out.println("[" + getOwnerID() + "]: Sending Sync Request via " + getOwnerID() + " !");
 		//Send Sync Request
-		MessageSystem.sendAuthenticatedMessage(getOwnerID(), TransmissionTypeEnum.KEYGEN_SYNC_REQUEST, "", "KEYGEN_SYNC_REQUEST");
+		//MessageSystem.conMan.getConnectionEndpoint(connectionID).pushMessage(TransmissionTypeEnum.KEYGEN_SYNC_REQUEST, "", "");
+		// (OLD) MessageSystem.sendAuthenticatedMessage(getOwnerID(), TransmissionTypeEnum.KEYGEN_SYNC_REQUEST, "","");
 		
+		NetworkPackage keyGenSyncRequest = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SYNC_REQUEST, false);
+		keyGenSyncRequest.sign(authenticator);
+		owner.pushMessage(keyGenSyncRequest);
 		
 		System.out.println("[" + getOwnerID() + "]: Starting to wait for response...");
 		Instant startWait = Instant.now();
@@ -228,7 +243,10 @@ public class KeyGenerator implements Runnable{
 	}
 	
 	
-	/**This is called if a message asking for preGenSync was received. It will ask the user if the keyGenProcess should be started and sends the appropriated message back.
+	/**This is called if a message asking for preGenSync was received. 
+	 * It will ask the user if the keyGenProcess should be started and sends the appropriated message back.
+	 * @param msg
+	 * 		the received message
 	 * @throws ManagerHasNoSuchEndpointException 
 	 * 		if the {@linkplain ConnectionManager} in the {@linkplain MessageSystem} does not contain the {@linkplain ConnectionEndpoint} that this KeyGenerator belongs to
 	 * @throws EndpointIsNotConnectedException 
@@ -236,17 +254,32 @@ public class KeyGenerator implements Runnable{
 	 * @throws NumberFormatException 
 	 * 		if the value saved in the config file under "SourcePort" is not an Integer
 	 */
-	public void keyGenSyncResponse() throws ManagerHasNoSuchEndpointException, NumberFormatException, EndpointIsNotConnectedException {
+	public void keyGenSyncResponse(NetworkPackage msg) throws NumberFormatException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
+		// verify the received message
+		boolean verified = msg.verify(authenticator, getOwnerID());
+		if (!verified)  {
+			// TODO exception handling
+			return;
+		}
+		
 		System.out.println("[" + getOwnerID() + "]: Add confirmation-prompt for KeyGen here!");
 		//for now, always accept
 		boolean accept = true;
 		if(accept && preGenChecks()) {
 			signalSourceAPI();
-			MessageSystem.sendAuthenticatedMessage(getOwnerID(), TransmissionTypeEnum.KEYGEN_SYNC_ACCEPT, "", "syncConfirm");
+			// (Old) MessageSystem.sendAuthenticatedMessage(getOwnerID(), TransmissionTypeEnum.KEYGEN_SYNC_ACCEPT, "", "syncConfirm");
+			
+			NetworkPackage acceptResponse = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SYNC_ACCEPT, false);
+			acceptResponse.sign(authenticator);
+			owner.pushMessage(acceptResponse);
+			
 			initiative = 0;
 			keyGenMessagingService();
 		}else {
-			MessageSystem.sendAuthenticatedMessage(getOwnerID(), TransmissionTypeEnum.KEYGEN_SYNC_REJECT, "", "syncReject");
+			// (Old) MessageSystem.sendAuthenticatedMessage(getOwnerID(), TransmissionTypeEnum.KEYGEN_SYNC_REJECT, "", "syncReject");
+			NetworkPackage rejectResponse = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SYNC_REJECT, false);
+			rejectResponse.sign(authenticator);
+			owner.pushMessage(rejectResponse);
 		}
 		
 	}
@@ -408,7 +441,10 @@ public class KeyGenerator implements Runnable{
 			Files.deleteIfExists(connectionPath.resolve(expectedTermination + ".lock"));
 			
 			if(relay) {
-				MessageSystem.sendAuthenticatedMessage(getOwnerID(), TransmissionTypeEnum.KEYGEN_TERMINATION, "", "KEYGEN_TERMINATION");
+				// (OLD) MessageSystem.sendAuthenticatedMessage(getOwnerID(), TransmissionTypeEnum.KEYGEN_TERMINATION, "", "");
+				NetworkPackage keyGenTerminationRequest = new NetworkPackage(TransmissionTypeEnum.KEYGEN_TERMINATION, false);
+				keyGenTerminationRequest.sign(authenticator);
+				owner.pushMessage(keyGenTerminationRequest);
 			}
 			if(informPython) {
 				//Signal the local python script that the other end of the connection has terminated the KeyGen Process
@@ -464,9 +500,10 @@ public class KeyGenerator implements Runnable{
 					}
 					
 				    //Send FileContent
-				    MessageSystem.sendAuthenticatedMessage(
-				    			getOwnerID(), TransmissionTypeEnum.KEYGEN_TRANSMISSION, "" ,
-				    			new String(outFileContent, Configuration.getProperty("Encoding")));
+					MessageArgs args = new MessageArgs();
+					NetworkPackage keygenTransmission = new NetworkPackage(TransmissionTypeEnum.KEYGEN_TRANSMISSION, args, outFileContent, false);
+					keygenTransmission.sign(authenticator);
+					owner.pushMessage(keygenTransmission);
 					
 				    //Clear File Content
 				    outFileContent = null;
@@ -542,8 +579,11 @@ public class KeyGenerator implements Runnable{
 		//Writing Incoming Files
 		byte[] inFileContent;
 		
+		// Verify message is legit
+		boolean verify = msg.verify(authenticator, getOwnerID());
+		if (!verify) { return; } // TODO Exception handling here if can not verify
 		//Receive Message
-		inFileContent = MessageSystem.readAuthenticatedMessage(getOwnerID(), msg);
+		inFileContent = msg.getContent();
 		
 		//Write temporary lock file
 		File lockFile = new File(connectionPath.resolve(inFilePath + ".lock").toString());

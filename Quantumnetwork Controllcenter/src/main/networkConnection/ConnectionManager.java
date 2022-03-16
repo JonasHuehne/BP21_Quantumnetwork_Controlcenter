@@ -262,27 +262,20 @@ public class ConnectionManager {
 	}
 	
 	/**Sends a Message via a local ConnectionEndpoint to the ConnectionEndpoint connected to it.
-	 * @param connectionID	the Identifier of the intended connectionEndpoint.
-	 * @param type the type of the transmission expressed as a TransmissionTypeEnum
-	 * @param typeArgument an additional String that some transmission types use. Can be "" if not needed.
-	 * @param message the String Message that is supposed to be sent via the designated ConnectionEndpoint.
-	 * @param sig the optional signature, used by authenticated messages
-	 * @param confID the optional ID used to confirm that the message has been received.
+	 * @param connectionID	the identifier of the intended connectionEndpoint.
+	 * @param message the message that is supposed to be sent via the designated ConnectionEndpoint.
 	 * @throws ManagerHasNoSuchEndpointException 
 	 * 		if no connection of that name could be found in the connection manager
-	 * @throws EndpointIsNotConnectedException
-	 * 		if the specified connection endpoint is not connected to its partner <br>
-	 * 		will not be thrown for transmissions of type {@linkplain TransmissionTypeEnum#CONNECTION_REQUEST}
+	 * @throws EndpointIsNotConnectedException 
+	 * 		if the specified endpoint is not connected to their partner
 	 */
-	public void sendMessage(String connectionID, TransmissionTypeEnum type, String typeArgument, byte[] message, byte[] sig) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		ConnectionEndpoint ce = connections.get(connectionID);
-		if (ce == null) {
+	public void sendMessage(String connectionID, NetworkPackage message) throws EndpointIsNotConnectedException, ManagerHasNoSuchEndpointException {
+		if (connections.get(connectionID) == null) {
 			throw new ManagerHasNoSuchEndpointException(connectionID);
 		} else {
-			connections.get(connectionID).pushMessage(type, typeArgument, message, sig);
+			connections.get(connectionID).pushMessage(message);
 		}
 	}
-	
 	
 	/**Returns a ConnectionEndpoint if one by the given name was found. Returns NULL and a Warning otherwise.
 	 * 

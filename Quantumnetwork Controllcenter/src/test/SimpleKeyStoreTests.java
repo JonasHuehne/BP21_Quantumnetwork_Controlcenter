@@ -10,13 +10,13 @@ import org.junit.jupiter.api.Test;
 
 import exceptions.NoKeyForContactException;
 import exceptions.NotEnoughKeyLeftException;
-import keyStore.AlternativeKeyStore;
+import keyStore.SimpleKeyStore;
 
 /**
- * Tests for the {@linkplain AlternativeKeyStore} class.
+ * Tests for the {@linkplain SimpleKeyStore} class.
  * @author Sasha Petri
  */
-public class AlternativeKeyStoreTests {
+public class SimpleKeyStoreTests {
 
 	static Random r;
 	
@@ -27,12 +27,12 @@ public class AlternativeKeyStoreTests {
 	
 	@Test
 	public void can_connect() throws SQLException {
-		AlternativeKeyStore.connect();
+		SimpleKeyStore.connect();
 	}
 	
 	@Test
 	public void can_create_table_if_not_exists() throws SQLException {
-		AlternativeKeyStore.createTableIfNotExists();
+		SimpleKeyStore.createTableIfNotExists();
 	}
 	
 	@Test
@@ -46,10 +46,10 @@ public class AlternativeKeyStoreTests {
 		(new Random()).nextBytes(randomKey);	
 		
 		// insert key
-		AlternativeKeyStore.insertEntry(contactName, randomKey, false);
+		SimpleKeyStore.insertEntry(contactName, randomKey, false);
 		
 		// attempt to retrieve it
-		byte[] retrievedKey = AlternativeKeyStore.getKeyBytes(contactName, keyLength);
+		byte[] retrievedKey = SimpleKeyStore.getKeyBytes(contactName, keyLength);
 		
 		// stored key should be equal to generated key
 		assertArrayEquals(randomKey, retrievedKey);
@@ -66,10 +66,10 @@ public class AlternativeKeyStoreTests {
 		(new Random()).nextBytes(randomKey);	
 		
 		// insert key
-		AlternativeKeyStore.insertEntry(contactName, randomKey, false);
+		SimpleKeyStore.insertEntry(contactName, randomKey, false);
 		
 		// attempt to retrieve the first 8 bytes (actually the "next" 8 bytes, but index is 0 so it's the first)
-		byte[] retrievedKey = AlternativeKeyStore.getKeyBytes(contactName, 8);
+		byte[] retrievedKey = SimpleKeyStore.getKeyBytes(contactName, 8);
 		
 		// retrieved array should be the first 8 bytes of the inserted key
 		byte[] randomKeySubArray = Arrays.copyOf(randomKey, 8);
@@ -87,13 +87,13 @@ public class AlternativeKeyStoreTests {
 		(new Random()).nextBytes(randomKey);	
 				
 		// insert key
-		AlternativeKeyStore.insertEntry(contactName, randomKey, false);
+		SimpleKeyStore.insertEntry(contactName, randomKey, false);
 		
 		// increment index by 4
-		AlternativeKeyStore.incrementIndex(contactName, 4);
+		SimpleKeyStore.incrementIndex(contactName, 4);
 		
 		// remaining bytes should now be 12
-		assertEquals(12, AlternativeKeyStore.getRemainingBytes(contactName));
+		assertEquals(12, SimpleKeyStore.getRemainingBytes(contactName));
 	}
 	
 	public void increment_adjust_returned_key_correctly() throws SQLException, NotEnoughKeyLeftException, NoKeyForContactException {
@@ -106,13 +106,13 @@ public class AlternativeKeyStoreTests {
 		(new Random()).nextBytes(randomKey);	
 				
 		// insert key
-		AlternativeKeyStore.insertEntry(contactName, randomKey, false);
+		SimpleKeyStore.insertEntry(contactName, randomKey, false);
 		
 		// increment index by 4
-		AlternativeKeyStore.incrementIndex(contactName, 4);
+		SimpleKeyStore.incrementIndex(contactName, 4);
 
 		// retrieve the next 8 bytes (key[4] to key[12])
-		byte[] subKey = AlternativeKeyStore.getKeyBytes(contactName, 8);
+		byte[] subKey = SimpleKeyStore.getKeyBytes(contactName, 8);
 		
 		// assert that they are equal to that sub-array of the key
 		byte[] randomKeySubArray = Arrays.copyOfRange(randomKey, 4, 13);
@@ -129,19 +129,19 @@ public class AlternativeKeyStoreTests {
 		(new Random()).nextBytes(randomKey);	
 				
 		// insert key
-		AlternativeKeyStore.insertEntry(contactName, randomKey, false);
+		SimpleKeyStore.insertEntry(contactName, randomKey, false);
 		
 		// increment index by 4
-		AlternativeKeyStore.incrementIndex(contactName, 4);
+		SimpleKeyStore.incrementIndex(contactName, 4);
 
 		// delete the "used" bytes
-		AlternativeKeyStore.deleteUsedKeyBytes(contactName);
+		SimpleKeyStore.deleteUsedKeyBytes(contactName);
 		
 		// now there should be 12 bytes remaining
-		assertEquals(12, AlternativeKeyStore.getRemainingBytes(contactName));
+		assertEquals(12, SimpleKeyStore.getRemainingBytes(contactName));
 		
 		// make sure they are the correct bytes (last 12 bytes of initially inserted array)
-		byte[] remainingKeyBytes = AlternativeKeyStore.getKeyBytes(contactName, 12);
+		byte[] remainingKeyBytes = SimpleKeyStore.getKeyBytes(contactName, 12);
 		byte[] expectedRemainingKeyBytes = Arrays.copyOfRange(randomKey, 4, 16);
 		assertArrayEquals(expectedRemainingKeyBytes, remainingKeyBytes);
 	}

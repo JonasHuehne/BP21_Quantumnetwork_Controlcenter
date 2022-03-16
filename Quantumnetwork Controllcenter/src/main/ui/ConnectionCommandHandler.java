@@ -343,11 +343,11 @@ public class ConnectionCommandHandler {
 		ConnectionEndpoint localPoint = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID);
 		
 		try {
-			MessageSystem.sendMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", "Hello World!", "");
-		} catch (ManagerHasNoSuchEndpointException e) {
-			return "ERROR - There is no connection with the ID \"" + connectionID + "\", so no hello world could be sent.";
+			MessageSystem.sendTextMessage(connectionID, "Hello World", false, false, -1);
 		} catch (EndpointIsNotConnectedException e) {
 			return "ERROR - Can only send messages on connections in state " + ConnectionState.CONNECTED;
+		} catch (ManagerHasNoSuchEndpointException e) {
+			return e.getMessage();
 		}
 		
 		return "An attempt has been made to send a hello world message.";
