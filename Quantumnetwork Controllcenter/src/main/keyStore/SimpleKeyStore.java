@@ -63,7 +63,6 @@ public class SimpleKeyStore {
 	                + "PRIMARY KEY (KeyID));";	
 	        stmt.executeUpdate(sql);
 		}
-        return;
 	}
 	
 	/**

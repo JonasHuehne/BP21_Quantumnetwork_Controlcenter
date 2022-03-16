@@ -372,10 +372,10 @@ public class ConnectionManager {
 
 	}
 	
-	/**Changes the current local IP address to a new value. 
+	/**Changes the current local port to a new value. 
 	 * This closes all {@linkplain ConnectionEndpoint}s managed by this manager, 
-	 * and sets their local IP address accordingly.
-	 * @param newLocalAddress the new local IP address
+	 * and sets their local port accordingly.
+	 * @param newLocalPort the new local port
 	 */
 	public void setLocalPort(int newLocalPort) {
 		conManLog.logInfo("[CM " + localName + "(" + localPort +")]  Set local port to a new name: " + newLocalPort);
