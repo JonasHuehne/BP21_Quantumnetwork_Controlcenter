@@ -18,6 +18,8 @@ import exceptions.EndpointIsNotConnectedException;
 import exceptions.IpAndPortAlreadyInUseException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.PortIsInUseException;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 /** This class is used for the creation, destruction and management of multiple {@linkplain ConnectionEndpoint}s. <br>
  * A ConnectionEndpoint represents a connection from our local machine to another machine also running this program. <br>
@@ -32,6 +34,8 @@ import exceptions.PortIsInUseException;
  *
  */
 public class ConnectionManager {
+	
+	static Log conManLog = new Log("ConnectionManager Log", LogSensitivity.WARNING);
 	
 	/** Ports in use by any ConnectionManager */
 	private static HashSet<Integer> portsInUse = new HashSet<Integer>();
@@ -99,6 +103,7 @@ public class ConnectionManager {
 		
 		masterServerSocket = new ServerSocket(this.localPort);
 		portsInUse.add(localPort);
+		conManLog.logInfo("Created new ConnectionManager \"" + localName + "\" with localPort " + localPort + " at IP " + localAddress);
 		waitForConnections();
 	}
 	
@@ -119,13 +124,12 @@ public class ConnectionManager {
 				while (isAcceptingConnections) {
 					Socket clientSocket;
 					try { // Wait for a Socket to attempt a connection to our ServerSocket
-						System.out.println("[CM " + localName + "(" + localPort +")] Now accepting connections on the master server socket with port " + localPort);
+						conManLog.logInfo("[CM " + localName + "(" + localPort +")] Now accepting connections on the master server socket with port " + localPort);
 						clientSocket = masterServerSocket.accept();
-						System.out.println("[CM " + localName + "(" + localPort +")] Accepted a request on master server socket.");
+						conManLog.logInfo("[CM " + localName + "(" + localPort +")] Accepted a request on master server socket and created new local client socket.");
 					} catch (IOException e) {
-						System.err.println("[CM " + localName + "(" + localPort +")] An I/O Exception occurred while trying to accept a connection in the ConnectionManager "
-								+ "with local IP " + localAddress + " and server port " + localPort + ". Accepting connections is being shut down.");
-						System.err.println("Message: " + e.getMessage());
+						conManLog.logWarning("[CM " + localName + "(" + localPort +")] An I/O Exception occurred while trying to accept a connection in the ConnectionManager "
+								+ "with local IP " + localAddress + " and server port " + localPort + ". Accepting connections is being shut down." , e);
 						isAcceptingConnections = false;
 						break;
 					} // Check that it is from a ConnectionEndpoint of our program
@@ -133,12 +137,11 @@ public class ConnectionManager {
 					ConnectionEndpointServerHandler cesh; 
 					try { // Construct a CESH for the socket that just connected to our server socket
 						cesh = new ConnectionEndpointServerHandler(clientSocket, this);
-						System.out.println("[CM " + localName + "(" + localPort +")] Created CESH for newly received client socket.");
+						conManLog.logInfo("[CM " + localName + "(" + localPort +")] Created CESH for newly received client socket.");
 						cesh.run();
 					} catch (IOException e) {
-						System.err.println("[CM " + localName + "(" + localPort +")] An I/O Exception occurred while trying to construct the ConnectionEndpointServerHandler "
-								+ "with local IP " + localAddress + " and server port " + localPort + ". Accepting connections is being shut down.");
-						System.err.println("Message: " + e.getMessage());
+						conManLog.logWarning("[CM " + localName + "(" + localPort +")] An I/O Exception occurred while trying to construct the ConnectionEndpointServerHandler "
+								+ "with local IP " + localAddress + " and server port " + localPort + ". Accepting connections is being shut down.", e);
 						isAcceptingConnections = false;
 						break;
 					}
@@ -152,6 +155,7 @@ public class ConnectionManager {
 	 * Causes the ConnectionManager to stop accepting incoming connection requests.
 	 */
 	public void stopWaitingForConnections() {
+		conManLog.logInfo("[CM " + localName + "(" + localPort +")] No longer accepting incoming connection requests.");
 		isAcceptingConnections = false;
 	}
 	
@@ -191,14 +195,15 @@ public class ConnectionManager {
 		if(!connections.containsKey(endpointName)) {
 			// no two connections to the same IP / Port pairing
 			if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
-			System.out.println("[CM " + localName + " (" + localPort + ")] Received local request to create a CE with ID " + endpointName + ". "
+			conManLog.logInfo("[CM " + localName + " (" + localPort + ")] Received local request to create a CE with ID " + endpointName + ". "
 					+ "CE will attempt to connect to " + targetIP + ":" + targetPort);
 			ConnectionEndpoint ce = new ConnectionEndpoint(endpointName, targetIP, targetPort, getLocalAddress(), getLocalPort(), localName, pk);
 			connections.put(endpointName, ce);
 			return ce;
 		} else {
-			throw new ConnectionAlreadyExistsException(endpointName);
-
+			ConnectionAlreadyExistsException e = new ConnectionAlreadyExistsException(endpointName);
+			conManLog.logWarning("[CM " + localName + " (" + localPort + ")] Received a local request to create a CE with ID " + endpointName + " but failed to create it.", e);
+			throw e;
 		}
 	}
 
@@ -234,14 +239,16 @@ public class ConnectionManager {
 				// no two connections to the same IP / Port pairing
 				if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) 
 					throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
-				System.out.println("[CM " + localName + " (" + localPort + ")] Received external (CESH) request to create a CE with ID " + endpointName + ". "
+				conManLog.logInfo("[CM " + localName + " (" + localPort + ")] Received external request (presumably from CESH) to create a CE with ID " + endpointName + ". "
 						+ "CE will attempt to connect to " + targetIP + ":" + targetPort);
 				ConnectionEndpoint ce 
 				= new ConnectionEndpoint(endpointName, getLocalAddress(), clientSocket, streamOut, streamIn, targetIP, targetPort, getLocalPort(), localName);
 				connections.put(endpointName, ce);
 				return ce;
 			} else {
-				throw new ConnectionAlreadyExistsException(endpointName);
+				ConnectionAlreadyExistsException e = new ConnectionAlreadyExistsException(endpointName);
+				conManLog.logWarning("[CM " + localName + " (" + localPort + ")] Received a connection request to create endpoint with ID " + endpointName + " but failed.", e);
+				throw e;
 			}
 		}
 
@@ -295,8 +302,11 @@ public class ConnectionManager {
 	 */
 	public void sendMessage(String connectionID, NetworkPackage message) throws EndpointIsNotConnectedException, ManagerHasNoSuchEndpointException {
 		if (connections.get(connectionID) == null) {
-			throw new ManagerHasNoSuchEndpointException(connectionID);
+			ManagerHasNoSuchEndpointException e = new ManagerHasNoSuchEndpointException(connectionID);
+			conManLog.logWarning("[CM " + localName + "(" + localPort +")] Failed to push a message of type " + message.getType() + " through CE with ID " + connectionID, e);
+			throw e;
 		} else {
+			conManLog.logInfo("[CM " + localName + "(" + localPort +")]  Pushing a message of type " + message.getType() + " through CE with ID " + connectionID);
 			connections.get(connectionID).pushMessage(message);
 		}
 	}
@@ -349,6 +359,7 @@ public class ConnectionManager {
 	 * @param newLocalAddress the new local IP address
 	 */
 	public void setLocalAddress(String newLocalAddress) {
+		conManLog.logInfo("[CM " + localName + "(" + localPort +")]  Setting local address " + localAddress + " to a new address: " + newLocalAddress);
 		closeAllConnections();
 		localAddress = newLocalAddress;
 		for (ConnectionEndpoint ce : connections.values()) {
@@ -362,6 +373,7 @@ public class ConnectionManager {
 	 * @param newLocalPort the new local port
 	 */
 	public void setLocalPort(int newLocalPort) {
+		conManLog.logInfo("[CM " + localName + "(" + localPort +")]  Set local port to a new name: " + newLocalPort);
 		closeAllConnections();
 		localPort = newLocalPort;
 		for (ConnectionEndpoint ce : connections.values()) {
@@ -376,6 +388,7 @@ public class ConnectionManager {
 	 * 		the new name
 	 */
 	public void setLocalName(String name) {
+		conManLog.logInfo("[CM " + localName + "(" + localPort +")]  Set local name to a new name: " + name);
 		this.localName = name;
 	}
 	
@@ -419,6 +432,7 @@ public class ConnectionManager {
 	 * 		name and public key will be set accordingly
 	 */
 	public void setCommList(CommunicationList commList) {
+		conManLog.logInfo("[CM " + localName + "(" + localPort +")]  Set CommunicationList to a new list of class " + commList.getClass().getSimpleName());
 		this.commList = commList;
 	}
 
@@ -431,6 +445,7 @@ public class ConnectionManager {
 	 * @return true if the connection was closed, false if no such connection could be found
 	 */
 	public boolean closeConnection(String connectionName) {
+		conManLog.logInfo("[CM " + localName + "(" + localPort +")]  Closing ConnectionEndpoint " + connectionName);
 		ConnectionEndpoint ce = getConnectionEndpoint(connectionName);
 		if (ce == null) {
 			return false;
@@ -448,6 +463,7 @@ public class ConnectionManager {
 	 * 
 	 */
 	public void closeAllConnections() {
+		conManLog.logInfo("[CM " + localName + "(" + localPort +")]  Closing all ConnectionEndpoints.");
 		connections.forEach((k,v) -> closeConnection(k));
 	}
 
@@ -459,7 +475,7 @@ public class ConnectionManager {
 	 * 		if there is no {@linkplain ConnectionEndpoint} with the specified name in the manager
 	 */
 	public void destroyConnectionEndpoint(String connectionID) throws ManagerHasNoSuchEndpointException {
-		System.out.println("[CM " + localName + "(" + localPort +")]  Destroying ConnectionEndpoint " + connectionID);
+		conManLog.logInfo("[CM " + localName + "(" + localPort +")]  Destroying ConnectionEndpoint " + connectionID);
 		ConnectionEndpoint ce = connections.get(connectionID);
 		if (ce == null) {
 			throw new ManagerHasNoSuchEndpointException(connectionID);
@@ -473,6 +489,7 @@ public class ConnectionManager {
 	 * Closes all connections managed by this manager, and removes them from the manager.
 	 */
 	public void destroyAllConnectionEndpoints() {
+		conManLog.logInfo("[CM " + localName + "(" + localPort +")]  Destroying all ConnectionEndpoints.");
 		connections.forEach((k,v) -> {
 			try {
 				connections.get(k).closeWithTerminationRequest();

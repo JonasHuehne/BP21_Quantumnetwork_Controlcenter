@@ -26,7 +26,7 @@ public class Log {
 	 */
 	public Log(String loggerName, LogSensitivity sensitivity) {
 		logger = Logger.getLogger(loggerName);
-		logger.addHandler(fileHandler); 
+		logger.addHandler(fileHandler);
 		switch(sensitivity) {
 		case INFO:
 			logger.setLevel(Level.INFO);

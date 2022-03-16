@@ -10,7 +10,8 @@ import graphicalUserInterface.SettingsDialog;
 import messengerSystem.SHA256withRSAAuthenticationGUI;
 import messengerSystem.SignatureAuthentication;
 import networkConnection.ConnectionManager;
-import networkConnection.TransmissionTypeEnum;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 import ui.ConsoleUI;
 import java.awt.EventQueue;
 import java.io.IOException;
@@ -36,6 +37,8 @@ public class QuantumnetworkControllcenter {
 	static boolean LAUNCH_GUI = true;  // launch GUI
 	static boolean LAUNCH_CUI = false; // launch console UI
 
+	public static Log logger;
+	
 	/**
 	 * Method to initialize a Quantumnetwork Controllcenter
 	 * @param args <br>
@@ -45,6 +48,8 @@ public class QuantumnetworkControllcenter {
 	 * 		may be null, in this case the Properties file is not modified
 	 */
 	public static void initialize(String[] args) {
+		
+		
 		
 		//TODO add initialization of further Classes
 		
@@ -121,8 +126,9 @@ public class QuantumnetworkControllcenter {
 	public static void main(String[] args) {
 		
 
-		
-		System.out.println("Run QuantumnetworkControllcenter initialisation");
+		logger = new Log("QNCC Logger", LogSensitivity.WARNING);
+		logger.loggerShowInfos();
+		logger.logInfo("Run QuantumnetworkControllcenter initialization.");
 		
 		initialize(args);
 		
@@ -155,27 +161,6 @@ public class QuantumnetworkControllcenter {
 				}
 			}
 		});
-		/*
-		
-		try {
-			TimeUnit.SECONDS.sleep(4);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		ce1.pushMessage(TransmissionTypeEnum.TRANSMISSION, "", MessageSystem.stringToByteArray("ABC Testnachricht über alte Verbindung"), "");
-		
-		try {
-			TimeUnit.SECONDS.sleep(4);
-		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		ce2.pushMessage(TransmissionTypeEnum.TRANSMISSION, "", MessageSystem.stringToByteArray("1212 Letzte Testnachricht über das Netzwerk."), "");
-		*/
 	}
-
 
 }
