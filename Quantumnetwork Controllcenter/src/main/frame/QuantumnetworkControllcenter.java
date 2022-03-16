@@ -81,11 +81,12 @@ public class QuantumnetworkControllcenter {
 
 		String ip = Configuration.getProperty("UserIP");
 		int port = Integer.valueOf(Configuration.getProperty("UserPort"));
+		String userName = Configuration.getProperty("UserName");
 		System.out.println("Initialising IP: " + ip + " and Port " + port);
 		String localIP = ip;
 		int localPort = port;
 		try {
-			conMan = new ConnectionManager(localIP, localPort);
+			conMan = new ConnectionManager(localIP, localPort, userName);
 		} catch (IOException | PortIsInUseException e) {
 			System.err.println("Could not initialize the ConnectionManager - an  Exception occured. ");
 			System.err.println(e.getClass().getCanonicalName() + " - Message: " + e.getMessage());
