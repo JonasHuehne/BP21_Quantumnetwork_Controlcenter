@@ -121,7 +121,8 @@ public class MessageSystem {
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
 	 */
-	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
+	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) 
+			throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
 		return sendConfirmedMessage(connectionID, stringToByteArray(message), stringToByteArray(sig));
 	}
 	
