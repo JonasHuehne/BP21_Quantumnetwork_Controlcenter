@@ -314,7 +314,7 @@ public class ConnectionEndpoint implements Runnable{
 		this.remoteName = remoteName;
 	}
 
-	
+
 	//-------------//
 	// Client Side //
 	//-------------//
