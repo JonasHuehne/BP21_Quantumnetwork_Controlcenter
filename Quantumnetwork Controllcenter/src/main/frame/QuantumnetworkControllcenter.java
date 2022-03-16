@@ -79,14 +79,17 @@ public class QuantumnetworkControllcenter {
 		 *TODO: Check if Sig files exist and if not, generate them!
 		 */
 
+		// Communication List Init
+		communicationList = new SQLiteCommunicationList();
+		
+		String userName = Configuration.getProperty("UserName");
 		String ip = Configuration.getProperty("UserIP");
 		int port = Integer.valueOf(Configuration.getProperty("UserPort"));
-		String userName = Configuration.getProperty("UserName");
 		System.out.println("Initialising IP: " + ip + " and Port " + port);
 		String localIP = ip;
 		int localPort = port;
 		try {
-			conMan = new ConnectionManager(localIP, localPort, userName);
+			conMan = new ConnectionManager(localIP, localPort, userName, communicationList);
 		} catch (IOException | PortIsInUseException e) {
 			System.err.println("Could not initialize the ConnectionManager - an  Exception occured. ");
 			System.err.println(e.getClass().getCanonicalName() + " - Message: " + e.getMessage());
@@ -95,9 +98,6 @@ public class QuantumnetworkControllcenter {
 			System.exit(0);
 		} 
 		MessageSystem.conMan = conMan;
-
-		// Communication List Init
-		communicationList = new SQLiteCommunicationList();
 
 		// Authentication Init
 		authentication = new SHA256withRSAAuthenticationGUI();
