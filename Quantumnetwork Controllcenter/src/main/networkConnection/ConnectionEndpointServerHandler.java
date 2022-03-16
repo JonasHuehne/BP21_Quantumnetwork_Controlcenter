@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.time.Duration;
 import java.time.Instant;
 
+import communicationList.CommunicationList;
 import communicationList.Contact;
 import exceptions.ConnectionAlreadyExistsException;
 import exceptions.IpAndPortAlreadyInUseException;
@@ -45,6 +46,8 @@ public class ConnectionEndpointServerHandler extends Thread{
 	private String localIP;
 	/** Will be passed to the CE created in response to an incoming connection request, will be the name the created CE tells its partner in response */
 	private String localName;
+	/** The {@linkplain ConnectionManager} that created this CESH */
+	private ConnectionManager ownerCM;
 
 	/**
 	 * Constructor.
@@ -53,20 +56,16 @@ public class ConnectionEndpointServerHandler extends Thread{
 	 * 		a client socket created by a ServerSockets .accept() method <br>
 	 * 		the CESH will listen for a connection request on this, 
 	 * 		and if one is received this will be passed on as the client socket for the newly created {@linkplain ConnectionEndpoint}
-	 * @param localIP
-	 * 		local IP that will be passed to the newly created  {@linkplain ConnectionEndpoint}
-	 * @param localPort
-	 * 		local port that will be passed to the newly created {@linkplain ConnectionEndpoint}
-	 * @param localName
-	 * 		local name that will be passed to the newly created {@linkplain ConnectionEndpoint}
+	 * @param owner
+	 * 		the {@linkplain ConnectionManager} that this CESH was created in <br>
+	 * 		may not be null
 	 * @throws IOException 
 	 * 		if an I/O Exception occurred trying to construct an internal ObjectInputStream from the clientsocket's InputStream
 	 */
-	ConnectionEndpointServerHandler(Socket newClientSocket, String localIP, int localPort, String localName) throws IOException {
+	ConnectionEndpointServerHandler(Socket newClientSocket, ConnectionManager owner) throws IOException {
 		clientSocket = newClientSocket;
-		this.localPort = localPort;
-		this.localIP = localIP;
-		this.localName = localName;
+		this.ownerCM = owner;
+		this.localName = owner.getLocalName();
 	}
 	
 	public void run() {
@@ -80,7 +79,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 				ntt.start();
 
 				if((receivedMessage = (NetworkPackage) serverIn.readObject()) != null) {
-					System.out.println("CESH Received a Message: -.-"+ receivedMessage.getType().toString() + " - " + receivedMessage.getMessageArgs() +"-.-");
+					System.out.println("[CESH " + localName + "] Received a Message: -.-"+ receivedMessage.getType().toString() + " - " + receivedMessage.getMessageArgs() +"-.-");
 					
 					//Create new CE
 					if(receivedMessage.getType() == TransmissionTypeEnum.CONNECTION_REQUEST) {
@@ -89,17 +88,26 @@ public class ConnectionEndpointServerHandler extends Thread{
 						remoteIP = receivedMessage.getMessageArgs().localIP();
 						remotePort = receivedMessage.getMessageArgs().localPort();
 
-						//Check if ContactDB contains the IP:PORT Pair already. If so, the Name and Sig is taken from the DB.
+						/*
+						 * Set the remote name and pk associated with the CE.
+						 */
 						String remoteName;
-						Contact dbEntry = QuantumnetworkControllcenter.communicationList.query(remoteIP, remotePort);
-						if(dbEntry != null && !remoteIP.equals("127.0.0.1") && !remoteIP.equals("localhost")) {
-							System.out.println("Found pre-existing DB Entry that had matching IP:PORT to new connection request. Using Name and Sig from DB.");
-							remoteName = dbEntry.getName();
-						}else {
+						// If the owner CM has a commlist, check it
+						CommunicationList commList = ownerCM.getCommList();
+						if (commList != null) {
+							Contact dbEntry = commList.query(remoteIP, remotePort);
+							if(dbEntry != null && !remoteIP.equals("127.0.0.1") && !remoteIP.equals("localhost")) {
+								// Set the values accordingly, if the commlist has an entry for that IP:Port pair
+								System.out.println("Found pre-existing DB Entry that had matching IP:PORT to new connection request. Using Name and Sig from DB.");
+								remoteName = dbEntry.getName();
+							} else { // otherwise, no pk & set remote name based on message args
+								remoteName = receivedMessage.getMessageArgs().userName();
+							}
+						} else {
 							remoteName = receivedMessage.getMessageArgs().userName();
 						}
 
-						ce = new ConnectionEndpoint(remoteName, "", clientSocket, serverOut, serverIn, remoteIP, remotePort, localPort, localName);
+						ce = ownerCM.createNewConnectionEndpoint(remoteName, clientSocket, serverOut, serverIn, remoteIP, remotePort);
 						ce.setRemoteName(remoteName);
 						settingUp = false;
 						acceptedRequest = true;
@@ -133,12 +141,6 @@ public class ConnectionEndpointServerHandler extends Thread{
 	public boolean acceptedRequest() {
 		return acceptedRequest;
 	}
-	
-	/**
-	 * @return the ConnectionEndpoint created by this CESH accepting a request, may be null if no request was accepted
-	 */
-	public ConnectionEndpoint getCE() {
-		return ce;
-	}
+
 	
 }

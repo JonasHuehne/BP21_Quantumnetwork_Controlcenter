@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import communicationList.CommunicationList;
 import exceptions.ConnectionAlreadyExistsException;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.IpAndPortAlreadyInUseException;
@@ -50,7 +51,7 @@ public class ConnectionManager {
 	private String localName;
 	/** This ServerSocket allows other ConnectionEndpoints to connect to us by sending requests to {@link #localAddress}:{@link #localPort}*/
 	private ServerSocket masterServerSocket;
-	/** This thread continuously checks for incoming connection requests */
+	/** This thread continuously checks for incoming connections to the master server socket */
 	private ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
 	/** Whether this CM is currently accepting ConnectionRequests */
 	private boolean isAcceptingConnections = false;
@@ -60,7 +61,11 @@ public class ConnectionManager {
 	/** true <==> no two connections to the same IP:Port pairing are allowed (should also make self-connections impossible) <br>
 	 *  for actual use we recommend setting this to true, however, it may make some manual tests impossible that involve connecting to oneself */
 	private boolean oneConnectionPerIpPortPair = false;
-
+	
+	/** When answering an incoming connection request, this communication list will be check if it contains
+	 *  an entry for that connection's IP:Port pair. If it does, we can name the connection based on that
+	 *  entry and also set the public key for the connection. May be null. */
+	private CommunicationList commList;
 
 	/**
 	 * Creates and new ConnectionManager.
@@ -74,18 +79,23 @@ public class ConnectionManager {
 	 * @param localName
 	 * 		local name that will be passed on to any ConnectionEndpoints in the manager, 
 	 * 		should be the name of this machine / the name you wish to have in the network
+	 * @param commList
+	 * 		when answering an incoming connection request, this communication list will be check if it contains
+	 *  	an entry for that connection's IP:Port pair. If it does, we can name the connection based on that
+	 *  	entry and also set the public key for the connection. May be null.
 	 * @throws IOException 
 	 * 		if an I/O Exception occurred while trying to open the ServerSocket used for accepting connections
 	 * @throws PortIsInUseException
 	 * 		if the specified port is already in use by another ConnectionManager <br>
 	 * 		ports used by a ConnectionManager remain marked as used until the program is restarted
 	 */
-	public ConnectionManager(String localAddress, int localPort, String localName) throws IOException, PortIsInUseException{
+	public ConnectionManager(String localAddress, int localPort, String localName, CommunicationList commlist) throws IOException, PortIsInUseException{
 		if (portsInUse.contains(localPort)) throw new PortIsInUseException("Port " + localPort + " is already in use by a ConnectionManager.");
 		
 		this.localAddress = localAddress;
 		this.localPort = localPort;
 		this.localName = localName;
+		this.commList = commList;
 		
 		masterServerSocket = new ServerSocket(this.localPort);
 		portsInUse.add(localPort);
@@ -109,10 +119,11 @@ public class ConnectionManager {
 				while (isAcceptingConnections) {
 					Socket clientSocket;
 					try { // Wait for a Socket to attempt a connection to our ServerSocket
+						System.out.println("[CM " + localName + "(" + localPort +")] Now accepting connections on the master server socket with port " + localPort);
 						clientSocket = masterServerSocket.accept();
-						System.out.println("Accepted a request on master server socket.");
+						System.out.println("[CM " + localName + "(" + localPort +")] Accepted a request on master server socket.");
 					} catch (IOException e) {
-						System.err.println("An I/O Exception occurred while trying to accept a connection in the ConnectionManager "
+						System.err.println("[CM " + localName + "(" + localPort +")] An I/O Exception occurred while trying to accept a connection in the ConnectionManager "
 								+ "with local IP " + localAddress + " and server port " + localPort + ". Accepting connections is being shut down.");
 						System.err.println("Message: " + e.getMessage());
 						isAcceptingConnections = false;
@@ -121,17 +132,16 @@ public class ConnectionManager {
 					
 					ConnectionEndpointServerHandler cesh; 
 					try { // Construct a CESH for the socket that just connected to our server socket
-						cesh = new ConnectionEndpointServerHandler(clientSocket, localAddress, localPort, localName);
-						System.out.println("Created CESH for newly received client socket.");
+						cesh = new ConnectionEndpointServerHandler(clientSocket, this);
+						System.out.println("[CM " + localName + "(" + localPort +")] Created CESH for newly received client socket.");
 						cesh.run();
 					} catch (IOException e) {
-						System.err.println("An I/O Exception occurred while trying to construct the ConnectionEndpointServerHandler "
+						System.err.println("[CM " + localName + "(" + localPort +")] An I/O Exception occurred while trying to construct the ConnectionEndpointServerHandler "
 								+ "with local IP " + localAddress + " and server port " + localPort + ". Accepting connections is being shut down.");
 						System.err.println("Message: " + e.getMessage());
 						isAcceptingConnections = false;
 						break;
 					}
-
 				}
 			});
 			submittedTaskOnce = true;
@@ -181,9 +191,11 @@ public class ConnectionManager {
 		if(!connections.containsKey(endpointName)) {
 			// no two connections to the same IP / Port pairing
 			if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
-			System.out.println("---Received new request for a CE. Creating it now. It will connect to the Server at "+ targetIP +":"+ targetPort +".---");
-			connections.put(endpointName, new ConnectionEndpoint(endpointName, targetIP, targetPort, localAddress, localPort, localName, pk));
-			return connections.get(endpointName);
+			System.out.println("[CM " + localName + " (" + localPort + ")] Received local request to create a CE with ID " + endpointName + ". "
+					+ "CE will attempt to connect to " + targetIP + ":" + targetPort);
+			ConnectionEndpoint ce = new ConnectionEndpoint(endpointName, targetIP, targetPort, getLocalAddress(), getLocalPort(), localName, pk);
+			connections.put(endpointName, ce);
+			return ce;
 		} else {
 			throw new ConnectionAlreadyExistsException(endpointName);
 
@@ -220,11 +232,14 @@ public class ConnectionManager {
 			throws ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException {
 			if(!connections.containsKey(endpointName)) {
 				// no two connections to the same IP / Port pairing
-				if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
-				System.out.println("---Received new request for a CE. Creating it now. It will connect to the Server at "+ targetIP +":"+ targetPort +".---");
-				//connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, localPort, targetIP, targetPort));
-				connections.put(endpointName, new ConnectionEndpoint(endpointName, localAddress, localPort, clientSocket, streamOut, streamIn, targetIP, targetPort));
-				return connections.get(endpointName);
+				if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) 
+					throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
+				System.out.println("[CM " + localName + " (" + localPort + ")] Received external (CESH) request to create a CE with ID " + endpointName + ". "
+						+ "CE will attempt to connect to " + targetIP + ":" + targetPort);
+				ConnectionEndpoint ce 
+				= new ConnectionEndpoint(endpointName, getLocalAddress(), clientSocket, streamOut, streamIn, targetIP, targetPort, getLocalPort(), localName);
+				connections.put(endpointName, ce);
+				return ce;
 			} else {
 				throw new ConnectionAlreadyExistsException(endpointName);
 			}
@@ -385,6 +400,27 @@ public class ConnectionManager {
 	public String getLocalName() {
 		return localName;
 	}
+	
+	/**
+	 * @return the communication list associated with this ConnectionManager <br>
+	 * when accepting incoming connection requests, this list will be checked
+	 * if entries exist for that ip:port pair, and if they do, the new CE's
+	 * name and public key will be set accordingly
+	 */
+	public CommunicationList getCommList() {
+		return commList;
+	}
+	
+	/**
+	 * @param commList
+	 * 		the communication list to be associated with this ConnectionManager <br>
+	 * 		when accepting incoming connection requests, this list will be checked
+	 * 		if entries exist for that ip:port pair, and if they do, the new CE's
+	 * 		name and public key will be set accordingly
+	 */
+	public void setCommList(CommunicationList commList) {
+		this.commList = commList;
+	}
 
 	
 	/**Closes a named connection if existing and open. Does not destroy the connectionEndpoint, use destroyConnectionEndpoint for that. <br>
@@ -423,7 +459,7 @@ public class ConnectionManager {
 	 * 		if there is no {@linkplain ConnectionEndpoint} with the specified name in the manager
 	 */
 	public void destroyConnectionEndpoint(String connectionID) throws ManagerHasNoSuchEndpointException {
-		System.out.println("[ConnectionManager]: Destroying ConnectionEndpoint " + connectionID);
+		System.out.println("[CM " + localName + "(" + localPort +")]  Destroying ConnectionEndpoint " + connectionID);
 		ConnectionEndpoint ce = connections.get(connectionID);
 		if (ce == null) {
 			throw new ManagerHasNoSuchEndpointException(connectionID);
