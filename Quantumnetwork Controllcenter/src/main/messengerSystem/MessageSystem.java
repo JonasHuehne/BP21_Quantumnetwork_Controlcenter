@@ -4,7 +4,6 @@ import java.io.UnsupportedEncodingException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Random;
-
 import encryptionDecryption.AES256;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
@@ -17,6 +16,8 @@ import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
 import networkConnection.NetworkPackage;
 import networkConnection.TransmissionTypeEnum;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 /**High Level Message System. Contains methods for sending and receiving messages without dealing with low-level things, like signals and prefixes.
  * Send and receiving messages via these methods, the connectionID determines which connectionEndpoint to interact with.
@@ -31,7 +32,8 @@ public class MessageSystem {
 	 * 	Generally, this is set once when initializing the program, however, for automated tests it may be needed to set this multiple times to simulate different users. */
 	public static ConnectionManager conMan;
 	private static final byte[] DEBUG_KEY = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
-
+	private static Log log = new Log(MessageSystem.class.getName(), LogSensitivity.WARNING);
+	
 	/**This simply sends a message on the given ConnectionEndpoint. No confirmation is expected from the recipient.
 	 *
 	 * @param connectionID the name of the ConnectionEndpoint to send the message from.
@@ -50,7 +52,7 @@ public class MessageSystem {
 			throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
 		//Check if connectionManager exists
 		if(conMan == null) {
-			System.err.println("ERROR - To send a Message via the MessageSystem, the QuantumNetworkControlCenter needs to be initialized first.");
+			log.logWarning("ERROR - To send a Message via the MessageSystem, the QuantumNetworkControlCenter needs to be initialized first.");
 			return;
 		}
 		//Check if connectionEndpoint is connected to something.
@@ -163,7 +165,7 @@ public class MessageSystem {
 		byte[] message;
 		message = msg.getContent();
 		byte[] signature = msg.getSignature();
-		System.out.println("----Tried to find Sig in DB for: " + connectionID);
+		log.logInfo("----Tried to find Sig in DB for: " + connectionID);
 		if(QuantumnetworkControllcenter.authentication.verify(message, signature, connectionID)) {
 			return message;
 		}
@@ -263,8 +265,7 @@ public class MessageSystem {
 		try {
 			return new String(arr, Configuration.getProperty("Encoding"));
 		} catch (UnsupportedEncodingException e) {
-			System.err.println("Error: unsupported Encoding: " + Configuration.getProperty("Encoding") + "!");
-			e.printStackTrace();
+			log.logWarning("Error: unsupported Encoding: " + Configuration.getProperty("Encoding") + "!", e);
 			return null;
 		}
 	}
@@ -283,8 +284,7 @@ public class MessageSystem {
 		try {
 			return str.getBytes(Configuration.getProperty("Encoding"));
 		} catch (UnsupportedEncodingException e) {
-			System.err.println("Error: unsupported Encoding: " + Configuration.getProperty("Encoding") + "!");
-			e.printStackTrace();
+			log.logWarning("Error: unsupported Encoding: " + Configuration.getProperty("Encoding") + "!", e);
 			return null;
 		}
 	}
