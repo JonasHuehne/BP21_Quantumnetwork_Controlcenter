@@ -55,6 +55,9 @@ public class MessageSystem {
 	private static final byte[] DEBUG_KEY = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
 
 	
+	/** Used to block further calls to methods to send encrypted messages if we are currently communicating about the key index */
+	private static boolean isCurrentlyCorrespondingAboutKeyUse;
+	
 	/**
 	 * Sets the encryption / decryption algorithm to be used by the MessageSystem.
 	 * @param cipher
@@ -133,7 +136,6 @@ public class MessageSystem {
 		
 		try {
 			if (encryptFile) { // sending an encrypted file
-				informPartnerAboutKeyUse(); // inform partner for key synchronization purposes
 				// encrypt the file locally
 				byte[] byteKey = SimpleKeyStore.getNextKeyBytes(connectionID, cipher.getKeyLength());
 				keyIndex = SimpleKeyStore.getIndex(connectionID);
@@ -154,10 +156,12 @@ public class MessageSystem {
 			 */
 			
 			MessageArgs args = new MessageArgs(file.getName(), keyIndex);
-			sendMessage(connectionID, TransmissionTypeEnum.FILE_TRANSFER, args, fileBytes, (sign || encryptFile), confirm);
+			NetworkPackage msg = new NetworkPackage(TransmissionTypeEnum.FILE_TRANSFER, args, fileBytes, confirm);
+			msg.sign(authenticator);
+			informAndSendOnceConfirmed(connectionID, msg);
 			
-		} catch (EndpointIsNotConnectedException | ManagerHasNoSuchEndpointException | IOException | InvalidKeyException | 
-				IllegalBlockSizeException | SQLException | NotEnoughKeyLeftException | NoKeyForContactException e) {
+		} catch (EndpointIsNotConnectedException | IOException | InvalidKeyException | 
+				IllegalBlockSizeException | SQLException | NotEnoughKeyLeftException | NoKeyForContactException | SecurityException e) {
 			throw new CouldNotSendMessageException("Could not send the file " + file.getName() + " along the connection " + connectionID + ".", e);
 		}
 
@@ -201,19 +205,24 @@ public class MessageSystem {
 	 */
 	public static void sendEncryptedTextMessage(String connectionID, String msgString, boolean confirm) throws CouldNotSendMessageException {
 		try {
-			// inform partner that you wish to send an encrypted message (to prevent key desync)
-			informPartnerAboutKeyUse();
 			// encrypt the message
 			String keyIDofConnection = conMan.getConnectionEndpoint(connectionID).getKeyStoreID();
 			byte[] msgBytes = stringToByteArray(msgString);
 			byte[] key = SimpleKeyStore.getNextKeyBytes(keyIDofConnection, cipher.getKeyLength() / 8);
 			byte[] encMsgBytes = cipher.encrypt(msgBytes, key);
+			
 			// Provide the index in the message args so receiver knows where to start with decryption
 			int index = SimpleKeyStore.getIndex(keyIDofConnection);
+				
+			// Construct the message to send
 			MessageArgs args = new MessageArgs(index);
-			sendMessage(connectionID, TransmissionTypeEnum.TEXT_MESSAGE, args, encMsgBytes, true, confirm);
-		} catch (EndpointIsNotConnectedException | ManagerHasNoSuchEndpointException | 
-			SQLException | NotEnoughKeyLeftException | NoKeyForContactException | InvalidKeyException | IllegalBlockSizeException e) {
+			NetworkPackage msg = new NetworkPackage(TransmissionTypeEnum.TEXT_MESSAGE, args, encMsgBytes, confirm);
+			msg.sign(authenticator);
+			// Tell the other party we wish to send, and queue the message
+			informAndSendOnceConfirmed(connectionID, msg);
+		} catch (EndpointIsNotConnectedException | SQLException | NotEnoughKeyLeftException 
+				| NoKeyForContactException | InvalidKeyException | IllegalBlockSizeException 
+				| SecurityException e) {
 			throw new CouldNotSendMessageException("Could not send the encrypted message along the connection " + connectionID + ".", e);
 		}
 	}
@@ -254,8 +263,38 @@ public class MessageSystem {
 		sendFileInternal(connectionID, file, true, true, confirm);
 	}
 	
-	private static void informPartnerAboutKeyUse() {
-		// TODO
+	private static void informAndSendOnceConfirmed(String connectionID, NetworkPackage msg) 
+			throws NoKeyForContactException, SQLException, EndpointIsNotConnectedException {
+		
+		/*
+		 * (Proof of concept)
+		 */
+
+		// CE A will send this package to CE B to inform them that
+		// A wishes to use bytes of their mutual key, starting at the specified index
+		final ConnectionEndpoint ceA = conMan.getConnectionEndpoint(connectionID);
+		int currentIndex = SimpleKeyStore.getIndex(ceA.getKeyStoreID());
+		final MessageArgs args = new MessageArgs(currentIndex);
+		final NetworkPackage keyUseAlert = new NetworkPackage(TransmissionTypeEnum.KEY_USE_ALERT, args, false);
+		ceA.pushOnceConfirmationReceivedForID(keyUseAlert.getID(), msg); // push the main message once key use is confirmed
+		ceA.pushMessage(keyUseAlert);
+		
+		// After sending this, increment the index because we used those bits now
+		SimpleKeyStore.incrementIndex(connectionID, getCipher().getKeyLength() / 8);
+		
+		/*
+		 * TODO: Asynchronously wait 3 seconds, if no confirmation arrives, delete the package from the queue.
+		 */
+		
+		// Could be better to have a thread that runs for a few seconds and sends multiple messages
+		// requesting approval, to account for package loss to mitigate the two generals problem
+		// however, as far as I know the transfer via the Sockets is already TCP so that might be redundant
+		
+	}
+
+	
+	public void stopEncryptionCorrespondence() {
+		isCurrentlyCorrespondingAboutKeyUse = false;
 	}
 	
 	/**Utility for converting a byte[] to a String.
@@ -305,4 +344,5 @@ public class MessageSystem {
 	}
 
 
+	
 }

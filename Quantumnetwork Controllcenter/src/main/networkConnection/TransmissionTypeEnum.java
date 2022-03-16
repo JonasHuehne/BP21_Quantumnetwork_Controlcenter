@@ -32,5 +32,26 @@ public enum TransmissionTypeEnum {
 	/** This is used for signals intended for the Photon source. The transmissions contents will be written into a .txt at the Source Servers location. */
 	KEYGEN_SOURCE_SIGNAL,
 	/** Signals the recipient that the sender wants to stop the key-generation process. */
-	KEYGEN_TERMINATION;	
+	KEYGEN_TERMINATION,
+	/** Transmissions of this type are used by party A to indicate to party B, that A wishes to use bytes of their shared key. 
+	 * This allows B to adjust their own key index accordingly. Transmissions of this type are expected to have an argument
+	 * specifying at which key index A wants to start using bytes, and should be signed (to avoid third-party interference). 
+	 * B is expected to send back a {@link #RECEPTION_CONFIRMATION} to say "ok" to the key use. */
+	KEY_USE_ALERT,
+	/**
+	 * Transmissions of this type are one of the two answers to {@linkplain #KEY_USE_ALERT}.
+	 * By sending this message to A, B tells A that they have agreed to A using the next n bytes at the key index A asked about.
+	 * The content of messages of this type is expected to be the ID of the {@link #KEY_USE_ALERT} they are accepting.
+	 * Transmissions of this type are expected to be signed.
+	 */
+	KEY_USE_ACCEPT,
+	/**
+	 * Transmissions of this type are one of the two answers to {@linkplain #KEY_USE_ALERT}.
+	 * By sending this message to A, B tells A that there was a problem with A using the next n bytes at the key index A asked about.
+	 * Transmissions of this type will have their key index argument set to B's current key index to allow A to re-synchronize their index.
+	 * The content of messages of this type is expected to be the ID of the {@link #KEY_USE_ALERT} they are rejecting.
+	 * Transmissions of this type are expected to be signed.
+	 */
+	KEY_USE_REJECT;
+	; // TODO add a way for B to say no and inform A about desync
 }

@@ -9,8 +9,9 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
-import java.util.LinkedList;
+import java.util.HashMap;
 
 import exceptions.CouldNotDecryptMessageException;
 import exceptions.EndpointIsNotConnectedException;
@@ -80,6 +81,14 @@ public class ConnectionEndpoint implements Runnable{
 	private ArrayList<NetworkPackage> packageLog = new ArrayList<NetworkPackage>();
 	/** A simple chat log for this CE. Each Entry is of the form (Sender, Message). */
 	private ArrayList<SimpleEntry<String, String>> chatLog = new ArrayList<SimpleEntry<String, String>>();
+	
+	/** MessageIDs of messages for which this endpoint received a confirmation after sending them */
+	private ArrayList<byte[]> receivedConfirmations = new ArrayList<byte[]>();
+	/** This hashmap acts like a queue. Add a pair {@code (i, msg)} here, and once a RECEPTION_CONFIRMATION is received 
+	 * which confirms the message with the ID {@code i}, the entry with key {@code i} is pushed via {@linkplain ConnectionEndpoint#pushMessage(NetworkPackage)}. 
+	 * Useful when waiting for key use to be approved. Potentially (?) for splitting up larger messages as well.  */
+	private HashMap<String, NetworkPackage> pushOnceApproved = new HashMap<String, NetworkPackage>(); 
+	// uses String instead of byte[] because equals() for two byte arrays in a HashMap only returns true if they are same object, not same contents
 	
 	/** Timeout in ms when trying to connect to a remote server, 0 is an infinite timeout */
 	private final int CONNECTION_TIMEOUT = 3000;
@@ -432,6 +441,7 @@ public class ConnectionEndpoint implements Runnable{
 	 * 		never thrown if type is {@linkplain TransmissionTypeEnum#CONNECTION_REQUEST}
 	 */
 	public void pushMessage(NetworkPackage message) throws EndpointIsNotConnectedException {
+		System.out.println(("[CE " + connectionID + "]: Pushing message with type " + message.getType()));
 		// NetworkPackages are only send if it's either a connection request, or we are connected
 		TransmissionTypeEnum type = message.getType();
 		if (   !type.equals(TransmissionTypeEnum.CONNECTION_REQUEST)	
@@ -474,7 +484,8 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	private void processMessage(NetworkPackage transmission) {
 
-		System.out.println("[CE " + connectionID + "]: Received Message, starting processing!: " + transmission.getType() + " - " + transmission.getMessageArgs() + " - " + transmission.getContent());
+		System.out.println("[CE " + connectionID + "]: Received Message, starting processing!: " + transmission.getType() + " - " + transmission.getMessageArgs() + " - " 
+		+ transmission.getContent() + " ID = " + Base64.getEncoder().encodeToString(transmission.getID()));
 		// If message sender requested the message to be confirmed, do so
 		if (transmission.expectedToBeConfirmed()) {
 			NetworkPackage confirmation = 
@@ -613,4 +624,62 @@ public class ConnectionEndpoint implements Runnable{
 		this.keyStoreID = keyStoreID;
 	}
 
+	/**
+	 * @return a list of message IDs - these are the IDs of the messages sent by this CE,
+	 * for which it received a corresponding message of type {@linkplain TransmissionTypeEnum#RECEPTION_CONFIRMATION}
+	 */
+	public ArrayList<byte[]> getConfirmations() {
+		return receivedConfirmations;
+	}
+	
+	/**
+	 * Checks whether this CE has received a confirmation for a message with the given ID.
+	 * @param messageID
+	 * 		the ID to check
+	 * @return
+	 * 		true if it has, false if not
+	 */
+	public boolean hasConfirmationFor(byte[] messageID) {
+		for (byte[] id : receivedConfirmations) {
+			if (Arrays.equals(id, messageID)) return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * Adds the given message ID to the list of message IDs for which this endpoint received a confirmation. <br>
+	 * @implNote Currently it is not checked whether this endpoint actually sent a message with the given ID,
+	 * it is expected that this is done before adding it to the list.
+	 * @param messageID
+	 * 		ID to add
+	 */
+	public void addConfirmationFor(byte[] messageID) {
+		receivedConfirmations.add(messageID);
+	}
+	
+	/**
+	 * This will push the given NetworkPackage once this CE receives a confirmation, 
+	 * which confirms the message the message with the given ID.
+	 * (Meaning a {@linkplain TransmissionTypeEnum#RECEPTION_CONFIRMATION} where the content field is == id.)
+	 * @param id
+	 * 		the ID to wait for confirmation for
+	 * @param message
+	 * 		the message to send once confirmation for that ID arrives
+	 */
+	public void pushOnceConfirmationReceivedForID(byte[] id, NetworkPackage message) {
+		String stringID = Base64.getEncoder().encodeToString(id);
+		pushOnceApproved.put(stringID, message);
+	}
+	
+	/**
+	 * Removes an entry from the push queue that was previously added by {@linkplain #pushOnceConfirmationReceivedForID(byte[], NetworkPackage)}.
+	 * @param id
+	 * 		the ID to no longer wait for confirmation for
+	 * @return
+	 * 		the entry removed, or null if there was no such entry
+	 */
+	public NetworkPackage removeFromPushQueue(byte[] id) {
+		String stringID = Base64.getEncoder().encodeToString(id);
+		return pushOnceApproved.remove(stringID);
+	}
 }
