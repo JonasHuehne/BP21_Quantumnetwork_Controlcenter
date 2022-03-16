@@ -47,7 +47,6 @@ public final class GUIMainWindow implements Runnable{
             "Public Signature Key"};
 	
 	private CustomClosingFrame frame;
-	private Boolean contactListChanged = false;
 	private JTable contactTable;
 	private Box connectionEndpointVerticalBox;
 	private HashMap<String, JPanel> representedConnectionEndpoints = new HashMap<String, JPanel>();
