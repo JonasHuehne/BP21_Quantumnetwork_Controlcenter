@@ -91,13 +91,11 @@ public class SHA256withRSAAuthentication implements Authentication {
             signature.update(message);
             return signature.sign();
         }  catch (InvalidKeyException e){
-        	log.logWarning("An unvalid key was used", e);
-        	//TODO for CR: alternative zu return null? eine Exception werfen?
+        	log.logWarning("An invalid key was used", e);
         	return null;
     	}
         catch (Exception e) {
             log.logError("Error while signing", e);
-            //TODO for CR: alternative zu return null? eine Exception werfen?
             return null;
         }
     }
@@ -133,7 +131,7 @@ public class SHA256withRSAAuthentication implements Authentication {
             // return result of verification
             return signature.verify(receivedSignature);
         } catch (InvalidKeyException e){
-        	log.logWarning("An unvalid key was used", e);
+        	log.logWarning("An invalid key was used", e);
         	return false;
     	} catch (Exception e) {
             log.logError("Error while verifying", e);
@@ -145,7 +143,6 @@ public class SHA256withRSAAuthentication implements Authentication {
      * Method to generate a PublicKey object from a matching String
      * @param key the key as a string
      * @return the key as a PublicKey object, null if error
-     * @throws Exception 
      */
     private PublicKey getPublicKeyFromString (final String key) {
         try {
@@ -154,7 +151,6 @@ public class SHA256withRSAAuthentication implements Authentication {
             return kf.generatePublic(publicKeySpec);
         } catch (Exception e) {
             log.logError("Error while creating a public key from the input string", e);
-            //TODO for CR: alternative zu return null? eine Exception werfen?
             return null;
         }
     }
@@ -166,11 +162,10 @@ public class SHA256withRSAAuthentication implements Authentication {
     private PrivateKey getPrivateKeyFromFile () {
         try {
             String currentPath = Configuration.getBaseDirPath();
-            log.logInfo(currentPath + KEY_PATH + privateKeyFile);
+            log.logInfo("Getting private key from Path:" + currentPath + KEY_PATH + privateKeyFile);
             if(!Files.exists(Path.of(currentPath + KEY_PATH + privateKeyFile))) {
                 log.logWarning("Error while creating a private key from the signature key file: "
-                        + "no signature key file found");
-                //TODO for CR: alternative zu return null? eine Exception werfen?
+                        + "no signature key file found at Path: " + currentPath + KEY_PATH + privateKeyFile);
                 return null;
             }
             String keyString = readKeyStringFromFile(privateKeyFile);
@@ -178,8 +173,7 @@ public class SHA256withRSAAuthentication implements Authentication {
             PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(keyString));
             return kf.generatePrivate(privateKeySpec);
         } catch (Exception e) {
-            log.logError("Error while creating a private key from the signature key file", e);
-            //TODO for CR: alternative zu return null? eine Exception werfen?
+            log.logError("Error while creating a private key from the signature key file at Path: " + Configuration.getBaseDirPath() + KEY_PATH + privateKeyFile, e);
             return null;
         }
     }
@@ -194,20 +188,19 @@ public class SHA256withRSAAuthentication implements Authentication {
      */
     public static String readKeyStringFromFile(String fileName) {
         try {
-            if(!Pattern.matches(KEY_FILENAME_SYNTAX, fileName)) {
+        	String currentPath = Configuration.getBaseDirPath();
+        	if(!Pattern.matches(KEY_FILENAME_SYNTAX, fileName)) {
                 log.logWarning("Error while creating a key string from the input file: "
-                        + "wrong key file format");
+                        + "wrong key file format at Path: " + currentPath + KEY_PATH + fileName);
                 return null;
             }
-            String currentPath = Configuration.getBaseDirPath();
             String key = new String (Files.readAllBytes
                     (Path.of(currentPath + KEY_PATH + fileName)));
             return key
                     .replaceAll("-----.{5,50}-----", "")
                     .replace(System.lineSeparator(), "");
         } catch (Exception e) {
-            log.logError("Error while creating a key string from the input file", e);
-            //TODO for CR: alternative zu return null? eine Exception werfen?
+            log.logError("Error while creating a key string from the input file at Path: " + Configuration.getBaseDirPath() + KEY_PATH + fileName, e);
             return null;
         }
     }
@@ -230,7 +223,6 @@ public class SHA256withRSAAuthentication implements Authentication {
             	return true;
             }
             else {
-            //TODO for CR: Warning or Error?
             log.logWarning("Problem deleting the current signature key");
             return false;
             }
