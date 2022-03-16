@@ -12,6 +12,7 @@ import java.awt.EventQueue;
 import java.io.IOException;
 
 import javax.swing.UIManager;
+import java.util.concurrent.TimeUnit;
 
 import exceptions.PortIsInUseException;
 import messengerSystem.MessageSystem;
@@ -87,7 +88,7 @@ public class QuantumnetworkControllcenter {
 			e.printStackTrace();
 			System.err.println("Shutting down.");
 			System.exit(0);
-		} 
+		}
 		MessageSystem.conMan = conMan;
 
 		// Communication List Init
