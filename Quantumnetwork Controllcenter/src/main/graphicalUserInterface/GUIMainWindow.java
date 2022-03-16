@@ -67,6 +67,9 @@ public final class GUIMainWindow implements Runnable{
 	/** used in updating the list of active connections */
 	private ArrayList<String> namesOfConnections = new ArrayList<String>();
 	
+	/** contains the last measured size of our local ConnectionManager, used in updating the list of active connections */
+	private int ceAmountOld = 0;
+	
 	public HashMap<String,ConnectionType> conType = new HashMap<String,ConnectionType>();
 
 	/**
