@@ -3,6 +3,7 @@ package networkConnection;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.time.Duration;
 import java.time.Instant;
@@ -92,12 +93,6 @@ public class ConnectionEndpointServerHandler extends Thread{
 						acceptedRequest = true;
 					}
 				}
-				
-				//Timeout after 10 Seconds
-				if(Duration.between(startWait, current).toSeconds() <= 10) {
-					System.out.println("TIMEOUT!");
-					settingUp = false;
-				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -113,7 +108,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 			e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * This stops the thread.
 	 */
@@ -122,7 +117,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 		settingUp = false;
 		this.interrupt();
 	}
-	
+
 	/**
 	 * @return true iff a connection request was accepted and a {@linkplain ConnectionEndpoint} was successfully created
 	 */
