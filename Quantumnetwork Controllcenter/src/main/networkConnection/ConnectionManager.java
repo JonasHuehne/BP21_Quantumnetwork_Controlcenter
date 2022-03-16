@@ -8,7 +8,6 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -84,7 +83,7 @@ public class ConnectionManager {
 	 * @param localName
 	 * 		local name that will be passed on to any ConnectionEndpoints in the manager, 
 	 * 		should be the name of this machine / the name you wish to have in the network
-	 * @param commList
+	 * @param commlist
 	 * 		when answering an incoming connection request, this communication list will be check if it contains
 	 *  	an entry for that connection's IP:Port pair. If it does, we can name the connection based on that
 	 *  	entry and also set the public key for the connection. May be null.
@@ -258,9 +257,9 @@ public class ConnectionManager {
 	 */
 	private boolean ipAndPortAreFree(String ip, int port) {
 		for (ConnectionEndpoint ce : connections.values()) {
-			if (ce.getRemoteAddress().equals(ip) && ce.getRemotePort() == port) return true;
+			if (ce.getRemoteAddress().equals(ip) && ce.getRemotePort() == port) return false;
 		}
-		return false;
+		return true;
 	}
 	
 	/**

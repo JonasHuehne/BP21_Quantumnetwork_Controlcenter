@@ -29,18 +29,18 @@ public final class KeyStoreObject {
 	 * 		identifier for the destination application
 	 * @param used
 	 * 		whether the key has been used already
-	 * @param iniative
+	 * @param initiative
 	 * 		true for the one who initiated key generation, false for the other party
 	 */
 	protected KeyStoreObject(final String keyStreamID, final byte[] keyBuffer, final int index, final String source,
-			final String destination, boolean used, boolean iniative) {
+			final String destination, boolean used, boolean initiative) {
 		this.keyStreamID = keyStreamID;
 		this.keyBuffer = keyBuffer;
 		this.index = index;
 		this.source = source;
 		this.destination = destination;
 		this.used = used;
-		this.initiative = iniative;
+		this.initiative = initiative;
 
 	}
 

@@ -1,5 +1,12 @@
 package graphicalUserInterface.keyStoreEditor;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
+
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
@@ -8,14 +15,6 @@ import exceptions.NoKeyWithThatIDException;
 import exceptions.NotEnoughKeyLeftException;
 import graphicalUserInterface.GenericWarningMessage;
 import keyStore.KeyStoreDbManager;
-
-import javax.swing.JButton;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowEvent;
-import java.nio.charset.StandardCharsets;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.awt.event.ActionEvent;
 
 /**
  * Debug Window for inserting an entry into the keystore.

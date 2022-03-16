@@ -51,7 +51,7 @@ public record MessageArgs(String userName, String fileName, int keyIndex, String
 	 * 		the name you wish the other communication partner to know you as
 	 * @param localIP
 	 * 		your IP
-	 * @param
+	 * @param localPort
 	 * 		your local server port
 	 */
 	public MessageArgs(String userName, String localIP, int localPort) {
@@ -61,7 +61,7 @@ public record MessageArgs(String userName, String fileName, int keyIndex, String
 	/**
 	 * Used for {@linkplain NetworkPackage}s sent for file transfer.
 	 * @param fileName
-	 * 		the name of the file being transfered, including extension
+	 * 		the name of the file being transferred, including extension
 	 * @param keyIndex
 	 * 		encrypted messages use a mutual key between you and your communication partner <br>
 	 * 		this is the index of the first bit being used of that mutual key <br>

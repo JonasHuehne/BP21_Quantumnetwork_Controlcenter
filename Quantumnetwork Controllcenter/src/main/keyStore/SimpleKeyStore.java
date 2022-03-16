@@ -302,7 +302,6 @@ public class SimpleKeyStore {
 	}
 	
 	/*
-	 * TODO: Method to change the ID of a key
-	 * (e.g. in case of renaming a contact)
+	 * Might be useful to have a method for changing the ID of a key?
 	 */
 }

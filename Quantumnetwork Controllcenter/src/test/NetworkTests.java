@@ -57,13 +57,13 @@ public class NetworkTests {
 		}
 		
 	}
-	
+
 	/**
 	 * Tests for the {@link ConnectionManager} class and the classes it uses to establish and manage connections.
 	 */
 	@Nested
 	class ConnectionManagerTests {
-		
+
 		/**
 		 * None of this code should trigger any Exceptions.
 		 * @throws IOException
@@ -257,7 +257,7 @@ public class NetworkTests {
 				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60040, null);
 				CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60050, null);
 			});
-			
+
 			// Trying to destroy a non-existent CE
 			assertThrows(ManagerHasNoSuchEndpointException.class, () -> {
 				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60045, "Alice", null);
@@ -330,16 +330,6 @@ public class NetworkTests {
 			
 			
 		}
-		
-	}
-	
-	/**
-	 * Tests for some of the other functionalities provided by classes in the networkConnection package.
-	 */
-	@Nested
-	class MiscNetworkTests {
-		
-		// TODO Add some tests here where appropriate
 		
 	}
 

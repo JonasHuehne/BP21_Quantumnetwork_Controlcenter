@@ -42,8 +42,6 @@ public class MessageSystem {
 
 	private static Log log = new Log(MessageSystem.class.getName(), LogSensitivity.WARNING);
 	
-	static Log messageSystemLog = new Log("MessageSystem Log", LogSensitivity.WARNING);
-	
 	/** The cipher the message system uses to encrypt / decrypt messages & files */
 	private static SymmetricCipher cipher;
 	/** The authenticator the message system uses to sign / verify messages & files */
@@ -200,7 +198,7 @@ public class MessageSystem {
 	 */
 	public static void sendTextMessage(String connectionID, String msgString, boolean sign, boolean confirm) throws CouldNotSendMessageException  {
 		MessageArgs args = new MessageArgs();
-		messageSystemLog.logInfo("Attempting to send message <" + msgString + "> from CE with ID <" + connectionID + "> | Signed: " + sign + " Confirmed: " + confirm + " |");
+		log.logInfo("Attempting to send message <" + msgString + "> from CE with ID <" + connectionID + "> | Signed: " + sign + " Confirmed: " + confirm + " |");
 		try {
 			sendMessage(connectionID, TransmissionTypeEnum.TEXT_MESSAGE, args, stringToByteArray(msgString), sign, confirm);
 		} catch (EndpointIsNotConnectedException | ManagerHasNoSuchEndpointException e) {
@@ -232,7 +230,7 @@ public class MessageSystem {
 			// Provide the index in the message args so receiver knows where to start with decryption
 			int index = KeyStoreDbManager.getIndex(keyIDofConnection);
 			
-			messageSystemLog.logInfo("Attempting to send encrypted <" + msgString + "> from CE with ID <" + connectionID + "> | "
+			log.logInfo("Attempting to send encrypted <" + msgString + "> from CE with ID <" + connectionID + "> | "
 					+ "Started Encryption at Index: " + index + " Confirmed: " + confirm + " |");
 				
 			// Construct the message to send
@@ -308,7 +306,8 @@ public class MessageSystem {
 			throws NoKeyWithThatIDException, SQLException, EndpointIsNotConnectedException {
 		
 		/*
-		 * (Proof of concept)
+		 * Basic implementation of algorithm to avoid key desynch.
+		 * Might need some improvements in the future.
 		 */
 
 		// CE A will send this package to CE B to inform them that
@@ -333,7 +332,7 @@ public class MessageSystem {
 				NetworkPackage removed = conMan.getConnectionEndpoint(connectionID).removeFromPushQueue(keyUseAlert.getID());
 				if (removed != null) { 
 					// if we successfully removed the package, that means it wasn't removed through a KEY_USE_ACCEPT / KEY_USE_REJECT
-					messageSystemLog.logWarning("A timeout occurred while awaiting a confirmation for key use on connection with ID " + connectionID);
+					log.logWarning("A timeout occurred while awaiting a confirmation for key use on connection with ID " + connectionID);
 				}
 			}
 		};
@@ -386,6 +385,7 @@ public class MessageSystem {
 	/**This generates a random MessageID that can be used to identify a message reception confirmation when using sendConfirmedMessage().
 	 * The ID is a 16 alpha-numerical characters long String. (a-z,A-Z,0-9)
 	 * @return the new random MessageID
+	 * @deprecated {@linkplain NetworkPackage}s now generate their own ID on creation.
 	 */
 	public static String generateRandomMessageID() {
 		Random randomGen = new Random();
