@@ -7,6 +7,8 @@ import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.LinkedList;
 
 import exceptions.EndpointIsNotConnectedException;
@@ -355,7 +357,6 @@ public class ConnectionEndpoint implements Runnable{
 				return;
 			}
 			System.out.println("[" + connectionID + "]: waiting for response");
-	
 			listenForMessage();
 	
 		//Error Messages

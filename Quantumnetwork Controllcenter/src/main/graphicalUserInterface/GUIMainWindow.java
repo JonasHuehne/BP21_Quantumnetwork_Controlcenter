@@ -1,33 +1,14 @@
 package graphicalUserInterface;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Component;
-import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.DefaultComboBoxModel;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JDialog;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.JToolBar;
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.LineBorder;
-import javax.swing.border.TitledBorder;
-import javax.swing.table.DefaultTableModel;
+import javax.swing.*;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Color;
 
 import communicationList.CommunicationList;
 import communicationList.Contact;
@@ -35,6 +16,15 @@ import exceptions.EndpointIsNotConnectedException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import frame.QuantumnetworkControllcenter;
+
+import java.awt.FlowLayout;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.table.DefaultTableModel;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import javax.swing.border.TitledBorder;
+
 import keyStore.KeyStoreDbManager;
 import keyStore.KeyStoreObject;
 import net.miginfocom.swing.MigLayout;
@@ -57,6 +47,7 @@ public final class GUIMainWindow implements Runnable{
             "Public Signature Key"};
 	
 	private CustomClosingFrame frame;
+	private Boolean contactListChanged = false;
 	private JTable contactTable;
 	private Box connectionEndpointVerticalBox;
 	private HashMap<String, JPanel> representedConnectionEndpoints = new HashMap<String, JPanel>();
@@ -179,7 +170,7 @@ public final class GUIMainWindow implements Runnable{
 		});
 		removeContactButton.setToolTipText("Removes a row from the \"Contacts\"-Table.");
 		contactControlPanel.add(removeContactButton);
-		
+
 		JButton contactRefreshButton = new JButton("Refresh Table");
 		contactRefreshButton.setToolTipText("Forces the contacts table shown below to update by re-querying the database. This can be used after modifying the contacts database.");
 		contactRefreshButton.addActionListener(new ActionListener() {
@@ -189,7 +180,7 @@ public final class GUIMainWindow implements Runnable{
 			}
 		});
 		contactControlPanel.add(contactRefreshButton);
-		
+
 		JButton saveChangesButton = new JButton("Save Changes to DB");
 		saveChangesButton.setToolTipText("Saves the changes made in the table to the contacts database.");
 		saveChangesButton.addActionListener(new ActionListener() {
@@ -286,7 +277,6 @@ public final class GUIMainWindow implements Runnable{
 		connectionButtonsPanel.add(generateKeyButton);
 		generateKeyButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
 				if(activeConnection == null) {
 					System.out.println("Warning: No Connection selected as active.");
 					return;
@@ -327,14 +317,14 @@ public final class GUIMainWindow implements Runnable{
 		
 		connectionEndpointVerticalBox = Box.createVerticalBox();
 		scrollPane.setViewportView(connectionEndpointVerticalBox);
-		
+
 		JButton connectionDebug = new JButton("Debug Button 1");
 		connectionDebug.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				ConnectionManager cm = QuantumnetworkControllcenter.conMan;
 				System.out.println("Conman Size: " + cm.getConnectionsAmount());
 				System.out.println("Entries: ");
-				for (Entry<String, ConnectionEndpoint> entry : cm.returnAllConnections().entrySet()) {
+				for (Map.Entry<String, ConnectionEndpoint> entry : cm.returnAllConnections().entrySet()) {
 					System.out.println(" " + entry.getKey() + " with state " + entry.getValue().reportState());
 				}
 				System.out.println("namesOfConnections size: " + namesOfConnections.size());
@@ -365,7 +355,7 @@ public final class GUIMainWindow implements Runnable{
 	public int getContactDBPortIndex() {
 		return contactDBPortIndex;
 	}
-	
+
 	public int getContactDBPubSigKeyIndex() {
 		return contactDBPubSigKeyIndex;
 	}
@@ -529,7 +519,7 @@ public final class GUIMainWindow implements Runnable{
 	public void run() {
 		
 		while(true) {
-			
+
 			/*
 			 * Update which connections are represented in the connections tab of the GUI
 			 */
@@ -540,7 +530,7 @@ public final class GUIMainWindow implements Runnable{
 				if (ceAmountNew > representedConnectionEndpoints.size()) { // if new connections were added
 					Map<String, ConnectionEndpoint> currentConnections = QuantumnetworkControllcenter.conMan.returnAllConnections();		
 					// Add a graphical entry for each connection that doesn't have one yet
-					for (Entry<String, ConnectionEndpoint> entry : currentConnections.entrySet()) {
+					for (Map.Entry<String, ConnectionEndpoint> entry : currentConnections.entrySet()) {
 						if (!(representedConnectionEndpoints.keySet().contains(entry.getKey()))) {
 								createConnectionRepresentation(
 										entry.getKey(), 
@@ -589,7 +579,7 @@ public final class GUIMainWindow implements Runnable{
 				v.repaint();
 				
 			});
-			
+
 			/*
 			 * Sleep between the updates to save resources.
 			 */
@@ -601,6 +591,6 @@ public final class GUIMainWindow implements Runnable{
 			}
 			prevActiveConnection = activeConnection;
 		}
-		
+
 	}
 }
