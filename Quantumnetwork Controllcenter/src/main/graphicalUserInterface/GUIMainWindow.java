@@ -1,5 +1,6 @@
 package graphicalUserInterface;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,6 +16,7 @@ import communicationList.Contact;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
+import exceptions.NoKeyWithThatIDException;
 import frame.QuantumnetworkControllcenter;
 
 import java.awt.FlowLayout;
@@ -466,8 +468,10 @@ public final class GUIMainWindow implements Runnable{
 				
 				//Check if Key exists
 				if(connectionTypeCB.getSelectedItem() == ConnectionType.ENCRYPTED) {
-					KeyStoreObject kSO = KeyStoreDbManager.getEntryFromKeyStore(connectionName);
-					if(kSO == null) {
+					KeyStoreObject kSO;
+					try {
+						kSO = KeyStoreDbManager.getEntryFromKeyStore(connectionName);
+					} catch (NoKeyWithThatIDException | SQLException e1) {
 						new GenericWarningMessage("Warning: no valid Key was found for " + connectionName + "! Please generate a Key before using encrypted communication.");
 						connectionTypeCB.setSelectedItem(ConnectionType.AUTHENTICATED);
 					}

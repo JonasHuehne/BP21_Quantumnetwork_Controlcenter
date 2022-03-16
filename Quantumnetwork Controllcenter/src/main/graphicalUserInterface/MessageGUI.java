@@ -2,10 +2,12 @@ package graphicalUserInterface;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.AbstractMap.SimpleEntry;
 
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -154,9 +156,27 @@ public class MessageGUI extends JFrame {
 		JButton sendFileButton = new JButton("Send File");
 		sendFileButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//TODO: Add Sending of File here!
+				final JFileChooser fc = new JFileChooser();
+				int choice = fc.showOpenDialog(sendFileButton);
+				File f = fc.getSelectedFile();
+				if (choice == fc.APPROVE_OPTION) {
+					// If user has approved of sending this file, send it with the currently selected security setting
+					try {
+					switch (QuantumnetworkControllcenter.guiWindow.conType.get(connectionID)) {
+						case AUTHENTICATED: MessageSystem.sendFile(connectionID, f, true, true);
+							break;
+						case ENCRYPTED: MessageSystem.sendEncryptedFile(connectionID, f, true);
+							break;
+						case UNSAFE: MessageSystem.sendFile(connectionID, f, false, true);
+							break;
+						default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selected!");
+							break;
+						}
+					} catch (CouldNotSendMessageException e1) {
+						new GenericWarningMessage("ERROR - Could not send File! An Exception occurred. Please see the log for details.");
+					}
+				}
 				
-				new GenericWarningMessage("TODO: Implement SendFile-Functionality!");
 				
 			}
 		});
