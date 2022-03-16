@@ -97,7 +97,7 @@ public class ConnectionCommandHandler {
 			
 		} 
 		
-		// If contact exists, and there is no connection, add the new connection	
+		// If contact exists, and there is no connection, add the new connection
 		ConnectionEndpoint localPoint;
 		/*try {
 			localPoint = QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(contactName, "", localPort);
