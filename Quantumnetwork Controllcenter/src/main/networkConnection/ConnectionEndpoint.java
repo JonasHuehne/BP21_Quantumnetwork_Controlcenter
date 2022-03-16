@@ -79,7 +79,6 @@ public class ConnectionEndpoint implements Runnable{
 	private String messageLog = " ------ START OF MESSAGE LOG ------ ";
 	/** Timeout in ms when trying to connect to a remote server, 0 is an infinite timeout */
 	private final int CONNECTION_TIMEOUT = 3000;
-
 	
 	/**
 	 * Used when creating a ConnectionEndpoint as a response to a ConnectionRequest.

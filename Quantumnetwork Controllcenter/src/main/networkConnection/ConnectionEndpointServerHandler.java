@@ -3,7 +3,6 @@ package networkConnection;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Method;
 import java.net.Socket;
 import java.time.Duration;
 import java.time.Instant;
@@ -39,7 +38,6 @@ public class ConnectionEndpointServerHandler extends Thread{
 	private boolean acceptedRequest = false;
 	private ConnectionEndpoint ce = null;
 
-	
 	/**
 	 * Constructor.
 	 * For details see the JavaDoc of this class.
@@ -56,6 +54,8 @@ public class ConnectionEndpointServerHandler extends Thread{
 	 */
 	ConnectionEndpointServerHandler(Socket newClientSocket) throws IOException {
 		clientSocket = newClientSocket;
+		this.localPort = localPort;
+		this.localIP = localIP;
 
 	}
 	
