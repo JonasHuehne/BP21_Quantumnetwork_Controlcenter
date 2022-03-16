@@ -161,6 +161,7 @@ public class ConnectionEndpoint implements Runnable{
 			System.err.println("Error occured while establishing a connection from " + connectionID + " to target ServerSocket @ " + remoteIP + ":" + remotePort + ".");
 			e.printStackTrace();
 		}
+		
 	}
 	
 	/**
@@ -286,7 +287,7 @@ public class ConnectionEndpoint implements Runnable{
 	public String getRemoteName() {
 		return remoteName;
 	}
-	
+
 	/**Sets the Name of the Connected User.
 	 * 
 	 * @param remoteName the Name of the connected User.
@@ -407,7 +408,7 @@ public class ConnectionEndpoint implements Runnable{
 			remoteClientSocket = null;
 		}		
 	}
-	
+
 	/**
 	 * Sends a request to the partner CE to close the connection, then closes the connection from this end.
 	 * @throws EndpointIsNotConnectedException 
@@ -441,7 +442,7 @@ public class ConnectionEndpoint implements Runnable{
 			&& !reportState().equals(ConnectionState.CONNECTED)) {
 			throw new EndpointIsNotConnectedException(connectionID, " push message of type " + type);
 		}
-		
+
 		//Write Message to Stream
 		try {
 			System.out.println(connectionID + " pushed a message of type " + type);
@@ -548,6 +549,8 @@ public class ConnectionEndpoint implements Runnable{
 			
 		case KEYGEN_SYNC_ACCEPT:	//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
 			//The SyncConfirm is added to the regular messagesStack and read by the KeyGenerator.
+			//System.out.println("[" + connectionID + "]: Received KeyGenSyncResponse-Message: " + transmission.getHead() + "!");
+			//addMessageToQueue( transmission);
 			keyGen.updateAccRejState(1);
 			return;
 			
@@ -560,10 +563,10 @@ public class ConnectionEndpoint implements Runnable{
 			keyGen.writeKeyGenFile(transmission);
 			return;
 			
-		case KEYGEN_SOURCE_SIGNAL:	//This is only used for signaling the source server to start sending photons. 
+		case KEYGEN_SOURCE_SIGNAL:	//This is only used for signaling the source server to start sending photons.
 			SourceControlApplication.writeSignalFile(transmission, connectionID);
 			return;
-			
+
 			
 		case KEYGEN_TERMINATION:	//This is received if the connected ConnectionEndpoint intends to terminate the KeyGen Process. This will cause a local shutdown in response.
 			//Terminating Key Gen
@@ -690,6 +693,72 @@ public class ConnectionEndpoint implements Runnable{
 	
 	public void appendMessageToLog(String newMessage) {
 		logMessage(getMessageLog() + newMessage);
+	}
+	
+	/**This Method handles all types of Transmissions.
+	 * TRANSMISSION, FILE_TRANSFER and RECEPTION_CONFIRMATION_REQUEST will be handled by this method after being processed.
+	 * 
+	 * @param transmission the new transmission.
+	 */
+	private void receiveMessage(NetworkPackage transmission) {
+		String msg;
+		System.out.println("[" + connectionID + "]: Receiving new Message...");
+		
+		if(transmission.getHead() == TransmissionTypeEnum.FILE_TRANSFER) {
+			//TODO: Implement File Handling
+		}
+		
+		
+		if(transmission.getTypeArg().split(":::")[0] == "encrypted") {
+			//Handle Encrypted Messages
+			msg = MessageSystem.readEncryptedMessage(connectionID, transmission);
+			if(msg == null) {
+				System.err.println("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
+				new GenericWarningMessage("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
+			}
+			return;
+		}
+		
+		if(transmission.getSignature() != null) {
+			//Handle Authenticated Messages
+			msg = MessageSystem.byteArrayToString(MessageSystem.readAuthenticatedMessage(connectionID, transmission));
+			if(msg == null) {
+				System.err.println("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
+				new GenericWarningMessage("ERROR: Could not Authenticate Message: " + MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission)));
+			}
+			
+		}else {
+			//Handle Unsafe Messages
+			msg = MessageSystem.byteArrayToString(MessageSystem.readMessage(transmission));
+		}
+		
+		//Update Message Log
+		logMessage(messageLog + "\n" + remoteName +" wrote: \n" + msg);
+		
+		if(logGUI != null) {
+			logGUI.refreshMessageLog();
+		}
+	}
+	
+	private void receiveFile(NetworkPackage transmission) {
+		//TODO: Add creation of file here! I assume the Argument of the NetworkPackage will contain the path + filename.filetype!
+	}
+	
+	/**This replaces the message log with a new one.
+	 * Normally the new one also contains the old one.
+	 * 
+	 * @param msg the new message log.
+	 */
+	public void logMessage(String msg) {
+		messageLog = (msg);
+	}
+	
+	/**This returns the MessageLog that contains any plain-text messages of this connection.
+	 * 
+	 * @return the message log
+	 */
+	public String getMessageLog() {
+		return messageLog;
 	}
 
 }

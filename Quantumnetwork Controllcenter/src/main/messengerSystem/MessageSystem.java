@@ -110,6 +110,13 @@ public class MessageSystem {
 	}
 
 	
+	/**This sends a message and the recipient is going to echo the message back to us.
+	 *
+	 * @param connectionID the name of the ConnectionEndpoint to send the message from.
+	 * @param message the message to be sent.
+	 * @param sig optional signature used by authenticated messages.
+	 * @return returns True if the confirmation of the message has been received, False if it times out.
+	 */
 	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) {
 		return sendConfirmedMessage(connectionID, stringToByteArray(message), stringToByteArray(sig));
 	}

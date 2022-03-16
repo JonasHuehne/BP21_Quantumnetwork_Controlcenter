@@ -165,7 +165,7 @@ public class KeyGenerator implements Runnable{
 	 * 		false otherwise
 	 */
 	private boolean preGenChecks() {
-		
+
 		boolean isConnectedToPartner = owner.reportState().equals(ConnectionState.CONNECTED);
 		
 		//TODO: Add any other Reqs here!
@@ -212,7 +212,7 @@ public class KeyGenerator implements Runnable{
 			current = Instant.now();
 			if(Duration.between(startWait, current).toSeconds() >= 10) {
 				hasBeenAccepted = 0;
-				throw new KeyGenRequestTimeoutException("[" + getOwnerID() + "]: Time-out while waiting for Pre-Key-Generation Sync. Did not receive an Accept- or Reject-Answer in time");	
+				throw new KeyGenRequestTimeoutException("[" + getOwnerID() + "]: Time-out while waiting for Pre-Key-Generation Sync. Did not receive an Accept- or Reject-Answer in time");
 			}
 		}
 		
@@ -543,7 +543,7 @@ public class KeyGenerator implements Runnable{
 		byte[] inFileContent;
 		
 		//Receive Message
-		inFileContent = MessageSystem.readAuthenticatedMessage(getOwnerID(), msg);    
+		inFileContent = MessageSystem.readAuthenticatedMessage(getOwnerID(), msg);
 		
 		//Write temporary lock file
 		File lockFile = new File(connectionPath.resolve(inFilePath + ".lock").toString());
@@ -554,7 +554,7 @@ public class KeyGenerator implements Runnable{
 			e1.printStackTrace();
 		}
 		//Write to file
-		try		
+		try
 		(Writer inWriter = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(inFilePath), Configuration.getProperty("Encoding")))) {
 			inWriter.write(MessageSystem.byteArrayToString(inFileContent));
 		} catch (UnsupportedEncodingException e) {

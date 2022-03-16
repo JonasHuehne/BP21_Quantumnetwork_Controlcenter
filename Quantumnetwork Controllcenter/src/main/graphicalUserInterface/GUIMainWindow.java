@@ -95,7 +95,7 @@ public final class GUIMainWindow implements Runnable{
 		getFrame().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		getFrame().setTitle("QNCC");
-		
+
 		frame.getContentPane().setLayout(new MigLayout("", "[1088.00px]", "[][528px][]"));
 		
 		JToolBar toolBar = new JToolBar();
@@ -125,7 +125,7 @@ public final class GUIMainWindow implements Runnable{
 		});
 		helpButton.setToolTipText("Opens the Help Screen.");
 		toolBar.add(helpButton);
-		
+
 		JPanel contactsOuterPanel = new JPanel();
 		contactsOuterPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "Contacts", TitledBorder.CENTER, TitledBorder.TOP, null, new Color(0, 0, 0)));
 		frame.getContentPane().add(contactsOuterPanel, "flowx,cell 0 1,alignx left,growy");
@@ -214,7 +214,7 @@ public final class GUIMainWindow implements Runnable{
 		contactTable = new JTable(new DefaultTableModel(contactColumnNames,0));
 		gatherContacts();
 		contactScrollPane.setViewportView(contactTable);
-		
+
 		JPanel connectionsOuterPanel = new JPanel();
 		connectionsOuterPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "Connections", TitledBorder.CENTER, TitledBorder.TOP, null, new Color(0, 0, 0)));
 		frame.getContentPane().add(connectionsOuterPanel, "cell 0 1,grow");
@@ -281,7 +281,7 @@ public final class GUIMainWindow implements Runnable{
 					System.out.println("Warning: No Connection selected as active.");
 					return;
 				}
-				
+
 				try {
 					if(QuantumnetworkControllcenter.conMan.getConnectionState(activeConnection) == ConnectionState.CONNECTED) {
 						try {
@@ -427,7 +427,7 @@ public final class GUIMainWindow implements Runnable{
 		ceFrame.setBorder(new LineBorder(new Color(0, 0, 0)));
 		ceFrame.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 		connectionEndpointVerticalBox.add(ceFrame);
-		
+
 		
 		JLabel connectionNameLabel = new JLabel(connectionName + " - " + targetIP + " - " + targetPort);
 		ceFrame.add(connectionNameLabel);

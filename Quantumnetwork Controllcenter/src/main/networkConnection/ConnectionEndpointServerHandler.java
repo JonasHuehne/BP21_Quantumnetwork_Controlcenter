@@ -109,6 +109,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 		}
 	}
 
+
 	/**
 	 * This stops the thread.
 	 */

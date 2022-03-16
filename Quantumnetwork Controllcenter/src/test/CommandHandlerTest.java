@@ -682,7 +682,7 @@ class CommandHandlerTest {
 			TimeUnit.MILLISECONDS.sleep(NETWORK_DELAY_MS);
 			// Now both should have exactly one message waiting
 			// assertEquals(1, conMan.getConnectionEndpoint("Alice").sizeOfMessageQueue(), "Bob should have received a message from Alice.");
-			// assertEquals(1, conMan.getConnectionEndpoint("Bob").sizeOfMessageQueue(), "Alice should have received a message from Bob.");			
+			// assertEquals(1, conMan.getConnectionEndpoint("Bob").sizeOfMessageQueue(), "Alice should have received a message from Bob.");
 		}
 		
 		/*

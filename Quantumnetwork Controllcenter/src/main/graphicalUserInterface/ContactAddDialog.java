@@ -21,6 +21,12 @@ import net.miginfocom.swing.MigLayout;
  *
  */
 
+/**This Dialog is used to add a new Contact to the ContactDB.
+ * 
+ * @author Jonas Huehne
+ *
+ */
+
 public class ContactAddDialog extends JDialog {
 	private JTextField nameTextField;
 	private JTextField ipTextField;
