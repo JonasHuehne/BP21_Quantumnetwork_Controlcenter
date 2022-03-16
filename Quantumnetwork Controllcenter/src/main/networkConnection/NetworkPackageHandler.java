@@ -24,9 +24,10 @@ import exceptions.VerificationFailedException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import keyStore.KeyStoreDbManager;
-import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
+import messengerSystem.SignatureAuthentication;
 import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 /**
  * Low level handling of {@linkplain NetworkPackage}s received by a {@linkplain ConnectionEndpoint}. <br>
@@ -36,7 +37,7 @@ import qnccLogger.Log;
  */
 public class NetworkPackageHandler {
 	
-	static Log nphLogger = new Log("NetworkPackageHandler Logger");
+	static Log nphLogger = new Log("NetworkPackageHandler Logger", LogSensitivity.WARNING);
 
 	
 	/** Whether files that do not have a valid signature should be saved to the system */
@@ -237,7 +238,7 @@ public class NetworkPackageHandler {
 	 */
 	private static void handleTextMessage(ConnectionEndpoint ce, NetworkPackage msg) throws CouldNotDecryptMessageException, VerificationFailedException {
 		if (msg.getSignature() != null) { // if the message is signed, verify it
-			Authentication authenticator = MessageSystem.getAuthenticator(); // the auth currently in use by the message system
+			SignatureAuthentication authenticator = MessageSystem.getAuthenticator(); // the auth currently in use by the message system
 			if (msg.verify(authenticator, ce.getID())) {
 				// If the message is also encrypted, try to decrypt it
 				if (msg.getMessageArgs().keyIndex() != -1) {

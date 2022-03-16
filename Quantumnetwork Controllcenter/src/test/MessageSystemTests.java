@@ -19,6 +19,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.crypto.IllegalBlockSizeException;
 
+import messengerSystem.SignatureAuthentication;
+import messengerSystem.Utils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +43,6 @@ import exceptions.VerificationFailedException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import keyStore.KeyStoreDbManager;
-import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionEndpoint;
@@ -60,7 +61,7 @@ import networkConnection.TransmissionTypeEnum;
 public class MessageSystemTests {
 	
 	static ConnectionManager AliceCM, BobCM;
-	static Authentication auth;
+	static SignatureAuthentication auth;
 
 	@BeforeAll
 	public static void initialize() throws IOException, PortIsInUseException, IpAndPortAlreadyInUseException {
@@ -109,10 +110,10 @@ public class MessageSystemTests {
 		commList.delete("Bob");
 		
 		// Generate key pair if none exists
-		SHA256withRSAAuthentication.generateSignatureKeyPair("signature", true, false);
+		auth.generateSignatureKeyPair("signature", true, false, false);
 		
 		// Public key used by both parties
-		String pk = SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub");
+		String pk = Utils.readKeyStringFromFile("signature.pub");
 		
 		commList.insert("Alice", "127.0.0.1", 60050, pk);
 		commList.insert("Bob", "127.0.0.2", 60040, pk); 

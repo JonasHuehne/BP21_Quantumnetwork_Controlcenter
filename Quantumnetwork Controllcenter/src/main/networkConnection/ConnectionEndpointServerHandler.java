@@ -79,25 +79,24 @@ public class ConnectionEndpointServerHandler extends Thread{
 
 		this.ceshLog = new Log("CESH Logger (Owner: " + parent.getLocalName() + ":" + parent.getLocalPort() + ")", LogSensitivity.WARNING);
 	}
-	
+
 	@Override
 	public void run() {
 		try {
 			serverOut = new ObjectOutputStream(clientSocket.getOutputStream());
 			serverIn = new ObjectInputStream(clientSocket.getInputStream());
 			while(settingUp) {
-				
+
 				//Create TimeOut
 				NetworkTimeoutThread ntt = new NetworkTimeoutThread(3000, this, this.getClass().getMethod("terminateThread"));
 				ntt.start();
 
 				if((receivedMessage = (NetworkPackage) serverIn.readObject()) != null) {
 					ceshLog.logInfo("[CESH " + localName + "] Received a Message: -.-"+ receivedMessage.getType().toString() + " - " + receivedMessage.getMessageArgs() +"-.-");
-					
+
 					//Create new CE
 					if(receivedMessage.getType() == TransmissionTypeEnum.CONNECTION_REQUEST) {
 						ntt.abortTimer();
-
 						remoteIP = receivedMessage.getMessageArgs().localIP();
 						remotePort = receivedMessage.getMessageArgs().localPort();
 
@@ -134,6 +133,10 @@ public class ConnectionEndpointServerHandler extends Thread{
 		} catch (NoSuchMethodException e) {
 			e.printStackTrace();
 		} catch (SecurityException e) {
+			e.printStackTrace();
+		} catch (ConnectionAlreadyExistsException e) {
+			e.printStackTrace();
+		} catch (IpAndPortAlreadyInUseException e) {
 			e.printStackTrace();
 		}
 	}

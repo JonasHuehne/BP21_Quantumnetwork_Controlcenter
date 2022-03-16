@@ -108,7 +108,8 @@ public class KeyGenerator implements Runnable{
 		System.out.println("[" + getOwnerID() + "]: Starting KeyGen MessagingService");
 		
 		//Signal the Source
-		signalSourceAPI();
+		// TODO
+		//signalSourceAPI();
 		
 		//Start the process
 		keyGenMessagingService();
@@ -256,7 +257,8 @@ public class KeyGenerator implements Runnable{
 		//for now, always accept
 		boolean accept = true;
 		if(accept && preGenChecks()) {
-			signalSourceAPI();
+			// TODO
+			//signalSourceAPI();
 			
 			NetworkPackage acceptResponse = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SYNC_ACCEPT, false);
 			acceptResponse.sign(authenticator);

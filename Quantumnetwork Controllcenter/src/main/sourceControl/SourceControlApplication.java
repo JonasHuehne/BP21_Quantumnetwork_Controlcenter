@@ -94,7 +94,7 @@ public class SourceControlApplication {
 	
 	public static void writeSignalFile(NetworkPackage transmission, String senderID) {
 
-		String fileName = transmission.getTypeArg();
+		String fileName = transmission.getMessageArgs().fileName();
 		String sourceInfo = MessageSystem.byteArrayToString(transmission.getContent());
 		Writer inWriter;
 		Path inFilePath = Path.of(System.getProperty("user.dir") + File.separator + "Signals" + File.separator + fileName + ".txt");

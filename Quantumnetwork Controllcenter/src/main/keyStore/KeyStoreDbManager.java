@@ -17,6 +17,7 @@ import exceptions.NoKeyWithThatIDException;
 import exceptions.NotEnoughKeyLeftException;
 import frame.Configuration;
 import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 /**
  * This class supplies methods for creating, editing, getting and deleting
@@ -28,7 +29,7 @@ public class KeyStoreDbManager {
 	private static final String dataBaseName = "KeyStore.db";
 	private static final String tableName = "KeyStorage";
 
-	private static Log logger = new Log("Keystore Logger");
+	private static Log logger = new Log("Keystore Logger", LogSensitivity.WARNING);
 	
 	/**
 	 * Connects to the Database.

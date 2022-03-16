@@ -38,9 +38,6 @@ public class SHA256withRSAAuthenticationGUI extends SHA256withRSAAuthentication 
                 	try { // wait for a bit between each check to not eat up the CPU
 						wait(100);
 					} catch (InterruptedException e) {
-						// this happens if the message waiting thread is interrupted
-						// <Sasha> as far as I know this shouldn't happen, but if it does
-						// the verification fails and the event is logged
 						log.logError("Verification aborted due to interrupt, message will be discarded.", e);
 	                    return false;
 					}

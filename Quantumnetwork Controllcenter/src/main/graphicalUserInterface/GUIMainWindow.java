@@ -358,7 +358,7 @@ public final class GUIMainWindow implements Runnable{
 					StringBuilder info = new StringBuilder();
 					info.append("ID: " 				+ active.getID() + System.lineSeparator());
 					info.append("Remote Name: " 	+ active.getRemoteName() + System.lineSeparator());
-					info.append("PK: " 				+ active.getPublicKey() + System.lineSeparator());
+					info.append("PK: " 				+ active.getSigKey() + System.lineSeparator());
 					info.append("KeyID: " 			+ active.getKeyStoreID() + System.lineSeparator());
 					try {
 						info.append("Keystore has an entry for this keyID == " 
