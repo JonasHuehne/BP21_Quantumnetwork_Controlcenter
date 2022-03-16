@@ -13,3 +13,4 @@ bin/
 *.pmd
 config.xml
 Quantumnetwork Controllcenter/log.txt
+Quantumnetwork Controllcenter/properties/
