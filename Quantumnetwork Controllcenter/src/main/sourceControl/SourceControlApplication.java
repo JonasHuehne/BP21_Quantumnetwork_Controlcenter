@@ -64,7 +64,7 @@ public class SourceControlApplication {
 		ip = args[0];
 		port = Integer.valueOf(args[1]);
 		System.out.println("Starting the Source Control on IP: " + ip + " and Port: " + String.valueOf(port) + "!");
-		
+
 		/*
 		 *TODO: Check if Sig files exist and if not, generate them!
 		 */

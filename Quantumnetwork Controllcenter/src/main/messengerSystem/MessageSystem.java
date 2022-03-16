@@ -31,7 +31,7 @@ import javax.swing.*;
  */
 public class MessageSystem {
 
-	
+
 	/** Contains the ConnectionEndpoints for which the MessageSystem handles the high-level messaging. <br>
 	 * 	Generally, this is set once when initializing the program, however, for automated tests it may be needed to set this multiple times to simulate different users. */
 	public static ConnectionManager conMan;
@@ -108,10 +108,10 @@ public class MessageSystem {
 	public static String readMessageAsString(NetworkPackage transmission) {
 		return byteArrayToString(transmission.getContent());
 	}
-	
+
 	
 	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) {
-		return sendConfirmedMessage(connectionID, stringToByteArray(message), sig);
+		return sendConfirmedMessage(connectionID, stringToByteArray(message), stringToByteArray(sig));
 	}
 	
 	
@@ -123,7 +123,7 @@ public class MessageSystem {
 		Random randomGen = new Random();
 	    return randomGen.ints(48, 123).filter(i -> (i<=57||i>=65) && (i<=90||i>=97)).limit(16).collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
 	}
-	
+
 	/**Sends a signed unconfirmed Message.
 	 * Signing requires valid keys.
 	 *
