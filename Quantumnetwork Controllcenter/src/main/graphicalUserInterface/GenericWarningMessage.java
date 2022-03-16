@@ -146,6 +146,6 @@ public class GenericWarningMessage extends JDialog {
 		warningTextField.setText(warningText);
 		getContentPane().add(warningTextField, BorderLayout.CENTER);
 	}
-	
+
 
 }
