@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 import exceptions.NoKeyWithThatIDException;
 import exceptions.NotEnoughKeyLeftException;
 import frame.Configuration;
+import qnccLogger.Log;
 
 /**
  * This class supplies methods for creating, editing, getting and deleting
@@ -27,9 +28,10 @@ public class KeyStoreDbManager {
 	private static final String dataBaseName = "KeyStore.db";
 	private static final String tableName = "KeyStorage";
 
+	private static Log logger = new Log("Keystore Logger");
+	
 	/**
 	 * Connects to the Database.
-	 * @return a new Connection to KeyStore.db
 	 */
 	private static Connection connect() {
 		Connection con = null;
@@ -44,8 +46,7 @@ public class KeyStoreDbManager {
 
 		} catch (ClassNotFoundException | SQLException e) {
 
-			System.err.println("Connection to database failed!" + "\n");
-			System.err.println(e.toString());
+			logger.logError("Connection to database failed.", e);
 
 		}
 
@@ -63,7 +64,7 @@ public class KeyStoreDbManager {
 		try (Connection conn = KeyStoreDbManager.connect()) {
 			Statement stmnt = conn.createStatement();
 
-			System.out.println("Database was created successfully!");
+			logger.logInfo("Successfully created key database " + dataBaseName + " or opened connection to it.");
 
 			// create Table
 			String keyInformationSQL = "CREATE TABLE IF NOT EXISTS " + tableName + " (KeyStreamId CHAR(128) UNIQUE ,"
@@ -72,7 +73,7 @@ public class KeyStoreDbManager {
 					+ "PRIMARY KEY (KeyStreamId))";
 
 			stmnt.executeUpdate(keyInformationSQL);
-			System.out.println("Table creation successful!");
+			logger.logInfo("Successfully created key table " + tableName + " in database " + dataBaseName + " (if it did not exist already).");
 		}
 	}
 
@@ -112,7 +113,9 @@ public class KeyStoreDbManager {
 			prepStmnt.setBoolean(7, initiative);
 
 			prepStmnt.executeUpdate();
-			System.out.println("Insertion to KeyInformation table was successful.");
+			logger.logInfo("Inserted new key into the database with ID [" + keyStreamID + "] " +
+					"with source [" + source + "] and destination [" + destination + "]. "
+							+ "Used is " + used + " and initiative is " + initiative);
 		}
 
 	}
@@ -137,7 +140,7 @@ public class KeyStoreDbManager {
 			pstmnt.setBytes(1, key);
 			pstmnt.setString(2, keyStreamID);
 			pstmnt.executeUpdate();
-
+			logger.logInfo("Changed key buffer of key with ID [" + keyStreamID + "]");
 		}
 
 	}
@@ -190,7 +193,7 @@ public class KeyStoreDbManager {
 	 * 		i.e. setting the index to be the specified value
 	 * 		would result in an invalid key store entry
 	 */
-	public static boolean changeIndex(String keyStreamID, int newIndex) throws NoKeyWithThatIDException, SQLException, NotEnoughKeyLeftException {
+	public static void changeIndex(String keyStreamID, int newIndex) throws NoKeyWithThatIDException, SQLException, NotEnoughKeyLeftException {
 		KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
 		if (newIndex > obj.getCompleteKeyBuffer().length) {
 			throw new NotEnoughKeyLeftException("Can not set Index to " + newIndex + " for key with ID " + keyStreamID + ". "
@@ -209,15 +212,8 @@ public class KeyStoreDbManager {
 				pstmnt.close();
 				conn.close();
 
-				int index = KeyStoreDbManager.getEntryFromKeyStore(keyStreamID).getIndex();
-				System.out.println("Successfully updated the Index to " + index);
-
-				return true;
-
-			} catch (SQLException e) {
-				System.err.println("Changing the Index of Entry failed! " + "\n");
-				System.err.println(e.toString());
-				return false;
+				logger.logInfo("Changed index of key with ID [" + keyStreamID + "] to " + newIndex);
+				
 			}
 		}
 		
@@ -258,16 +254,18 @@ public class KeyStoreDbManager {
 		KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
 		int newIndex = Math.min(obj.getIndex() + increment, obj.getCompleteKeyBuffer().length); // new index is at most == key length
 		try {
+			logger.logInfo("Incrementing index of Key with ID [" + keyStreamID + "] to " + newIndex);
 			changeIndex(keyStreamID, newIndex);
 		} catch (NotEnoughKeyLeftException e) {
-			// never thrown
+			// never thrown, but if it is, log it
+			logger.logError("There was an error incrementing the index of key with ID [" + keyStreamID + "]. "
+					+ "It should have just been set to the maximum key length, but an Exception was thrown.", e);
 		}
 	}
 
 	/**
 	 * Displays all entries on the console
 	 *
-	 * @return True if output was displayed correctly, False otherwise
 	 * @throws SQLException
 	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
 	 */
@@ -302,7 +300,7 @@ public class KeyStoreDbManager {
 
 			pstmnt.setString(1, keyStreamID);
 			pstmnt.executeUpdate();
-			System.out.println("Entry from KeyInformation table was deleted successfully!");
+			logger.logInfo("Executed delete command for key with ID [" + keyStreamID + "]");
 		}
 
 	}
@@ -320,7 +318,7 @@ public class KeyStoreDbManager {
 				.map(obj -> new String(obj.getID())).collect(Collectors.toList());
 
 		if (keyIdList.size() == 0) {
-			System.err.println("There are no used keys that could be deleted");
+			logger.logInfo("Executed delete command for all used keys, but there were none to delete.");
 			return false;
 		}
 
@@ -328,6 +326,7 @@ public class KeyStoreDbManager {
 			deleteEntryIfExists(str);
 		}
 		
+		logger.logInfo("Executed delete command for all used keys, deleted " + keyIdList.size() + ".");
 		return true;
 
 	}
@@ -354,7 +353,7 @@ public class KeyStoreDbManager {
 
 			pstmnt.setString(1, keyStreamID);
 			pstmnt.executeUpdate();
-			System.out.println("Changed key from Unused to Used");
+			logger.logInfo("Set used status of key with ID [" + keyStreamID + "] to TRUE.");
 
 			return true;
 
@@ -393,7 +392,7 @@ public class KeyStoreDbManager {
 					rs.getInt("Index_"), rs.getString("Source_"), rs.getString("Destination"), rs.getBoolean("Used"),
 					rs.getBoolean("Initiative"));
 
-
+			logger.logInfo("Retrieved key with ID [" + keyStreamID + "]");
 			return object;
 
 		}
@@ -495,6 +494,7 @@ public class KeyStoreDbManager {
 			throws NotEnoughKeyLeftException, NoKeyWithThatIDException, SQLException {
 		if (index < 0) throw new IndexOutOfBoundsException("Index may not be less than 0, but was " + index);
 		if (nbytes <= 0) throw new IllegalArgumentException("Must specify an amount of bytes to get greater than 0, but specified " + nbytes);
+		logger.logInfo("Attempting to retrieve bytes from index " + index + " to " + (index + nbytes) + " for key with ID [" + keyStreamID + "]");
 		KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
 
 		if (obj.getCompleteKeyBuffer().length < index + nbytes)
@@ -519,15 +519,16 @@ public class KeyStoreDbManager {
 	 * @param source        identifier for the source application
 	 * @param destination   identifier for the destination application
 	 * @param qosParameters multiple parameters that are delivered as a QoS Object
-	 *                      //Weiß selber ned wie der Parameter aussehen soll
+	 *                      
 	 * @param keyStreamID   reference ID to locate a key
 	 * @return number of status
 	 * @throws SQLException 
+	 * 		if there was an error with the database
 	 */
 	public static int open_Connect(String source, String destination, QoS qosParameters, String keyStreamID,
 			boolean peerConnected, boolean initiative) throws SQLException {
 
-		// return 5 -----> if KeyStramID already exists
+		// return 5 -----> if KeyStreamID already exists
 		if (!doesKeyStreamIdExist(keyStreamID)) {
 			return 5;
 		}
@@ -536,7 +537,7 @@ public class KeyStoreDbManager {
 		boolean insertbool = doesKeyStreamIdExist(keyStreamID);
 
 		if (insertbool) {
-			// return 0 -----> if everything was succesfull
+			// return 0 -----> if everything was successful
 			if (peerConnected)
 				return 0;
 
@@ -567,12 +568,13 @@ public class KeyStoreDbManager {
 	 *
 	 * @param keyStreamID reference ID to locate a key
 	 * @return number of status
-	 * @throws SQLException
+	 * @throws SQLException 
+	 * 		if there was an error with the database
 	 */
 	static int close(String keyStreamID, boolean peerConnected) throws SQLException {
 		// delete keyInformation for this ID
 
-		// return 0 -----> if everything was succesfull
+		// return 0 -----> if everything was successful
 		if (doesKeyStreamIdExist(keyStreamID)) {
 			deleteEntryIfExists(keyStreamID);
 			if (peerConnected)
@@ -589,8 +591,10 @@ public class KeyStoreDbManager {
 	 *
 	 * @param keyStreamID reference ID to locate a key
 	 * @return number of status + the key
-	 * @throws SQLException
+	 * @throws SQLException 
+	 * 		if there was an error with the database
 	 * @throws NoKeyWithThatIDException
+	 * 		if no key with that ID is in the database
 	 */
 	public static Map.Entry<byte[], Integer> get_Key(String keyStreamID) throws NoKeyWithThatIDException, SQLException {
 		AbstractMap.SimpleEntry<byte[], Integer> pair;

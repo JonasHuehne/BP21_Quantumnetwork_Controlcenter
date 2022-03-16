@@ -53,5 +53,5 @@ public enum TransmissionTypeEnum {
 	 * Transmissions of this type are expected to be signed.
 	 */
 	KEY_USE_REJECT;
-	; // TODO add a way for B to say no and inform A about desync
+	; 
 }

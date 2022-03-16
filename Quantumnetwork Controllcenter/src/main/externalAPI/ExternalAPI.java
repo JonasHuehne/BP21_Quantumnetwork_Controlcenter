@@ -30,6 +30,7 @@ import exceptions.CouldNotDecryptMessageException;
 import exceptions.CouldNotEncryptMessageException;
 import exceptions.CouldNotGetKeyException;
 import exceptions.CouldNotSendMessageException;
+import exceptions.ExternalApiNotInitializedException;
 import exceptions.IpAndPortAlreadyInUseException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.NoKeyWithThatIDException;
@@ -173,7 +174,7 @@ public class ExternalAPI {
 	 * 		the bytes to be used for decryption will be read starting at that
 	 * 		index in the keystore (needs to be the same as the index was when
 	 * 		the file was decrypted with the same key)
-	 * @param file
+	 * @param inFile
 	 * 		the file to decrypt
 	 * @throws CouldNotDecryptMessageException 
 	 * 		if the file could not be decrypted
@@ -201,12 +202,14 @@ public class ExternalAPI {
 	 * 	the file to send, must be a .txt file
 	 * @throws CouldNotSendMessageException
 	 * 	if the message could not be sent, e.g. because there is no key available, or the file could not be read
+	 * @throws ExternalApiNotInitializedException 
+	 * 	if {@link #initialize(String, String, int)} has not been executed yet
 	 */
-	public static void sendEncryptedTxtFile(String communicationPartner, File file) throws ManagerHasNoSuchEndpointException, CouldNotSendMessageException {
+	public static void sendEncryptedTxtFile(String communicationPartner, File file) throws CouldNotSendMessageException, ExternalApiNotInitializedException {
 		if (!file.toString().endsWith(".txt")) {
 			throw new IllegalArgumentException("File " + file.toString() + " is not a .txt file.");
 		}
-		if (!initialized) return;
+		if (!initialized) throw new ExternalApiNotInitializedException("Can not send message to " + communicationPartner + ". API is not initialized.");
 		try {
 			// load the text of the file
 			String msg = Files.readString(file.toPath());
@@ -301,10 +304,22 @@ public class ExternalAPI {
 	 * 		if a connection with this IP:Port pair already exists 
 	 * @throws ConnectionAlreadyExistsException 
 	 * 		if a connection with this ID already exists
+	 * @throws ExternalApiNotInitializedException
+	 * 		if {@link #initialize(String, String, int)} has not been executed yet 
 	 */
-	public static void connectTo(String ip, int port, String name, String pk) throws ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException {
-		if (!initialized) return;
+	public static void connectTo(String ip, int port, String name, String pk) throws ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException, ExternalApiNotInitializedException {
+		if (!initialized) 
+			throw new ExternalApiNotInitializedException(
+					"Can not connect to CE " + name + " with address:port " 
+					+ ip + ":" + port + ". API is not initialized.");
 		conMan.createNewConnectionEndpoint(name, ip, port, pk);
+	}
+	
+	/**
+	 * @return true if the ExternalAPI has been initialized, i.e. is ready for data transfer
+	 */
+	public static boolean isInitialized() {
+		return initialized;
 	}
 	
 	/*

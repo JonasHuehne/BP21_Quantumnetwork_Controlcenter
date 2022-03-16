@@ -141,7 +141,7 @@ public abstract class SymmetricCipher {
 	
 	/**
 	 * @param mode
-	 * 		the opmode to initialize the cipher in <br>
+	 * 		the operation mode to initialize the cipher in <br>
 	 * 		(Should be either {@linkplain Cipher#ENCRYPT_MODE} or {@linkplain Cipher#DECRYPT_MODE})
 	 * @param key
 	 * 		key used to initialize the cipher with

@@ -98,7 +98,7 @@ public class NetworkPackage implements Serializable{
 		 * For the integrity of a NetworkPackage, not only the content is important,
 		 * but also the type, arguments, and whether a confirmation is expected.
 		 * All of this needs to be signed so that if they are changed along the way the recipient can spot it.
-		 * Unfortunately, we can't have two seperate signatures for the meta data and content (see: replay attack)
+		 * Unfortunately, we can't have two separate signatures for the meta data and content (see: replay attack)
 		 * so we have to create a new, large array in memory. Because of this it is discouraged
 		 * to create especially large NetworkPackages.
 		 */

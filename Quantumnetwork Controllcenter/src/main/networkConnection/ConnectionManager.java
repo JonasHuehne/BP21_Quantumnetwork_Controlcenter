@@ -82,7 +82,7 @@ public class ConnectionManager {
 	 * @param localName
 	 * 		local name that will be passed on to any ConnectionEndpoints in the manager, 
 	 * 		should be the name of this machine / the name you wish to have in the network
-	 * @param commList
+	 * @param commlist
 	 * 		when answering an incoming connection request, this communication list will be check if it contains
 	 *  	an entry for that connection's IP:Port pair. If it does, we can name the connection based on that
 	 *  	entry and also set the public key for the connection. May be null.
@@ -261,9 +261,9 @@ public class ConnectionManager {
 	 */
 	private boolean ipAndPortAreFree(String ip, int port) {
 		for (ConnectionEndpoint ce : connections.values()) {
-			if (ce.getRemoteAddress().equals(ip) && ce.getRemotePort() == port) return true;
+			if (ce.getRemoteAddress().equals(ip) && ce.getRemotePort() == port) return false;
 		}
-		return false;
+		return true;
 	}
 	
 	/**
@@ -443,9 +443,8 @@ public class ConnectionManager {
 
 	
 	/**Closes a named connection if existing and open. Does not destroy the connectionEndpoint, use destroyConnectionEndpoint for that. <br>
-	 * @implNote Calls {@linkplain ConnectionEndpoint#closeConnection(boolean)} with the parameter {@code sendTerminationRequest} set to {@code true}.
-	 * If sending the termination request fails (because the endpoint was not connected), it attempts to force close the endpoint instead, by
-	 * calling {@linkplain ConnectionEndpoint#closeConnection(boolean)} again with {@code sendTerminationRequest} set to {@code false}.
+	 * @implNote Calls {@linkplain ConnectionEndpoint#closeWithTerminationRequest()}. If sending the termination request fails (because the 
+	 * endpoint was not connected), it attempts to force close the endpoint instead, by calling {@linkplain ConnectionEndpoint#forceCloseConnection()}.
 	 * @param connectionName	
 	 * 		the name of the intended {@linkplain ConnectionEndpoint}
 	 * @return true if the connection was closed, false if no such connection could be found

@@ -92,8 +92,6 @@ public final class GUIMainWindow implements Runnable{
 	public GUIMainWindow() {
 		initialize();
 		startUpdateService();
-		
-		
 	}
 
 	/**
@@ -103,8 +101,7 @@ public final class GUIMainWindow implements Runnable{
 		frame = new CustomClosingFrame();
 		getFrame().setBounds(100, 100, 1120, 567);
 		getFrame().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
-		
+			
 		frame.getContentPane().setLayout(new MigLayout("", "[1088.00px]", "[][528px][]"));
 		
 		JToolBar toolBar = new JToolBar();
@@ -454,7 +451,6 @@ public final class GUIMainWindow implements Runnable{
 		model.addRow(new Object[]{name, ip, port, sig});
 	}
 	
-
 	/**This Method adds a set of SwingItems that allow the user to interact with the ConnectionEndpoint.
 	 * 
 	 * @param connectionName	the name of the CE
@@ -462,8 +458,7 @@ public final class GUIMainWindow implements Runnable{
 	 * @param targetPort	the targetPort of the CE
 	 */
 	private void createConnectionRepresentation(String connectionName, String targetIP, int targetPort) {
-
-		
+	
 		JPanel ceFrame = new JPanel();
 		ceFrame.setBorder(new LineBorder(new Color(0, 0, 0)));
 		ceFrame.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
@@ -547,15 +542,13 @@ public final class GUIMainWindow implements Runnable{
 		ceUpdateThread.start();
 	}
 	
-	
 	/**
 	 * Interrupts the thread used to update the representation of the connections in the right table.
 	 */
 	public void shutdownUpdateService() {
 		ceUpdateThread.interrupt();
 	}
-	
-	
+		
 	/**
 	 * Runs a thread that updates the representation of the connections in the right table of the GUI.
 	 */

@@ -302,7 +302,8 @@ public class MessageSystem {
 			throws NoKeyWithThatIDException, SQLException, EndpointIsNotConnectedException {
 		
 		/*
-		 * (Proof of concept)
+		 * Basic implementation of algorithm to avoid key desynch.
+		 * Might need some improvements in the future.
 		 */
 
 		// CE A will send this package to CE B to inform them that
@@ -350,8 +351,7 @@ public class MessageSystem {
 		try {
 			return new String(arr, ENCODING_STANDARD);
 		} catch (UnsupportedEncodingException e) {
-			System.err.println("Error: unsupportet Encoding: " + ENCODING_STANDARD + "!");
-			e.printStackTrace();
+			messageSystemLog.logError("Error: unsupported Encoding: " + ENCODING_STANDARD + "!", e);
 			return null;
 		}
 	}
@@ -367,8 +367,7 @@ public class MessageSystem {
 		try {
 			return str.getBytes(ENCODING_STANDARD);
 		} catch (UnsupportedEncodingException e) {
-			System.err.println("Error: unsupportet Encoding: " + ENCODING_STANDARD + "!");
-			e.printStackTrace();
+			messageSystemLog.logError("Error: unsupported Encoding: " + ENCODING_STANDARD + "!", e);
 			return null;
 		}
 	}
@@ -376,6 +375,7 @@ public class MessageSystem {
 	/**This generates a random MessageID that can be used to identify a message reception confirmation when using sendConfirmedMessage().
 	 * The ID is a 16 alpha-numerical characters long String. (a-z,A-Z,0-9)
 	 * @return the new random MessageID
+	 * @deprecated {@linkplain NetworkPackage}s now generate their own ID on creation.
 	 */
 	public static String generateRandomMessageID() {
 		Random randomGen = new Random();

@@ -119,11 +119,6 @@ public class MessageSystemTests {
 		
 		auth = new SHA256withRSAAuthentication();
 		
-		/* <Sasha>
-		 * Signing & Verifying is currently a bit finicky, due to its dependenance on the pk specified in Configurations...
-		 * Well, I guess it's just not possible to really test the MessageSystem with any other (sk, pk) pair
-		 * than the "actual" one in use. But as long as the unit tests work, the program appears to do too.
-		 */
 	}
 	
 	@BeforeEach

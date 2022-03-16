@@ -1,23 +1,20 @@
 package graphicalUserInterface.keyStoreEditor;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.SwingConstants;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 
 import keyStore.KeyStoreDbManager;
 import keyStore.KeyStoreObject;
-
-import javax.swing.JButton;
-import java.awt.event.ActionListener;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.awt.event.ActionEvent;
 
 /**
  * Debug Window for viewing and editing the keystore.
@@ -34,8 +31,6 @@ public class DebugKeystoreEditor extends JFrame {
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				updateTable();
-
-				
 			}
 		});
 		

@@ -16,6 +16,7 @@ import javax.crypto.SecretKey;
 import communicationList.Contact;
 import encryptionDecryption.FileCrypter;
 import exceptions.CouldNotDecryptMessageException;
+import exceptions.CouldNotGetKeyException;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.NoKeyWithThatIDException;
 import exceptions.NotEnoughKeyLeftException;
@@ -110,8 +111,14 @@ public class NetworkPackageHandler {
 			break;
 		case RECEPTION_CONFIRMATION: // content of messages of this type is the ID they are confirming
 			// TODO check if we actually sent out a message with that ID (this will need us to also log which messages we sent...)
-			// TODO theoretically these messages should be verified
-			System.out.println("[" + ce.getID() + "] Received confirmation for message with ID " + Base64.getEncoder().encodeToString(msg.getContent()));
+			// Ignore RECEPTION_CONFIRMATIONS that are not verified (confirmation is not useful unless authentic)
+			
+			if (msg.getSignature() == null) { 
+				nphLogger.logWarning("[" + ce.getID() + "] Received confirmation for message with ID " + msg.getStringID()
+						+ " but discarded it. The confirmation was not signed.");
+				break;
+			}
+			nphLogger.logInfo("[" + ce.getID() + "] Received confirmation for message with ID " + msg.getStringID());
 			// if we did, add the messageID to the list
 			ce.addConfirmationFor(msg.getContent());
 			// if we have been waiting for this ID to be confirmed before pushing a message
@@ -217,6 +224,17 @@ public class NetworkPackageHandler {
 	 * The two methods below could theoretically go into MessageSystem with some refactoring?
 	 */
 	
+	/**
+	 * Handles a text message that was received
+	 * @param ce
+	 * 		the ConnectionEndpoint that received the message
+	 * @param msg
+	 * 		the message received - content will be interpreted as a string
+	 * @throws CouldNotDecryptMessageException
+	 * 		if the message was encrypted (keyIndex >= 0) but could not be decrypted
+	 * @throws VerificationFailedException
+	 * 		if the message was signed (msg.getSignature() != null) but could not be verified
+	 */
 	private static void handleTextMessage(ConnectionEndpoint ce, NetworkPackage msg) throws CouldNotDecryptMessageException, VerificationFailedException {
 		if (msg.getSignature() != null) { // if the message is signed, verify it
 			Authentication authenticator = MessageSystem.getAuthenticator(); // the auth currently in use by the message system
@@ -230,8 +248,8 @@ public class NetworkPackageHandler {
 						String decryptedString	= MessageSystem.byteArrayToString(decryptedMsg);
 						// Log the decrypted text of the message
 						ce.appendMessageToChatLog(false, true, decryptedString);
-					} catch (SQLException | InvalidKeyException | BadPaddingException | NotEnoughKeyLeftException | NoKeyWithThatIDException e) {
-						throw new CouldNotDecryptMessageException("Could not decrypt the text message with ID " + Base64.getEncoder().encodeToString(msg.getID()), e);
+					} catch (InvalidKeyException | BadPaddingException | CouldNotGetKeyException e) {
+						throw new CouldNotDecryptMessageException("[CE " + ce.getID() + "] Could not decrypt the text message with ID " + msg.getStringID(), e);
 					}
 				} 
 				// If the message is not encrypted
@@ -241,13 +259,23 @@ public class NetworkPackageHandler {
 					return;
 				}
 			} else {
-				
+				throw new VerificationFailedException("[CE " + ce.getID() + "] Could not verify the message with ID " + msg.getStringID());
 			}
 		} else {
 			ce.appendMessageToChatLog(false, false, MessageSystem.byteArrayToString(msg.getContent()));
 		}
 	}
 	
+	/**
+	 * Handles a file that was received.
+	 * @param ce
+	 * 		the ConnectionEndpoint that received the message
+	 * @param msg
+	 * 		the message received - content will be interpreted as the bytes of a file <br>
+	 * 		filename will be taken from the message arguments
+	 * @throws CouldNotDecryptMessageException
+	 * 		if the file was encrypted (keyIndex >= 0) but could not be decrypted
+	 */
 	private static void handleFile(ConnectionEndpoint ce, NetworkPackage msg) throws CouldNotDecryptMessageException {
 		// Save the file if saving unverified files is true, or if it can be verified
 		Path outDirectory = Paths.get("");
@@ -272,12 +300,12 @@ public class NetworkPackageHandler {
 						// save decrypted file with the same filename, but prefixed with decrypted_
 						Path pathToDecryptedFile = Paths.get(f.getParent().toString(), "decrypted_" + f.getName()); 
 						FileCrypter.decryptAndSave(outDirectory.resolve(fileName).toFile(), MessageSystem.getCipher(), sk, pathToDecryptedFile);
-					} catch (BadPaddingException | InvalidKeyException | SQLException | NoKeyWithThatIDException | NotEnoughKeyLeftException | IOException e) {
+					} catch (BadPaddingException | InvalidKeyException | IOException | CouldNotGetKeyException e) {
 						throw new CouldNotDecryptMessageException("Could not decrypt the text message with ID " + Base64.getEncoder().encodeToString(msg.getID()), e);
 					}
 				} 
 			} catch (IOException e) {
-				// TODO Log & exit
+				nphLogger.logError("[CE " + ce.getID() + "] An I/O Exception occurred trying to receive the file " + msg.getMessageArgs().fileName(), e);
 				return;
 			}
 		} else {
@@ -289,25 +317,37 @@ public class NetworkPackageHandler {
 	}
 	
 	/**
-	 * Gets the key to be used to decrypt the passed message.
+	 * Gets the key to be used to decrypt a passed message.
+	 * Looks in the keystore for the key with {@code keyID = ce.getKeystoreId()}
+	 * and returns the bytes key[keyIndex] to key[keyIndex + n] of it,
+	 * where n is the key length (in bytes) for the currently used cipher.
+	 * keyIndex is as specified in the message arguments.
 	 * @param ce
+	 * 		the ConnectionEndpoint that received the message
 	 * @param msg
+	 * 		the encrypted message
 	 * @return
-	 * @throws NotEnoughKeyLeftException 
-	 * @throws NoKeyWithThatIDException 
-	 * @throws SQLException 
+	 * 		the key that can be used to decrypt the message
+	 * @throws CouldNotGetKeyException 
+	 * 		if no key could be retrieved for decryption, generally wraps a lower level exception
 	 */
-	private static byte[] getKey(ConnectionEndpoint ce, NetworkPackage msg) throws SQLException, NoKeyWithThatIDException, NotEnoughKeyLeftException {
+	private static byte[] getKey(ConnectionEndpoint ce, NetworkPackage msg) throws CouldNotGetKeyException {
 		// Get the key for decryption
-		if (MessageSystem.getCipher().getKeyLength() % 8 != 0) { // check needed, because SimpleKeyStore only supports byte-sized keys
-			// TODO throw a more appropriate Exception here if possible
-			throw new RuntimeException("Currently, the simple key store only support byte sized keys. "
-					+ "Keys of a bit size that is not a multiple of 8 can not be retrieved.");
+		try {
+			if (MessageSystem.getCipher().getKeyLength() % 8 != 0) { // check needed, because SimpleKeyStore only supports byte-sized keys
+				// TODO throw a more appropriate Exception here if possible
+				throw new CouldNotGetKeyException("Currently, the simple key store only support byte sized keys. "
+						+ "Keys of a bit size that is not a multiple of 8 can not be retrieved.", null);
+			}
+			String keyID 			= ce.getKeyStoreID(); // ID of key to get
+			int keyLengthInBytes 	= MessageSystem.getCipher().getKeyLength() / 8; // # of key bytes to get
+			byte[] decryptionKey 	= KeyStoreDbManager.getKeyBytesAtIndexN(keyID, keyLengthInBytes, msg.getMessageArgs().keyIndex());
+			return decryptionKey;
+		} catch (SQLException | NotEnoughKeyLeftException | NoKeyWithThatIDException e) {
+			throw new CouldNotGetKeyException("[CE " + ce.getID() + "] Could not get key to decrypt message with ID " + msg.getStringID(), e);
 		}
-		String keyID 			= ce.getKeyStoreID(); // ID of key to get
-		int keyLengthInBytes 	= MessageSystem.getCipher().getKeyLength() / 8; // # of key bytes to get
-		byte[] decryptionKey 	= KeyStoreDbManager.getKeyBytesAtIndexN(keyID, keyLengthInBytes, msg.getMessageArgs().keyIndex());
-		return decryptionKey;
+		
+
 	}
 	
 }

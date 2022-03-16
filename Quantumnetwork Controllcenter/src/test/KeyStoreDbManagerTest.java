@@ -247,7 +247,7 @@ class KeyStoreDbManagerTest {
     }
 
     @Test
-    void can_not_change_non_existant_key() {
+    void can_not_change_non_existent_key() {
     	assertThrows(NoKeyWithThatIDException.class, () -> KeyStoreDbManager.changeIndex("Max", 100));
     	assertThrows(NoKeyWithThatIDException.class, () -> KeyStoreDbManager.incrementIndex("Max", 100));
     	assertThrows(NoKeyWithThatIDException.class, () -> KeyStoreDbManager.changeKeyToUsed("Max"));

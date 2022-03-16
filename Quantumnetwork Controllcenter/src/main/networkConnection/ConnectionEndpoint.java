@@ -66,7 +66,7 @@ public class ConnectionEndpoint implements Runnable{
 	//Communication Channels
 	/** Outgoing messages to the other CE are sent along this channel */
 	private ObjectOutputStream clientOut;
-	/** Incoming messages from the other CE are received on tis channel */
+	/** Incoming messages from the other CE are received on this channel */
 	private ObjectInputStream clientIn;	
 	
 	//State
@@ -144,6 +144,7 @@ public class ConnectionEndpoint implements Runnable{
 			pushMessage(connectionConfirmation);
 		} catch (EndpointIsNotConnectedException e) {
 			// this should not occur
+			ceLogger.logError("Control flow issue. Endpoint should be connected after creation, but wasn't.", e);
 		}
 		ceLogger.logInfo("[CE " + connectionName + "] Connection confirmation sent. Now listening for messages. ");
 		//Wait for greeting
@@ -636,20 +637,6 @@ public class ConnectionEndpoint implements Runnable{
 	}
 	
 	/**
-	 * Checks whether this CE has received a confirmation for a message with the given ID.
-	 * @param messageID
-	 * 		the ID to check
-	 * @return
-	 * 		true if it has, false if not
-	 */
-	public boolean hasConfirmationFor(byte[] messageID) {
-		for (byte[] id : receivedConfirmations) {
-			if (Arrays.equals(id, messageID)) return true;
-		}
-		return false;
-	}
-	
-	/**
 	 * Adds the given message ID to the list of message IDs for which this endpoint received a confirmation. <br>
 	 * @implNote Currently it is not checked whether this endpoint actually sent a message with the given ID,
 	 * it is expected that this is done before adding it to the list.
@@ -662,7 +649,7 @@ public class ConnectionEndpoint implements Runnable{
 	
 	/**
 	 * This will push the given NetworkPackage once this CE receives a confirmation, 
-	 * which confirms the message the message with the given ID.
+	 * which confirms the message with the given ID.
 	 * (Meaning a {@linkplain TransmissionTypeEnum#RECEPTION_CONFIRMATION} where the content field is == id.)
 	 * @param id
 	 * 		the ID to wait for confirmation for

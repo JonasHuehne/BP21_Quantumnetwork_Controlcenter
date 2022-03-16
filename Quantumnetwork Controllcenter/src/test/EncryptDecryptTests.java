@@ -37,11 +37,6 @@ class EncryptDecryptTests {
 	byte [] byteKeyLong = new byte [] { (byte) 0,  (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
 	byte [] byteKeyShort = new byte[] { (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
 	
-	String plainText 	= "The quick brown fox jumped over the lazy dog. 0123456789.";
-	
-	String keyBase64 	= "";
-	String keyBitString = "";
-	
 	static byte[] bytePlainText;
 
 	private final static String KEYGEN_ERROR = "An ERROR occured during the keygeneration:";
@@ -164,12 +159,6 @@ class EncryptDecryptTests {
 				cipher.decrypt(bytePlainText, byteKeyShort);
 			});
 		}
-		
-		/*
-		 * Note: Honestly not sure if all this NPE testing is even neccessary,
-		 * if we just specify in the JavaDoc that the input may not be null.
-		 * Oh well, now the tests are already written.
-		 */
 		
 		@Test
 		public void NPE_if_plaintext_is_ever_null() {
