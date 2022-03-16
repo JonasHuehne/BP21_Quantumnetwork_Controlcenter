@@ -367,8 +367,8 @@ public class ConnectionManager {
 		}
 
 	}
-
-	/**Changes the current local port address to a new value. 
+	
+	/** Changes the current local port to a new value.
 	 * This closes all {@linkplain ConnectionEndpoint}s managed by this manager, 
 	 * and sets their local port accordingly.
 	 * @param newLocalPort the new local port

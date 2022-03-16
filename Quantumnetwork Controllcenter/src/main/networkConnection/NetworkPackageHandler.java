@@ -256,7 +256,6 @@ public class NetworkPackageHandler {
 				else { 
 					// It has already been verified, so we just log it
 					ce.appendMessageToChatLog(false, true, MessageSystem.byteArrayToString(msg.getContent()));
-					return;
 				}
 			} else {
 				throw new VerificationFailedException("[CE " + ce.getID() + "] Could not verify the message with ID " + msg.getStringID());
@@ -311,7 +310,6 @@ public class NetworkPackageHandler {
 		} else {
 			nphLogger.logInfo("[CE " + ce.getID() + " ] Saving unverified files is disabled, and the message with ID " 
 					+ msg.getStringID() + " did not have a valid signature. So, no file was saved.");
-			return;
 		}
 
 	}
@@ -335,7 +333,6 @@ public class NetworkPackageHandler {
 		// Get the key for decryption
 		try {
 			if (MessageSystem.getCipher().getKeyLength() % 8 != 0) { // check needed, because SimpleKeyStore only supports byte-sized keys
-				// TODO throw a more appropriate Exception here if possible
 				throw new CouldNotGetKeyException("Currently, the simple key store only support byte sized keys. "
 						+ "Keys of a bit size that is not a multiple of 8 can not be retrieved.", null);
 			}

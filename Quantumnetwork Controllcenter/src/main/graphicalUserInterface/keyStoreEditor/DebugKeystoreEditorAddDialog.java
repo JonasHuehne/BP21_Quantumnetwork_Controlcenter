@@ -30,6 +30,9 @@ public class DebugKeystoreEditorAddDialog extends JFrame {
 	
 	protected DebugKeystoreEditor caller;
 	
+	/**
+	 * Debug window for inserting an entry into the keystore.
+	 */
 	public DebugKeystoreEditorAddDialog() {
 		getContentPane().setLayout(null);
 		

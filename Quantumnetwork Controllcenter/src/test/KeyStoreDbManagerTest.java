@@ -170,11 +170,8 @@ class KeyStoreDbManagerTest {
     void doesKSIdExistTest() throws SQLException{
     	KeyStoreDbManager.insertToKeyStore("Alice", new byte[] {1, 2, 3}, "vonHier", "nachHier", false, true);
     	
-        boolean existing = KeyStoreDbManager.doesKeyStreamIdExist("Alice");
-        assertEquals(true, existing);
-
-        boolean nonExisting = KeyStoreDbManager.doesKeyStreamIdExist("Gunther");
-        assertEquals(false, nonExisting);
+        assertTrue(KeyStoreDbManager.doesKeyStreamIdExist("Alice"));
+        assertFalse(KeyStoreDbManager.doesKeyStreamIdExist("Gunther"));
     }
 
     @Test
