@@ -90,7 +90,7 @@ public class ExternalAPITests {
         QuantumnetworkControllcenter.authentication.deleteSignatureKeys();
     }
     
-    /*@Nested
+    @Nested
     class testEncryptedMessage {
 
         @Test
@@ -164,6 +164,6 @@ public class ExternalAPITests {
             
             assertArrayEquals(inputBytes, outputBytes);
         }
-    }*/
+    }
     
 }
