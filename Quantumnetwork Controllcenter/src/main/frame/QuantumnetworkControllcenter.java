@@ -2,6 +2,8 @@ package frame;
 
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
+import encryptionDecryption.AES256;
+import encryptionDecryption.SymmetricCipher;
 import exceptions.PortIsInUseException;
 import graphicalUserInterface.GUIMainWindow;
 import graphicalUserInterface.SettingsDialog;
@@ -98,8 +100,11 @@ public class QuantumnetworkControllcenter {
 
 		// Authentication Init
 		authentication = new SHA256withRSAAuthenticationGUI();
+		MessageSystem.setAuthenticationAlgorithm(authentication);
 		
-		
+		// Encryption to use
+		SymmetricCipher cipher = new AES256();
+		MessageSystem.setEncryption(cipher);
 		
 		System.out.println("QuantumnetworkControllcenter initialized");
 	}

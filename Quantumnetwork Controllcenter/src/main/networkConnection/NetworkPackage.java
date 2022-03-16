@@ -1,10 +1,11 @@
 package networkConnection;
 
 import java.io.Serializable;
+import java.util.Random;
 
 /**A wrapper for a String Transmission that includes a head String that is used to identify the transmission type/purpose.
  * 
- * @author Jonas Huehne
+ * @author Jonas Huehne, Sasha Petri
  *
  */
 public class NetworkPackage implements Serializable{
@@ -14,6 +15,11 @@ public class NetworkPackage implements Serializable{
 	private String typeArgument; 
 	private byte[] content;
 	private byte[] signature;
+	
+	/** numerical ID for the package */
+	private double packageID;
+	/** true <==> the recipient is expected to send a package of type {@linkplain TransmissionTypeEnum#CONNECTION_CONFIRMATION} back */
+	private boolean expectConfirmation;
 	
 	/**Supply the newly created NetworkPackage with a TransmissionType, an Argument depending on the type and the actual content of the package.
 	 * 
@@ -60,5 +66,5 @@ public class NetworkPackage implements Serializable{
 	public byte[] getSignature() {
 		return signature;
 	}
-	
+
 }

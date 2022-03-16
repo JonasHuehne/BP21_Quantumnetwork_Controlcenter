@@ -25,7 +25,7 @@ public class AES256 extends SymmetricCipher {
 	//generating constant IV
 	private static final byte[] BYTE_IV = {42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42, 42};
 	private static final IvParameterSpec IV = new IvParameterSpec(BYTE_IV);
-	
+
 	//constants
 	private static final String ALGORITHM_WITH_PADDING = "AES/CBC/PKCS5Padding";
 	private static final int KEY_LENGTH_BYTE = 32;
