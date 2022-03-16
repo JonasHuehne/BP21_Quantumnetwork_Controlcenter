@@ -1,22 +1,34 @@
+
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.security.InvalidKeyException;
+import java.util.Random;
 
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 
 import encryptionDecryption.AES256;
 import encryptionDecryption.CryptoUtility;
 
-
-public class EncryptDecryptTests {
-	String original = "This is a Test!\\\"§$%&/()=?öäü to be fair a very long test text to see if it really works. So i am just going to smash my head on the keyboard a bit more: ajodaohglaenkohadoibhlaknowehojobhaskdjnfoaishcvon'#*_-:.,,;<>|adasogphopaidfhgvpoiiruhgaowenklödaioühoigüoh";
+/**
+ * Tests for Classes of the encryptionDecryption package.
+ * @author Sasha Petri, Lukas Dentler
+ */
+class EncryptDecryptTests {
+	
 	String bitStringKey = "0101010110101011101010111011101010101010101010101110011110000011101010111010111011100011000011110111101111101011010101011010101010111000011101010111101011110110111110001111100001111100011111010101110101110101110101110111101111000001111111010101010111101111";
 	String bitStringKeyWithChars = "abc1010110101011101010111011101010101010101010101110011110000011101010111010111011100011000011110111101111101011010101011010101010111000011101010111101011110110111110001111100001111100011111010101110101110101110101110111101111000001111111010101010111101111";
 	String bitStringKeyGreaterOne = "3011010110101011101010111011101010101010101010101110011110000011101010111010111011100011000011110111101111101011010101011010101010111000011101010111101011110110111110001111100001111100011111010101110101110101110101110111101111000001111111010101010111101111";
@@ -26,594 +38,406 @@ public class EncryptDecryptTests {
 	byte [] byteKeyLong = new byte [] { (byte) 0,  (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
 	byte [] byteKeyShort = new byte[] { (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
 	
-	private final PrintStream standardOut = System.out;
-	private final PrintStream standardErr = System.err;
-	private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
-	private final ByteArrayOutputStream outputErrCaptor = new ByteArrayOutputStream();
+	String plainText 	= "The quick brown fox jumped over the lazy dog. 0123456789.";
 	
-	private final static String KEY_WRONG_SIZE = "An invalid key was used. Please use a key of length 256";
-	private final static String BIT_STRING_WRONG_LENGTH = "Please only use 256 char long bit strings";
+	String keyBase64 	= "";
+	String keyBitString = "";
+	
+	static byte[] bytePlainText;
+
 	private final static String KEYGEN_ERROR = "An ERROR occured during the keygeneration:";
 	private final static String ALGORITHM_AES = "AES";
 	
+	static AES256 cipher;
 	
-	@Test
-	/*
-	 * Testing encryption and decryption with a bit string as Key
-	 */
-	public void testEncryptionDecryptionBitStringKey(){
-		String encrypted = AES256.encrypt(original, bitStringKey);
-		String decrypted = AES256.decrypt(encrypted, bitStringKey);
+	@BeforeAll
+	public static void initialize() {
+		Random r = new Random();
+		bytePlainText = new byte[1024];
+		r.nextBytes(bytePlainText);
+		
+		cipher = new AES256();
+	}
+	
+	@Nested
+	class AES256_Regular_Cases {
+		
+		@Nested
+		class Methods_Using_SecretKey {
 			
-		assertNotEquals(original,encrypted);
-		assertNotEquals(encrypted,decrypted);
-		assertEquals(decrypted,original);
-	}
-	
-	@Test
-	/*
-	 * Testing encryption and decryption with a byte array as Key
-	 */
-	public void testEncryptionDecryptionByteArrayKey(){
-		String encrypted = AES256.encrypt(original, byteKey);
-		String decrypted = AES256.decrypt(encrypted, byteKey);
-			
-		assertNotEquals(original,encrypted);
-		assertNotEquals(encrypted,decrypted);
-		assertEquals(decrypted,original);
-	}
-	
-	@Test
-	/*
-	 * Testing encryption and decryption with a generated Key
-	 */
-	public void testEncryptionDecryptionGeneratedKey() {
-		SecretKey key = null;
-		
-		try{
-			KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
-			keyGen.init(256);
-			key = keyGen.generateKey();
-		}
-		catch (Exception e) {
-			System.out.println(KEYGEN_ERROR +e.toString());
-		}		
-		
-		String encrypted = AES256.encrypt(original, key);
-		String decrypted = AES256.decrypt(encrypted, key);
-		
-		assertNotEquals(original,encrypted);
-		assertNotEquals(encrypted,decrypted);
-		assertEquals(decrypted,original);
-	}	
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown when null is used as key
-	 */
-	public void testEncryptionNullByteKey() {
-		assertThrows(NullPointerException.class,() -> {
-			assertNull(AES256.encrypt(original,(byte []) null));
-			});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Error message is shown when using a too long byte array during encryption
-	 */
-	public void testEncryptionByteArrayTooLong() {
-		System.setErr(new PrintStream(outputErrCaptor));
-		
-		assertNull(AES256.encrypt(original, byteKeyLong));	
-		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
-		
-		System.setErr(standardErr);
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Error message is shown when using a too short byte array during encryption
-	 */
-	public void testEncryptionByteArrayTooShort() {
-		System.setErr(new PrintStream(outputErrCaptor));
-		
-		assertNull(AES256.encrypt(original, byteKeyShort));
-		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
-		
-		System.setErr(standardErr);
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown, when bit string for key contains Chars during encryption
-	 */
-	public void testEncryptionBitStringContainsChars() {		
-		assertThrows(NumberFormatException.class,() -> {
-			assertNull(AES256.encrypt(original, bitStringKeyWithChars));
-			});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown, when bit string for key contains Numbers greater 1 during encryption
-	 */
-	public void testEncryptionBitStringGreaterOne() {
-		assertThrows(NumberFormatException.class,() -> {
-			assertNull(AES256.encrypt(original, bitStringKeyGreaterOne));
-			});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Error message is shown when using a too short bit string during encryption
-	 */
-	public void testEncryptionBitStringTooShort() {
-		System.setErr(new PrintStream(outputErrCaptor));
-		
-		assertNull(AES256.encrypt(original, bitStringKeyShort));
-		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
-		
-		System.setErr(standardErr);
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Error message is shown when using a too long bit string during encryption
-	 */
-	public void testEncryptionBitStringTooLong() {
-		System.setErr(new PrintStream(outputErrCaptor));
-		
-		assertNull(AES256.encrypt(original, bitStringKeyLong));	
-		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
-		
-		System.setErr(standardErr);
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Error message is shown when using a generated key of wrong length during encryption
-	 */
-	public void testEncryptionGeneratedKeyWrongLength() {
-		System.setErr(new PrintStream(outputErrCaptor));
-		SecretKey keyWrongLength = null;
-		
-		try{
-			KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
-			keyGen.init(128);
-			keyWrongLength = keyGen.generateKey();
-		}
-		catch (Exception e) {
-			System.out.println(KEYGEN_ERROR +e.toString());
-		}
-		
-		assertNull(AES256.encrypt(original, keyWrongLength));
-		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
-		
-		System.setErr(standardErr);
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown when null is used as key
-	 */
-	public void testEncryptionNullStrKey() {
-		assertThrows(NullPointerException.class,() -> {
-			assertNull(AES256.encrypt(original,(String) null));
-			});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown when null is used as key
-	 */
-	public void testEncryptionNullSecretKey() {
-		SecretKey sk = null;
-		
-		assertThrows(NullPointerException.class,() -> {
-			assertNull(AES256.encrypt(original,sk));
-			});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown when null is used as plaintext with a valid key
-	 */
-	public void testEncryptionNullPlaintext() {
-		assertThrows(NullPointerException.class, () -> {
-			assertNull(AES256.encrypt(null, bitStringKey));
-		});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown when null is used as plaintext and key
-	 */
-	public void testEncryptionNullPlaintextStrKey() {
-		assertThrows(NullPointerException.class, () -> {
-			assertNull(AES256.encrypt(null,(String) null));
-		});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown when null is used as plaintext and key
-	 */
-	public void testEncryptionNullPlaintextSecretKey() {
-		assertThrows(NullPointerException.class, () -> {
-			SecretKey sk = null;
-			assertNull(AES256.encrypt(null,sk));
-		});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown when null is used as key during decryption
-	 */
-	public void testDecryptionNullByteKey() {
-		String encrypted = AES256.encrypt(original, byteKey);
-
-		assertThrows(NullPointerException.class,() -> {
-			assertNull(AES256.decrypt(encrypted, (byte[]) null));
-			});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Error message is shown when using a too long byte array during decryption
-	 */
-	public void testDecryptionByteArrayTooLong() {
-		System.setErr(new PrintStream(outputErrCaptor));
-		String encrypted = AES256.encrypt(original, byteKey);
-		
-		assertNull(AES256.decrypt(encrypted, byteKeyLong));
-		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
-		
-		System.setErr(standardErr);
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Error message is shown when using a too short byte array during decryption
-	 */
-	public void testDecryptionByteArrayTooShort() {
-		System.setErr(new PrintStream(outputErrCaptor));
-		String encrypted = AES256.encrypt(original, byteKey);
-		
-		assertNull(AES256.decrypt(encrypted, byteKeyShort));
-		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
-		
-		System.setErr(standardErr);
-	}
-	//TODO
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown, when bit string for key contains Chars during decryption
-	 */
-	public void testDecryptionBitStringContainsChars() {
-		String encrypted = AES256.encrypt(original, bitStringKey);
-		
-		assertThrows(NumberFormatException.class,() -> {
-			assertNull(AES256.decrypt(encrypted, bitStringKeyWithChars));
-		});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown, when bit string for key contains Numbers greater 1 during decryption
-	 */
-	public void testDecryptionBitStringGreaterOne() {
-		String encrypted = AES256.encrypt(original, bitStringKey);
-		
-		assertThrows(NumberFormatException.class,() -> {
-			assertNull(AES256.decrypt(encrypted, bitStringKeyGreaterOne));
-			});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Error message is shown when using a too short bit string during decryption
-	 */
-	public void testDecryptionBitStringTooShort() {
-		System.setErr(new PrintStream(outputErrCaptor));
-		String encrypted = AES256.encrypt(original, bitStringKey);
-		
-		assertNull(AES256.decrypt(encrypted, bitStringKeyShort));
-		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
-		
-		System.setErr(standardErr);
-	}
-	
-
-	@Test
-	/*
-	 * Testing that correct Error message is shown when using a too long bit string during decryption
-	 */
-	public void testDecryptionBitStringTooLong() {
-		System.setErr(new PrintStream(outputErrCaptor));
-		String encrypted = AES256.encrypt(original, bitStringKey);
-		
-		assertNull(AES256.decrypt(encrypted, bitStringKeyLong));
-		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
-		
-		System.setErr(standardErr);
-	}
-	
-
-	@Test
-	/*
-	 * Testing that correct Error message is shown when using a generated key of wrong length during decryption
-	 */
-	public void testDecryptionGeneratedKeyWrongLength() {
-		System.setErr(new PrintStream(outputErrCaptor));
-		SecretKey keyEnc = null;
-		SecretKey keyWrongLength = null;
-		
-		try{
-			KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
-			keyGen.init(256);
-			keyEnc = keyGen.generateKey();
-		}
-		catch (Exception e) {
-			System.out.println(KEYGEN_ERROR +e.toString());
-		}
+			@Test
+			public void encrypt_decrypt_works_for_byte_arrays_with_valid_secret_key() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+				SecretKey key = null;
 				
-		try{
-			KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
-			keyGen.init(128);
-			keyWrongLength = keyGen.generateKey();
-		}
-		catch (Exception e) {
-			System.out.println(KEYGEN_ERROR +e.toString());
-		}
+				try{
+					KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
+					keyGen.init(256);
+					key = keyGen.generateKey();
+				}
+				catch (Exception e) {
+					System.out.println(KEYGEN_ERROR +e.toString());
+				}		
+				
+				byte[] encryptedBytes = cipher.encrypt(bytePlainText, key);
+				byte[] decryptedBytes = cipher.decrypt(encryptedBytes, key);
+				
+				assertNotEquals(bytePlainText,encryptedBytes);
+				assertNotEquals(encryptedBytes,decryptedBytes);
+				assertArrayEquals(decryptedBytes,bytePlainText);
+			}
 			
-		String encrypted = AES256.encrypt(original, keyEnc);
-		
-		assertNull(AES256.decrypt(encrypted, keyWrongLength));
-		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
-		
-		System.setErr(standardErr);
-	}
 
-	@Test
-	/*
-	 * Testing that correct Exception is thrown when null is used as key during decryption
-	 */
-	public void testDecryptionNullStrKey() {
-		String encrypted = AES256.encrypt(original, bitStringKey);
-
-		assertThrows(NullPointerException.class,() -> {
-			assertNull(AES256.decrypt(encrypted,(String) null));
-			});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown when null is used as key during decryption
-	 */
-	public void testDecryptionNullSecretKey() {
-		String encrypted = AES256.encrypt(original, bitStringKey);
-		SecretKey sk = null;
+			
+		}
 		
-		assertThrows(NullPointerException.class,() -> {
-			assertNull(AES256.decrypt(encrypted,sk));
-			});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown when null is used as cipher text with a valid key
-	 */
-	public void testDecryptionNullPlaintext() {
-		assertThrows(NullPointerException.class, () -> {
-			assertNull(AES256.decrypt(null, bitStringKey));
-		});
-		
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown when null is used as plaintext and key
-	 */
-	public void testDecryptionNullPlaintextStrKey() {
-		assertThrows(NullPointerException.class, () -> {
-			assertNull(AES256.decrypt(null,(String) null));
-		});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown when null is used as plaintext and key
-	 */
-	public void testDecryptionNullPlaintextSecretKey() {
-		assertThrows(NullPointerException.class, () -> {
-			SecretKey sk = null;
-			assertNull(AES256.decrypt(null,sk));
-		});
-	}
-	
-	@Test
-	/*
-	 *Testing the 256 char bit string to 32 bytes array method 
-	 *with extreme cases:
-	 *max value
-	 *min value
-	 *zero
-	 *and random values between 
-	 */
-	public void testBitString256ToByteArray32() {
-		String bitString = "0000000011111111100000001011101010101010101010101110011110000011101010111010111011100011000011110111101111101011010101011010101010111000011101010111101011110110111110001111100001111100011111010101110101110101110101110111101111000001111111010101010111101111";
-		byte[] byteArray = CryptoUtility.bitString256ToByteArray32(bitString);
-		assertEquals(byteArray[0], -128);
-		assertEquals(byteArray[1], 127);
-		assertEquals(byteArray[2], 0);
-	}
-	
-	@Test
-	/*
-	 * Testing the 256 char bit string to 32 bytes array method when using
-	 * too long bit string
-	 */
-	public void testBitString256ToByteArray32TooLong() {
-		System.setOut(new PrintStream(outputStreamCaptor));
-		
-		assertNull(CryptoUtility.bitString256ToByteArray32(bitStringKeyLong));
-		assertEquals(BIT_STRING_WRONG_LENGTH, outputStreamCaptor.toString().trim());
-		
-		System.setOut(standardOut);
-	}
-	
-	@Test
-	/*
-	 * Testing the 256 char bit string to 32 bytes array method when using
-	 * too short bit string
-	 */
-	public void testBitString256ToByteArray32TooShort() {
-		System.setOut(new PrintStream(outputStreamCaptor));
-		
-		assertNull(CryptoUtility.bitString256ToByteArray32(bitStringKeyShort));
-		assertEquals(BIT_STRING_WRONG_LENGTH, outputStreamCaptor.toString().trim());
-		
-		System.setOut(standardOut);
-	}
-	
-	@Test
-	/*
-	 * Testing the 256 char bit string to 32 bytes array method when using 
-	 * null as bit string
-	 */
-	public void testBitString256ToByteArray32Null() {
-		assertThrows(NullPointerException.class,() -> {
-			assertNull(CryptoUtility.bitString256ToByteArray32(null));
-		});
-		
-	}
-	
-	@Test
-	/*
-	 * Testing the 256 char bit string to 32 bytes array method when using
-	 * chars in bit string
-	 */
-	public void testBitString256ToByteArray32Chars() {
-		assertThrows(NumberFormatException.class,()->{
-			assertNull(CryptoUtility.bitString256ToByteArray32(bitStringKeyWithChars));
-		});
-	}
-	
-	@Test
-	/*
-	 * Testing that SecretKey object contains the correct key information.
-	 */
-	public void testByteArrayToSecretKeyAES256ValidByteArray() {
-		SecretKey sk = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
-		byte[] keyBytes = sk.getEncoded();
-		for(int i = 0; i < 32; i++) {
-			assertEquals(byteKey[i], keyBytes[i]);
+		@Nested
+		class Methods_Using_Byte_Key {
+			
+			@Test
+			public void encrypt_decrypt_works_for_byte_arrays_with_valid_byte_array_key() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+				
+				byte[] encryptedBytes = cipher.encrypt(bytePlainText, byteKey);
+				byte[] decryptedBytes = cipher.decrypt(encryptedBytes, byteKey);
+				
+				assertNotEquals(bytePlainText,encryptedBytes);
+				assertNotEquals(encryptedBytes,decryptedBytes);
+				assertArrayEquals(decryptedBytes,bytePlainText);
+			}
+			
 		}
 	}
 	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown when null used as byte array
-	 */
-	public void testByteArrayToSecretKeyAES256Null() {
-		assertThrows(NullPointerException.class, () -> {
-			assertNull(CryptoUtility.byteArrayToSecretKeyAES256(null));
-		});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Error message is shown when using a too long byte array
-	 */
-	public void testStringToSecretKeyAES256ByteArraygTooLong() {
-		System.setErr(new PrintStream(outputErrCaptor));
+	@Nested
+	class AES256_Edge_Cases {
 		
-		assertNull(CryptoUtility.byteArrayToSecretKeyAES256(byteKeyLong));
-		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
+		@Test
+		public void encrypt_decrypt_for_empty_array_with_SecretKey() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+			SecretKey key = null;
+			
+			try{
+				KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
+				keyGen.init(256);
+				key = keyGen.generateKey();
+			}
+			catch (Exception e) {
+				System.out.println(KEYGEN_ERROR +e.toString());
+			}		
+			
+			byte[] encryptedBytes = cipher.encrypt(new byte[] {}, key);
+			byte[] decryptedBytes = cipher.decrypt(encryptedBytes, key);
+			
+			assertArrayEquals(decryptedBytes,new byte[] {});
+
+		}
 		
-		System.setErr(standardErr);
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Error message is shown when using a too short byte array
-	 */
-	public void testStringToSecretKeyAES256ByteArrayTooShort() {
-		System.setErr(new PrintStream(outputErrCaptor));
+		@Test
+		public void encrypt_decrypt_for_empty_array_with_byte_array_key() throws InvalidKeyException, IllegalBlockSizeException, BadPaddingException {
+			
+			byte[] encryptedBytes = cipher.encrypt(new byte[] {}, byteKey);
+			byte[] decryptedBytes = cipher.decrypt(encryptedBytes, byteKey);
+			
+			assertArrayEquals(decryptedBytes,new byte[] {});
+
+		}
 		
-		assertNull(CryptoUtility.byteArrayToSecretKeyAES256(byteKeyShort));
-		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
+		@Test
+		public void ILA_encrypt_byte_arr_wrong_length() {
+			assertThrows(IllegalArgumentException.class, () -> 
+			{
+				cipher.encrypt(bytePlainText, byteKeyLong);
+			});
+			
+			assertThrows(IllegalArgumentException.class, () -> 
+			{
+				cipher.encrypt(bytePlainText, byteKeyShort);
+			});
+		}
 		
-		System.setErr(standardErr);
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown, when bit string for key contains Chars
-	 */
-	public void testStringToSecretKeyAES256BitStringContainsChars() {		
-		assertThrows(NumberFormatException.class,() -> {
-			assertNull(CryptoUtility.stringToSecretKeyAES256(bitStringKeyWithChars));
-		});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown, when bit string for key contains Chars
-	 */
-	public void testStringToSecretKeyAES256BitStringGreaterOne() {		
-		assertThrows(NumberFormatException.class,() -> {
-			assertNull(CryptoUtility.stringToSecretKeyAES256(bitStringKeyGreaterOne));
-		});
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Error message is shown when using a too short bit string
-	 */
-	public void testStringToSecretKeyAES256BitStringTooShort() {
-		System.setErr(new PrintStream(outputErrCaptor));
+		@Test
+		public void ILA_decrypt_byte_arr_wrong_length() {
+			assertThrows(IllegalArgumentException.class, () -> 
+			{
+				cipher.decrypt(bytePlainText, byteKeyLong);
+			});
+			
+			assertThrows(IllegalArgumentException.class, () -> 
+			{
+				cipher.decrypt(bytePlainText, byteKeyShort);
+			});
+		}
 		
-		assertNull(CryptoUtility.stringToSecretKeyAES256(bitStringKeyShort));
-		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
+		/*
+		 * Note: Honestly not sure if all this NPE testing is even neccessary,
+		 * if we just specify in the JavaDoc that the input may not be null.
+		 * Oh well, now the tests are already written.
+		 */
 		
-		System.setErr(standardErr);
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Error message is shown when using a too long bit string
-	 */
-	public void testStringToSecretKeyAES256BitStringTooLong() {
-		System.setErr(new PrintStream(outputErrCaptor));
+		@Test
+		public void NPE_if_plaintext_is_ever_null() {
+			String		nullInputStr = null;
+			byte[]		nullInputArr = null;
+			
+			assertThrows(NullPointerException.class, () -> {
+				SecretKey key = null;
+				try{
+					KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
+					keyGen.init(256);
+					key = keyGen.generateKey();
+				}
+				catch (Exception e) {
+					System.out.println(KEYGEN_ERROR +e.toString());
+					assertFalse(true, "Could not generate the key needed for this test.");
+				}
+				cipher.encrypt(nullInputArr, key);
+			});
+			
+			assertThrows(NullPointerException.class, () -> {
+				cipher.encrypt(nullInputArr, byteKey);
+			});
+			
+
+		}
 		
-		assertNull(CryptoUtility.stringToSecretKeyAES256(bitStringKeyLong));
-		assertEquals(KEY_WRONG_SIZE, outputErrCaptor.toString().trim());
+		@Test
+		public void NPE_if_ciphertext_is_ever_null() {
+			
+			String		nullInputStr = null;
+			byte[]		nullInputArr = null;
+			
+			assertThrows(NullPointerException.class, () -> {
+				SecretKey key = null;
+				try {
+					KeyGenerator keyGen = KeyGenerator.getInstance(ALGORITHM_AES);
+					keyGen.init(256);
+					key = keyGen.generateKey();
+				}
+				catch (Exception e) {
+					System.out.println(KEYGEN_ERROR +e.toString());
+					assertFalse(true, "Could not generate the key needed for this test.");
+				}
+				cipher.decrypt(nullInputArr, key);
+			});
+			
+			assertThrows(NullPointerException.class, () -> {
+				cipher.decrypt(nullInputArr, byteKey);
+			});
+
+		}
 		
-		System.setErr(standardErr);
-	}
-	
-	@Test
-	/*
-	 * Testing that correct Exception is thrown when null used as String
-	 */
-	public void testStringToSecretKeyAES256Null() {
-		assertThrows(NullPointerException.class, () -> {
-			assertNull(CryptoUtility.stringToSecretKeyAES256(null));
-		});
-	}
-	
-	@Test
-	/*
-	 * Testing that SecretKey object contains the correct key information.
-	 */
-	public void testStringToSecretKeyAES256ValidBitString() {
-		SecretKey sk = CryptoUtility.stringToSecretKeyAES256(bitStringKey);
-		byte[] bytes = CryptoUtility.bitString256ToByteArray32(bitStringKey);
-		byte[] keyBytes = sk.getEncoded();
-		for(int i = 0; i < 32; i++) {
-			assertEquals(bytes[i], keyBytes[i]);
+		@Test
+		public void NPE_if_key_is_ever_null() {
+			SecretKey 	nullSk 	= null;
+			byte[] 		nullByteSk 	= null;
+
+			assertThrows(NullPointerException.class, () -> {
+				cipher.encrypt(bytePlainText, nullSk);
+			});
+						
+			assertThrows(NullPointerException.class, () -> {
+				cipher.decrypt(bytePlainText, nullSk);
+			});
+			
+			assertThrows(NullPointerException.class, () -> {
+				cipher.encrypt(bytePlainText, nullByteSk);
+			});
+						
+			assertThrows(NullPointerException.class, () -> {
+				cipher.decrypt(bytePlainText, nullByteSk);
+			});
+			
+		}
+		
+		@Test
+		public void NPE_if_key_and_text_are_null() {
+			SecretKey 	nullSk 			= null;
+			byte[] 		nullByteSk 		= null;
+
+			byte[]		nullInputArr = null;
+			
+			assertThrows(NullPointerException.class, () -> {
+				cipher.encrypt(nullInputArr, nullSk);
+			});
+			
+			assertThrows(NullPointerException.class, () -> {
+				cipher.decrypt(nullInputArr, nullSk);
+			});
+
 		}
 	}
+	
+	@Nested
+	class Crypto_Utility {
+		
+		@Nested
+		class bitString256ToByteArray32 {
+			@Test
+			/*
+			 *Testing the 256 char bit string to 32 bytes array method 
+			 *with extreme cases:
+			 *max value
+			 *min value
+			 *zero
+			 *and random values between 
+			 */
+			public void testBitString256ToByteArray32() {
+				String bitString = "0000000011111111100000001011101010101010101010101110011110000011101010111010111011100011000011110111101111101011010101011010101010111000011101010111101011110110111110001111100001111100011111010101110101110101110101110111101111000001111111010101010111101111";
+				byte[] byteArray = CryptoUtility.bitString256ToByteArray32(bitString);
+				assertEquals(byteArray[0], -128);
+				assertEquals(byteArray[1], 127);
+				assertEquals(byteArray[2], 0);
+			}
+			
+			@Test
+			/*
+			 * Testing the 256 char bit string to 32 bytes array method when using
+			 * too long bit string
+			 */
+			public void testBitString256ToByteArray32TooLong() {
+				assertThrows(IllegalArgumentException.class, () -> {CryptoUtility.bitString256ToByteArray32(bitStringKeyLong);});
+			}
+			
+			@Test
+			/*
+			 * Testing the 256 char bit string to 32 bytes array method when using
+			 * too short bit string
+			 */
+			public void testBitString256ToByteArray32TooShort() {
+				assertThrows(IllegalArgumentException.class, () -> {CryptoUtility.bitString256ToByteArray32(bitStringKeyShort);});
+			}
+			
+			@Test
+			/*
+			 * Testing the 256 char bit string to 32 bytes array method when using 
+			 * null as bit string
+			 */
+			public void testBitString256ToByteArray32Null() {
+				assertThrows(NullPointerException.class,() -> {
+					assertNull(CryptoUtility.bitString256ToByteArray32(null));
+				});
+				
+			}
+			
+			@Test
+			/*
+			 * Testing the 256 char bit string to 32 bytes array method when using
+			 * chars in bit string
+			 */
+			public void testBitString256ToByteArray32Chars() {
+				assertThrows(NumberFormatException.class,()->{
+					assertNull(CryptoUtility.bitString256ToByteArray32(bitStringKeyWithChars));
+				});
+			}
+
+		}
+		
+		@Nested
+		class stringToSecretKeyAES256 {
+			
+			@Test
+			/*
+			 * Testing that correct Exception is thrown when using a too long byte array
+			 */
+			public void testStringToSecretKeyAES256ByteArraygTooLong() {
+				assertThrows(IllegalArgumentException.class, () -> {CryptoUtility.byteArrayToSecretKeyAES256(byteKeyLong);});
+			}
+			
+			@Test
+			/*
+			 * Testing that correct Exception is thrown when using a too short byte array
+			 */
+			public void testStringToSecretKeyAES256ByteArrayTooShort() {
+				assertThrows(IllegalArgumentException.class, () -> {CryptoUtility.byteArrayToSecretKeyAES256(byteKeyShort);});
+			}
+			
+			@Test
+			/*
+			 * Testing that correct Exception is thrown, when bit string for key contains Chars
+			 */
+			public void testStringToSecretKeyAES256BitStringContainsChars() {		
+				assertThrows(NumberFormatException.class,() -> {
+					assertNull(CryptoUtility.stringToSecretKeyAES256(bitStringKeyWithChars));
+				});
+			}
+			
+			@Test
+			/*
+			 * Testing that correct Exception is thrown, when bit string for key contains Chars
+			 */
+			public void testStringToSecretKeyAES256BitStringGreaterOne() {		
+				assertThrows(NumberFormatException.class,() -> {
+					assertNull(CryptoUtility.stringToSecretKeyAES256(bitStringKeyGreaterOne));
+				});
+			}
+			
+			@Test
+			/*
+			 * Testing that correct Exception is thrown, when using a too short bit string
+			 */
+			public void testStringToSecretKeyAES256BitStringTooShort() {
+				assertThrows(IllegalArgumentException.class,() -> {
+					assertNull(CryptoUtility.stringToSecretKeyAES256(bitStringKeyShort));
+				});
+			}
+			
+			@Test
+			/*
+			 * Testing that correct Exception is thrown, when using a too long bit string
+			 */
+			public void testStringToSecretKeyAES256BitStringTooLong() {
+				assertThrows(IllegalArgumentException.class,() -> {
+					assertNull(CryptoUtility.stringToSecretKeyAES256(bitStringKeyLong));
+				});
+			}
+			
+			@Test
+			/*
+			 * Testing that correct Exception is thrown when null used as String
+			 */
+			public void testStringToSecretKeyAES256Null() {
+				assertThrows(NullPointerException.class, () -> {
+					assertNull(CryptoUtility.stringToSecretKeyAES256(null));
+				});
+			}
+			
+			@Test
+			/*
+			 * Testing that SecretKey object contains the correct key information.
+			 */
+			public void testStringToSecretKeyAES256ValidBitString() {
+				SecretKey sk = CryptoUtility.stringToSecretKeyAES256(bitStringKey);
+				byte[] bytes = CryptoUtility.bitString256ToByteArray32(bitStringKey);
+				byte[] keyBytes = sk.getEncoded();
+				for(int i = 0; i < 32; i++) {
+					assertEquals(bytes[i], keyBytes[i]);
+				}
+			}
+		}
+		
+		@Nested
+		class byteArrayToSecretKeyAES256 {
+			@Test
+			/*
+			 * Testing that SecretKey object contains the correct key information.
+			 */
+			public void testByteArrayToSecretKeyAES256ValidByteArray() {
+				SecretKey sk = CryptoUtility.byteArrayToSecretKeyAES256(byteKey);
+				byte[] keyBytes = sk.getEncoded();
+				for(int i = 0; i < 32; i++) {
+					assertEquals(byteKey[i], keyBytes[i]);
+				}
+			}
+			
+			@Test
+			/*
+			 * Testing that correct Exception is thrown when null used as byte array
+			 */
+			public void testByteArrayToSecretKeyAES256Null() {
+				assertThrows(NullPointerException.class, () -> {
+					assertNull(CryptoUtility.byteArrayToSecretKeyAES256(null));
+				});
+			}
+		}
+
+	}
+	
 }
