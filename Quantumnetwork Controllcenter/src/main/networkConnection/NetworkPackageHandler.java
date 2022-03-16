@@ -14,19 +14,9 @@ import messengerSystem.MessageSystem;
  */
 public class NetworkPackageHandler {
 
-	private static Authentication authenticator;
-	private static SymmetricCipher cipher;
 	
 	/** Whether files that do not have a valid signature should be saved to the system */
 	final static boolean saveUnverifiedFiles = false;
-	
-	public static void setAuthenticator(Authentication auth) {
-		NetworkPackageHandler.authenticator = auth;
-	}
-	
-	public static void setCipher(SymmetricCipher cipher) {
-		NetworkPackageHandler.cipher = cipher;
-	}
 	
 	/**
 	 * Processes a NetworkPackage.
@@ -96,8 +86,13 @@ public class NetworkPackageHandler {
 
 	}
 	
+	/*
+	 * The two methods below could theoretically go into MessageSystem with some refactoring?
+	 */
+	
 	private static void handleTextMessage(ConnectionEndpoint ce, NetworkPackage msg) {
 		if (msg.getSignature() != null) { // if the message is signed, verify it
+			Authentication authenticator = MessageSystem.getAuthenticator(); // the auth currently in use by the message system
 			if (msg.verify(authenticator, ce.getID())) {
 				if (msg.getMessageArgs().keyIndex() != -1) {
 					// if it is encrypted, decrypt it
@@ -113,6 +108,7 @@ public class NetworkPackageHandler {
 	
 	private static void handleFile(ConnectionEndpoint ce, NetworkPackage msg) {
 		if (msg.getSignature() != null) { // if the message is signed, verify it
+			Authentication authenticator = MessageSystem.getAuthenticator(); // the auth currently in use by the message system
 			if (msg.verify(authenticator, ce.getID())) {
 				if (msg.getMessageArgs().keyIndex() != -1) {
 					// if it is encrypted, decrypt and save it

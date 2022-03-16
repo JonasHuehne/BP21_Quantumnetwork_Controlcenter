@@ -102,7 +102,7 @@ public class QuantumnetworkControllcenter {
 		// Authentication Init
 		authentication = new SHA256withRSAAuthenticationGUI();
 		MessageSystem.setAuthenticationAlgorithm(authentication);
-		
+
 		// Encryption to use
 		SymmetricCipher cipher = new AES256();
 		MessageSystem.setEncryption(cipher);
