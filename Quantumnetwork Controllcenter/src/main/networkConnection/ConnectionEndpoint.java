@@ -39,8 +39,8 @@ public class ConnectionEndpoint implements Runnable{
 	private String connectionID; // TODO Possibly refactor connectionID and remoteName to be the same
 	/** a private instance of KeyGenerator that will be used if this particular ConnectionEndpoint is generating a new Key. */
 	private KeyGenerator keyGen;
-	
-	private String publicSignatureKey = ""; //This is the public signature key of the ConnectionEndpoint that this CE is connected to.
+
+
 	
 	//Addresses, Sockets and Ports
 	/** Our local IP, sent when trying to establish a connection, so that the partner knows which IP to connect to */
@@ -60,7 +60,10 @@ public class ConnectionEndpoint implements Runnable{
 	private String remoteName;
 	/** When establishing a connection with another connection endpoint, this CE sends this name to be set as the "remote name" on the other end */
 	private String localName;
-	/** ID of the key entry in the key store that this CE will use for encryption and decryption */
+	/** public key for verifying messages received on this CE */
+	private String publicSignatureKey = "";
+	/** ID of the key entry in the key store that this CE will use for encryption and decryption. 
+	 * At creation this is set to the connectionID. */
 	private String keyStoreID;
 	
 	//Communication Channels
@@ -135,6 +138,7 @@ public class ConnectionEndpoint implements Runnable{
 		this.remotePort = targetPort;
 		this.isBuildingConnection = false;
 		this.isConnected = true;
+		this.keyStoreID = connectionID;
 		
 		ceLogger.logInfo("[CE " + connectionName + "] Local values have been set. Now sending a connection confirmation to the partner CE. ");
 		
@@ -185,6 +189,8 @@ public class ConnectionEndpoint implements Runnable{
 		this.publicSignatureKey = pk;
 		this.remoteIP = targetIP;
 		this.remotePort = targetPort;
+		this.keyStoreID = connectionID;
+		
 		ceLogger.logInfo("[CE " + connectionID + "] Local values have been set. Now attempting to establish a connection. ");
 		try {
 			establishConnection(targetIP, targetPort);
@@ -606,11 +612,23 @@ public class ConnectionEndpoint implements Runnable{
 	 * @param sent
 	 * 		true if the message was sent from this CE <br>
 	 * 		false if it was received
+	 * @param verified
+	 * 		if this message was received and verified, set this to true <br>
+	 * 		otherwise, set it to false (this parameter will be ignored if sent == true)
 	 * @param message
 	 * 		the message to add
 	 */
-	public void appendMessageToChatLog(boolean sent, String message) {
-		String sender = sent ? localName + " (You)" : remoteName;
+	public void appendMessageToChatLog(boolean sent, boolean verified, String message) {
+		String sender;
+		if (sent) {
+			sender = localName + " (You)";
+		} else {
+			if (verified) {
+				sender = remoteName + " <Verified> ";
+			} else {
+				sender = remoteName;
+			}
+		}
 		this.chatLog.add(new SimpleEntry<>(sender, message));
 	}
 

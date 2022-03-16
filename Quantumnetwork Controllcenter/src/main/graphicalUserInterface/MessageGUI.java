@@ -17,6 +17,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.StyleContext;
 
 import org.w3c.dom.css.RGBColor;
 
@@ -141,7 +142,7 @@ public class MessageGUI extends JFrame {
 					default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selected!");
 						break;
 					}
-					MessageSystem.conMan.getConnectionEndpoint(connectionID).appendMessageToChatLog(true, msg);
+					MessageSystem.conMan.getConnectionEndpoint(connectionID).appendMessageToChatLog(true, false, msg);
 				} catch (CouldNotSendMessageException e1) {
 					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". " + e1.getMessage());
 					// TODO log the error, for some specific errors maybe throw a specific warning message (getCause() and instanceof)

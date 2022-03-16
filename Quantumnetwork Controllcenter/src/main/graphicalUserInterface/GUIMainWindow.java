@@ -337,6 +337,30 @@ public final class GUIMainWindow implements Runnable{
 		});
 		connectionDebug.setToolTipText("Used for debugging purposes by the developers. Displays some information about connections to the console.");
 		frame.getContentPane().add(connectionDebug, "cell 0 0");
+		
+		JButton debugButton2 = new JButton("Debug Button 2 (CE Info)");
+		debugButton2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (activeConnection != null) {
+					ConnectionEndpoint active = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection);
+					StringBuilder info = new StringBuilder();
+					info.append("ID: " 				+ active.getID() + System.lineSeparator());
+					info.append("Remote Name: " 	+ active.getRemoteName() + System.lineSeparator());
+					info.append("PK: " 				+ active.getPublicKey() + System.lineSeparator());
+					info.append("KeyID: " 			+ active.getKeyStoreID() + System.lineSeparator());
+					try {
+						info.append("Keystore has an entry for this keyID == " 
+									+ KeyStoreDbManager.doesKeyStreamIdExist(active.getKeyStoreID())
+									+ System.lineSeparator());
+					} catch (SQLException e1) {
+						info.append("Can not reach Keystore. SQL Exception." + System.lineSeparator());
+					}
+					new GenericWarningMessage(info.toString(), 600, 300);
+				}
+			}
+		});
+		debugButton2.setToolTipText("Displays some information about the currently selected CE.");
+		frame.getContentPane().add(debugButton2, "cell 0 0");
 	}
 
 	public JFrame getFrame() {

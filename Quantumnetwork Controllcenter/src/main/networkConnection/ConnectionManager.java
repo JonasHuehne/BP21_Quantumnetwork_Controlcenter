@@ -365,6 +365,7 @@ public class ConnectionManager {
 		for (ConnectionEndpoint ce : connections.values()) {
 			ce.updateLocalAddress(newLocalAddress);
 		}
+
 	}
 
 	/**Changes the current local port address to a new value. 

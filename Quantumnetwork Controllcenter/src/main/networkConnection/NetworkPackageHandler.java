@@ -201,7 +201,7 @@ public class NetworkPackageHandler {
 						byte[] decryptedMsg 	= MessageSystem.getCipher().decrypt(msg.getContent(), decryptionKey);
 						String decryptedString	= MessageSystem.byteArrayToString(decryptedMsg);
 						// Log the decrypted text of the message
-						ce.appendMessageToChatLog(false, decryptedString);
+						ce.appendMessageToChatLog(false, true, decryptedString);
 					} catch (SQLException | InvalidKeyException | BadPaddingException | NotEnoughKeyLeftException | NoKeyWithThatIDException e) {
 						throw new CouldNotDecryptMessageException("Could not decrypt the text message with ID " + Base64.getEncoder().encodeToString(msg.getID()), e);
 					}
@@ -209,14 +209,14 @@ public class NetworkPackageHandler {
 				// If the message is not encrypted
 				else { 
 					// It has already been verified, so we just log it
-					ce.appendMessageToChatLog(false, MessageSystem.byteArrayToString(msg.getContent()));
+					ce.appendMessageToChatLog(false, true, MessageSystem.byteArrayToString(msg.getContent()));
 					return;
 				}
 			} else {
 				
 			}
 		} else {
-			ce.appendMessageToChatLog(false, MessageSystem.byteArrayToString(msg.getContent()));
+			ce.appendMessageToChatLog(false, false, MessageSystem.byteArrayToString(msg.getContent()));
 		}
 	}
 	
