@@ -12,15 +12,18 @@ import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-import java.util.regex.Pattern;
 import communicationList.Contact;
 import exceptions.NoValidPublicKeyException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
+import graphicalUserInterface.GenericWarningMessage;
 import qnccLogger.Log;
 import qnccLogger.LogSensitivity;
 import graphicalUserInterface.CESignatureQueryDialog;
 import networkConnection.ConnectionEndpoint;
+
+import javax.swing.*;
+
 /**
  * Class providing the methods necessary for authentication
  * using SHA256 with RSA 2048
@@ -28,8 +31,12 @@ import networkConnection.ConnectionEndpoint;
  */
 public class SHA256withRSAAuthentication implements SignatureAuthentication {
 
+    /**
+     * Flags for the verification process
+     */
     public static boolean continueVerify;
     public static boolean abortVerify;
+    public static boolean discardMessage;
 
     /**
      * Default name for generating signature key files, without file name extension
@@ -106,7 +113,7 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
     @Override
     public boolean verify (final byte[] message, final byte[] receivedSignature,
                            final String sender) {
-        String pubKeyString = null;
+        String pubKeyString;
         Contact senderEntry = QuantumnetworkControllcenter.communicationList.query(sender);
         if(senderEntry == null
                 || senderEntry.getSignatureKey().equals(Utils.NO_KEY)
@@ -116,22 +123,27 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
             if (pubKeyString.equals("")) {
                 continueVerify = false;
                 abortVerify = false;
-                new CESignatureQueryDialog(sender, false);
-                int timer = 0;
-                while (!continueVerify) {
+                boolean invalidKey = true;
+                new CESignatureQueryDialog(sender);
+                while (invalidKey) {
                     if (abortVerify) {
-                        log.logError("Verification aborted.", new NoValidPublicKeyException(sender));
+                        log.logWarning("Verification aborted, message will be shown unauthenticated.", new NoValidPublicKeyException(sender));
+                        return true;
+                    } else if (discardMessage) {
+                        log.logError("Verification aborted, message will be discarded.", new NoValidPublicKeyException(sender));
                         return false;
-                    } else if (timer < 90) {
-                        try {
-                            Thread.sleep(2000);
-                            timer++;
-                        } catch (InterruptedException e) {
-                            log.logError("Problem while trying too verifying the message.", e);
+                    } else if (continueVerify) {
+                        PublicKey publicKey = getPublicKeyFromString(senderCE.getSigKey());
+                        if (publicKey == null) {
+                            new CESignatureQueryDialog(sender);
+                            GenericWarningMessage noKeyWarning = new GenericWarningMessage("Invalid public key entered.");
+                            noKeyWarning.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+                            noKeyWarning.setAlwaysOnTop(true);
+                            continueVerify = false;
+                        } else {
+                            pubKeyString = senderCE.getSigKey();
+                            invalidKey = false;
                         }
-                    } else {
-                        log.logError("Verification aborted.", new NoValidPublicKeyException(sender));
-                        return false;
                     }
                 }
             }
@@ -189,7 +201,7 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
             PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(keyString));
             return kf.generatePrivate(privateKeySpec);
         } catch (Exception e) {
-            log.logError("Error while creating a private key from the signature key file at Path: " + Configuration.getBaseDirPath() + KEY_PATH + privateKeyFile, e);
+            log.logError("Error while creating a private key from the signature key file at Path: " + Configuration.getBaseDirPath() + Utils.KEY_PATH + privateKeyFile, e);
             return null;
         }
     }
