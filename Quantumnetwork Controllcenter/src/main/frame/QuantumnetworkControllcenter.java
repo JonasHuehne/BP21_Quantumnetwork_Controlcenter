@@ -4,8 +4,8 @@ import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
 import graphicalUserInterface.GUIMainWindow;
 import graphicalUserInterface.SettingsDialog;
+import messengerSystem.SHA256withRSAAuthenticationGUI;
 import messengerSystem.SignatureAuthentication;
-import messengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionManager;
 import ui.ConsoleUI;
 import java.awt.EventQueue;
@@ -94,7 +94,7 @@ public class QuantumnetworkControllcenter {
 		communicationList = new SQLiteCommunicationList();
 
 		// Authentication Init
-		authentication = new SHA256withRSAAuthentication();
+		authentication = new SHA256withRSAAuthenticationGUI();
 		
 		
 		

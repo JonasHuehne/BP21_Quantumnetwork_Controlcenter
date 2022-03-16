@@ -32,6 +32,7 @@ public class GenericWarningMessage extends JDialog {
 		
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setVisible(true);
+		toFront();
 		
 		int width = 450;
 		int height = 150;

@@ -30,13 +30,6 @@ import networkConnection.ConnectionEndpoint;
 public class SHA256withRSAAuthentication implements SignatureAuthentication {
 
     /**
-     * Flags for the verification process
-     */
-    public static boolean continueVerify;
-    public static boolean abortVerify;
-    public static boolean discardMessage;
-
-    /**
      * Default name for generating signature key files, without file name extension
      */
     private static final String DEFAULT_KEY_FILE_NAME = "signature";
@@ -101,11 +94,11 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
             signature.update(message);
             return signature.sign();
         }  catch (InvalidKeyException e){
-        	log.logWarning("An invalid key was used", e);
+        	log.logWarning("An invalid key was used.", e);
         	return null;
     	}
         catch (Exception e) {
-            log.logError("Error while signing", e);
+            log.logError("Error while signing.", e);
             return null;
         }
     }
@@ -127,36 +120,10 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
                 || senderEntry.getSignatureKey().equals(Utils.NO_KEY)) {
             ConnectionEndpoint senderCE = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(sender);
             if (senderCE == null) {
-                // TODO: log
+                log.logError("Error: No connection endpoint for " + sender + " found.", new RuntimeException());
                 return false;
             }
             pubKeyString = senderCE.getSigKey();
-            if (pubKeyString.equals("")) {
-                continueVerify = false;
-                abortVerify = false;
-                boolean invalidKey = true;
-                new CESignatureQueryDialog(sender);
-                while (invalidKey) {
-                    if (abortVerify) {
-                        log.logWarning("Verification aborted, message will be shown unauthenticated.", new NoValidPublicKeyException(sender));
-                        return true;
-                    } else if (discardMessage) {
-                        log.logError("Verification aborted, message will be discarded.", new NoValidPublicKeyException(sender));
-                        return false;
-                    } else if (continueVerify) {
-                        PublicKey publicKey = getPublicKeyFromString(senderCE.getSigKey());
-                        if (publicKey == null) {
-                            new CESignatureQueryDialog(sender);
-                            GenericWarningMessage noKeyWarning = new GenericWarningMessage("Invalid public key entered.");
-                            noKeyWarning.setAlwaysOnTop(true);
-                            continueVerify = false;
-                        } else {
-                            pubKeyString = senderCE.getSigKey();
-                            invalidKey = false;
-                        }
-                    }
-                }
-            }
         } else {
             pubKeyString = senderEntry.getSignatureKey();
         }
@@ -182,7 +149,7 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
      * @param key the key as a string
      * @return the key as a PublicKey object, null if error
      */
-    private PublicKey getPublicKeyFromString (final String key) {
+    PublicKey getPublicKeyFromString(final String key) {
         try {
             KeyFactory kf = KeyFactory.getInstance("RSA");
             X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(key));
@@ -233,7 +200,7 @@ public class SHA256withRSAAuthentication implements SignatureAuthentication {
         if (res1 && res2) {
             return true;
         } else {
-            log.logWarning("Problem deleting the current signature key");
+            log.logWarning("Problem deleting the current signature keys.");
             return false;
         }
     }

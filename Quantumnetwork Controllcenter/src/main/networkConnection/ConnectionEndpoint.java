@@ -535,7 +535,7 @@ public class ConnectionEndpoint implements Runnable{
 			return;
 			
 		case KEYGEN_SYNC_REQUEST:	//This is received if another ConnectionEndpoint that is connected to this one is intending to start a KeyGeneration Process and is asking for a response(accept/reject).
-			if (((SHA256withRSAAuthentication)QuantumnetworkControllcenter.authentication).verify(transmission.getContent(), transmission.getSignature(), connectionID)) {
+			if (QuantumnetworkControllcenter.authentication.verify(transmission.getContent(), transmission.getSignature(), connectionID)) {
 				try {
 					keyGen.keyGenSyncResponse();
 				} catch (ManagerHasNoSuchEndpointException | NumberFormatException | EndpointIsNotConnectedException e) {

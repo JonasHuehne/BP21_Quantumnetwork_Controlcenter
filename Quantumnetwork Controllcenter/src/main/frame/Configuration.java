@@ -7,7 +7,6 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Properties;
 
 /**
@@ -48,7 +47,6 @@ public class Configuration {
     private static final String[] DIRECTORY_LIST =
             {"SignatureKeys", "python", "connections", "externalAPI", "logs"};
 
-    // TODO: correct handling of potentially corrupt file?
     /**
      * Utility method to check whether the properties file is at the expected place
      * Creates an empty properties file if not existent
@@ -60,13 +58,13 @@ public class Configuration {
         if(Files.exists(Path.of(LOCAL_PATH + CONFIG_FILE_NAME))) {
             try {
                 // create an input stream
-                InputStream in = Files.newInputStream(Paths.get(LOCAL_PATH, CONFIG_FILE_NAME));
+                InputStream in = Files.newInputStream(Path.of(LOCAL_PATH + CONFIG_FILE_NAME));
                 // read the properties from file
                 Properties properties = new Properties();
                 properties.loadFromXML(in);
                 in.close();
                 return true;
-            } catch (Exception e) {
+            } catch (IOException e) {
                 throw new IOException("Error while reading the config file at " + LOCAL_PATH
                         + "(" + e + ")");
             }
@@ -145,7 +143,7 @@ public class Configuration {
             if (Files.exists(Path.of(LOCAL_PATH + CONFIG_FILE_NAME))) {
                 return true;
             }
-            OutputStream out = Files.newOutputStream(Paths.get(LOCAL_PATH, CONFIG_FILE_NAME));
+            OutputStream out = Files.newOutputStream(Path.of(LOCAL_PATH + CONFIG_FILE_NAME));
             Properties properties = new Properties();
             properties.storeToXML(out, null, StandardCharsets.ISO_8859_1);
             out.close();
@@ -165,7 +163,7 @@ public class Configuration {
     public static String getProperty (final String propertyKey) {
         try {
             // create an input stream
-            InputStream in = Files.newInputStream(Paths.get(LOCAL_PATH, CONFIG_FILE_NAME));
+            InputStream in = Files.newInputStream(Path.of(LOCAL_PATH + CONFIG_FILE_NAME));
             // read the properties from file
             Properties properties = new Properties();
             properties.loadFromXML(in);
@@ -190,7 +188,7 @@ public class Configuration {
             Properties properties = new Properties();
             if (Files.exists(Path.of(LOCAL_PATH + CONFIG_FILE_NAME))) {
                 // create an input stream
-                InputStream in = Files.newInputStream(Paths.get(LOCAL_PATH, CONFIG_FILE_NAME));
+                InputStream in = Files.newInputStream(Path.of(LOCAL_PATH + CONFIG_FILE_NAME));
                 // read the properties from file
                 properties.loadFromXML(in);
                 in.close();
@@ -199,7 +197,7 @@ public class Configuration {
             }
             properties.setProperty(propertyKey, propertyValue);
             // create an output stream
-            OutputStream out = Files.newOutputStream(Paths.get(LOCAL_PATH, CONFIG_FILE_NAME));
+            OutputStream out = Files.newOutputStream(Path.of(LOCAL_PATH + CONFIG_FILE_NAME));
             properties.storeToXML(out, null, StandardCharsets.ISO_8859_1);
             out.close();
             return true;

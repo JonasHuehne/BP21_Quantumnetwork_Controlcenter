@@ -124,11 +124,17 @@ public class ContactAddDialog extends JDialog {
 				okButton = new JButton("OK");
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						
-						QuantumnetworkControllcenter.guiWindow.addRowToContactTable(nameTextField.getText(), ipTextField.getText(), Integer.valueOf(portTextField.getText()), sigTextField.getText());
-						
 						setVisible(false);
 						dispose();
+						try {
+							int port = Integer.valueOf(portTextField.getText());
+							QuantumnetworkControllcenter.guiWindow.addRowToContactTable(nameTextField.getText(), ipTextField.getText(), port, sigTextField.getText());
+						} catch (NumberFormatException nfe) {
+							// TODO: log
+							new GenericWarningMessage("Contact could not be added, because the entered port is not a number."
+									+ " Please refer to the log for details.");
+						}
+
 					}
 				});
 				okButton.setActionCommand("OK");
