@@ -9,6 +9,7 @@ import communicationList.Contact;
 import exceptions.ConnectionAlreadyExistsException;
 import exceptions.IpAndPortAlreadyInUseException;
 import frame.QuantumnetworkControllcenter;
+import messengerSystem.MessageSystem;
 
 /**Every time a connection to the local Server Socket is created, a new instance of ConnectionEndpointServerHandler is also created.
  * The purpose of each CESH is to wait for the first message from the connecting Party, the TransmissionTypeEnum.CONNECTION_REQUEST
@@ -52,6 +53,8 @@ public class ConnectionEndpointServerHandler extends Thread{
 	 */
 	ConnectionEndpointServerHandler(Socket newClientSocket) throws IOException {
 		clientSocket = newClientSocket;
+		remoteIP = targetIP;
+		remotePort = targetPort;
 	}
 	
 	public void run() {
@@ -72,7 +75,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 						ntt.abortTimer();
 						remoteIP = receivedMessage.getTypeArg().split(":::")[0];
 						remotePort = Integer.valueOf(receivedMessage.getTypeArg().split(":::")[1]);
-						
+
 						//Check if ContactDB contains the IP:PORT Pair already. If so, the Name and Sig is taken from the DB.
 						String remoteName;
 						Contact dbEntry = QuantumnetworkControllcenter.communicationList.query(remoteIP, remotePort);
@@ -86,7 +89,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 						ce.setRemoteName(remoteName);
 						settingUp = false;
 						acceptedRequest = true;
-					}				
+					}
 				}
 			}
 		} catch (IOException e) {

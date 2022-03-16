@@ -7,6 +7,7 @@ import graphicalUserInterface.SettingsDialog;
 import messengerSystem.SHA256withRSAAuthenticationGUI;
 import messengerSystem.SignatureAuthentication;
 import networkConnection.ConnectionManager;
+import networkConnection.TransmissionTypeEnum;
 import ui.ConsoleUI;
 import java.awt.EventQueue;
 import java.io.IOException;
@@ -147,7 +148,26 @@ public class QuantumnetworkControllcenter {
 				}
 			}
 		});
+		/*
 		
+		try {
+			TimeUnit.SECONDS.sleep(4);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		ce1.pushMessage(TransmissionTypeEnum.TRANSMISSION, "", MessageSystem.stringToByteArray("ABC Testnachricht über alte Verbindung"), "");
+		
+		try {
+			TimeUnit.SECONDS.sleep(4);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		ce2.pushMessage(TransmissionTypeEnum.TRANSMISSION, "", MessageSystem.stringToByteArray("1212 Letzte Testnachricht über das Netzwerk."), "");
+		*/
 	}
 
 

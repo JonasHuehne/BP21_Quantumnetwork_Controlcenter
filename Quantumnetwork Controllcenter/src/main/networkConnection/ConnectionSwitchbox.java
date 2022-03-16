@@ -13,15 +13,14 @@ import java.util.concurrent.Executors;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
 
-public class ConnectionSwitchbox implements Runnable{
+public class ConnectionSwitchbox {
 	
 	private boolean acceptingConnections = false;
 	private int port = 0000;
 	private ServerSocket masterServerSocket;
 	private Socket newClientSocket;
 	private ExecutorService connectionExecutor = Executors.newSingleThreadExecutor();
-	private Map<String,ObjectInputStream> serverInputs = new HashMap<String,ObjectInputStream>();
-	private Map<String,ConnectionEndpointServerHandler> serverThreads = new HashMap<String,ConnectionEndpointServerHandler>();
+
 	
 	public ConnectionSwitchbox(int portnumber) {
 		port = portnumber;
@@ -53,16 +52,8 @@ public class ConnectionSwitchbox implements Runnable{
 			
 				//Try accepting ConnectionRequest;
 				try {
-					//Listen for connection attempt
-					System.out.println("Waiting to accept incoming Connections on Port "+ port +"...");
-					ConnectionEndpointServerHandler cESH = new ConnectionEndpointServerHandler(newClientSocket = masterServerSocket.accept());
-					cESH.start();
-					serverThreads.put("tmpName" + MessageSystem.generateRandomMessageID(), cESH);
-					System.out.println("---MasterServer has received a connection attempt!---");
-					System.out.println("---MasterServer is adding new InputStream.---");
-				
-					
-			
+					//Listen for connection attempt and create new Handler once one was accepted.
+					new ConnectionEndpointServerHandler(newClientSocket = masterServerSocket.accept(), QuantumnetworkControllcenter.conMan.getLocalAddress(), QuantumnetworkControllcenter.conMan.getLocalPort()).start();
 				
 				} catch (IOException e) {
 					System.err.println("Server of ConnectionSwitchbox failed to accept connection attempt!");
@@ -83,19 +74,5 @@ public class ConnectionSwitchbox implements Runnable{
 			e.printStackTrace();
 		}
 		connectionExecutor.shutdownNow();
-	}
-	
-
-	@Override
-	public void run() {
-		/**
-		//Read incoming Messages for the ServerStream and enqueue them on the correct CEs MessageStack.
-		ObjectOutputStream serverOut = new ObjectOutputStream(masterServerSocket.getOutputStream());
-		ObjectInputStream serverIn = new ObjectInputStream(masterServerSocket.getInputStream());
-		
-		while(true) {
-			//masterServerSocket
-		}
-		*//
 	}
 }

@@ -167,7 +167,7 @@ public class ConnectionAddDialog extends JDialog {
 							}
 							newID = QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedTableRowIndex, QuantumnetworkControllcenter.guiWindow.getContactDBNameIndex()).toString();
 						}
-						
+
 						if(useManualInputRadioButton.isSelected()) {
 							// Create new CE
 							String ceName = textFieldContactName.getText();

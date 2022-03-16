@@ -62,7 +62,7 @@ public class ConnectionEndpoint implements Runnable{
 	/** Outgoing messages to the other CE are sent along this channel */
 	private ObjectOutputStream clientOut;
 	/** Incoming messages from the other CE are received on this channel */
-	private ObjectInputStream clientIn;	
+	private ObjectInputStream clientIn;
 	
 	//State
 	/** whether this endpoint is currently listening for incoming messages or not*/
@@ -71,9 +71,8 @@ public class ConnectionEndpoint implements Runnable{
 	private boolean isConnected = false;
 	/** true if the client socket has connected to a server socket, but a connection between endpoints has not been established yet */
 	private boolean isBuildingConnection = false;
-	
+
 	private MessageGUI logGUI;//This is a ref to the Chat GUI
-	
 	private Thread messageThread = new Thread(this, connectionID + "_messageThread");	//a parallel thread used to listen for incoming messages while connected to another ConnectionEndpoint.
 	
 	
@@ -82,7 +81,7 @@ public class ConnectionEndpoint implements Runnable{
 	private String messageLog = " ------ START OF MESSAGE LOG ------ ";
 	/** Timeout in ms when trying to connect to a remote server, 0 is an infinite timeout */
 	private final int CONNECTION_TIMEOUT = 3000;
-	
+
 	
 	/**
 	 * Used when creating a ConnectionEndpoint as a response to a ConnectionRequest.
@@ -129,7 +128,7 @@ public class ConnectionEndpoint implements Runnable{
 		//System.out.println("[" + connectionID + "]: Waiting for Greeting from connecting Party");
 		listenForMessage();
 	}
-	
+
 	/**
 	 * Used when creating a ConnectionEndpoint that tries to connect to another ConnectionEndpoint by sending a request.
 	 * Called by {@linkplain ConnectionManager}. Do not call from anywhere else!
@@ -390,7 +389,6 @@ public class ConnectionEndpoint implements Runnable{
 		isConnected = false;
 		isBuildingConnection = false;
 		isListeningForMessages = false;
-		
 		if(localClientSocket != null) {
 			try {
 				localClientSocket.close();
@@ -489,7 +487,7 @@ public class ConnectionEndpoint implements Runnable{
 	//-------------//
 	// Server Side //
 	//-------------//	
-		
+
 	/**
 	 * Starts a parallel thread causing this endpoint to listen for incoming messages.
 	 */
