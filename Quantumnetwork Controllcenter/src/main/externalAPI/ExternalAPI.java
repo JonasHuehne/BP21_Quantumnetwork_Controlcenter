@@ -6,6 +6,7 @@ import java.nio.file.Path;
 
 import javax.crypto.SecretKey;
 
+import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
 import keyStore.KeyStoreDbManager;
 
