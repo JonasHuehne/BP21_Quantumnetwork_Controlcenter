@@ -1,11 +1,13 @@
 package networkConnection;
 
+import java.io.Serializable;
+
 /**
  * Used to convey meta-information about the message being sent.
 
  * @author Sasha Petri
  */
-public record MessageArgs(String userName, String fileName, int keyIndex, String localIP, int localPort) {
+public record MessageArgs(String userName, String fileName, int keyIndex, String localIP, int localPort) implements Serializable {
 	
 	/**
 	 * @param userName

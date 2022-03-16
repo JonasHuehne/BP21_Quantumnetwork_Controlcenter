@@ -443,7 +443,7 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public void pushMessage(NetworkPackage message) throws EndpointIsNotConnectedException {
 		// NetworkPackages are only send if it's either a connection request, or we are connected
-		TransmissionTypeEnum type = message.getHead();
+		TransmissionTypeEnum type = message.getType();
 		if (   !type.equals(TransmissionTypeEnum.CONNECTION_REQUEST)	
 				&& !reportState().equals(ConnectionState.CONNECTED)) {
 				throw new EndpointIsNotConnectedException(connectionID, " push message of type " + type);
@@ -484,7 +484,7 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	private void processMessage(NetworkPackage transmission) {
 
-		System.out.println("[" + connectionID + "]: Received Message, starting processing!: " + transmission.getHead() + " - " + transmission.getMessageArgs() + " - " + transmission.getContent());
+		System.out.println("[" + connectionID + "]: Received Message, starting processing!: " + transmission.getType() + " - " + transmission.getMessageArgs() + " - " + transmission.getContent());
 		// If message sender requested the message to be confirmed, do so
 		if (transmission.expectedToBeConfirmed()) {
 			NetworkPackage confirmation = 
@@ -501,7 +501,7 @@ public class ConnectionEndpoint implements Runnable{
 		logPackage(transmission);
 		
 		//Chose processing based on transmissionType in the NetworkPackage head.
-		if (transmission.getHead().equals(TransmissionTypeEnum.CONNECTION_CONFIRMATION)) {
+		if (transmission.getType().equals(TransmissionTypeEnum.CONNECTION_CONFIRMATION)) {
 			System.out.println("[" + connectionID + "]: Connection Confirmation received!");
 			remoteName = transmission.getMessageArgs().userName();
 			isBuildingConnection = false;
@@ -509,7 +509,15 @@ public class ConnectionEndpoint implements Runnable{
 			return;
 
 		} else {
-			NetworkPackageHandler.handlePackage(this, transmission);
+			try {
+				NetworkPackageHandler.handlePackage(this, transmission);
+			} catch (EndpointIsNotConnectedException e) {
+				// These should both be thrown only during key generation
+				System.err.println();
+				// For safety, shut down the key generator
+				e.printStackTrace();
+				// TODO Consider if further error handling should take place, like shutting down the key gen
+			}
 		}
 	}
 	
@@ -562,7 +570,7 @@ public class ConnectionEndpoint implements Runnable{
 	 * 		the message to add
 	 */
 	public void logPackage(NetworkPackage msg) {
-		if(msg.getHead().equals(TransmissionTypeEnum.FILE_TRANSFER)) msg.clearContents();
+		if(msg.getType().equals(TransmissionTypeEnum.FILE_TRANSFER)) msg.clearContents();
 		packageLog.add(msg);
 	}
 	
