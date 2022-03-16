@@ -59,6 +59,9 @@ public class NetworkPackageHandler {
 	 */
 	public static void handlePackage(ConnectionEndpoint ce, NetworkPackage msg) throws EndpointIsNotConnectedException, CouldNotDecryptMessageException, VerificationFailedException {
 		
+		// if the received message could be verified
+		boolean verified = false;
+		
 		// if it is a signed message, check the signature first 
 		if (msg.getSignature() != null) {
 			if (!msg.verify(MessageSystem.getAuthenticator(), ce.getID())) {
@@ -66,6 +69,8 @@ public class NetworkPackageHandler {
 				throw new VerificationFailedException("Could not verify the text message with ID " 
 						+ Base64.getEncoder().encodeToString(msg.getID()) + " using the public key of " + ce.getID() + 
 						"(" + (c != null ? c.getSignatureKey() : "???")  + ")");
+			} else {
+				verified = true;
 			}
 		}
 		
@@ -83,7 +88,7 @@ public class NetworkPackageHandler {
 			ce.forceCloseConnection();
 			break;
 		case FILE_TRANSFER:
-			handleFile(ce, msg);
+			handleFile(ce, msg, verified);
 			break;
 		case KEYGEN_SOURCE_SIGNAL:
 			//This is only used for signaling the source server to start sending photons. 
@@ -128,7 +133,7 @@ public class NetworkPackageHandler {
 			if (toPush != null) ce.pushMessage(toPush);
 			break;
 		case TEXT_MESSAGE:
-			handleTextMessage(ce, msg);
+			handleTextMessage(ce, msg, verified);
 			break;
 		case KEY_USE_ALERT:
 			int encStartIndex = msg.getMessageArgs().keyIndex(); // index at which sender wants to start encrypting
@@ -231,15 +236,17 @@ public class NetworkPackageHandler {
 	 * 		the ConnectionEndpoint that received the message
 	 * @param msg
 	 * 		the message received - content will be interpreted as a string
+	 * @param verified
+	 * 		if the message has a valid signature
 	 * @throws CouldNotDecryptMessageException
 	 * 		if the message was encrypted (keyIndex >= 0) but could not be decrypted
 	 * @throws VerificationFailedException
 	 * 		if the message was signed (msg.getSignature() != null) but could not be verified
 	 */
-	private static void handleTextMessage(ConnectionEndpoint ce, NetworkPackage msg) throws CouldNotDecryptMessageException, VerificationFailedException {
+	private static void handleTextMessage(ConnectionEndpoint ce, NetworkPackage msg, boolean verified) throws CouldNotDecryptMessageException, VerificationFailedException {
 		if (msg.getSignature() != null) { // if the message is signed, verify it
 			SignatureAuthentication authenticator = MessageSystem.getAuthenticator(); // the auth currently in use by the message system
-			if (msg.verify(authenticator, ce.getID())) {
+			if (verified) {
 				// If the message is also encrypted, try to decrypt it
 				if (msg.getMessageArgs().keyIndex() != -1) {
 					try {
@@ -273,14 +280,16 @@ public class NetworkPackageHandler {
 	 * @param msg
 	 * 		the message received - content will be interpreted as the bytes of a file <br>
 	 * 		filename will be taken from the message arguments
+	 * @param verified
+	 * 		if the message has a valid signature
 	 * @throws CouldNotDecryptMessageException
 	 * 		if the file was encrypted (keyIndex >= 0) but could not be decrypted
 	 */
-	private static void handleFile(ConnectionEndpoint ce, NetworkPackage msg) throws CouldNotDecryptMessageException {
+	private static void handleFile(ConnectionEndpoint ce, NetworkPackage msg, boolean verified) throws CouldNotDecryptMessageException {
 		// Save the file if saving unverified files is true, or if it can be verified
 		Path outDirectory = Paths.get("");
 		String fileName = "";
-		if (saveUnverifiedFiles || (msg.getSignature() != null && msg.verify(MessageSystem.getAuthenticator(), ce.getID()))) {
+		if (saveUnverifiedFiles || (msg.getSignature() != null && verified)) {
 			// if the file can be verified, save it in a folder named after the connection
 			outDirectory = Paths.get(Configuration.getBaseDirPath(), "ReceivedFiles" , ce.getRemoteName());
 			fileName = msg.getMessageArgs().fileName();
