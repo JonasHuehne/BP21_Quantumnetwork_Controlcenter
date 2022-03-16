@@ -25,7 +25,7 @@ import networkConnection.TransmissionTypeEnum;
  *
  */
 public class NetworkTests {
-	
+
 	/**
 	 * Low Level Tests directly testing the {@link ConnectionEndpoint} class.
 	 */
@@ -115,7 +115,7 @@ public class NetworkTests {
 			conMan.destroyAllConnectionEndpoints();
 			assertEquals(0, conMan.returnAllConnections().size());
 		}
-		
+
 		/**
 		 * None of this code should trigger any Exceptions.
 		 * @throws IOException
@@ -172,7 +172,7 @@ public class NetworkTests {
 			assertEquals(ConnectionState.CLOSED, BobCM.getConnectionState(nameOfBobsPartner));
 			
 		}
-		
+
 		/**
 		 * None of this code should trigger any exceptions.
 		 * @throws IOException
@@ -245,18 +245,18 @@ public class NetworkTests {
 				//CM.createNewConnectionEndpoint("Alice", "127.0.0.1", 60050);
 			});
 			
-			// Trying to destroy a non-existent CE 
+			// Trying to destroy a non-existent CE
 			assertThrows(ManagerHasNoSuchEndpointException.class, () -> {
 				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60045);
 				CM.destroyConnectionEndpoint("Bob");
 			});
-			
+
 			// Trying to access state of non-existent CE
 			assertThrows(ManagerHasNoSuchEndpointException.class, () -> {
 				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60046);
 				CM.getConnectionState("Bob");
 			});
-			
+
 			// Trying to send a message when a CE is not connected
 			assertThrows(EndpointIsNotConnectedException.class, () -> {
 				ConnectionManager CM = new ConnectionManager("127.0.0.1", 60047);
@@ -264,7 +264,7 @@ public class NetworkTests {
 				CM.sendMessage("Bob", TransmissionTypeEnum.TRANSMISSION, "", null, null);
 				
 			});
-			
+
 			// Trying to insert two CEs connecting to the same IP:Port pair into one CM
 			// will fail in case same IP:Port pair is currently allowed to enable manual testing
 			assertThrows(IpAndPortAlreadyInUseException.class, () -> {
