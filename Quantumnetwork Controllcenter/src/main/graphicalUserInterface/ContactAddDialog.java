@@ -23,7 +23,7 @@ import net.miginfocom.swing.MigLayout;
 
 /**This Dialog is used to add a new Contact to the ContactDB.
  * 
- * @author Jonas Huehne
+ * @author Jonas Huehne, Sasha Petri
  *
  */
 

@@ -118,8 +118,10 @@ public class MessageSystem {
 	 * @return returns True if the confirmation of the message has been received, False if it times out.
 	 * @throws ManagerHasNoSuchEndpointException 
 	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
+	 * @throws EndpointIsNotConnectedException 
+	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
 	 */
-	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) throws ManagerHasNoSuchEndpointException {
+	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
 		return sendConfirmedMessage(connectionID, stringToByteArray(message), stringToByteArray(sig));
 	}
 	
