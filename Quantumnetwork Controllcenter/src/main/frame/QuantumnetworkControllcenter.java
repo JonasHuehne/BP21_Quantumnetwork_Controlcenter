@@ -2,6 +2,7 @@ package frame;
 
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
+import exceptions.PortIsInUseException;
 import graphicalUserInterface.GUIMainWindow;
 import graphicalUserInterface.SettingsDialog;
 import messengerSystem.SHA256withRSAAuthenticationGUI;
@@ -29,7 +30,7 @@ public class QuantumnetworkControllcenter {
 	public static CommunicationList communicationList;
 	public static SignatureAuthentication authentication;
 	public static GUIMainWindow guiWindow;
-	
+
 	static boolean LAUNCH_GUI = true;  // launch GUI
 	static boolean LAUNCH_CUI = false; // launch console UI
 
@@ -71,11 +72,11 @@ public class QuantumnetworkControllcenter {
 			Configuration.setProperty("UserPort", args[1]);
 		}
 		
-		
+
 		/*
 		 *TODO: Check if Sig files exist and if not, generate them!
 		 */
-		
+
 		String ip = Configuration.getProperty("UserIP");
 		int port = Integer.valueOf(Configuration.getProperty("UserPort"));
 		System.out.println("Initialising IP: " + ip + " and Port " + port);
@@ -89,7 +90,7 @@ public class QuantumnetworkControllcenter {
 			e.printStackTrace();
 			System.err.println("Shutting down.");
 			System.exit(0);
-		}
+		} 
 		MessageSystem.conMan = conMan;
 
 		// Communication List Init
