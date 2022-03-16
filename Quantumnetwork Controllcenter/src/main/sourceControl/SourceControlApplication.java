@@ -69,8 +69,12 @@ public class SourceControlApplication {
 		 *TODO: Check if Sig files exist and if not, generate them!
 		 */
 		
+		// Communication List Init
+		communicationList = new SQLiteCommunicationList();
+
+		
 		try {
-			conMan = new ConnectionManager(ip,port, "PhotonSource");
+			conMan = new ConnectionManager(ip,port, "Source", communicationList);
 		} catch (IOException e) {
 			System.err.println("A " + e.getClass().getSimpleName() + " occurred trying to create the ConnectionManager for the Photon Source. Shutting down.");
 			e.printStackTrace();
@@ -81,8 +85,6 @@ public class SourceControlApplication {
 			return;
 		}
 		
-		// Communication List Init
-		communicationList = new SQLiteCommunicationList();
 
 		// Authentication Init
 		authentication = new SHA256withRSAAuthentication();
