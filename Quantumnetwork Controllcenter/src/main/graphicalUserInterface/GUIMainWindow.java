@@ -522,7 +522,7 @@ public final class GUIMainWindow implements Runnable{
 	public void run() {
 		
 		while(true) {
-
+			
 			/*
 			 * Update which connections are represented in the connections tab of the GUI
 			 */
@@ -587,6 +587,10 @@ public final class GUIMainWindow implements Runnable{
 			 * Sleep between the updates to save resources.
 			 */
 			
+			/*
+			 * Sleep between the updates to save ressources.
+			 */
+			
 			try {
 				TimeUnit.MILLISECONDS.sleep(200);
 			} catch (InterruptedException e) {
@@ -594,6 +598,5 @@ public final class GUIMainWindow implements Runnable{
 			}
 			prevActiveConnection = activeConnection;
 		}
-
 	}
 }
