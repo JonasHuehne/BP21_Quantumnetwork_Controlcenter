@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
+import java.time.Duration;
+import java.time.Instant;
 
 import communicationList.Contact;
 import exceptions.ConnectionAlreadyExistsException;
@@ -19,7 +21,7 @@ import messengerSystem.MessageSystem;
  * Once the Streams and the Socket are handed to the CE, the CESH terminates.
  * 
  * If no initial message of type TransmissionTypeEnum.CONNECTION_REQUEST is received for 10 seconds, the CESH times out and also terminates.
- * 
+ *
  * @author Jonas Huehne, Sasha Petri
  *
  */
@@ -32,7 +34,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 	private String remoteIP;	//This will be set to the IP Address of the connecting parties ServerSocket based on the contents of the initial message.
 	private int remotePort;	//This will be set to the Port of the connection parties ServerSocket based on the contents of the initial message.
 	private boolean settingUp = true;	//As long as this is true, the CESH will keep trying to receive a message that contains the info needed to connect back to the remote CEs ServerSocket.
-	
+
 	private boolean acceptedRequest = false;
 	private ConnectionEndpoint ce = null;
 
@@ -53,8 +55,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 	 */
 	ConnectionEndpointServerHandler(Socket newClientSocket) throws IOException {
 		clientSocket = newClientSocket;
-		remoteIP = targetIP;
-		remotePort = targetPort;
+
 	}
 	
 	public void run() {
@@ -66,7 +67,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 				//Create TimeOut
 				NetworkTimeoutThread ntt = new NetworkTimeoutThread(3000, this, this.getClass().getMethod("terminateThread"));
 				ntt.start();
-				
+
 				if((receivedMessage = (NetworkPackage) serverIn.readObject()) != null) {
 					System.out.println("CESH Received a Message: "+ receivedMessage.getHead().toString());
 					
@@ -90,6 +91,12 @@ public class ConnectionEndpointServerHandler extends Thread{
 						settingUp = false;
 						acceptedRequest = true;
 					}
+				}
+				
+				//Timeout after 10 Seconds
+				if(Duration.between(startWait, current).toSeconds() <= 10) {
+					System.out.println("TIMEOUT!");
+					settingUp = false;
 				}
 			}
 		} catch (IOException e) {

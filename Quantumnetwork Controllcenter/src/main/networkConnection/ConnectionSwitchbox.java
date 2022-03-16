@@ -1,17 +1,11 @@
 package networkConnection;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import frame.QuantumnetworkControllcenter;
-import messengerSystem.MessageSystem;
 
 public class ConnectionSwitchbox {
 	
@@ -53,7 +47,7 @@ public class ConnectionSwitchbox {
 				//Try accepting ConnectionRequest;
 				try {
 					//Listen for connection attempt and create new Handler once one was accepted.
-					new ConnectionEndpointServerHandler(newClientSocket = masterServerSocket.accept(), QuantumnetworkControllcenter.conMan.getLocalAddress(), QuantumnetworkControllcenter.conMan.getLocalPort()).start();
+					new ConnectionEndpointServerHandler(newClientSocket = masterServerSocket.accept()).start();
 				
 				} catch (IOException e) {
 					System.err.println("Server of ConnectionSwitchbox failed to accept connection attempt!");

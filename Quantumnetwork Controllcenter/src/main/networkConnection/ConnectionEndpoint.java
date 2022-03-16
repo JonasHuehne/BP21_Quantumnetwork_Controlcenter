@@ -7,8 +7,6 @@ import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.LinkedList;
 
 import exceptions.EndpointIsNotConnectedException;
@@ -163,7 +161,6 @@ public class ConnectionEndpoint implements Runnable{
 			System.err.println("Error occured while establishing a connection from " + connectionID + " to target ServerSocket @ " + remoteIP + ":" + remotePort + ".");
 			e.printStackTrace();
 		}
-		
 	}
 	
 	/**
@@ -281,7 +278,7 @@ public class ConnectionEndpoint implements Runnable{
 	public int getRemotePort() {
 		return remotePort;
 	}
-	
+
 	/**Returns the Name of the Connected User.
 	 * 
 	 * @return the Name of the Connected User.
@@ -313,7 +310,7 @@ public class ConnectionEndpoint implements Runnable{
 	public void setLogGUI(MessageGUI log) {
 		logGUI = log;
 	}
-	
+
 	
 	//-------------//
 	// Client Side //
