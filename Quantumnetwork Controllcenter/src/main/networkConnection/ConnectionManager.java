@@ -57,8 +57,8 @@ public class ConnectionManager {
 	/** true <==> no two connections to the same IP:Port pairing are allowed (should also make self-connections impossible) <br>
 	 *  for actual use we recommend setting this to true, however, it may make some manual tests impossible that involve connecting to oneself */
 	private boolean oneConnectionPerIpPortPair = false;
-	
-	
+
+
 	/**
 	 * Creates and new ConnectionManager.
 	 * Automatically begins accepting connection requests.
@@ -96,7 +96,7 @@ public class ConnectionManager {
 	public final void waitForConnections() {
 		isAcceptingConnections = true;
 		
-		if (!submittedTaskOnce) { 
+		if (!submittedTaskOnce) {
 			// Used to asynchronously wait for incoming connections
 			connectionExecutor.submit(() -> {
 				while (isAcceptingConnections) {
