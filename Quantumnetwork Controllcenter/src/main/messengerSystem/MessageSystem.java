@@ -30,7 +30,7 @@ import javax.swing.*;
  *
  */
 public class MessageSystem {
-	
+
 	
 	/** Contains the ConnectionEndpoints for which the MessageSystem handles the high-level messaging. <br>
 	 * 	Generally, this is set once when initializing the program, however, for automated tests it may be needed to set this multiple times to simulate different users. */
@@ -68,7 +68,7 @@ public class MessageSystem {
 			throw new EndpointIsNotConnectedException(connectionID, "send a message");
 		}
 	}
-	
+
 	/**This simply sends a message on the given ConnectionEndpoint. No confirmation is expected from the recipient.
 	 *
 	 * @param connectionID the name of the ConnectionEndpoint to send the message from.
@@ -110,6 +110,11 @@ public class MessageSystem {
 	}
 	
 	
+	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) {
+		return sendConfirmedMessage(connectionID, stringToByteArray(message), sig);
+	}
+	
+	
 	/**This generates a random MessageID that can be used to identify a message reception confirmation when using sendConfirmedMessage().
 	 * The ID is a 16 alpha-numerical characters long String. (a-z,A-Z,0-9)
 	 * @return the new random MessageID
@@ -121,7 +126,7 @@ public class MessageSystem {
 	
 	/**Sends a signed unconfirmed Message.
 	 * Signing requires valid keys.
-	 * 
+	 *
 	 * @param connectionID  the name of the ConnectionEndpoint to send the message from.
 	 * @param type the type of the transmission.
 	 * @param argument the optional argument, use depends on the chosen TransmissionType. Refer to ConnectionEndpoint.processMessage() for more information.
@@ -139,7 +144,7 @@ public class MessageSystem {
 		sendMessage(connectionID, type, argument, message, signature);
 		return true;
 	}
-	
+
 	/**Sends a signed unconfirmed Message.
 	 * Signing requires valid keys.
 	 * 
@@ -213,7 +218,7 @@ public class MessageSystem {
 		
 		String encrypted = AES256.encrypt(message, byteKey);
 		//Encrypted::: is used in the CE to decide if the message is encrypted and therefore needs to be read with readEncryptedMessage().
-		return sendAuthenticatedMessage(connectionID, type,"encrypted:::" + argument, encrypted);		
+		return sendAuthenticatedMessage(connectionID, type,"encrypted:::" + argument, encrypted);
 	}
 	
 	/**
