@@ -41,7 +41,7 @@ public class NetworkTimeoutThread extends Thread{
 	 * @param caller the object that wants to be notified of the timeout.
 	 * @param method the method of the caller object that should get called after the timeout.
 	 */
-	NetworkTimeoutThread(int ms, Object caller, Method method){
+	public NetworkTimeoutThread(int ms, Object caller, Method method){
 		msDuration = ms;
 		startWait = Instant.now();
 		current = Instant.now();

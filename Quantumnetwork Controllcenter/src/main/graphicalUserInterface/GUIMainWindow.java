@@ -6,10 +6,10 @@ import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.Box;
@@ -34,7 +34,9 @@ import communicationList.Contact;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
+import exceptions.NoKeyWithThatIDException;
 import frame.QuantumnetworkControllcenter;
+import graphicalUserInterface.keyStoreEditor.DebugKeystoreEditor;
 import keyStore.KeyStoreDbManager;
 import keyStore.KeyStoreObject;
 import net.miginfocom.swing.MigLayout;
@@ -42,6 +44,8 @@ import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
 import networkConnection.ConnectionType;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 /**This is the Main GUI of this Application. The left half handles the ContactDB and the right half handles the Connections.
  * @implNote We encourage the use of a tool like WindowBuilder when making changes to this and other GUI classes.
@@ -49,6 +53,9 @@ import networkConnection.ConnectionType;
  *
  */
 public final class GUIMainWindow implements Runnable{
+	
+	Log guiLogger = new Log(GUIMainWindow.class.getSimpleName(), LogSensitivity.WARNING);
+
 
 	private Object[][] contactData = {};
 	String[] contactColumnNames = {"Connection Name",
@@ -77,6 +84,7 @@ public final class GUIMainWindow implements Runnable{
 	private ArrayList<String> namesOfConnections = new ArrayList<String>();
 	
 	public HashMap<String,ConnectionType> conType = new HashMap<String,ConnectionType>();
+	protected ArrayList<MessageGUI> openChatWindows = new ArrayList<MessageGUI>();
 
 	/**
 	 * Create the application.
@@ -102,9 +110,7 @@ public final class GUIMainWindow implements Runnable{
 		frame = new CustomClosingFrame();
 		getFrame().setBounds(100, 100, 1120, 567);
 		getFrame().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
 		getFrame().setTitle("QNCC");
-		
 		frame.getContentPane().setLayout(new MigLayout("", "[1088.00px]", "[][528px][]"));
 		
 		JToolBar toolBar = new JToolBar();
@@ -134,7 +140,7 @@ public final class GUIMainWindow implements Runnable{
 		});
 		helpButton.setToolTipText("Opens the Help Screen.");
 		toolBar.add(helpButton);
-		
+
 		JPanel contactsOuterPanel = new JPanel();
 		contactsOuterPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "Contacts", TitledBorder.CENTER, TitledBorder.TOP, null, new Color(0, 0, 0)));
 		frame.getContentPane().add(contactsOuterPanel, "flowx,cell 0 1,alignx left,growy");
@@ -179,7 +185,7 @@ public final class GUIMainWindow implements Runnable{
 		});
 		removeContactButton.setToolTipText("Removes a row from the \"Contacts\"-Table.");
 		contactControlPanel.add(removeContactButton);
-		
+
 		JButton contactRefreshButton = new JButton("Refresh Table");
 		contactRefreshButton.setToolTipText("Forces the contacts table shown below to update by re-querying the database. This can be used after modifying the contacts database.");
 		contactRefreshButton.addActionListener(new ActionListener() {
@@ -189,7 +195,7 @@ public final class GUIMainWindow implements Runnable{
 			}
 		});
 		contactControlPanel.add(contactRefreshButton);
-		
+
 		JButton saveChangesButton = new JButton("Save Changes to DB");
 		saveChangesButton.setToolTipText("Saves the changes made in the table to the contacts database.");
 		saveChangesButton.addActionListener(new ActionListener() {
@@ -223,7 +229,7 @@ public final class GUIMainWindow implements Runnable{
 		contactTable = new JTable(new DefaultTableModel(contactColumnNames,0));
 		gatherContacts();
 		contactScrollPane.setViewportView(contactTable);
-		
+
 		JPanel connectionsOuterPanel = new JPanel();
 		connectionsOuterPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "Connections", TitledBorder.CENTER, TitledBorder.TOP, null, new Color(0, 0, 0)));
 		frame.getContentPane().add(connectionsOuterPanel, "cell 0 1,grow");
@@ -286,12 +292,11 @@ public final class GUIMainWindow implements Runnable{
 		connectionButtonsPanel.add(generateKeyButton);
 		generateKeyButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				
 				if(activeConnection == null) {
 					System.out.println("Warning: No Connection selected as active.");
 					return;
 				}
-				
+
 				try {
 					if(QuantumnetworkControllcenter.conMan.getConnectionState(activeConnection) == ConnectionState.CONNECTED) {
 						try {
@@ -327,14 +332,14 @@ public final class GUIMainWindow implements Runnable{
 		
 		connectionEndpointVerticalBox = Box.createVerticalBox();
 		scrollPane.setViewportView(connectionEndpointVerticalBox);
-		
+
 		JButton connectionDebug = new JButton("Debug Button 1");
 		connectionDebug.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				ConnectionManager cm = QuantumnetworkControllcenter.conMan;
 				System.out.println("Conman Size: " + cm.getConnectionsAmount());
 				System.out.println("Entries: ");
-				for (Entry<String, ConnectionEndpoint> entry : cm.returnAllConnections().entrySet()) {
+				for (Map.Entry<String, ConnectionEndpoint> entry : cm.returnAllConnections().entrySet()) {
 					System.out.println(" " + entry.getKey() + " with state " + entry.getValue().reportState());
 				}
 				System.out.println("namesOfConnections size: " + namesOfConnections.size());
@@ -344,6 +349,40 @@ public final class GUIMainWindow implements Runnable{
 		});
 		connectionDebug.setToolTipText("Used for debugging purposes by the developers. Displays some information about connections to the console.");
 		frame.getContentPane().add(connectionDebug, "cell 0 0");
+		
+		JButton debugButton2 = new JButton("Debug Button 2 (CE Info)");
+		debugButton2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (activeConnection != null) {
+					ConnectionEndpoint active = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(activeConnection);
+					StringBuilder info = new StringBuilder();
+					info.append("ID: " 				+ active.getID() + System.lineSeparator());
+					info.append("Remote Name: " 	+ active.getRemoteName() + System.lineSeparator());
+					info.append("PK: " 				+ active.getSigKey() + System.lineSeparator());
+					info.append("KeyID: " 			+ active.getKeyStoreID() + System.lineSeparator());
+					try {
+						info.append("Keystore has an entry for this keyID == " 
+									+ KeyStoreDbManager.doesKeyStreamIdExist(active.getKeyStoreID())
+									+ System.lineSeparator());
+					} catch (SQLException e1) {
+						info.append("Can not reach Keystore. SQL Exception." + System.lineSeparator());
+					}
+					new GenericWarningMessage(info.toString(), 600, 300);
+				}
+			}
+		});
+		debugButton2.setToolTipText("Displays some information about the currently selected CE.");
+		frame.getContentPane().add(debugButton2, "cell 0 0");
+		
+		JButton buttonDebugKeystoreEditor = new JButton("Debug Button 3 (KS Editor)");
+		buttonDebugKeystoreEditor.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				DebugKeystoreEditor dialog = new DebugKeystoreEditor();
+				dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				dialog.setVisible(true);
+			}
+		});
+		frame.getContentPane().add(buttonDebugKeystoreEditor, "cell 0 0");
 	}
 
 	public JFrame getFrame() {
@@ -365,7 +404,7 @@ public final class GUIMainWindow implements Runnable{
 	public int getContactDBPortIndex() {
 		return contactDBPortIndex;
 	}
-	
+
 	public int getContactDBPubSigKeyIndex() {
 		return contactDBPubSigKeyIndex;
 	}
@@ -423,7 +462,6 @@ public final class GUIMainWindow implements Runnable{
 		}
 	}
 	
-
 	/**This Method adds a set of SwingItems that allow the user to interact with the ConnectionEndpoint.
 	 * 
 	 * @param connectionName	the name of the CE
@@ -431,13 +469,12 @@ public final class GUIMainWindow implements Runnable{
 	 * @param targetPort	the targetPort of the CE
 	 */
 	private void createConnectionRepresentation(String connectionName, String targetIP, int targetPort) {
-
-		
+	
 		JPanel ceFrame = new JPanel();
 		ceFrame.setBorder(new LineBorder(new Color(0, 0, 0)));
 		ceFrame.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
 		connectionEndpointVerticalBox.add(ceFrame);
-		
+
 		
 		JLabel connectionNameLabel = new JLabel(connectionName + " - " + targetIP + " - " + targetPort);
 		ceFrame.add(connectionNameLabel);
@@ -475,8 +512,10 @@ public final class GUIMainWindow implements Runnable{
 				
 				//Check if Key exists
 				if(connectionTypeCB.getSelectedItem() == ConnectionType.ENCRYPTED) {
-					KeyStoreObject kSO = KeyStoreDbManager.getEntryFromKeyStore(connectionName);
-					if(kSO == null) {
+					KeyStoreObject kSO;
+					try {
+						kSO = KeyStoreDbManager.getEntryFromKeyStore(connectionName);
+					} catch (NoKeyWithThatIDException | SQLException e1) {
 						new GenericWarningMessage("Warning: no valid Key was found for " + connectionName + "! Please generate a Key before using encrypted communication.");
 						connectionTypeCB.setSelectedItem(ConnectionType.AUTHENTICATED);
 					}
@@ -493,7 +532,8 @@ public final class GUIMainWindow implements Runnable{
 		JButton openTransferButton = new JButton("Message System");
 		openTransferButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				new MessageGUI(connectionName);
+				openChatWindows.add(new MessageGUI(connectionName)); 
+				// add opened chat to list, so it can be refreshed when needed
 			}
 		});
 		ceFrame.add(openTransferButton);
@@ -513,15 +553,13 @@ public final class GUIMainWindow implements Runnable{
 		ceUpdateThread.start();
 	}
 	
-	
 	/**
 	 * Interrupts the thread used to update the representation of the connections in the right table.
 	 */
 	public void shutdownUpdateService() {
 		ceUpdateThread.interrupt();
 	}
-	
-	
+
 	/**
 	 * Runs a thread that updates the representation of the connections in the right table of the GUI.
 	 */
@@ -532,6 +570,7 @@ public final class GUIMainWindow implements Runnable{
 			
 			/*
 			 * Update which connections are represented in the connections tab of the GUI
+			 * Also updates the displayed state.
 			 */
 			
 			int ceAmountNew = QuantumnetworkControllcenter.conMan.getConnectionsAmount();
@@ -540,7 +579,7 @@ public final class GUIMainWindow implements Runnable{
 				if (ceAmountNew > representedConnectionEndpoints.size()) { // if new connections were added
 					Map<String, ConnectionEndpoint> currentConnections = QuantumnetworkControllcenter.conMan.returnAllConnections();		
 					// Add a graphical entry for each connection that doesn't have one yet
-					for (Entry<String, ConnectionEndpoint> entry : currentConnections.entrySet()) {
+					for (Map.Entry<String, ConnectionEndpoint> entry : currentConnections.entrySet()) {
 						if (!(representedConnectionEndpoints.keySet().contains(entry.getKey()))) {
 								createConnectionRepresentation(
 										entry.getKey(), 
@@ -589,6 +628,13 @@ public final class GUIMainWindow implements Runnable{
 				v.repaint();
 				
 			});
+
+			/*
+			 * Sleep between the updates to save resources.
+			 */
+			
+			// Update any open chat window
+			for (MessageGUI c : openChatWindows) c.refreshMessageLog();
 			
 			/*
 			 * Sleep between the updates to save resources.
@@ -597,10 +643,9 @@ public final class GUIMainWindow implements Runnable{
 			try {
 				TimeUnit.MILLISECONDS.sleep(200);
 			} catch (InterruptedException e) {
-				//Ignore Exception as this is only triggered when intentionally shutting down the thread.
+				guiLogger.logError("An Interrupt occured in the refresher thread for the GUI", e);
 			}
 			prevActiveConnection = activeConnection;
 		}
-		
 	}
 }

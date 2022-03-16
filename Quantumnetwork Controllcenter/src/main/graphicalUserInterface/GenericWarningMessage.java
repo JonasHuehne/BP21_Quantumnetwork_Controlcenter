@@ -1,6 +1,7 @@
 package graphicalUserInterface;
 
 import java.awt.BorderLayout;
+
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.MouseInfo;
@@ -13,19 +14,20 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
 import javax.swing.UIManager;
+import javax.swing.JFrame;
 
 /**This is a simple generic Warning or Error Dialog Window. It can be used to display important messages to the user.
- * 
+ *
  * @author Jonas Huehne, Sasha Petri
  *
  */
-public class GenericWarningMessage extends JDialog {
+public class GenericWarningMessage extends JFrame {
 
 	private static final long serialVersionUID = -1172300406464343271L;
 
 
 	/**This is a simple generic Warning or Error Dialog Window. It can be used to display important messages to the user.
-	 * 
+	 *
 	 * @param warningText the content of the warning windows text area.
 	 */
 	public GenericWarningMessage(String warningText) {
@@ -40,7 +42,7 @@ public class GenericWarningMessage extends JDialog {
 		int xPos = (int) Math.max(0, mousePos.getX() - (width / 2));
 		int yPos = (int) Math.max(0, mousePos.getY() - (height / 2));
 		setBounds(xPos, yPos, width, height);
-		
+
 		getContentPane().setLayout(new BorderLayout());
 		JPanel buttonPane = new JPanel();
 		buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
@@ -146,6 +148,6 @@ public class GenericWarningMessage extends JDialog {
 		warningTextField.setText(warningText);
 		getContentPane().add(warningTextField, BorderLayout.CENTER);
 	}
-	
+
 
 }

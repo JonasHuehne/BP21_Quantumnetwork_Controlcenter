@@ -1,259 +1,349 @@
 package messengerSystem;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.time.Duration;
-import java.time.Instant;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.InvalidKeyException;
+import java.sql.SQLException;
 import java.util.Random;
-import encryptionDecryption.AES256;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.SecretKey;
+
+import encryptionDecryption.FileCrypter;
+import encryptionDecryption.SymmetricCipher;
+import exceptions.CouldNotSendMessageException;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
-import exceptions.NoValidPublicKeyException;
+import exceptions.NoKeyWithThatIDException;
+import exceptions.NotEnoughKeyLeftException;
 import frame.Configuration;
-import frame.QuantumnetworkControllcenter;
-import graphicalUserInterface.CESignatureQueryDialog;
 import keyStore.KeyStoreDbManager;
-import keyStore.KeyStoreObject;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
-import networkConnection.ConnectionState;
+import networkConnection.MessageArgs;
 import networkConnection.NetworkPackage;
 import networkConnection.TransmissionTypeEnum;
 import qnccLogger.Log;
 import qnccLogger.LogSensitivity;
 
-import javax.swing.*;
-
 /**High Level Message System. Contains methods for sending and receiving messages without dealing with low-level things, like signals and prefixes.
  * Send and receiving messages via these methods, the connectionID determines which connectionEndpoint to interact with.
  *
- * @author Jonas Huehne, Sarah Schumann
+ * @author Jonas Huehne, Sarah Schumann, Sasha Petri
  *
  */
 public class MessageSystem {
+
+	private static Log log = new Log(MessageSystem.class.getName(), LogSensitivity.WARNING);
 	
+	/** The cipher the message system uses to encrypt / decrypt messages & files */
+	private static SymmetricCipher cipher;
+	/** The authenticator the message system uses to sign / verify messages & files */
+	private static SignatureAuthentication authenticator;
+	
+	private static final String ENCODING_STANDARD = Configuration.getProperty("Encoding");
 	
 	/** Contains the ConnectionEndpoints for which the MessageSystem handles the high-level messaging. <br>
 	 * 	Generally, this is set once when initializing the program, however, for automated tests it may be needed to set this multiple times to simulate different users. */
 	public static ConnectionManager conMan;
+	
 	private static final byte[] DEBUG_KEY = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
-	private static Log log = new Log(MessageSystem.class.getName(), LogSensitivity.WARNING);
+
 	
-	/**This simply sends a message on the given ConnectionEndpoint. No confirmation is expected from the recipient.
-	 *
-	 * @param connectionID the name of the ConnectionEndpoint to send the message from.
-	 * @param type the specific type of message. 
-	 * @param argument the type-specific argument.
-	 * @param message the message to be sent.
-	 * @param sig the signature of an authenticated message. May be null for non-authenticated messages.
-	 * @param confID the ID used to check if the message was received by the other party. May be "" if no confirmation is expected.
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
-	 * @throws EndpointIsNotConnectedException 
-	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
-	 * @see TransmissionTypeEnum
+	/**
+	 * Sets the encryption / decryption algorithm to be used by the MessageSystem.
+	 * @param cipher
+	 * 		the algorithm to use
 	 */
-	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, byte[] message, byte[] sig) 
-			throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		//Check if connectionManager exists
-		if(conMan == null) {
-			log.logWarning("ERROR - To send a Message via the MessageSystem, the QuantumNetworkControlCenter needs to be initialized first.");
-			return;
-		}
-		//Check if connectionEndpoint is connected to something.
-		ConnectionState state = conMan.getConnectionState(connectionID);
-		if(state == ConnectionState.CONNECTED) {
-			//Send the messages
-			conMan.sendMessage(connectionID, type, argument, message, sig);
-		} else {
-			throw new EndpointIsNotConnectedException(connectionID, "send a message");
-		}
-	}
-	
-	/**This simply sends a message on the given ConnectionEndpoint. No confirmation is expected from the recipient.
-	 *
-	 * @param connectionID the name of the ConnectionEndpoint to send the message from.
-	 * @param type the specific type of message. Look at TransmissionTypeEnum for more information.
-	 * @param argument the type-specific argument. Look at TransmissionTypeEnum for more information.
-	 * @param message the message to be sent.
-	 * @param sig the signature of an authenticated message. May be null for non-authenticated messages.
-	 * @param confID the ID used to check if the message was received by the other party. May be "" if no confirmation is expected.
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
-	 * @throws EndpointIsNotConnectedException 
-	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
-	 */
-	public static void sendMessage(String connectionID, TransmissionTypeEnum type, String argument, String message, String sig) 
-			throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		if(sig == null) {
-			sendMessage(connectionID, type, argument, stringToByteArray(message), null);
-		}else {
-			sendMessage(connectionID, type, argument, stringToByteArray(message), stringToByteArray(sig));
-		}
+	public static void setEncryption(SymmetricCipher cipher) {
+		MessageSystem.cipher = cipher;
 	}
 
 	/**
-	 * This returns the actual message contained inside a given NetworkPackage.
-	 * @param transmission the NetworkPackage to open.
-	 * @return the content as a byte[]. Can be converted to string with MessageSystem.byteArrayToString().
+	 * Sets the authentication algorithm to be used by the MessageSystem.
+	 * @param authentication
+	 * 		the algorithm to use
 	 */
-	public static byte[] readMessage(NetworkPackage transmission) {
-		return transmission.getContent();
-	}
-	
-	/**
-	 * This returns the actual message contained inside a given NetworkPackage.
-	 * @param transmission the NetworkPackage to open.
-	 * @return the content as a String.
-	 */
-	public static String readMessageAsString(NetworkPackage transmission) {
-		return byteArrayToString(transmission.getContent());
-	}
-	
-	
-	/**This generates a random MessageID that can be used to identify a message reception confirmation when using sendConfirmedMessage().
-	 * The ID is a 16 alpha-numerical characters long String. (a-z,A-Z,0-9)
-	 * @return the new random MessageID
-	 */
-	public static String generateRandomMessageID() {
-		Random randomGen = new Random();
-	    return randomGen.ints(48, 123).filter(i -> (i<=57||i>=65) && (i<=90||i>=97)).limit(16).collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
-	}
-	
-	/**Sends a signed unconfirmed Message.
-	 * Signing requires valid keys.
-	 * 
-	 * @param connectionID  the name of the ConnectionEndpoint to send the message from.
-	 * @param type the type of the transmission.
-	 * @param argument the optional argument, use depends on the chosen TransmissionType. Refer to ConnectionEndpoint.processMessage() for more information.
-	 * @param message the actual message to be transmitted. Can be empty. Most transmissions with content will use the first variant of this method.
-	 * @return returns true if the message was confirmed to have been received.
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
-	 * @throws EndpointIsNotConnectedException 
-	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
-	 */
-	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final byte[] message) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		byte[] signature;
-		signature = QuantumnetworkControllcenter.authentication.sign(message);
-		//sendConfirmedMessage(connectionID, type, argument, message, signature);
-		sendMessage(connectionID, type, argument, message, signature);
-		return true;
-	}
-	
-	/**Sends a signed unconfirmed Message.
-	 * Signing requires valid keys.
-	 * 
-	 * @param connectionID  the name of the ConnectionEndpoint to send the message from.
-	 * @param type the type of the transmission.
-	 * @param argument the optional argument, use depends on the chosen TransmissionType. Refer to ConnectionEndpoint.processMessage() for more information.
-	 * @param message the actual message to be transmitted. Can be empty. Most transmissions with content will use the first variant of this method.
-	 * @return returns true if the message was confirmed to have been received.
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
-	 * @throws EndpointIsNotConnectedException 
-	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
-	 */
-	public static boolean sendAuthenticatedMessage(String connectionID, TransmissionTypeEnum type, String argument, final String message) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		return sendAuthenticatedMessage(connectionID, type, argument, stringToByteArray(message));
+	public static void setAuthenticationAlgorithm(SignatureAuthentication authentication) {
+		MessageSystem.authenticator = authentication;
 	}
 
+
 	/**
-	 * Receives and verifies a signed message.
-	 * 
-	 * @param connectionID the name of the ConnectionEndpoint
-	 * @param transmission the NetworkPackage that was received and needs to be verified.
-	 * @return the received message as byte[], null if error none, on time-out, if the decoding failed or if result of verify was false
+	 * @return the message authenticator currently in use by the MessageSystem
 	 */
-	public static byte[] readAuthenticatedMessage(String connectionID, NetworkPackage transmission) {
-		NetworkPackage msg = transmission;
-		byte[] message = msg.getContent();
-		byte[] signature = msg.getSignature();
-		log.logInfo("----Tried to find Sig in DB for: " + connectionID);
-		if(QuantumnetworkControllcenter.authentication.verify(message, signature, connectionID)) {
-			return message;
-		}
-		return null;
+	public static SignatureAuthentication getAuthenticator() {
+		return authenticator;
 	}
 	
 	/**
-	 * sends a signed message with encrypted text
-	 * 
-	 * @param connectionID the ID of the receiver
-	 * @param message the message to be sent
-	 * @return true if the sending of the message worked, false otherwise
-	 * @throws ManagerHasNoSuchEndpointException 
-	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
-	 * @throws EndpointIsNotConnectedException 
-	 * 		if the {@linkplain ConnectionEndpoint} specified by {@code connectionID} is not connected to its partner at the moment
+	 * @return the symmetric encryption algorithm used in this class when encryption messages
 	 */
-	public static boolean sendEncryptedMessage(String connectionID, TransmissionTypeEnum type, String argument, final String message) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		//TODO: Remove Debug in Release?
-		byte[] byteKey;
-		if(connectionID.equals("42debugging42") || connectionID.equals("41debugging41") ) {
-			byteKey = DEBUG_KEY; 
-		}
-		else {
-		//getting key
-		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
-		byteKey = keyObject.getCompleteKeyBuffer();
+	public static SymmetricCipher getCipher() {
+		return cipher;
+	}
+	
+	/**
+	 * Constructs a NetworkPackage with the given parameters and sends it to the specified partner. <br>
+	 * Signs the NetworkPackage with the authenticator of this class if desired.
+	 * @param connectionID
+	 * 		connectionID of a {@linkplain ConnectionEndpoint} in the {@linkplain ConnectionManager} of this class <br>
+	 * 		the constructed NetworkPackage is sent to the connected partner of the specified endpoint
+	 * @param type
+	 * 		type of the NetworkPackage
+	 * @param args
+	 * 		arguments of the NetworkPackage
+	 * @param content
+	 * 		content of the network package
+	 * @param sign
+	 * 		whether to sign the NetworkPackage
+	 * @param confirm
+	 * 		whether the recipient should confirm that they received the package
+	 * @throws EndpointIsNotConnectedException
+	 * 		if the specified endpoint is not connected to their partner
+	 * @throws ManagerHasNoSuchEndpointException
+	 * 		if no endpoint of the given name exists in the ConnectionManager of this class
+	 */
+	private static void sendMessage(String connectionID, TransmissionTypeEnum type, MessageArgs args, byte[] content, boolean sign, boolean confirm)
+			throws EndpointIsNotConnectedException, ManagerHasNoSuchEndpointException {
+		NetworkPackage message = new NetworkPackage(type, args, content, confirm);
+		if (sign) message.sign(authenticator);
+		conMan.sendMessage(connectionID, message);
+	}
+	
+	/**
+	 * Internal method for sending a file.
+	 * @param connectionID
+	 * 		connectionID of a {@linkplain ConnectionEndpoint} in the {@linkplain ConnectionManager} of this class <br>
+	 * 		the constructed NetworkPackage is sent to the connected partner of the specified endpoint
+	 * @param file
+	 * 		the file to send
+	 * @param encryptFile
+	 * 		true if the file is to be encrypted
+	 * @param sign
+	 * 		true if the file is to be signed <br>
+	 * 		always treated as true if the file is to be encrypted
+	 * @param confirm
+	 * 		true if a message of type {@linkplain TransmissionTypeEnum#RECEPTION_CONFIRMATION}
+	 * 		should be sent in response to this message
+	 * @throws CouldNotSendMessageException
+	 * 		if the file could not be sent <br>
+	 * 		wraps a lower level exception, such as IOException or {@linkplain EndpointIsNotConnectedException}
+	 */
+	private static void sendFileInternal(String connectionID, File file, boolean encryptFile, boolean sign, boolean confirm) throws CouldNotSendMessageException {
+		byte[] fileBytes;
+		int keyIndex;
 		
-		//TODO wird sp�ter vermutlich nicht mehr ben�tigt
-		//marking key as used
-		KeyStoreDbManager.changeKeyToUsed(connectionID);
+		try {
+			if (encryptFile) { // sending an encrypted file
+				// encrypt the file locally
+				byte[] byteKey = KeyStoreDbManager.getNextNBytes(connectionID, cipher.getKeyLength() / 8, false);
+				keyIndex = KeyStoreDbManager.getIndex(connectionID);
+				SecretKey key = cipher.byteArrayToSecretKey(byteKey);
+				Path pathToEncryptedFile = Paths.get(file.getParent().toString(), "encrypted_" + file.getName());
+				FileCrypter.encryptAndSave(file, cipher, key, pathToEncryptedFile);
+				// read the encrypted file to send
+				fileBytes = Files.readAllBytes(pathToEncryptedFile);
+				// delete encrypted file after reading it to not clutter the machine
+				Files.deleteIfExists(pathToEncryptedFile);
+			} else {
+				// read the file to send
+				fileBytes = Files.readAllBytes(file.toPath());
+				keyIndex = -1; // indicates file isn't encrypted
+			}
+			
+			/*
+			 * For large files, it may (?) be beneficial to split it into multiple packages. 
+			 * However, this would be a significantly more complicated protocol to prevent package loss etc.
+			 */
+			
+			MessageArgs args = new MessageArgs(file.getName(), keyIndex);
+			NetworkPackage msg = new NetworkPackage(TransmissionTypeEnum.FILE_TRANSFER, args, fileBytes, confirm);
+			if (sign) msg.sign(authenticator);
+			if (encryptFile) {
+				informAndSendOnceConfirmed(connectionID, msg);
+			} else {
+				conMan.sendMessage(connectionID, msg);
+			}
+			
+			
+		} catch (EndpointIsNotConnectedException | IOException | InvalidKeyException | 
+				IllegalBlockSizeException | SQLException | NotEnoughKeyLeftException | 
+				NoKeyWithThatIDException | SecurityException | ManagerHasNoSuchEndpointException e) {
+			throw new CouldNotSendMessageException("Could not send the file " + file.getName() + " along the connection " + connectionID + ".", e);
 		}
+
+	}
+	
+	/**
+	 * Sends an unencrypted text message to the specified communication partner.
+	 * @param connectionID
+	 * 		connectionID of a {@linkplain ConnectionEndpoint} in the {@linkplain ConnectionManager} of this class <br>
+	 * 		the text message is sent to the connected partner of the specified endpoint
+	 * @param msgString
+	 * 		the message to send
+	 * @param sign
+	 * 		true if the message should be signed, false if not
+	 * @param confirm
+	 * 		set this to true if the recipient should send a confirmation message upon receiving the message, false otherwise
+	 * @throws CouldNotSendMessageException
+	 * 		if the message could not be sent <br>
+	 * 		wraps a lower level exception, such as IOException or {@linkplain EndpointIsNotConnectedException}
+	 */
+	public static void sendTextMessage(String connectionID, String msgString, boolean sign, boolean confirm) throws CouldNotSendMessageException  {
+		MessageArgs args = new MessageArgs();
+		log.logInfo("Attempting to send message <" + msgString + "> from CE with ID <" + connectionID + "> | Signed: " + sign + " Confirmed: " + confirm + " |");
+		try {
+			sendMessage(connectionID, TransmissionTypeEnum.TEXT_MESSAGE, args, stringToByteArray(msgString), sign, confirm);
+		} catch (EndpointIsNotConnectedException | ManagerHasNoSuchEndpointException e) {
+			throw new CouldNotSendMessageException("Could not send the specified message along the connection " + connectionID + ".", e);
+		}
+	}
+	
+	/**
+	 * Encrypts a text message and sends it to the specified communication partner.
+	 * @param connectionID
+	 * 		connectionID of a {@linkplain ConnectionEndpoint} in the {@linkplain ConnectionManager} of this class <br>
+	 * 		the text message is sent to the connected partner of the specified endpoint
+	 * @param msgString
+	 * 		the message to send
+	 * @param confirm
+	 * 		set this to true if the recipient should send a confirmation message upon receiving the message, false otherwise
+	 * @throws CouldNotSendMessageException
+	 * 		if the message could not be sent, or an error during encryption occured <br>
+	 * 		wraps a lower level exception, such as IOException or {@linkplain EndpointIsNotConnectedException}
+	 */
+	public static void sendEncryptedTextMessage(String connectionID, String msgString, boolean confirm) throws CouldNotSendMessageException {
+		try {
+			// encrypt the message
+			String keyIDofConnection = conMan.getConnectionEndpoint(connectionID).getKeyStoreID();
+			byte[] msgBytes = stringToByteArray(msgString);
+			byte[] key = KeyStoreDbManager.getNextNBytes(keyIDofConnection, cipher.getKeyLength() / 8, false);
+			byte[] encMsgBytes = cipher.encrypt(msgBytes, key);
+			
+			// Provide the index in the message args so receiver knows where to start with decryption
+			int index = KeyStoreDbManager.getIndex(keyIDofConnection);
+			
+			log.logInfo("Attempting to send encrypted <" + msgString + "> from CE with ID <" + connectionID + "> | "
+					+ "Started Encryption at Index: " + index + " Confirmed: " + confirm + " |");
+				
+			// Construct the message to send
+			MessageArgs args = new MessageArgs(index);
+			NetworkPackage msg = new NetworkPackage(TransmissionTypeEnum.TEXT_MESSAGE, args, encMsgBytes, confirm);
+			msg.sign(authenticator);
+			// Tell the other party we wish to send, and queue the message
+			informAndSendOnceConfirmed(connectionID, msg);
+		} catch (EndpointIsNotConnectedException | SQLException | NotEnoughKeyLeftException 
+				| NoKeyWithThatIDException | InvalidKeyException | IllegalBlockSizeException 
+				| SecurityException e) {
+			throw new CouldNotSendMessageException("Could not send the encrypted message along the connection " + connectionID + ".", e);
+		}
+	}
+	
+	/**
+	 * Sends an unencrypted file to the specified communication partner.
+	 * @param connectionID
+	 * 		connectionID of a {@linkplain ConnectionEndpoint} in the {@linkplain ConnectionManager} of this class <br>
+	 * 		the file is sent to the connected partner of the specified endpoint
+	 * @param file
+	 * 		the file to send
+	 * @param sign
+	 * 		true if the message should be signed, false if not
+	 * @param confirm
+	 * 		set this to true if the recipient should send a confirmation message upon receiving the file, false otherwise
+	 * @throws CouldNotSendMessageException
+	 * 		if the file could not be sent <br>
+	 * 		wraps a lower level exception, such as IOException or {@linkplain EndpointIsNotConnectedException} 
+	 */
+	public static void sendFile(String connectionID, File file, boolean sign, boolean confirm) throws CouldNotSendMessageException {
+		sendFileInternal(connectionID, file, false, sign, confirm);
+	}
+	
+	/**
+	 * Encrypts a file and sends it to the specified communication partner.
+	 * @param connectionID
+	 * 		connectionID of a {@linkplain ConnectionEndpoint} in the {@linkplain ConnectionManager} of this class <br>
+	 * 		the file is sent to the connected partner of the specified endpoint
+	 * @param file
+	 * 		the file to encrypt and send
+	 * @param confirm
+	 * 		set this to true if the recipient should send a confirmation message upon receiving the file, false otherwise
+	 * @throws CouldNotSendMessageException
+	 * 		if the file could not be sent, or an error during encryption occured <br>
+	 * 		wraps a lower level exception, such as IOException or {@linkplain EndpointIsNotConnectedException} 
+	 */
+	public static void sendEncryptedFile(String connectionID, File file, boolean confirm) throws CouldNotSendMessageException {
+		sendFileInternal(connectionID, file, true, true, confirm);
+	}
+	
+	/**
+	 * Called after encrypting a message. This queues the encrypted message up for sending,
+	 * however, before sending it alerts the other CE that key bytes starting at a certain index
+	 * are used in the encrypted message it wants to send. The other CE can then approve or disapprove
+	 * this (disapprove if this would cause sender to use bytes for encryption that receiver already used)
+	 * and only if the receiver approves, the message is sent. <br>
+	 * If this takes longer than three seconds, no message is sent. <br>
+	 * The timeout happens asynchronously - this method does not block.
+	 * @param connectionID
+	 * 		ID of the CE in the {@linkplain ConnectionManager} from which to send the package
+	 * @param msg
+	 * 		the encrypted message to send
+	 * @throws NoKeyWithThatIDException
+	 * 		if there is no mutual key for the connection given by the specified CE <br>
+	 * 		if this method is called correctly, this should not occurr
+	 * @throws SQLException
+	 * 		if an SQL error occured with the keystore
+	 * @throws EndpointIsNotConnectedException
+	 * 		if the specified endpoint is not connected to their partner
+	 */
+	private static void informAndSendOnceConfirmed(String connectionID, NetworkPackage msg) 
+			throws NoKeyWithThatIDException, SQLException, EndpointIsNotConnectedException {
 		
 		/*
-		 * TODO 
-		 * hier entsteht noch ziemliches durcheinander!
-		 * M�glichkeiten das sauberer zu l�sen:
-		 * - keys in der DB direct in passender L�nge speichern 
-		 * - dem folgend eine m�glichkeit den entsprechenden key als used zu markieren oder besser:
-		 * 	 beim erhalten des Keys diret als used markieren
+		 * Basic implementation of algorithm to avoid key desynch.
+		 * Might need some improvements in the future.
 		 */
+
+		// CE A will send this package to CE B to inform them that
+		// A wishes to use bytes of their mutual key, starting at the specified index
+		final ConnectionEndpoint ceA = conMan.getConnectionEndpoint(connectionID);
+		int currentIndex = KeyStoreDbManager.getIndex(ceA.getKeyStoreID());
+		final MessageArgs args = new MessageArgs(currentIndex);
+		final NetworkPackage keyUseAlert = new NetworkPackage(TransmissionTypeEnum.KEY_USE_ALERT, args, false);
+		ceA.pushOnceConfirmationReceivedForID(keyUseAlert.getID(), msg); // push the main message once key use is confirmed
+		ceA.pushMessage(keyUseAlert);
 		
-		String encrypted = AES256.encrypt(message, byteKey);
-		//Encrypted::: is used in the CE to decide if the message is encrypted and therefore needs to be read with readEncryptedMessage().
-		return sendAuthenticatedMessage(connectionID, type,"encrypted:::" + argument, encrypted);		
-	}
-	
-	/**
-	 * receives a signed message with encrypted text
-	 * 
-	 * @param connectionID the ID of the sender
-	 * @return the received and decrypted message as string, null if error none or if result of verify was false
-	 */
-	public static String readEncryptedMessage(String connectionID, NetworkPackage transmission) {
-		byte[] encrypted = readAuthenticatedMessage(connectionID, transmission);
-		
-		byte[] byteKey;
-		if(connectionID.equals("42debugging42") || connectionID.equals("41debugging41") ) {
-			byteKey = DEBUG_KEY;
-		}
-		else {
-		//getting key
-		KeyStoreObject keyObject = KeyStoreDbManager.getEntryFromKeyStore(connectionID);
-		byteKey = keyObject.getCompleteKeyBuffer();
-		
-		//TODO wird sp�ter vermutlich nicht mehr ben�tigt
-		//marking key as used
-		KeyStoreDbManager.changeKeyToUsed(connectionID);
-		}
+		// After sending this, increment the index because we used those bits now
+		KeyStoreDbManager.incrementIndex(connectionID, getCipher().getKeyLength() / 8);
 		
 		/*
-		 * TODO
-		 * 
-		 * auch hier herrscht noch Durcheinander und Unklarheiten:
-		 * -wie genau wird sich auf einen key geeinigt?
-		 *  wird das �ber eine vorherige message gel�st 
-		 *  oder wird vom KeyStore eine methode implementiert bei der immer der �lteste unused key zur�ckgegeben wird?
-		 *  
-		 * Wenn sich vorher auf den key geeinigt wird muss noch ein paramete key hinzugef�gt werden!
+		 * Asynchronously wait 3 seconds, if no confirmation arrives, delete the package from the queue.
+		 * (This is to avoid cluttering our RAM infinitely with packages)
 		 */
+		TimerTask task = new TimerTask() {
+			@Override
+			public void run() {
+				NetworkPackage removed = conMan.getConnectionEndpoint(connectionID).removeFromPushQueue(keyUseAlert.getID());
+				if (removed != null) { 
+					// if we successfully removed the package, that means it wasn't removed through a KEY_USE_ACCEPT / KEY_USE_REJECT
+					log.logWarning("A timeout occurred while awaiting a confirmation for key use on connection with ID " + connectionID);
+				}
+			}
+		};
+		Timer timer = new Timer("KeySynchro TimeOut Timer");
+		timer.schedule(task, 3000L);
 		
-		//decrypting the message and then returning it
-		return AES256.decrypt(MessageSystem.byteArrayToString(encrypted), byteKey);
+		// Could be better to have a thread that runs for a few seconds and sends multiple messages
+		// requesting approval, to account for package loss to mitigate the two generals problem
+		// however, as far as I know the transfer via the Sockets is already TCP so that might be redundant
+		
 	}
-	
 	
 	/**Utility for converting a byte[] to a String.
 	 * The Network sends messagesPackages with byte[]s as content. This Method is used 
@@ -292,4 +382,16 @@ public class MessageSystem {
 		}
 	}
 
+	/**This generates a random MessageID that can be used to identify a message reception confirmation when using sendConfirmedMessage().
+	 * The ID is a 16 alpha-numerical characters long String. (a-z,A-Z,0-9)
+	 * @return the new random MessageID
+	 * @deprecated {@linkplain NetworkPackage}s now generate their own ID on creation.
+	 */
+	public static String generateRandomMessageID() {
+		Random randomGen = new Random();
+	    return randomGen.ints(48, 123).filter(i -> (i<=57||i>=65) && (i<=90||i>=97)).limit(16).collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
+	}
+
+
+	
 }

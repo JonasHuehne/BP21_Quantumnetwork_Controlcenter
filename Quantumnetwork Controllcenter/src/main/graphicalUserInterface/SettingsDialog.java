@@ -11,6 +11,7 @@ import java.awt.Desktop;
 
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -30,7 +31,7 @@ import javax.swing.DefaultComboBoxModel;
  * @author Jonas Huehne, Sasha Petri
  *
  */
-public class SettingsDialog extends JDialog {
+public class SettingsDialog extends JFrame {
 
 	private final JPanel contentPanel = new JPanel();
 	private JTextField ownNameTextField;
@@ -205,6 +206,7 @@ public class SettingsDialog extends JDialog {
 				JButton okButton = new JButton("Apply");
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
+						// TODO Input validation
 						writeSettings();
 						setVisible(false);
 						dispose();
@@ -303,12 +305,15 @@ public class SettingsDialog extends JDialog {
 		
 		encodingComboBox.setSelectedItem(enc);
 	}
-	
+
 	/**This method reads the text from the textFields and writes them into the config file.
-	 * 
+	 *
 	 */
 	private void writeSettings() {
-		
+
+		if(!Configuration.getProperty("UserName").equals(ownNameTextField.getText())) {
+			MessageSystem.conMan.setLocalName(ownNameTextField.getText());
+		}
 		Configuration.setProperty("UserName", ownNameTextField.getText());
 		if(!Configuration.getProperty("UserIP").equals(ownIPTextField.getText())) {
 			MessageSystem.conMan.destroyAllConnectionEndpoints();

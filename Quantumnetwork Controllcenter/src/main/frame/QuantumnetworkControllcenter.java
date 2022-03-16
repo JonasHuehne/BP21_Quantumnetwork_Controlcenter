@@ -2,16 +2,22 @@ package frame;
 
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
+import encryptionDecryption.AES256;
+import encryptionDecryption.SymmetricCipher;
+import exceptions.PortIsInUseException;
 import graphicalUserInterface.GUIMainWindow;
 import graphicalUserInterface.SettingsDialog;
 import messengerSystem.SHA256withRSAAuthenticationGUI;
 import messengerSystem.SignatureAuthentication;
 import networkConnection.ConnectionManager;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 import ui.ConsoleUI;
 import java.awt.EventQueue;
 import java.io.IOException;
 
 import javax.swing.UIManager;
+import java.util.concurrent.TimeUnit;
 
 import exceptions.PortIsInUseException;
 import messengerSystem.MessageSystem;
@@ -27,10 +33,12 @@ public class QuantumnetworkControllcenter {
 	public static CommunicationList communicationList;
 	public static SignatureAuthentication authentication;
 	public static GUIMainWindow guiWindow;
-	
+
 	static boolean LAUNCH_GUI = true;  // launch GUI
 	static boolean LAUNCH_CUI = false; // launch console UI
 
+	public static Log logger;
+	
 	/**
 	 * Method to initialize a Quantumnetwork Controllcenter
 	 * @param args <br>
@@ -69,18 +77,22 @@ public class QuantumnetworkControllcenter {
 			Configuration.setProperty("UserPort", args[1]);
 		}
 		
-		
+
 		/*
 		 *TODO: Check if Sig files exist and if not, generate them!
 		 */
+
+		// Communication List Init
+		communicationList = new SQLiteCommunicationList();
 		
+		String userName = Configuration.getProperty("UserName");
 		String ip = Configuration.getProperty("UserIP");
 		int port = Integer.valueOf(Configuration.getProperty("UserPort"));
 		System.out.println("Initialising IP: " + ip + " and Port " + port);
 		String localIP = ip;
 		int localPort = port;
 		try {
-			conMan = new ConnectionManager(localIP, localPort);
+			conMan = new ConnectionManager(localIP, localPort, userName, communicationList);
 		} catch (IOException | PortIsInUseException e) {
 			System.err.println("Could not initialize the ConnectionManager - an  Exception occured. ");
 			System.err.println(e.getClass().getCanonicalName() + " - Message: " + e.getMessage());
@@ -90,13 +102,13 @@ public class QuantumnetworkControllcenter {
 		} 
 		MessageSystem.conMan = conMan;
 
-		// Communication List Init
-		communicationList = new SQLiteCommunicationList();
-
 		// Authentication Init
 		authentication = new SHA256withRSAAuthenticationGUI();
-		
-		
+		MessageSystem.setAuthenticationAlgorithm(authentication);
+
+		// Encryption to use
+		SymmetricCipher cipher = new AES256();
+		MessageSystem.setEncryption(cipher);
 		
 		System.out.println("QuantumnetworkControllcenter initialized");
 	}
@@ -112,8 +124,9 @@ public class QuantumnetworkControllcenter {
 	public static void main(String[] args) {
 		
 
-		
-		System.out.println("Run QuantumnetworkControllcenter initialisation");
+		logger = new Log("QNCC Logger", LogSensitivity.WARNING);
+		logger.loggerShowInfos();
+		logger.logInfo("Run QuantumnetworkControllcenter initialization.");
 		
 		initialize(args);
 		
@@ -146,8 +159,6 @@ public class QuantumnetworkControllcenter {
 				}
 			}
 		});
-		
 	}
-
 
 }

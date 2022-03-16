@@ -73,7 +73,7 @@ public class DiscardMessageDialog extends JDialog {
         warningTextField.setFont(new Font("Tahoma", Font.PLAIN, 16));
         warningTextField.setText("The message could not be authenticated "
                 + "because there is no valid public key set for connection to " + connectionID
-                + ". Do you want to discard the message, or read it without being authenticated?");
+                + ". Do you want to discard the message, or read it being treated as verified?");
         getContentPane().add(warningTextField, BorderLayout.CENTER);
 
         addWindowListener(new WindowAdapter() {

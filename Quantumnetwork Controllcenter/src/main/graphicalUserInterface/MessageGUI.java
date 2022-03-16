@@ -2,8 +2,12 @@ package graphicalUserInterface;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -14,13 +18,16 @@ import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
-import exceptions.EndpointIsNotConnectedException;
-import exceptions.ManagerHasNoSuchEndpointException;
+import exceptions.CouldNotSendMessageException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
 import net.miginfocom.swing.MigLayout;
+import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionState;
+import networkConnection.ConnectionType;
+import networkConnection.MessageArgs;
+import networkConnection.NetworkPackage;
 import networkConnection.TransmissionTypeEnum;
 
 /**This GUI contains a chatLog that visualizes the MessageLog of a connectionEndpoint.
@@ -37,8 +44,11 @@ public class MessageGUI extends JFrame {
 	
 	private JTextPane chatLogTextPane;
 
-
-
+	/** Used for chat refreshing */
+	private int loggedMessagesAmount = 0;
+	/** Used for chat refreshing, specifically, logging received files */
+	private int loggedFilesAmount = 0;
+	
 	/**
 	 * Create the frame.
 	 */
@@ -73,7 +83,6 @@ public class MessageGUI extends JFrame {
 		
 		chatLogTextPane = new JTextPane();
 		chatLogTextPane.setEditable(false);
-		chatLogTextPane.setText(MessageSystem.conMan.getConnectionEndpoint(connectionID).getMessageLog());
 		chatLogScrollPane.setViewportView(chatLogTextPane);
 		
 		JSplitPane controlSplitPane = new JSplitPane();
@@ -107,22 +116,23 @@ public class MessageGUI extends JFrame {
 									+ " Message will not be sent.");
 							break;
 						}
-						MessageSystem.sendAuthenticatedMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg);
+						MessageSystem.sendTextMessage(connectionID, msg, true, true);
 						break;
-					case ENCRYPTED: MessageSystem.sendEncryptedMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg);
+					case ENCRYPTED: 
+						MessageSystem.sendEncryptedTextMessage(connectionID, msg, true);
 						break;
-					case UNSAFE: MessageSystem.sendMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg, null);
+					case UNSAFE: 
+						MessageSystem.sendTextMessage(connectionID, msg, false, false);
 						break;
 					default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selected!");
 						break;
 					}
-				} catch (ManagerHasNoSuchEndpointException e1) {
-					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". No such connection exists.");
-				} catch (EndpointIsNotConnectedException e1) {
-					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". You are not connected.");
-				}
+					MessageSystem.conMan.getConnectionEndpoint(connectionID).appendMessageToChatLog(true, false, msg);
+				} catch (CouldNotSendMessageException e1) {
+					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". " + e1.getMessage());
+					// TODO log the error, for some specific errors maybe throw a specific warning message (getCause() and instanceof)
+				} 
 				
-				logSentMessage(msg);
 				messageTextArea.setText("");
 				
 			}
@@ -132,29 +142,94 @@ public class MessageGUI extends JFrame {
 		JButton sendFileButton = new JButton("Send File");
 		sendFileButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				//TODO: Add Sending of File here!
+				final JFileChooser fc = new JFileChooser();
+				int choice = fc.showOpenDialog(sendFileButton);
+				File f = fc.getSelectedFile();
+				if (choice == fc.APPROVE_OPTION) {
+					// If user has approved of sending this file, send it with the currently selected security setting
+					try {
+						ConnectionType t = QuantumnetworkControllcenter.guiWindow.conType.get(connectionID);
+					switch (t) {
+						case AUTHENTICATED: MessageSystem.sendFile(connectionID, f, true, true);
+							break;
+						case ENCRYPTED: MessageSystem.sendEncryptedFile(connectionID, f, true);
+							break;
+						case UNSAFE: MessageSystem.sendFile(connectionID, f, false, false);
+							break;
+						default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selected!");
+							return;
+						}
+						MessageSystem.conMan.getConnectionEndpoint(connectionID).appendMessageToChatLog(true, false, "Sent the file " + f.toString() + " in " + t + " mode.");
+					} catch (CouldNotSendMessageException e1) {
+						new GenericWarningMessage("ERROR - Could not send File! An Exception occurred. Please see the log for details.");
+					}
+				}
 				
-				new GenericWarningMessage("TODO: Implement SendFile-Functionality!");
 				
 			}
 		});
 		buttonSplitPane.setRightComponent(sendFileButton);
-		MessageSystem.conMan.getConnectionEndpoint(connectionID).setLogGUI(this);
-	}
-
-	/**This logs any messages that have been sent from the local CE.
-	 * 
-	 * @param msg the message content that will be added to the log.
-	 */
-	private void logSentMessage(String msg) {
-		MessageSystem.conMan.getConnectionEndpoint(connectionID).appendMessageToLog( "\n" + "You wrote: \n" + msg);
-		refreshMessageLog();
 	}
 	
 	/**This method refreshes the ChatLog to reflect the latest MessageLog stored in the CE.
 	 * 
 	 */
 	public void refreshMessageLog() {
-		chatLogTextPane.setText(MessageSystem.conMan.getConnectionEndpoint(connectionID).getMessageLog());
+		ConnectionEndpoint ce = MessageSystem.conMan.getConnectionEndpoint(connectionID);
+		if (ce == null) return; // can not update message log for a CE that no longer exists
+		if (ce.getChatLog() == null) return; // can not update a log that does not exist
+		// log text messages
+		ArrayList<SimpleEntry<String, String>> log = ce.getChatLog();
+		int logSize = log.size(); // measure this once to prevent desync due to multiple threads
+		if (logSize > loggedMessagesAmount) {
+			// add each new message to the log
+			for (int i = 0; i < logSize - loggedMessagesAmount; i++) {
+				SimpleEntry<String, String> msgToLog = log.get(loggedMessagesAmount + i);
+				chatLogTextPane.setText(chatLogTextPane.getText() + System.lineSeparator() + msgToLog.getKey() + " : " + msgToLog.getValue());
+			}
+			loggedMessagesAmount = logSize;
+		}
+
+		addReceivedFilesToMessageLog(ce);
 	}
+	
+	/**
+	 * Checks if new files have been received on the CE, and if they have, adds an appropriate message to the chat log.
+	 * @param ce
+	 * 		ConnectionEndpoint for which this is the message GUI
+	 */
+	private void addReceivedFilesToMessageLog(ConnectionEndpoint ce) {
+		// for each received file, add an appropriate chat message
+		ArrayList<NetworkPackage> filesLog = ce.getLoggedPackagesOfType(TransmissionTypeEnum.FILE_TRANSFER);
+		if (filesLog == null)  {
+			return;
+		} else {
+			if (filesLog.size() > loggedFilesAmount) {
+				// add an entry for each new received file to the chat
+				for (int i = 0; i < filesLog.size() - loggedFilesAmount; i++) {
+					NetworkPackage nextFileToLog = filesLog.get(loggedFilesAmount + i);
+					MessageArgs filePackageArgs = nextFileToLog.getMessageArgs();
+					
+					String securityLevel = "UNKNOWN"; // security level at which the file was sent/received
+					if (filePackageArgs.keyIndex() >= 0) {
+						securityLevel = ConnectionType.ENCRYPTED.toString();
+					} else {
+						if (nextFileToLog.getSignature() != null) {
+							securityLevel =  ConnectionType.AUTHENTICATED.toString();
+						} else {
+							securityLevel = ConnectionType.UNSAFE.toString();
+						}
+					}
+		
+					String fileName = filePackageArgs.fileName();
+					
+					String appendToChat = ce.getID() + " : Sent the file " + fileName + " in security mode " + securityLevel + ".";
+					
+					chatLogTextPane.setText(chatLogTextPane.getText() + System.lineSeparator() + appendToChat);
+				}
+				loggedFilesAmount = filesLog.size();
+			}
+		}
+	}
+	
 }
