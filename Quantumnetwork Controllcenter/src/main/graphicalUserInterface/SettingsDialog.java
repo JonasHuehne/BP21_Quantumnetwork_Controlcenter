@@ -205,6 +205,7 @@ public class SettingsDialog extends JDialog {
 				JButton okButton = new JButton("Apply");
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
+						// TODO Input validation
 						writeSettings();
 						setVisible(false);
 						dispose();
@@ -303,12 +304,15 @@ public class SettingsDialog extends JDialog {
 		
 		encodingComboBox.setSelectedItem(enc);
 	}
-	
+
 	/**This method reads the text from the textFields and writes them into the config file.
-	 * 
+	 *
 	 */
 	private void writeSettings() {
-		
+
+		if(!Configuration.getProperty("UserName").equals(ownNameTextField.getText())) {
+			MessageSystem.conMan.setLocalName(ownNameTextField.getText());
+		}
 		Configuration.setProperty("UserName", ownNameTextField.getText());
 		if(!Configuration.getProperty("UserIP").equals(ownIPTextField.getText())) {
 			MessageSystem.conMan.destroyAllConnectionEndpoints();

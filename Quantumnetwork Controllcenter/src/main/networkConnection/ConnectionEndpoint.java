@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedList;
@@ -75,16 +76,12 @@ public class ConnectionEndpoint implements Runnable{
 	/** true if the client socket has connected to a server socket, but a connection between endpoints has not been established yet */
 	private boolean isBuildingConnection = false;
 
-	private MessageGUI logGUI;//This is a ref to the Chat GUI
 	private Thread messageThread = new Thread(this, connectionID + "_messageThread");	//a parallel thread used to listen for incoming messages while connected to another ConnectionEndpoint.
 	
-	
-	private LinkedList<String> pendingConfirmations = new LinkedList<String>();	//this is where reception confirmations are stored and checked from while a confirmedMessage is waiting for a confirmation.
-	
-	@Deprecated
-	private String messageLog = " ------ START OF MESSAGE LOG ------ ";
-	
+	/** Log of all packages received by this CE */
 	private ArrayList<NetworkPackage> packageLog = new ArrayList<NetworkPackage>();
+	/** A simple list of text messages received by this CE, for chat log purposes */
+	private ArrayList<String> chatLog = new ArrayList<String>();
 	
 	/** Timeout in ms when trying to connect to a remote server, 0 is an infinite timeout */
 	private final int CONNECTION_TIMEOUT = 3000;
@@ -315,22 +312,6 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public void setRemoteName(String remoteName) {
 		this.remoteName = remoteName;
-	}
-	
-	/**Returns the latest Text-Message Log.
-	 * 
-	 * @return the latest Text-Message Log.
-	 */
-	public MessageGUI getLogGUI() {
-		return logGUI;
-	}
-	
-	/**Use this to Edit the Text-Message Log.
-	 * 
-	 * @param log The new Log.
-	 */
-	public void setLogGUI(MessageGUI log) {
-		logGUI = log;
 	}
 
 	
@@ -565,16 +546,6 @@ public class ConnectionEndpoint implements Runnable{
 		isListeningForMessages = false;
 	}
 
-	@Deprecated
-	public void logMessage(String msg) {
-		messageLog = (msg);
-	}
-	
-	@Deprecated
-	public String getMessageLog() {
-		return messageLog;
-	}
-
 	/**
 	 * Adds a message / package to the log.
 	 * If it is a NetworkPackage, its contents will be cleared.
@@ -608,5 +579,25 @@ public class ConnectionEndpoint implements Runnable{
 		}
 		return filtered;
 	}
-	
+
+	/**
+	 * @return the current chat log
+	 */
+	public ArrayList<String> getChatLog() {
+		return chatLog;
+	}
+
+	/**
+	 * Adds a message to the chat log.
+	 * @param sent
+	 * 		true if the message was sent from this CE <br>
+	 * 		false if it was received
+	 * @param message
+	 * 		the message to add
+	 */
+	public void appendMessageToChatLog(boolean sent, String message) {
+		String sender = sent ? "You" : remoteName;
+		this.chatLog.add(sender + " wrote: " + message);
+	}
+
 }

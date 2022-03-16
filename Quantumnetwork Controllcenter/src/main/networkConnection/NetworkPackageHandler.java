@@ -104,9 +104,11 @@ public class NetworkPackageHandler {
 					// add the decrypted text to the chat log
 				} else { 
 					// otherwise just chat log it	
+					ce.appendMessageToChatLog(false, MessageSystem.byteArrayToString(msg.getContent()));
 				}
 			}
 		}
+		ce.appendMessageToChatLog(false, MessageSystem.byteArrayToString(msg.getContent()));
 	}
 	
 	private static void handleFile(ConnectionEndpoint ce, NetworkPackage msg) {

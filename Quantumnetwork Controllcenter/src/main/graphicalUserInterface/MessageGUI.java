@@ -14,6 +14,9 @@ import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 
+import org.w3c.dom.css.RGBColor;
+
+import exceptions.CouldNotSendMessageException;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import frame.Configuration;
@@ -21,7 +24,23 @@ import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
 import net.miginfocom.swing.MigLayout;
 import networkConnection.ConnectionState;
+import networkConnection.NetworkPackage;
 import networkConnection.TransmissionTypeEnum;
+
+import javax.swing.JTextPane;
+import javax.swing.Box;
+import javax.swing.JButton;
+import javax.swing.JTextArea;
+import javax.swing.JScrollPane;
+import java.awt.Component;
+import javax.swing.BoxLayout;
+import javax.swing.JTextField;
+import javax.swing.JLabel;
+import javax.swing.SwingConstants;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.AbstractMap.SimpleEntry;
+import java.awt.event.ActionEvent;
 
 /**This GUI contains a chatLog that visualizes the MessageLog of a connectionEndpoint.
  * It allows for sending plain-text Messages and for sending Files.
@@ -37,8 +56,8 @@ public class MessageGUI extends JFrame {
 	
 	private JTextPane chatLogTextPane;
 
-
-
+	private int loggedMessagesAmount = 0;
+	
 	/**
 	 * Create the frame.
 	 */
@@ -73,7 +92,6 @@ public class MessageGUI extends JFrame {
 		
 		chatLogTextPane = new JTextPane();
 		chatLogTextPane.setEditable(false);
-		chatLogTextPane.setText(MessageSystem.conMan.getConnectionEndpoint(connectionID).getMessageLog());
 		chatLogScrollPane.setViewportView(chatLogTextPane);
 		
 		JSplitPane controlSplitPane = new JSplitPane();
@@ -107,25 +125,23 @@ public class MessageGUI extends JFrame {
 									+ " Message will not be sent.");
 							break;
 						}
-						MessageSystem.sendTextMessage(connectionID, msg, true, true, -1);
+						MessageSystem.sendTextMessage(connectionID, msg, true, true);
 						break;
 					case ENCRYPTED: 
-						// MessageSystem.sendEncryptedMessage(connectionID, msg);
+						MessageSystem.sendEncryptedTextMessage(connectionID, msg, true);
 						break;
 					case UNSAFE: 
-						MessageSystem.sendTextMessage(connectionID, msg, false, false, -1);
+						MessageSystem.sendTextMessage(connectionID, msg, false, false);
 						break;
 					default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selected!");
 						break;
 					}
-				} catch (EndpointIsNotConnectedException e1) {
-					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". You are not connected.");
-				} catch (ManagerHasNoSuchEndpointException e1) {
-					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". "
-							+ "This connection is not managed by the ConnectionManager of the MessageSystem.");
-				}
+					MessageSystem.conMan.getConnectionEndpoint(connectionID).appendMessageToChatLog(true, msg);
+				} catch (CouldNotSendMessageException e1) {
+					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". " + e1.getMessage());
+					// TODO log the error, for some specific errors maybe throw a specific warning message (getCause() and instanceof)
+				} 
 				
-				logSentMessage(msg);
 				messageTextArea.setText("");
 				
 			}
@@ -142,22 +158,22 @@ public class MessageGUI extends JFrame {
 			}
 		});
 		buttonSplitPane.setRightComponent(sendFileButton);
-		MessageSystem.conMan.getConnectionEndpoint(connectionID).setLogGUI(this);
-	}
-
-	/**This logs any messages that have been sent from the local CE.
-	 * 
-	 * @param msg the message content that will be added to the log.
-	 */
-	private void logSentMessage(String msg) {
-		MessageSystem.conMan.getConnectionEndpoint(connectionID).appendMessageToLog( "\n" + "You wrote: \n" + msg);
-		refreshMessageLog();
 	}
 	
 	/**This method refreshes the ChatLog to reflect the latest MessageLog stored in the CE.
 	 * 
 	 */
 	public void refreshMessageLog() {
-		chatLogTextPane.setText(MessageSystem.conMan.getConnectionEndpoint(connectionID).getMessageLog());
+		ArrayList<String> log = MessageSystem.conMan.getConnectionEndpoint(connectionID).getChatLog();
+		int logSize = log.size(); // measure this once to prevent desync due to multiple threads
+		if (logSize > loggedMessagesAmount) {
+			// add each new message to the log
+			for (int i = 0; i < logSize - loggedMessagesAmount; i++) {
+				String messageToLog = log.get(loggedMessagesAmount + i);
+				chatLogTextPane.setText(chatLogTextPane.getText() + System.lineSeparator() + messageToLog);
+			}
+			loggedMessagesAmount = logSize;
+		}
 	}
+	
 }

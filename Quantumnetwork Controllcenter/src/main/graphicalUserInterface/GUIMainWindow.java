@@ -71,6 +71,9 @@ public final class GUIMainWindow implements Runnable{
 	private int ceAmountOld = 0;
 	
 	public HashMap<String,ConnectionType> conType = new HashMap<String,ConnectionType>();
+	
+	/** currently open message GUIs, tracked here so they can be updated */
+	protected ArrayList<MessageGUI> openChatWindows = new ArrayList<>();
 
 	/**
 	 * Create the application.
@@ -486,7 +489,7 @@ public final class GUIMainWindow implements Runnable{
 		JButton openTransferButton = new JButton("Message System");
 		openTransferButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				new MessageGUI(connectionName);
+				openChatWindows.add(new MessageGUI(connectionName));
 			}
 		});
 		ceFrame.add(openTransferButton);
@@ -586,6 +589,9 @@ public final class GUIMainWindow implements Runnable{
 			/*
 			 * Sleep between the updates to save resources.
 			 */
+			
+			// Update any open chat window
+			for (MessageGUI c : openChatWindows) c.refreshMessageLog();
 			
 			/*
 			 * Sleep between the updates to save ressources.
