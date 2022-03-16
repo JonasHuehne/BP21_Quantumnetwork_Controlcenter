@@ -274,7 +274,7 @@ public class ConnectionManager {
 	 * 		if the specified connection endpoint is not connected to its partner <br>
 	 * 		will not be thrown for transmissions of type {@linkplain TransmissionTypeEnum#CONNECTION_REQUEST}
 	 */
-	public void sendMessage(String connectionID, TransmissionTypeEnum type, String typeArgument, byte[] message, byte[] sig) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {	
+	public void sendMessage(String connectionID, TransmissionTypeEnum type, String typeArgument, byte[] message, byte[] sig) throws ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
 		ConnectionEndpoint ce = connections.get(connectionID);
 		if (ce == null) {
 			throw new ManagerHasNoSuchEndpointException(connectionID);
@@ -338,7 +338,7 @@ public class ConnectionManager {
 			ce.updateLocalAddress(newLocalAddress);
 		}
 	}
-	
+
 	/**Changes the current local port address to a new value. 
 	 * This closes all {@linkplain ConnectionEndpoint}s managed by this manager, 
 	 * and sets their local port accordingly.

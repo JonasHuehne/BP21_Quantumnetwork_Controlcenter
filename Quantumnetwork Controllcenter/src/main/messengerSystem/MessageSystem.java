@@ -116,8 +116,10 @@ public class MessageSystem {
 	 * @param message the message to be sent.
 	 * @param sig optional signature used by authenticated messages.
 	 * @return returns True if the confirmation of the message has been received, False if it times out.
+	 * @throws ManagerHasNoSuchEndpointException 
+	 * 		if the {@linkplain ConnectionManager} does not contain a {@linkplain ConnectionEndpoint} with the specified name
 	 */
-	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) {
+	public static boolean sendConfirmedMessage(String connectionID, String message, String sig) throws ManagerHasNoSuchEndpointException {
 		return sendConfirmedMessage(connectionID, stringToByteArray(message), stringToByteArray(sig));
 	}
 	

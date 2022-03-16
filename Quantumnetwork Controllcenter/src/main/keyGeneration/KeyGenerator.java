@@ -424,14 +424,14 @@ public class KeyGenerator implements Runnable{
 	}
 	
 	/**This is the tread that runs in the background and listens for .txt files, reads/writes them and then sends and deletes the files where needed. <br>
-	 * <b> To avoid unstable behaviour </b> if this is called while the owning {@linkplain ConnectionEndpoint} is not in the current 
+	 * <b> To avoid unstable behaviour </b> if this is called while the owning {@linkplain ConnectionEndpoint} is not in the current
 	 * {@linkplain ConnectionManager} of the {@linkplain MessageSystem}, this method will immediately return. It will also immediately return
 	 * if the owner of this keyGenerator is not connected to their partner CE at the moment.
 	 * 
 	 */
 	@Override
 	public void run() {
-		
+
 		/*
 		 * Safety check:
 		 *  - Manager of the MessageSystem should own this endpoint

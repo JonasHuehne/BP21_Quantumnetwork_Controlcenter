@@ -160,7 +160,12 @@ public class GenericWarningMessage extends JDialog {
 		
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setVisible(true);
-		setBounds(100, 100, xBounds, yBounds);
+		
+		Point mousePos = MouseInfo.getPointerInfo().getLocation();
+		int xPos = (int) Math.max(0, mousePos.getX() - (xBounds / 2));
+		int yPos = (int) Math.max(0, mousePos.getY() - (yBounds / 2));
+		setBounds(xPos, yPos, xBounds, yBounds);
+		
 		getContentPane().setLayout(new BorderLayout());
 		JPanel buttonPane = new JPanel();
 		buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
