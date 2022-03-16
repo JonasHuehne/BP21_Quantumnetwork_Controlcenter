@@ -2,7 +2,7 @@ package communicationList;
 
 import frame.Configuration;
 import qnccLogger.Log;
-
+import qnccLogger.LogSensitivity;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -52,7 +52,7 @@ public class SQLiteCommunicationList implements CommunicationList {
     private static final int MIN_PORT_NUMBER = 0;
     private static final int MAX_PORT_NUMBER = 65535;
     
-    private static Log log = new Log(SQLiteCommunicationList.class.getName());
+    private static Log log = new Log(SQLiteCommunicationList.class.getName(), LogSensitivity.WARNING);
 
     /**
      * open a connection to the db

@@ -22,11 +22,21 @@ public class Log {
 	 *  example: QuantumnetworkControllcenter.class.getName()
 	 * 
 	 * @param loggerName the Name of the logger
+	 * @param sensitivity sensitivity for logevents to be saved
 	 */
-	public Log(String loggerName) {
+	public Log(String loggerName, LogSensitivity sensitivity) {
 		logger = Logger.getLogger(loggerName);
 		logger.addHandler(fileHandler); 
-		logger.setLevel(Level.WARNING);
+		switch(sensitivity) {
+		case INFO:
+			logger.setLevel(Level.INFO);
+			break;
+		case ERROR:
+			logger.setLevel(Level.SEVERE);
+			break;
+		default:
+			logger.setLevel(Level.WARNING);
+		}
 	}
 	
 	/**

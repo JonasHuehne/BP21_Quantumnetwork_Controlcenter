@@ -3,6 +3,7 @@ package messengerSystem;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -13,10 +14,11 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.regex.Pattern;
-
 import communicationList.Contact;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 /**
  * Class providing the methods necessary for authentication
@@ -61,6 +63,11 @@ public class SHA256withRSAAuthentication implements Authentication {
             "(.+\\.pub)|(.+\\.pem)|(.+\\.key)|(.+\\.der)|(.+\\.txt)|(^[^.]+$)";
 
     /**
+     * Logger for error handling
+     */
+    private static Log log = new Log(SHA256withRSAAuthentication.class.getName(), LogSensitivity.WARNING);
+    
+    /**
      * Constructor of the class, calls the methods to check
      * if the needed folders and files exist
      */
@@ -83,8 +90,12 @@ public class SHA256withRSAAuthentication implements Authentication {
             signature.initSign(privateKey);
             signature.update(message);
             return signature.sign();
-        } catch (Exception e) {
-            System.err.println("Error while signing: " + e.getMessage());
+        }  catch (InvalidKeyException e){
+        	log.logWarning("An invalid key was used", e);
+        	return null;
+    	}
+        catch (Exception e) {
+            log.logError("Error while signing", e);
             return null;
         }
     }
@@ -101,26 +112,29 @@ public class SHA256withRSAAuthentication implements Authentication {
     @Override
     public boolean verify (final byte[] message, final byte[] receivedSignature,
                            final String sender) {
-        try {
+    	// get public key of sender from the db
+        Contact senderEntry = QuantumnetworkControllcenter.communicationList.query(sender);
+        if (senderEntry == null) {
+            throw new IllegalArgumentException("Sender not found in Communication List");
+        }
+        String pubKey = senderEntry.getSignatureKey();
+        if (pubKey == null || pubKey.equals("")) {
+            throw new IllegalArgumentException
+                    ("No Public signature Key found in Database for " + sender);
+        }
+    	try {
             Signature signature = Signature.getInstance("SHA256withRSA");
-            // get public key of sender from the db
-            Contact senderEntry = QuantumnetworkControllcenter.communicationList.query(sender);
-            if (senderEntry == null) {
-                throw new IllegalArgumentException("Sender not found Communication List");
-            }
-            String pubKey = senderEntry.getSignatureKey();
-            if (pubKey == null || pubKey.equals("")) {
-                throw new IllegalArgumentException
-                        ("No Public signature Key found in Database for " + sender);
-            }
             // get PublicKey object from String
             PublicKey publicKey = getPublicKeyFromString(pubKey);
             signature.initVerify(publicKey);
             signature.update(message);
             // return result of verification
             return signature.verify(receivedSignature);
-        } catch (Exception e) {
-            System.err.println("Error while verifying: " + e.getMessage());
+        } catch (InvalidKeyException e){
+        	log.logWarning("An invalid key was used", e);
+        	return false;
+    	} catch (Exception e) {
+            log.logError("Error while verifying", e);
             return false;
         }
     }
@@ -136,7 +150,7 @@ public class SHA256withRSAAuthentication implements Authentication {
             X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(key));
             return kf.generatePublic(publicKeySpec);
         } catch (Exception e) {
-            System.err.println("Error while creating a public key from the input string: " + e.getMessage());
+            log.logError("Error while creating a public key from the input string", e);
             return null;
         }
     }
@@ -148,10 +162,10 @@ public class SHA256withRSAAuthentication implements Authentication {
     private PrivateKey getPrivateKeyFromFile () {
         try {
             String currentPath = Configuration.getBaseDirPath();
-            System.out.println(currentPath + KEY_PATH + privateKeyFile);
+            log.logInfo("Getting private key from Path:" + currentPath + KEY_PATH + privateKeyFile);
             if(!Files.exists(Path.of(currentPath + KEY_PATH + privateKeyFile))) {
-                System.err.println("Error while creating a private key from the signature key file: "
-                        + "no signature key file found");
+                log.logWarning("Error while creating a private key from the signature key file: "
+                        + "no signature key file found at Path: " + currentPath + KEY_PATH + privateKeyFile);
                 return null;
             }
             String keyString = readKeyStringFromFile(privateKeyFile);
@@ -159,7 +173,7 @@ public class SHA256withRSAAuthentication implements Authentication {
             PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(keyString));
             return kf.generatePrivate(privateKeySpec);
         } catch (Exception e) {
-            System.err.println("Error while creating a private key from the signature key file: " + e.getMessage());
+            log.logError("Error while creating a private key from the signature key file at Path: " + Configuration.getBaseDirPath() + KEY_PATH + privateKeyFile, e);
             return null;
         }
     }
@@ -174,19 +188,19 @@ public class SHA256withRSAAuthentication implements Authentication {
      */
     public static String readKeyStringFromFile(String fileName) {
         try {
-            if(!Pattern.matches(KEY_FILENAME_SYNTAX, fileName)) {
-                System.err.println("Error while creating a key string from the input file: "
-                        + "wrong key file format");
+        	String currentPath = Configuration.getBaseDirPath();
+        	if(!Pattern.matches(KEY_FILENAME_SYNTAX, fileName)) {
+                log.logWarning("Error while creating a key string from the input file: "
+                        + "wrong key file format at Path: " + currentPath + KEY_PATH + fileName);
                 return null;
             }
-            String currentPath = Configuration.getBaseDirPath();
             String key = new String (Files.readAllBytes
                     (Path.of(currentPath + KEY_PATH + fileName)));
             return key
                     .replaceAll("-----.{5,50}-----", "")
                     .replace(System.lineSeparator(), "");
         } catch (Exception e) {
-            System.err.println("Error while creating a key string from the input file: " + e.getMessage());
+            log.logError("Error while creating a key string from the input file at Path: " + Configuration.getBaseDirPath() + KEY_PATH + fileName, e);
             return null;
         }
     }
@@ -196,7 +210,7 @@ public class SHA256withRSAAuthentication implements Authentication {
      * @return true if the deleting worked or already no default file set, false if error
      */
     public static boolean deleteSignatureKeys() {
-        try {
+        
             boolean res1 = deleteSignatureKey(privateKeyFile);
             if (res1) {
                 setPrivateKey("");
@@ -205,11 +219,13 @@ public class SHA256withRSAAuthentication implements Authentication {
             if(res2) {
                 setPublicKey("");
             }
-            return (res1 && res2);
-        } catch (Exception e) {
-            System.err.println("Problem deleting the current signature keys: " + e.getMessage());
+            if (res1 && res2) {
+            	return true;
+            }
+            else {
+            log.logWarning("Problem deleting the current signature key");
             return false;
-        }
+            }
     }
 
     /**
@@ -226,7 +242,7 @@ public class SHA256withRSAAuthentication implements Authentication {
             }
             return true;
         } catch (Exception e) {
-            System.err.println("Problem deleting the signature key: " + e.getMessage());
+            log.logError("Problem deleting the signature key", e);
             return false;
         }
     }
@@ -246,7 +262,7 @@ public class SHA256withRSAAuthentication implements Authentication {
                 || Files.exists(Path.of(currentPath + KEY_PATH + keyFileName))) {
             privateKeyFile = keyFileName;
         } else {
-            System.err.println("Error while setting the private key: "
+            log.logWarning("Error while setting the private key: "
                     + "File does not exist.");
             return false;
         }
@@ -269,7 +285,7 @@ public class SHA256withRSAAuthentication implements Authentication {
                 || Files.exists(Path.of(currentPath + KEY_PATH + keyFileName))) {
             publicKeyFile = keyFileName;
         } else {
-            System.err.println("Error while setting the public key: "
+            log.logWarning("Error while setting the public key: "
                     + "File does not exist.");
             return false;
         }
@@ -314,7 +330,7 @@ public class SHA256withRSAAuthentication implements Authentication {
                 deleteSignatureKey(keyFileName + ".pub");
             } else if (Files.exists(Path.of(currentPath + KEY_PATH + keyFileName + ".key")) ||
                     Files.exists(Path.of(currentPath + KEY_PATH + keyFileName + ".pub"))) {
-                System.err.println("Error while creating a key pair: "
+                log.logWarning("Error while creating a key pair: "
                         + "File name exists already, but should not be overwritten. "
                         + "No new key created.");
                 return false;
@@ -336,7 +352,7 @@ public class SHA256withRSAAuthentication implements Authentication {
             }
             return true;
         } catch (Exception e) {
-            System.err.println("Error while creating a key pair: " + e.getMessage());
+            log.logError("Error while creating a key pair", e);
             return false;
         }
     }
