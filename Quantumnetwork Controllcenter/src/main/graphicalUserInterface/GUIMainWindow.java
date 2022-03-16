@@ -1,15 +1,33 @@
 package graphicalUserInterface;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.*;
-import java.awt.BorderLayout;
-import java.awt.Component;
-import java.awt.Color;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JDialog;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JToolBar;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.LineBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableModel;
 
 import communicationList.CommunicationList;
 import communicationList.Contact;
@@ -18,14 +36,6 @@ import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.NoKeyWithThatIDException;
 import frame.QuantumnetworkControllcenter;
-
-import java.awt.FlowLayout;
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.LineBorder;
-import javax.swing.table.DefaultTableModel;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import javax.swing.border.TitledBorder;
 
 import keyStore.KeyStoreDbManager;
 import keyStore.KeyStoreObject;
@@ -512,7 +522,8 @@ public final class GUIMainWindow implements Runnable{
 		JButton openTransferButton = new JButton("Message System");
 		openTransferButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				openChatWindows.add(new MessageGUI(connectionName));
+				openChatWindows.add(new MessageGUI(connectionName)); 
+				// add opened chat to list, so it can be refreshed when needed
 			}
 		});
 		ceFrame.add(openTransferButton);
@@ -551,6 +562,7 @@ public final class GUIMainWindow implements Runnable{
 			
 			/*
 			 * Update which connections are represented in the connections tab of the GUI
+			 * Also updates the displayed state.
 			 */
 			
 			int ceAmountNew = QuantumnetworkControllcenter.conMan.getConnectionsAmount();
@@ -617,13 +629,14 @@ public final class GUIMainWindow implements Runnable{
 			for (MessageGUI c : openChatWindows) c.refreshMessageLog();
 			
 			/*
-			 * Sleep between the updates to save ressources.
+			 * Sleep between the updates to save resources.
 			 */
 			
 			try {
 				TimeUnit.MILLISECONDS.sleep(200);
 			} catch (InterruptedException e) {
-				//Ignore Exception as this is only triggered when intentionally shutting down the thread.
+				// Ignore Exception as this is only triggered when intentionally shutting down the thread.
+				// TODO Log this
 			}
 			prevActiveConnection = activeConnection;
 		}

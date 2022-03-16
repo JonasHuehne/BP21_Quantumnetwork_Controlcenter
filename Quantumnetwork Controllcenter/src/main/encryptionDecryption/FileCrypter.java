@@ -24,7 +24,7 @@ public class FileCrypter {
 
 	/**
 	 * Loads, encrypts and saves a file using the given cipher and key.
-	 * @param toDecrypt
+	 * @param toEncrypt
 	 * 		the file to encrypt
 	 * @param cipher
 	 * 		the cipher to encrypt the file with 
@@ -32,7 +32,7 @@ public class FileCrypter {
 	 * 		the key to encrypt the file with
 	 * @param outPath
 	 * 		path to the output file that is to be written <br>
-	 * 		must be different than the path of the input file
+	 * 		must be different from the path of the input file
 	 * @return
 	 * 		the encrypted file
 	 * @throws InvalidKeyException
@@ -116,7 +116,9 @@ public class FileCrypter {
 	 */
 	private static File encryptDecryptAndSave(File input, SymmetricCipher sc, SecretKey key, Path outPath, int mode) 
 			throws InvalidKeyException, IOException, IllegalBlockSizeException, BadPaddingException {
-		if (input.toPath().equals(outPath)) throw new IllegalArgumentException("Path of output file may not be the same as path of input file.");
+		if (input.toPath().equals(outPath)) 
+			throw new IllegalArgumentException("Received " + input.toString() + " as both the input and output path. "
+					+ "This violates the constraint that the path of the input and output file may not be the same.");
 		
 		if (mode != Cipher.ENCRYPT_MODE && mode != Cipher.DECRYPT_MODE) 
 			throw new IllegalArgumentException("Mode must be either Cipher.ENCRYPT_MODE or Cipher.DECRYPT_MODE.");

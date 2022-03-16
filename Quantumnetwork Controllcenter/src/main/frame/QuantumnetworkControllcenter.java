@@ -49,8 +49,6 @@ public class QuantumnetworkControllcenter {
 	 */
 	public static void initialize(String[] args) {
 		
-		
-		
 		//TODO add initialization of further Classes
 		
 		//Open GUI or CUI

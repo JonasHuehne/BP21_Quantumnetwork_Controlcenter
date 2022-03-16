@@ -9,14 +9,13 @@ import java.sql.Statement;
 import java.util.Arrays;
 
 import exceptions.NoKeyWithThatIDException;
-import exceptions.NoKeyWithThatIDException;
 import exceptions.NotEnoughKeyLeftException;
 import frame.Configuration;
 
 /**
  * This class supplies methods for creating, editing, getting and deleting entries from a KeyStore.db which holds all the keys
  * @author Sasha Petri
- *
+ * @implNote Alternative to the {@linkplain KeyStoreDbManager}. Currently not in use.
  */
 public class SimpleKeyStore {
 	

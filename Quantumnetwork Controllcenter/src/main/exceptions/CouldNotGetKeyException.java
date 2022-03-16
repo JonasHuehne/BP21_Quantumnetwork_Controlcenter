@@ -13,9 +13,9 @@ public class CouldNotGetKeyException extends Exception {
 	/**
 	 * Constructor.
 	 * @param message
-	 * 		the message
+	 * 		the detail message. The detail message is saved for later retrieval by the Throwable.getMessage() method.
 	 * @param cause
-	 * 		the cause, may be null if nonexistant / unknown
+	 * 		the cause, may be null if nonexistent / unknown
 	 */
 	public CouldNotGetKeyException(String message, Exception cause) {
 		super(message, cause);

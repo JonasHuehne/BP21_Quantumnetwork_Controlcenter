@@ -11,7 +11,6 @@ import communicationList.CommunicationList;
 import communicationList.Contact;
 import exceptions.ConnectionAlreadyExistsException;
 import exceptions.IpAndPortAlreadyInUseException;
-import frame.QuantumnetworkControllcenter;
 import qnccLogger.Log;
 import qnccLogger.LogSensitivity;
 
@@ -29,15 +28,23 @@ import qnccLogger.LogSensitivity;
  */
 public class ConnectionEndpointServerHandler extends Thread{
 	
+	/** Logger for this CESH */
 	Log ceshLog;
 
-	private Socket clientSocket;	//This Socket is the one that will be handed over to the CE after receiving the initial message containing the foreign IP:::PORT of the connection.
-	private ObjectOutputStream serverOut;	//This is the Outgoing Communication Line that will be handed over to the CE.
-	private ObjectInputStream serverIn;	//This is the Incoming Communication Line that will be used to receive the initial message and is then handed over to the CE.
-	private NetworkPackage receivedMessage;	//This variable is used to hold the initial message once it has been received.
-	private String remoteIP;	//This will be set to the IP Address of the connecting parties ServerSocket based on the contents of the initial message.
-	private int remotePort;	//This will be set to the Port of the connection parties ServerSocket based on the contents of the initial message.
-	private boolean settingUp = true;	//As long as this is true, the CESH will keep trying to receive a message that contains the info needed to connect back to the remote CEs ServerSocket.
+	/** This Socket is the one that will be handed over to the CE after receiving the initial message containing the foreign IP:::PORT of the connection. */
+	private Socket clientSocket;	
+	/** This is the Outgoing Communication Line that will be handed over to the CE. */
+	private ObjectOutputStream serverOut;	
+	/** This is the Incoming Communication Line that will be used to receive the initial message and is then handed over to the CE. */
+	private ObjectInputStream serverIn;	
+	/** This variable is used to hold the initial message once it has been received. */
+	private NetworkPackage receivedMessage;
+	/** This will be set to the IP Address of the connecting parties ServerSocket based on the contents of the initial message. */
+	private String remoteIP;	
+	/** This will be set to the Port of the connection parties ServerSocket based on the contents of the initial message. */
+	private int remotePort;	
+	/** As long as this is true, the CESH will keep trying to receive a message that contains the info needed to connect back to the remote CEs ServerSocket. */
+	private boolean settingUp = true;	
 	
 	/** For control flow, this flag indicates whether we have accepted an incoming connection request */
 	private boolean acceptedRequest = false;
@@ -73,6 +80,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 		this.ceshLog = new Log("CESH Logger (Owner: " + owner.getLocalName() + ":" + owner.getLocalPort() + ")", LogSensitivity.WARNING);
 	}
 	
+	@Override
 	public void run() {
 		try {
 			serverOut = new ObjectOutputStream(clientSocket.getOutputStream());

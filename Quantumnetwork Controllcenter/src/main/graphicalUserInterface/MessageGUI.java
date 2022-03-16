@@ -3,8 +3,8 @@ package graphicalUserInterface;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -17,7 +17,6 @@ import javax.swing.JTextArea;
 import javax.swing.JTextPane;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
-import javax.swing.text.StyleContext;
 
 import org.w3c.dom.css.RGBColor;
 
@@ -62,6 +61,7 @@ public class MessageGUI extends JFrame {
 	
 	private JTextPane chatLogTextPane;
 
+	/** Used for chat refreshing */
 	private int loggedMessagesAmount = 0;
 	
 	/**

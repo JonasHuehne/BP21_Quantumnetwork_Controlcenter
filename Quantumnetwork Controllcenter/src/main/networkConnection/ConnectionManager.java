@@ -34,7 +34,8 @@ import qnccLogger.LogSensitivity;
  *
  */
 public class ConnectionManager {
-	
+
+	/** Logger for this ConnectionManager */
 	static Log conManLog = new Log("ConnectionManager Log", LogSensitivity.WARNING);
 	
 	/** Ports in use by any ConnectionManager */
