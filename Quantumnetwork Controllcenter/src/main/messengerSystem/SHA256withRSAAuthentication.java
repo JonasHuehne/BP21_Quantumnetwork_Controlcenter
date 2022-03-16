@@ -322,7 +322,6 @@ public class SHA256withRSAAuthentication extends SignatureAuthentication {
      * @param keyFileName name for the created Key Pair
      * @param setAsKeyFile if true, sets the created Key Pair as new own standard keys,
      *                     using {@link #setPrivateKey(String)} and {@link #setPublicKey(String)}
-     * @param deleteCurrent if true, deletes the currently set standard keys
      * @param overwrite if true, any existing file with the same name will be overwritten
      * @return true if it worked, false if error
      */
