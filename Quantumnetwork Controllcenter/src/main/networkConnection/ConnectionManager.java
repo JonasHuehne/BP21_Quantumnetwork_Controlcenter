@@ -167,7 +167,7 @@ public class ConnectionManager {
 	 * @throws IpAndPortAlreadyInUseException 
 	 * 		if a connection with the same IP and Port pairing is already in this ConnectionManager
 	 */
-	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort, String sig) 
+	public ConnectionEndpoint createNewConnectionEndpoint(String endpointName, String targetIP, int targetPort, String sig)
 		throws ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException {
 		if(!connections.containsKey(endpointName)) {
 			// no two connections to the same IP / Port pairing
@@ -180,7 +180,7 @@ public class ConnectionManager {
 
 		}
 	}
-	
+
 	/**Creates a new ConnectionEndpoint and stores the Connection-Name and Endpoint-Ref.
 	 * 
 	 * This version of the method should be used if the CE is being created as part of the response to a connection request from an external source.
@@ -220,7 +220,7 @@ public class ConnectionManager {
 				throw new ConnectionAlreadyExistsException(endpointName);
 			}
 		}
-	
+
 	/**
 	 * Utility method. Used to check if an IP/Port pairing is not used by any connection in the manager at the moment.
 	 */
