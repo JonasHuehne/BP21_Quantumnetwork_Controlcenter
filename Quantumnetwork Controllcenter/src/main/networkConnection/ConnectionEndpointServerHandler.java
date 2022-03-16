@@ -45,18 +45,11 @@ public class ConnectionEndpointServerHandler extends Thread{
 	 * 		a client socket created by a ServerSockets .accept() method <br>
 	 * 		the CESH will listen for a connection request on this, 
 	 * 		and if one is received this will be passed on as the client socket for the newly created {@linkplain ConnectionEndpoint}
-	 * @param localIP
-	 * 		local IP that will be passed to the newly created  {@linkplain ConnectionEndpoint}
-	 * @param localPort
-	 * 		local port that will be passed to the newly created {@linkplain ConnectionEndpoint}
 	 * @throws IOException 
 	 * 		if an I/O Exception occurred trying to construct an internal ObjectInputStream from the clientsocket's InputStream
 	 */
 	ConnectionEndpointServerHandler(Socket newClientSocket) throws IOException {
 		clientSocket = newClientSocket;
-		this.localPort = localPort;
-		this.localIP = localIP;
-
 	}
 	
 	public void run() {

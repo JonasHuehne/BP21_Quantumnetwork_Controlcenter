@@ -96,7 +96,7 @@ public class ConnectionManager {
 	 */
 	public final void waitForConnections() {
 		isAcceptingConnections = true;
-		
+
 		if (!submittedTaskOnce) {
 			// Used to asynchronously wait for incoming connections
 			connectionExecutor.submit(() -> {
@@ -126,7 +126,7 @@ public class ConnectionManager {
 						break;
 					}
 
-					}
+				}
 			});
 			submittedTaskOnce = true;
 		}
@@ -270,7 +270,7 @@ public class ConnectionManager {
 	 * @param confID the optional ID used to confirm that the message has been received.
 	 * @throws ManagerHasNoSuchEndpointException 
 	 * 		if no connection of that name could be found in the connection manager
-	 * @throws EndpointIsNotConnectedException 
+	 * @throws EndpointIsNotConnectedException
 	 * 		if the specified connection endpoint is not connected to its partner <br>
 	 * 		will not be thrown for transmissions of type {@linkplain TransmissionTypeEnum#CONNECTION_REQUEST}
 	 */

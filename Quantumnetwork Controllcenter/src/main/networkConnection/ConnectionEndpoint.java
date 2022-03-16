@@ -483,7 +483,7 @@ public class ConnectionEndpoint implements Runnable{
 	
 	//-------------//
 	// Server Side //
-	//-------------//	
+	//-------------//
 
 	/**
 	 * Starts a parallel thread causing this endpoint to listen for incoming messages.
@@ -529,7 +529,7 @@ public class ConnectionEndpoint implements Runnable{
 		case FILE_TRANSFER:
 			receiveFile(transmission);
 			return;
-			
+
 		case KEYGEN_SYNC_REQUEST:	//This is received if another ConnectionEndpoint that is connected to this one is intending to start a KeyGeneration Process and is asking for a response(accept/reject).
 			if (QuantumnetworkControllcenter.authentication.verify(transmission.getContent(), transmission.getSignature(), connectionID)) {
 				try {
