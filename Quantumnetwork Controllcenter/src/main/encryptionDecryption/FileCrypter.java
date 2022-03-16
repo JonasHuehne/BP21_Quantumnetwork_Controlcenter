@@ -36,7 +36,7 @@ public class FileCrypter {
 	 * @return
 	 * 		the encrypted file
 	 * @throws InvalidKeyException
-	 * 		if the provided key is not a valid for the algorithm implemented by the provided {@linkplain SymmetricCipher}
+	 * 		if the provided key is not a valid key for the algorithm implemented by the provided {@linkplain SymmetricCipher}
 	 * @throws IllegalBlockSizeException
 	 * 		if the algorithm is a block cipher with no padding, and the input file's size is not a multiple of the block's size <br>
 	 * 		see also documentation of {@linkplain Cipher#doFinal()}
@@ -69,7 +69,7 @@ public class FileCrypter {
 	 * @return
 	 * 		the decrypted file
 	 * @throws InvalidKeyException
-	 * 		if the provided key is not a valid for the algorithm implemented by the provided {@linkplain SymmetricCipher}
+	 * 		if the provided key is not a valid key for the algorithm implemented by the provided {@linkplain SymmetricCipher}
 	 * @throws BadPaddingException
 	 * 		if the final block of the input file is not properly padded for the algorithm implemented by the provided
 	 * 		{@linkplain SymmetricCipher} <br> see also documentation of {@linkplain Cipher#doFinal()}
@@ -121,7 +121,7 @@ public class FileCrypter {
 		if (mode != Cipher.ENCRYPT_MODE && mode != Cipher.DECRYPT_MODE) 
 			throw new IllegalArgumentException("Mode must be either Cipher.ENCRYPT_MODE or Cipher.DECRYPT_MODE.");
 		
-		Cipher c = sc.getInitializedInstance(mode);
+		Cipher c = sc.getInitializedInstance(mode, key);
 		
 		byte[] buffer = new byte[BUFFERSIZE];
 		

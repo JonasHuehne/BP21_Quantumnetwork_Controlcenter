@@ -1,8 +1,11 @@
 package encryptionDecryption;
 
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -20,15 +23,29 @@ public abstract class SymmetricCipher {
 	 */
 	
 	/** Expected length of the key (in bits) used in the algorithm implemented by this class */
-	private final int KEY_LENGTH = 0;
+	final int KEY_LENGTH;
 	/** Simple name of the algorithm used in this class (e.g. "DES", "AES", ...), used for creating SecretKey objects */
-	private final String TRANSFORMATION_SIMPLE = "";
+	final String TRANSFORMATION_SIMPLE;
 	/** Full name of the algorithm used in this class, including mode and padding (e.g. "AES/CBC/PKCS5Padding"), used for Cipher.getInstance() */
-	private final String TRANSFORMATION_FULL = "";
+	final String TRANSFORMATION_FULL;
 	
-	public SymmetricCipher() {
-		
-	};
+	/**
+	 * Constructor.
+	 * @implNote 
+	 * Intended to be called in sub-classes with their own constructor,
+	 * setting the class fields as appropriate. See {@linkplain AES256} for an example.
+	 * @param key_length
+	 * 		length of the keys used by this cipher
+	 * @param transformation_simple
+	 * 		Simple name of the algorithm used in this class (e.g. "DES", "AES", ...), used for creating SecretKey objects
+	 * @param transformation_full
+	 * 		Full name of the algorithm used in this class, including mode and padding (e.g. "AES/CBC/PKCS5Padding"), used for Cipher.getInstance()
+	 */
+	protected SymmetricCipher(final int key_length, final String transformation_simple, final String transformation_full) {
+		this.KEY_LENGTH = key_length;
+		this.TRANSFORMATION_SIMPLE = transformation_simple;
+		this.TRANSFORMATION_FULL = transformation_full;
+	}
 	
 	/**
 	 * Encrypts a plaintext with the cipher implemented by this class.
@@ -41,8 +58,14 @@ public abstract class SymmetricCipher {
 	 * 		and with a key length of 256 bits
 	 * @return
 	 * 		the ciphertext corresponding to the plaintext being encrypted with the given key
+	 * @throws InvalidKeyException
+	 * 		if the provided key is not a valid key for the {@linkplain Cipher} implemented in this class
+	 * @throws IllegalBlockSizeException
+	 * 		if the {@linkplain Cipher} implemented by this class is a block cipher with no padding, 
+	 * 		and the plaintext size is not a multiple of the block's size <br>
+	 * 		see also documentation of {@linkplain Cipher#doFinal()}
 	 */
-	public abstract byte[] encrypt(byte[] ciphertext, SecretKey key);
+	public abstract byte[] encrypt(byte[] plaintext, SecretKey key) throws InvalidKeyException, IllegalBlockSizeException;
 	
 	/**
 	 * Decrypts a ciphertext with the cipher implemented by this class.
@@ -55,8 +78,13 @@ public abstract class SymmetricCipher {
 	 * 		and with a key length of 256 bits
 	 * @return
 	 * 		the plaintext corresponding to the ciphertext being decrypted with the given key
+	 * @throws InvalidKeyException
+	 * 		if the provided key is not a valid key for the {@linkplain Cipher} implemented in this class
+	 * @throws BadPaddingException
+	 * 		if the final block of the ciphertext is not properly padded for the {@linkplain Cipher} implemented in this class <br>
+	 * 		see also documentation of {@linkplain Cipher#doFinal()}
 	 */
-	public abstract byte[] decrypt(byte[] ciphertext, SecretKey key);
+	public abstract byte[] decrypt(byte[] ciphertext, SecretKey key) throws InvalidKeyException, BadPaddingException;
 	
 	/**
 	 * Encrypts a plaintext with the cipher implemented by this class.
@@ -67,8 +95,14 @@ public abstract class SymmetricCipher {
 	 * 		the first {@link #KEY_LENGTH} bytes will be used as a secret key for the algorithm implemented by this class
 	 * @return
 	 * 		the ciphertext corresponding to the plaintext being encrypted with the given key
+	 * @throws InvalidKeyException
+	 * 		if the provided key is not a valid key for the {@linkplain Cipher} implemented in this class
+	 * @throws IllegalBlockSizeException
+	 * 		if the {@linkplain Cipher} implemented by this class is a block cipher with no padding, 
+	 * 		and the plaintext size is not a multiple of the block's size <br>
+	 * 		see also documentation of {@linkplain Cipher#doFinal()}
 	 */
-	public byte[] encrypt(byte[] plaintext, byte[] byteKey) {
+	public byte[] encrypt(byte[] plaintext, byte[] byteKey) throws InvalidKeyException, IllegalBlockSizeException {
 		return encrypt(plaintext, byteArrayToSecretKey(byteKey));
 	}
 	
@@ -81,8 +115,13 @@ public abstract class SymmetricCipher {
 	 * 		the first {@link #KEY_LENGTH} bytes will be used as a secret key for the algorithm implemented by this class
 	 * @return
 	 * 		the plaintext corresponding to the ciphertext being decrypted with the given key
+	 * @throws InvalidKeyException
+	 * 		if the provided key is not a valid key for the {@linkplain Cipher} implemented in this class
+	 * @throws BadPaddingException
+	 * 		if the final block of the ciphertext is not properly padded for the {@linkplain Cipher} implemented in this class <br>
+	 * 		see also documentation of {@linkplain Cipher#doFinal()}
 	 */
-	public byte[] decrypt(byte[] ciphertext, byte[] byteKey) {
+	public byte[] decrypt(byte[] ciphertext, byte[] byteKey) throws InvalidKeyException, BadPaddingException {
 		return decrypt(ciphertext, byteArrayToSecretKey(byteKey));
 	}
 	
@@ -93,17 +132,21 @@ public abstract class SymmetricCipher {
 	 * @return
 	 * 		a SecretKey object that can be used for encryption and decryption in this class
 	 */
-	private SecretKey byteArrayToSecretKey(byte[] key) {
+	protected SecretKey byteArrayToSecretKey(byte[] key) {
 		return new SecretKeySpec(key, 0, KEY_LENGTH, TRANSFORMATION_SIMPLE);
 	};
 	
 	/**
 	 * @param mode
 	 * 		the opmode to initialize the cipher in
+	 * @param key
+	 * 		key used to initialize the cipher with
 	 * @return an instance of the underlying {@linkplain Cipher} used by this encryption algorithm.
 	 * 		   this instance will be initialized the same way it would be initialized in this class
+	 * @throws InvalidKeyException
+	 * 		if the provided key is not a valid key for the {@linkplain Cipher} that this class implements
 	 */
-	protected abstract Cipher getInitializedInstance(int mode);
+	protected abstract Cipher getInitializedInstance(int mode, SecretKey key) throws InvalidKeyException;
 	
 	
 }
