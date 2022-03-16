@@ -15,7 +15,7 @@ import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.PortIsInUseException;
 import frame.Configuration;
 import graphicalUserInterface.SettingsDialog;
-import messengerSystem.Authentication;
+import messengerSystem.SignatureAuthentication;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionManager;
@@ -40,7 +40,7 @@ public class SourceControlApplication {
 	private static int port;
 	public static ConnectionManager conMan;
 	public static CommunicationList communicationList;
-	public static Authentication authentication;
+	public static SignatureAuthentication authentication;
 	
 	/**
 	 * Launches the Source Control Application

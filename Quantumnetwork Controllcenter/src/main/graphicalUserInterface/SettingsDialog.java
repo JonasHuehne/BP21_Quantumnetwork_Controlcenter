@@ -179,7 +179,7 @@ public class SettingsDialog extends JDialog {
 		JButton reGenerateSigButton = new JButton("Regenerate Signature");
 		reGenerateSigButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				SHA256withRSAAuthentication.generateSignatureKeyPair ();
+				QuantumnetworkControllcenter.authentication.generateSignatureKeyPair();
 				new GenericWarningMessage("New Signature Files have been created.");
 			}
 		});

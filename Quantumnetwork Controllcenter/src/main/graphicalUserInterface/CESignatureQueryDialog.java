@@ -3,39 +3,41 @@ package graphicalUserInterface;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 
-import javax.swing.JButton;
-import javax.swing.JDialog;
-import javax.swing.JPanel;
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 
 import frame.QuantumnetworkControllcenter;
+import messengerSystem.SigKeyQueryInteractionObject;
+import messengerSystem.SHA256withRSAAuthenticationGUI;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import javax.swing.Box;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
 import java.awt.Font;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 /**
- * 
- * @author Jonas Huehne
+ * Dialog to ask for the public signature key for a connection endpoint
+ * @author Jonas Huehne, Sarah Schumann
  *
  */
-public class CESignatureQueryDialog extends JDialog {
+public class CESignatureQueryDialog extends JFrame {
 
+	// fields for the dialog
 	private final JPanel contentPanel = new JPanel();
 	private String connectionID;
 	private JTextField textField;
 	JLabel titleNewLabel;
 
-
 	/**
 	 * Create the dialog.
 	 */
-	public CESignatureQueryDialog(String connectionID) {
-		setBounds(100, 100, 450, 150);
+	public CESignatureQueryDialog(String connectionID, SigKeyQueryInteractionObject sigKeyQuery) {
+		setBounds(100, 100, 550, 150);
 		getContentPane().setLayout(new BorderLayout());
+		setVisible(true);
+		toFront();
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		contentPanel.setLayout(new FlowLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
@@ -63,7 +65,14 @@ public class CESignatureQueryDialog extends JDialog {
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
 						if(textField.getText() != null && !textField.getText().equals("")) {
-							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).setSig(textField.getText());
+							setVisible(false);
+							dispose();
+							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).setSigKey(textField.getText());
+							sigKeyQuery.setContinueVerify(true);
+						} else {
+							setVisible(false);
+							dispose();
+							new CESignatureQueryDialog(connectionID, sigKeyQuery);
 						}
 					}
 				});
@@ -77,13 +86,22 @@ public class CESignatureQueryDialog extends JDialog {
 					public void actionPerformed(ActionEvent e) {
 						setVisible(false);
 						dispose();
+						new DiscardMessageDialog(connectionID, sigKeyQuery);
 					}
 				});
 				cancelButton.setActionCommand("Cancel");
 				buttonPane.add(cancelButton);
 			}
 		}
-		
+
+		addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				setVisible(false);
+				dispose();
+				new DiscardMessageDialog(connectionID, sigKeyQuery);
+			}
+		});
 		
 		this.connectionID = connectionID;
 		titleNewLabel.setText("Please enter the public signature key of " + QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getRemoteName() + "_" + QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getRemoteAddress() + "_" + QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).getRemotePort());

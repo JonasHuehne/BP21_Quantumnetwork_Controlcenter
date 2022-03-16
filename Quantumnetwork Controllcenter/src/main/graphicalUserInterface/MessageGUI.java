@@ -101,7 +101,13 @@ public class MessageGUI extends JFrame {
 
 				try {
 					switch(QuantumnetworkControllcenter.guiWindow.conType.get(connectionID)) {
-					case AUTHENTICATED: MessageSystem.sendAuthenticatedMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg);
+					case AUTHENTICATED:
+						if (!QuantumnetworkControllcenter.authentication.existsValidKeyPair()) {
+							new GenericWarningMessage("Warning: an authenticated message cannot be sent without a valid signature key pair."
+									+ " Message will not be sent.");
+							break;
+						}
+						MessageSystem.sendAuthenticatedMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg);
 						break;
 					case ENCRYPTED: MessageSystem.sendEncryptedMessage(connectionID, TransmissionTypeEnum.TRANSMISSION, "", msg);
 						break;

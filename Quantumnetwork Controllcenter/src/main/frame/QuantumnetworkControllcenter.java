@@ -1,20 +1,20 @@
 package frame;
 
+import communicationList.CommunicationList;
+import communicationList.SQLiteCommunicationList;
+import graphicalUserInterface.GUIMainWindow;
+import graphicalUserInterface.SettingsDialog;
+import messengerSystem.SHA256withRSAAuthenticationGUI;
+import messengerSystem.SignatureAuthentication;
+import networkConnection.ConnectionManager;
+import ui.ConsoleUI;
 import java.awt.EventQueue;
 import java.io.IOException;
 
 import javax.swing.UIManager;
 
-import communicationList.CommunicationList;
-import communicationList.SQLiteCommunicationList;
 import exceptions.PortIsInUseException;
-import graphicalUserInterface.GUIMainWindow;
-import graphicalUserInterface.SettingsDialog;
-import messengerSystem.Authentication;
 import messengerSystem.MessageSystem;
-import messengerSystem.SHA256withRSAAuthentication;
-import networkConnection.ConnectionManager;
-import ui.ConsoleUI;
 
 /**
  * Main Class of QuantumnetworkControllcenter
@@ -25,7 +25,7 @@ public class QuantumnetworkControllcenter {
 	
 	public static ConnectionManager conMan;
 	public static CommunicationList communicationList;
-	public static Authentication authentication;
+	public static SignatureAuthentication authentication;
 	public static GUIMainWindow guiWindow;
 	
 	static boolean LAUNCH_GUI = true;  // launch GUI
@@ -94,7 +94,7 @@ public class QuantumnetworkControllcenter {
 		communicationList = new SQLiteCommunicationList();
 
 		// Authentication Init
-		authentication = new SHA256withRSAAuthentication();
+		authentication = new SHA256withRSAAuthenticationGUI();
 		
 		
 		

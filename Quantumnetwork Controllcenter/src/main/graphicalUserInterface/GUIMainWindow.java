@@ -54,7 +54,7 @@ public final class GUIMainWindow implements Runnable{
 	String[] contactColumnNames = {"Connection Name",
             "IP Address",
             "Target Port",
-            "Signature"};
+            "Public Signature Key"};
 	
 	private CustomClosingFrame frame;
 	private JTable contactTable;
@@ -71,7 +71,7 @@ public final class GUIMainWindow implements Runnable{
 	/** column of the contacts table in which the ports are listed */
 	private final int contactDBPortIndex = 2;
 	/** column of the contacts table in which the public keys are listed */
-	private final int contactDBSigIndex = 3;
+	private final int contactDBPubSigKeyIndex = 3;
 	
 	/** used in updating the list of active connections */
 	private ArrayList<String> namesOfConnections = new ArrayList<String>();
@@ -84,8 +84,15 @@ public final class GUIMainWindow implements Runnable{
 	public GUIMainWindow() {
 		initialize();
 		startUpdateService();
-		
-		
+
+		if(!QuantumnetworkControllcenter.authentication.existsValidKeyPair()) {
+			GenericWarningMessage keyWarning = new GenericWarningMessage("No valid own signature keys set. Please generate a new pair in the Settings window.");
+			// new GenericWarningMessage("No valid own signature keys set. Please generate a new pair in the Settings window, or refer to the user guide for setting a different key pair.");
+			keyWarning.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+			keyWarning.setVisible(true);
+			keyWarning.toFront();
+			keyWarning.setAlwaysOnTop(true);
+		}
 	}
 
 	/**
@@ -95,7 +102,8 @@ public final class GUIMainWindow implements Runnable{
 		frame = new CustomClosingFrame();
 		getFrame().setBounds(100, 100, 1120, 567);
 		getFrame().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		
+
+		getFrame().setTitle("QNCC");
 		
 		frame.getContentPane().setLayout(new MigLayout("", "[1088.00px]", "[][528px][]"));
 		
@@ -199,7 +207,7 @@ public final class GUIMainWindow implements Runnable{
 					String ip = (String) contactTable.getValueAt(i, contactDBIPIndex);
 					String portString = String.valueOf(contactTable.getValueAt(i, contactDBPortIndex));
 					int port = Integer.valueOf(portString);
-					String sig = (String) contactTable.getValueAt(i, contactDBSigIndex);
+					String sig = (String) contactTable.getValueAt(i, contactDBPubSigKeyIndex);
 					cl.insert(name, ip, port, sig);
 				}
 				
@@ -358,8 +366,8 @@ public final class GUIMainWindow implements Runnable{
 		return contactDBPortIndex;
 	}
 	
-	public int getContactDBSigIndex() {
-		return contactDBSigIndex;
+	public int getContactDBPubSigKeyIndex() {
+		return contactDBPubSigKeyIndex;
 	}
 	
 	
@@ -408,8 +416,11 @@ public final class GUIMainWindow implements Runnable{
 	void addRowToContactTable(String name, String ip, int port, String sig) {
 		
 		DefaultTableModel model = (DefaultTableModel)contactTable.getModel();
-		QuantumnetworkControllcenter.communicationList.insert(name, ip, port, sig);
-		model.addRow(new Object[]{name, ip, port, sig});
+		if(QuantumnetworkControllcenter.communicationList.insert(name, ip, port, sig)) {
+			model.addRow(new Object[]{name, ip, port, sig});
+		} else {
+			new GenericWarningMessage("Contact could not be added. Please refer to the log for details");
+		}
 	}
 	
 

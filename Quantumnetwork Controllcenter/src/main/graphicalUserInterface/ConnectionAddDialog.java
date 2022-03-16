@@ -282,7 +282,7 @@ public class ConnectionAddDialog extends JDialog {
 	private String getPkOfSelectedContact() {
 		int selectedRow = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
 		if (selectedRow == -1) return "";
-		return (String) QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedRow, QuantumnetworkControllcenter.guiWindow.getContactDBSigIndex());
+		return (String) QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedRow, QuantumnetworkControllcenter.guiWindow.getContactDBPubSigKeyIndex());
 	}
 
 	/**This is used to ensure that only one of the 2 RadioButtons is selected at once.

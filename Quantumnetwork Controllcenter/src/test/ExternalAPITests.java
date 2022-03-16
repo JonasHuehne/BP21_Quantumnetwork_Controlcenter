@@ -12,6 +12,7 @@ import java.util.ArrayList;
 
 import javax.crypto.SecretKey;
 
+import messengerSystem.Utils;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -23,7 +24,6 @@ import communicationList.Contact;
 import externalAPI.ExternalAPI;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
-import messengerSystem.SHA256withRSAAuthentication;
 import networkConnection.ConnectionManager;
 
 public class ExternalAPITests {
@@ -87,7 +87,7 @@ public class ExternalAPITests {
             QuantumnetworkControllcenter.communicationList.delete(e.getName());
         }
 
-        SHA256withRSAAuthentication.deleteSignatureKeys();
+        QuantumnetworkControllcenter.authentication.deleteSignatureKeys();
     }
     
     @Nested
@@ -96,7 +96,7 @@ public class ExternalAPITests {
         @Test
         // only realistically testable if signature key generation, signing and sending of messages work
         void testLocalSendAuthenticatedMessage() throws IOException {
-            SHA256withRSAAuthentication.generateSignatureKeyPair();
+            QuantumnetworkControllcenter.authentication.generateSignatureKeyPair();
             String otherPublicKeyString =
                     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                             "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -110,7 +110,7 @@ public class ExternalAPITests {
             int ourServerPort = QuantumnetworkControllcenter.conMan.getLocalPort();
             ConnectionManager otherCM = new ConnectionManager("127.0.0.1", ourServerPort + 1);
             
-            QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 6603, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
+            QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 6603, Utils.readKeyStringFromFile("signature.pub"));
             QuantumnetworkControllcenter.communicationList.insert("42debugging42", "127.0.0.1", 6604, otherPublicKeyString);
 
             QuantumnetworkControllcenter.initialize(null);
@@ -127,7 +127,7 @@ public class ExternalAPITests {
         @Test
         // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
         void testLocalReceiveAuthenticatedMessage() throws IOException {
-            SHA256withRSAAuthentication.generateSignatureKeyPair();
+            QuantumnetworkControllcenter.authentication.generateSignatureKeyPair();
             String otherPublicKeyString =
                     "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
                             "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
@@ -136,7 +136,7 @@ public class ExternalAPITests {
                             "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
                             "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
                             "1QIDAQAB";
-            QuantumnetworkControllcenter.communicationList.insert("41debugging41", "127.0.0.1", 9303, SHA256withRSAAuthentication.readKeyStringFromFile("signature.pub"));
+            QuantumnetworkControllcenter.communicationList.insert("41debugging41", "127.0.0.1", 9303, Utils.readKeyStringFromFile("signature.pub"));
             QuantumnetworkControllcenter.communicationList.insert("42debugging42", "127.0.0.1", 8303, otherPublicKeyString);
 
             QuantumnetworkControllcenter.initialize();
