@@ -57,7 +57,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 	/** Will be passed to the CE created in response to an incoming connection request, will be the name the created CE tells its partner in response */
 	private String localName;
 	/** The {@linkplain ConnectionManager} that created this CESH */
-	private ConnectionManager ownerCM;
+	private ConnectionManager parentCM;
 
 	/**
 	 * Constructor.
@@ -66,18 +66,18 @@ public class ConnectionEndpointServerHandler extends Thread{
 	 * 		a client socket created by a ServerSockets .accept() method <br>
 	 * 		the CESH will listen for a connection request on this, 
 	 * 		and if one is received this will be passed on as the client socket for the newly created {@linkplain ConnectionEndpoint}
-	 * @param owner
+	 * @param parent
 	 * 		the {@linkplain ConnectionManager} that this CESH was created in <br>
 	 * 		may not be null
 	 * @throws IOException 
 	 * 		if an I/O Exception occurred trying to construct an internal ObjectInputStream from the clientsocket's InputStream
 	 */
-	ConnectionEndpointServerHandler(Socket newClientSocket, ConnectionManager owner) throws IOException {
+	ConnectionEndpointServerHandler(Socket newClientSocket, ConnectionManager parent) throws IOException {
 		clientSocket = newClientSocket;
-		this.ownerCM = owner;
-		this.localName = owner.getLocalName();
-		
-		this.ceshLog = new Log("CESH Logger (Owner: " + owner.getLocalName() + ":" + owner.getLocalPort() + ")", LogSensitivity.WARNING);
+		this.parentCM = parent;
+		this.localName = parent.getLocalName();
+
+		this.ceshLog = new Log("CESH Logger (Owner: " + parent.getLocalName() + ":" + parent.getLocalPort() + ")", LogSensitivity.WARNING);
 	}
 	
 	@Override
@@ -106,7 +106,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 						 */
 						String remoteName;
 						// If the owner CM has a commlist, check it
-						CommunicationList commList = ownerCM.getCommList();
+						CommunicationList commList = parentCM.getCommList();
 						if (commList != null) {
 							Contact dbEntry = commList.query(remoteIP, remotePort);
 							if(dbEntry != null && !remoteIP.equals("127.0.0.1") && !remoteIP.equals("localhost")) {
@@ -120,7 +120,7 @@ public class ConnectionEndpointServerHandler extends Thread{
 							remoteName = receivedMessage.getMessageArgs().userName();
 						}
 
-						ce = ownerCM.createNewConnectionEndpoint(remoteName, clientSocket, serverOut, serverIn, remoteIP, remotePort);
+						ce = parentCM.createNewConnectionEndpoint(remoteName, clientSocket, serverOut, serverIn, remoteIP, remotePort);
 						ce.setRemoteName(remoteName);
 						settingUp = false;
 						acceptedRequest = true;

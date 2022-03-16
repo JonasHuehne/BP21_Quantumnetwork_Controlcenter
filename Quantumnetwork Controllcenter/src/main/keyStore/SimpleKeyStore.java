@@ -72,13 +72,13 @@ public class SimpleKeyStore {
 	 * 		unique ID under which this key is to be saved
 	 * @param key
 	 * 		the key to save
-	 * @param iniative
+	 * @param initiative
 	 * 		true if you initiated the key generation, false otherwise <br>
 	 * 		used to determine priority when key bits are used
 	 * @throws SQLException
 	 * 		if there was an error connecting to the database, or if the insert failed
 	 */
-	public static void insertEntry(String keyID, byte[] key, boolean iniative) throws SQLException {
+	public static void insertEntry(String keyID, byte[] key, boolean initiative) throws SQLException {
 		createTableIfNotExists();
 		try (Connection connection = connect()) {
 			String sql = "INSERT INTO " + tableName + "(KeyID, Key, KeyIndex, Initiative, KeyLength) VALUES(?, ?, ?, ?, ?)";
@@ -86,7 +86,7 @@ public class SimpleKeyStore {
 	        stmt.setString(1, keyID);
 	        stmt.setBytes(2, key);
 	        stmt.setInt(3, 0);
-	        stmt.setBoolean(4, iniative);
+	        stmt.setBoolean(4, initiative);
 	        stmt.setInt(5, key.length);
 	        stmt.executeUpdate();
 		}
@@ -104,8 +104,11 @@ public class SimpleKeyStore {
 	 * 		the next {@code nbytes} bytes of the specified key
 	 * @throws SQLException 
 	 * 		if there was an error connecting to the database or querying it (e.g. table does not exist)
-	 * @throws NotEnoughKeyLeftException 
-	 * @throws NoKeyWithThatIDException 
+	 * @throws NotEnoughKeyLeftException
+	 * 		if there is not enough key material left after the 
+	 * 		current index to return n bytes of key material
+	 * @throws NoKeyWithThatIDException
+	 * 		if no key with the specified ID could be found in the database
 	 */
 	public static byte[] getNextKeyBytes(String keyID, int nbytes) throws SQLException, NotEnoughKeyLeftException, NoKeyWithThatIDException {
 		int index = getIndex(keyID);
@@ -125,9 +128,15 @@ public class SimpleKeyStore {
 	 * 		index at which to start retrieving bytes <br>
 	 * 		must be 0 or greater
 	 * @return
+	 * 		the next n bytes of the key with the specified ID, 
+	 * 		starting at the specified index in the key
 	 * @throws SQLException
+	 * 		if an error occurred with the SQL database this key manager is based on (e.g. table doesn't exist)
 	 * @throws NoKeyWithThatIDException
+	 * 		if no key with the specified ID could be found in the database
 	 * @throws NotEnoughKeyLeftException
+	 * 		if there is not enough key material left after the 
+	 * 		given index to return n bytes of key material
 	 */
 	public static byte[] getKeyBytesAtIndexN(String keyID, int nbytes, int startingIndex) throws SQLException, NoKeyWithThatIDException, NotEnoughKeyLeftException {
 		if (nbytes <= 0) throw new IllegalArgumentException("Requested byte amount must be at least 1.");
@@ -162,7 +171,7 @@ public class SimpleKeyStore {
 	 * 		how much to increment the index / how many bytes are to be marked as used <br>
 	 * 		if this exceeds the amount of remaining usable key bytes, all key bytes are marked as used
 	 * @throws SQLException 
-	 * 		if an error occured connecting to the database, or while querying or updating it
+	 * 		if an error occurred connecting to the database, or while querying or updating it
 	 * @throws NoKeyWithThatIDException 
 	 * 		if the key specified by {@code keyID} has no entry in the database
 	 */
@@ -263,7 +272,7 @@ public class SimpleKeyStore {
 	 * 		the ID of the key
 	 * @param index
 	 * 		the new Index <br>
-	 * 		if this is greater than the total lenght of the key, 
+	 * 		if this is greater than the total length of the key, 
 	 * 		the new index will instead be set to the maximum acceptable value (==keylength)
 	 * @throws SQLException 
 	 * 		if there was an error connecting to the Database or querying it

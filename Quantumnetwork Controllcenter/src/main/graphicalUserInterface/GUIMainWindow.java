@@ -44,6 +44,8 @@ import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
 import networkConnection.ConnectionType;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 /**This is the Main GUI of this Application. The left half handles the ContactDB and the right half handles the Connections.
  * @implNote We encourage the use of a tool like WindowBuilder when making changes to this and other GUI classes.
@@ -51,6 +53,8 @@ import networkConnection.ConnectionType;
  *
  */
 public final class GUIMainWindow implements Runnable{
+	
+	Log guiLogger = new Log(GUIMainWindow.class.getSimpleName(), LogSensitivity.WARNING);
 
 
 	private Object[][] contactData = {};
@@ -645,8 +649,7 @@ public final class GUIMainWindow implements Runnable{
 			try {
 				TimeUnit.MILLISECONDS.sleep(200);
 			} catch (InterruptedException e) {
-				// Ignore Exception as this is only triggered when intentionally shutting down the thread.
-				// TODO Log this
+				guiLogger.logError("An Interrupt occured in the refresher thread for the GUI", e);
 			}
 			prevActiveConnection = activeConnection;
 		}

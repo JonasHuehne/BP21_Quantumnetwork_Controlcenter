@@ -19,8 +19,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.crypto.IllegalBlockSizeException;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -126,7 +126,7 @@ public class MessageSystemTests {
 		 */
 	}
 	
-	@AfterEach
+	@BeforeEach
 	public void reset() throws SQLException {
 		AliceCM.getConnectionEndpoint("Bob").getPackageLog().clear();
 		AliceCM.getConnectionEndpoint("Bob").getChatLog().clear();
@@ -433,11 +433,6 @@ public class MessageSystemTests {
 		
 		assertArrayEquals(encryptedBytesRead, artificiallyEncryptedBytes);
 		
-	}
-	
-	@Test
-	public void other_tests() {
-		assertFalse(true, "Not implemented yet.");
 	}
 	
 	private static void waitBriefly() {
