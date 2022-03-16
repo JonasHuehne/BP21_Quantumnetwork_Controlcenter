@@ -425,7 +425,7 @@ public class ConnectionEndpoint implements Runnable{
 	 * 		the type of message being sent. Regular transmissions should use TransmissionTypeEnum.TRANSMISSION.
 	 * @param typeArgument 
 	 * 		an additional argument used by some TransmissionTypes to pass on important information. Can be "" if not needed.
-	 * @param message 
+	 * @param message
 	 * 		the byte[] Message that should be sent to the connected ConnectionEndpoints Server.
 	 * @param sig 
 	 * 		the signature of the Message if it is an authenticated message. If not, set sig to null.
