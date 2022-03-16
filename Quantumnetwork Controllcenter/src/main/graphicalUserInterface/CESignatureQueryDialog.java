@@ -8,7 +8,6 @@ import javax.swing.border.EmptyBorder;
 
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.SigKeyQueryInteractionObject;
-import messengerSystem.SHA256withRSAAuthenticationGUI;
 
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;

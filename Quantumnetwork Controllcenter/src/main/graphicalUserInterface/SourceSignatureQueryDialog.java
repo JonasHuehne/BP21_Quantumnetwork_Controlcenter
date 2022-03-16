@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -21,7 +22,7 @@ import frame.Configuration;
  * @author Jonas Huehne
  *
  */
-public class SourceSignatureQueryDialog extends JDialog {
+public class SourceSignatureQueryDialog extends JFrame {
 
 	private final JPanel contentPanel = new JPanel();
 	private JTextField textField;

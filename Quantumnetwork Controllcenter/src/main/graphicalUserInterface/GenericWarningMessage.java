@@ -1,6 +1,7 @@
 package graphicalUserInterface;
 
 import java.awt.BorderLayout;
+
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.MouseInfo;
@@ -13,13 +14,14 @@ import javax.swing.JDialog;
 import javax.swing.JPanel;
 import javax.swing.JTextPane;
 import javax.swing.UIManager;
+import javax.swing.JFrame;
 
 /**This is a simple generic Warning or Error Dialog Window. It can be used to display important messages to the user.
  *
  * @author Jonas Huehne, Sasha Petri
  *
  */
-public class GenericWarningMessage extends JDialog {
+public class GenericWarningMessage extends JFrame {
 
 	private static final long serialVersionUID = -1172300406464343271L;
 
