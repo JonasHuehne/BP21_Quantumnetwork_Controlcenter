@@ -40,6 +40,7 @@ import networkConnection.ConnectionType;
  */
 public final class GUIMainWindow implements Runnable{
 
+
 	private Object[][] contactData = {};
 	String[] contactColumnNames = {"Connection Name",
             "IP Address",
@@ -66,13 +67,8 @@ public final class GUIMainWindow implements Runnable{
 	/** used in updating the list of active connections */
 	private ArrayList<String> namesOfConnections = new ArrayList<String>();
 	
-	/** contains the last measured size of our local ConnectionManager, used in updating the list of active connections */
-	private int ceAmountOld = 0;
-	
 	public HashMap<String,ConnectionType> conType = new HashMap<String,ConnectionType>();
-	
-	/** currently open message GUIs, tracked here so they can be updated */
-	protected ArrayList<MessageGUI> openChatWindows = new ArrayList<>();
+	protected ArrayList<MessageGUI> openChatWindows;
 
 	/**
 	 * Create the application.
@@ -508,14 +504,15 @@ public final class GUIMainWindow implements Runnable{
 		ceUpdateThread.start();
 	}
 	
+	
 	/**
 	 * Interrupts the thread used to update the representation of the connections in the right table.
 	 */
 	public void shutdownUpdateService() {
 		ceUpdateThread.interrupt();
 	}
-
 	
+
 	/**
 	 * Runs a thread that updates the representation of the connections in the right table of the GUI.
 	 */
