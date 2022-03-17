@@ -179,7 +179,7 @@ public class Configuration {
             in.close();
             return properties.getProperty(propertyKey);
         } catch (Exception e) {
-            System.err.println("Error while reading or returning a property: " + e.getMessage());
+            System.err.println("Error while reading or returning the property with key \"" + propertyKey + "\" " + e.getMessage());
             return null;
         }
     }
