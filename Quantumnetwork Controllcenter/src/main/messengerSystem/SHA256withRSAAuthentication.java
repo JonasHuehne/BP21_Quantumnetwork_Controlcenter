@@ -340,9 +340,9 @@ public class SHA256withRSAAuthentication extends SignatureAuthentication {
                 deleteSignatureKey(keyFileName + ".pub");
             } else if (Files.exists(Path.of(currentPath + Utils.KEY_PATH + keyFileName + ".key")) ||
                     Files.exists(Path.of(currentPath + Utils.KEY_PATH + keyFileName + ".pub"))) {
-                log.logWarning("Error while creating a key pair: "
-                        + "File name exists already, but should not be overwritten. "
-                        + "No new key created.");
+                log.logWarning("Error while creating a key pair: " + System.lineSeparator()
+                        + "A public or private key with the name \" + " +  keyFileName + "\" exists already, "
+                        + "but overwrite was set to false. No new key created.");
                 return false;
             }
             // generate the new keys

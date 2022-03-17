@@ -56,7 +56,6 @@ public class ConfigurationTests {
     }
     
     @BeforeEach
-    @AfterEach
     void setupCleanup() {
         if(Files.exists(Path.of(System.getProperty("user.dir") + File.separator + "config.xml" ))) {
             try {
