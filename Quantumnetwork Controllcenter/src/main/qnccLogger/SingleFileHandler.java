@@ -40,19 +40,21 @@ public class SingleFileHandler {
 			return;
 		}
 		
-		//create log File if it does not exist
+		//get current Date and Time
 		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu_MM_dd_HH_mm_");
         LocalDateTime now = LocalDateTime.now();
         String currentDateTime = dateTimeFormatter.format(now);
         
+        // get logs directory
         Path qnccPath = Paths.get(Configuration.getBaseDirPath());
-        
-        
     	Path logsPath = qnccPath.resolve("logs");
+    	
+    	//create logs directory if it does not exist
     	if(!logsPath.toFile().isDirectory()) {
     		Configuration.createFolders();
     	}
     	
+    	//create log file
     	String fileName = currentDateTime + FILE_NAME;
 		File file = logsPath.resolve(fileName).toFile();
 		if(!file.exists()) {
@@ -63,7 +65,20 @@ public class SingleFileHandler {
 			}
 		}
 		
-		File myLoggingProperties = propertiesDir.resolve("logger.properties").toFile();
+		//create
+		Path myLoggingPropertiesPath = propertiesDir.resolve("logger.properties");
+		File myLoggingProperties = myLoggingPropertiesPath.toFile();
+		if(myLoggingProperties.isFile()) {
+			try {
+				Files.createFile(myLoggingPropertiesPath); 
+				String properties = "java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter\njava.util.logging.SimpleFormatter.format=[%1$tF %1$tT]   [%4$s]: %n	[at]:				%3$s %n	[Dev Message]:		%5$s %n	[Stacktrace]:%n%6$s%n------------------------------------------------------------%n";
+				Files.writeString(myLoggingPropertiesPath, properties);
+			} catch (IOException e) {
+				System.err.println(e.toString());
+			}
+		}
+		
+		//set logging properties
 		try {
 			LogManager.getLogManager().readConfiguration(new FileInputStream(myLoggingProperties));
 		} catch (SecurityException | IOException e) {
@@ -76,7 +91,6 @@ public class SingleFileHandler {
 		} catch (SecurityException | IOException e) {
 			System.err.println(e.toString());
 		}
-		
 		
 		singleFileHandler = this;
 	}
