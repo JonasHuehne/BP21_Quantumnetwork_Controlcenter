@@ -33,7 +33,7 @@ public class SHA256withRSAAuthenticationGUI extends SHA256withRSAAuthentication 
             String pubKeyString = Utils.getPkIfPossible(sender);
             if (pubKeyString == null) {
                 SigKeyQueryInteractionObject skq = new SigKeyQueryInteractionObject();
-                new CESignatureQueryDialog(sender, skq);
+                new CESignatureQueryDialog(sender, skq, false);
                 while (!(skq.isAbortVerify() || skq.isContinueVerify() || skq.isDiscardMessage())) { 
                 	try { // wait for a bit between each check to not eat up the CPU
 						wait(100);

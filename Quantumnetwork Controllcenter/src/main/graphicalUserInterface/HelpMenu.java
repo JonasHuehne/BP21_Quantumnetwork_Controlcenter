@@ -15,7 +15,7 @@ import javax.swing.border.EmptyBorder;
 /**This Menu will contain an instructional manual
  * 
  * @author Jonas Huehne
- *
+ * @deprecated Opening "Help" folder instead of in-GUI Solution
  */
 public class HelpMenu extends JFrame {
 

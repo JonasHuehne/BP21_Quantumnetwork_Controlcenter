@@ -31,7 +31,7 @@ public class CESignatureQueryDialog extends JFrame {
 	/**
 	 * Create the dialog.
 	 */
-	public CESignatureQueryDialog(String connectionID, SigKeyQueryInteractionObject sigKeyQuery) {
+	public CESignatureQueryDialog(String connectionID, SigKeyQueryInteractionObject sigKeyQuery, boolean preemptiveQuery) {
 		setBounds(100, 100, 550, 150);
 		getContentPane().setLayout(new BorderLayout());
 		setVisible(true);
@@ -67,11 +67,13 @@ public class CESignatureQueryDialog extends JFrame {
 							setVisible(false);
 							dispose();
 							QuantumnetworkControllcenter.conMan.getConnectionEndpoint(connectionID).setSigKey(textField.getText());
-							sigKeyQuery.setContinueVerify(true);
+							if(preemptiveQuery == false) {
+								sigKeyQuery.setContinueVerify(true);
+							}
 						} else {
 							setVisible(false);
 							dispose();
-							new CESignatureQueryDialog(connectionID, sigKeyQuery);
+							new CESignatureQueryDialog(connectionID, sigKeyQuery, preemptiveQuery);
 						}
 					}
 				});
@@ -85,7 +87,9 @@ public class CESignatureQueryDialog extends JFrame {
 					public void actionPerformed(ActionEvent e) {
 						setVisible(false);
 						dispose();
-						new DiscardMessageDialog(connectionID, sigKeyQuery);
+						if(preemptiveQuery == false) {
+							new DiscardMessageDialog(connectionID, sigKeyQuery);
+						}
 					}
 				});
 				cancelButton.setActionCommand("Cancel");
@@ -98,7 +102,9 @@ public class CESignatureQueryDialog extends JFrame {
 			public void windowClosing(WindowEvent e) {
 				setVisible(false);
 				dispose();
-				new DiscardMessageDialog(connectionID, sigKeyQuery);
+				if(preemptiveQuery == false) {
+					new DiscardMessageDialog(connectionID, sigKeyQuery);
+				}
 			}
 		});
 		

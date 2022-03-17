@@ -49,8 +49,6 @@ public class QuantumnetworkControllcenter {
 	 */
 	public static void initialize(String[] args) {
 		
-		//TODO add initialization of further Classes
-		
 		//Open GUI or CUI
 		if(args != null && args.length == 3 && args[2].equals("noGUI")) {
 			LAUNCH_GUI = false;
@@ -76,11 +74,6 @@ public class QuantumnetworkControllcenter {
 			Configuration.setProperty("UserIP", args[0]);
 			Configuration.setProperty("UserPort", args[1]);
 		}
-		
-
-		/*
-		 *TODO: Check if Sig files exist and if not, generate them!
-		 */
 
 		// Communication List Init
 		communicationList = new SQLiteCommunicationList();

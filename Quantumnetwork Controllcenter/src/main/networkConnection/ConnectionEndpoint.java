@@ -23,7 +23,7 @@ import qnccLogger.LogSensitivity;
 
 
 /**Represents a single connection endpoint at a given port, that can connect to a single other connection endpoint on the same machine, in the same local network or via the Internet.
- * Handles connection management and low-level transmissions. Use waitForConnection() and establishConnections() to connect 2 endpoints. Do not call pushMessage()
+ * Handles connection management and low-level transmissions. Use establishConnection() to connect 2 endpoints. Do not call pushMessage()
  *  manually unless you know what you are doing. Use connectionManager.sendMessage() at the very least. Ideally you would use one of the methods from MessageSystem to send anything.
  * This class also contains parsing for different message types in processMessage(). This is used to trigger additional functionality from messages that are f.ex. used to close the connection.
  * 
@@ -600,18 +600,21 @@ public class ConnectionEndpoint implements Runnable{
 	 * 		true if the message was sent from this CE <br>
 	 * 		false if it was received
 	 * @param verified
-	 * 		if this message was received and verified, set this to true <br>
-	 * 		otherwise, set it to false (this parameter will be ignored if sent == true)
+	 * 		if this message was received and verified, set this to 1 <br>
+	 * 		if this message failed to be verified, set this to -1 <br>
+	 * 		otherwise, set it to 0 (this parameter will be ignored if sent == true)
 	 * @param message
 	 * 		the message to add
 	 */
-	public void appendMessageToChatLog(boolean sent, boolean verified, String message) {
+	public void appendMessageToChatLog(boolean sent, int verified, String message) {
 		String sender;
 		if (sent) {
 			sender = localName + " (You)";
 		} else {
-			if (verified) {
+			if (verified == 1) {
 				sender = remoteName + " <Verified> ";
+			}else if(verified == -1) {
+				sender = remoteName + " <Failed to verify Message!> ";
 			} else {
 				sender = remoteName;
 			}

@@ -127,7 +127,7 @@ public class MessageGUI extends JFrame {
 					default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selected!");
 						break;
 					}
-					MessageSystem.conMan.getConnectionEndpoint(connectionID).appendMessageToChatLog(true, false, msg);
+					MessageSystem.conMan.getConnectionEndpoint(connectionID).appendMessageToChatLog(true, 0, msg);
 				} catch (CouldNotSendMessageException e1) {
 					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". " + e1.getMessage());
 					// TODO log the error, for some specific errors maybe throw a specific warning message (getCause() and instanceof)
@@ -159,7 +159,7 @@ public class MessageGUI extends JFrame {
 						default: new GenericWarningMessage("ERROR: Invalid Connection Security Setting selected!");
 							return;
 						}
-						MessageSystem.conMan.getConnectionEndpoint(connectionID).appendMessageToChatLog(true, false, "Sent the file " + f.toString() + " in " + t + " mode.");
+						MessageSystem.conMan.getConnectionEndpoint(connectionID).appendMessageToChatLog(true, 0, "Sent the file " + f.toString() + " in " + t + " mode.");
 					} catch (CouldNotSendMessageException e1) {
 						new GenericWarningMessage("ERROR - Could not send File! An Exception occurred. Please see the log for details.");
 					}
