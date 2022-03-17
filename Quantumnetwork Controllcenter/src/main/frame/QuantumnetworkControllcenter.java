@@ -1,5 +1,10 @@
 package frame;
 
+import java.awt.EventQueue;
+import java.io.IOException;
+
+import javax.swing.UIManager;
+
 import communicationList.CommunicationList;
 import communicationList.SQLiteCommunicationList;
 import encryptionDecryption.AES256;
@@ -7,20 +12,13 @@ import encryptionDecryption.SymmetricCipher;
 import exceptions.PortIsInUseException;
 import graphicalUserInterface.GUIMainWindow;
 import graphicalUserInterface.SettingsDialog;
+import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthenticationGUI;
 import messengerSystem.SignatureAuthentication;
 import networkConnection.ConnectionManager;
 import qnccLogger.Log;
 import qnccLogger.LogSensitivity;
 import ui.ConsoleUI;
-import java.awt.EventQueue;
-import java.io.IOException;
-
-import javax.swing.UIManager;
-import java.util.concurrent.TimeUnit;
-
-import exceptions.PortIsInUseException;
-import messengerSystem.MessageSystem;
 
 /**
  * Main Class of QuantumnetworkControllcenter

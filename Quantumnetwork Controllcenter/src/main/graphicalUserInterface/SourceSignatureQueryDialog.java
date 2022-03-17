@@ -8,7 +8,6 @@ import java.awt.event.ActionListener;
 
 import javax.swing.Box;
 import javax.swing.JButton;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -24,10 +23,11 @@ import frame.Configuration;
  */
 public class SourceSignatureQueryDialog extends JFrame {
 
+	private static final long serialVersionUID = 1569416070822712762L;
+	
 	private final JPanel contentPanel = new JPanel();
 	private JTextField textField;
 	JLabel titleNewLabel;
-
 
 	/**
 	 * Create the dialog.

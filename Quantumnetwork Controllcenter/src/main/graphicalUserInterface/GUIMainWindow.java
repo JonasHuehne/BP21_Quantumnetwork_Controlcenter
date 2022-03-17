@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
 import javax.swing.Box;
@@ -34,11 +35,9 @@ import communicationList.Contact;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
-import exceptions.NoKeyWithThatIDException;
 import frame.QuantumnetworkControllcenter;
 import graphicalUserInterface.keyStoreEditor.DebugKeystoreEditor;
 import keyStore.KeyStoreDbManager;
-import keyStore.KeyStoreObject;
 import net.miginfocom.swing.MigLayout;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
@@ -512,12 +511,14 @@ public final class GUIMainWindow implements Runnable{
 				
 				//Check if Key exists
 				if(connectionTypeCB.getSelectedItem() == ConnectionType.ENCRYPTED) {
-					KeyStoreObject kSO;
 					try {
-						kSO = KeyStoreDbManager.getEntryFromKeyStore(connectionName);
-					} catch (NoKeyWithThatIDException | SQLException e1) {
-						new GenericWarningMessage("Warning: no valid Key was found for " + connectionName + "! Please generate a Key before using encrypted communication.");
-						connectionTypeCB.setSelectedItem(ConnectionType.AUTHENTICATED);
+						if (!(KeyStoreDbManager.doesKeyStreamIdExist(connectionName))) {
+							new GenericWarningMessage("Warning: no valid Key was found for " + connectionName + "! Please generate a Key before using encrypted communication.");
+							connectionTypeCB.setSelectedItem(ConnectionType.AUTHENTICATED);
+						}
+					} catch (SQLException e1) {
+						new GenericWarningMessage("SQL Exception while trying to get the key for " + connectionName + ". Encrypted communication is not possible.");
+						guiLogger.logError("SQL Exception while trying to get the key for " + connectionName + ". Encrypted communication is not possible.", e1);
 					}
 				}
 			}
@@ -567,67 +568,64 @@ public final class GUIMainWindow implements Runnable{
 	public void run() {
 		
 		while(true) {
-			
-			/*
-			 * Update which connections are represented in the connections tab of the GUI
-			 * Also updates the displayed state.
-			 */
-			
-			int ceAmountNew = QuantumnetworkControllcenter.conMan.getConnectionsAmount();
-			// If the amount of connections in the CM is not the same as the amount of listed connections
-			if (ceAmountNew != representedConnectionEndpoints.size()) {
-				if (ceAmountNew > representedConnectionEndpoints.size()) { // if new connections were added
-					Map<String, ConnectionEndpoint> currentConnections = QuantumnetworkControllcenter.conMan.returnAllConnections();		
-					// Add a graphical entry for each connection that doesn't have one yet
-					for (Map.Entry<String, ConnectionEndpoint> entry : currentConnections.entrySet()) {
-						if (!(representedConnectionEndpoints.keySet().contains(entry.getKey()))) {
-								createConnectionRepresentation(
-										entry.getKey(), 
-										entry.getValue().getRemoteAddress(), 
-										entry.getValue().getRemotePort());
-						}
+
+			// for each connection in the manager
+			for (Entry<String, ConnectionEndpoint> currentConnection : QuantumnetworkControllcenter.conMan.returnAllConnections().entrySet()) {
+				// if it is ready to remove, remove its representation (if present)
+				if (currentConnection.getValue().reportState() == ConnectionState.READY_FOR_REMOVAL) {
+					representedConnectionEndpoints.remove(currentConnection.getKey());
+					// also remove it from the connection manager
+					// (this is safe because returnAllConnections returns a different map than the one internally used by the CM)
+					try {
+						QuantumnetworkControllcenter.conMan.destroyConnectionEndpoint(currentConnection.getKey());
+					} catch (ManagerHasNoSuchEndpointException e) {
+						// Ignore this
 					}
+					continue;
+				} else {
+					// Otherwise, add a representation if not present
+					if (!(representedConnectionEndpoints.keySet().contains(currentConnection.getKey()))) {
+						createConnectionRepresentation(
+								currentConnection.getKey(), 
+								currentConnection.getValue().getRemoteAddress(), 
+								currentConnection.getValue().getRemotePort());
+					}
+					
+					// And update the representation of the CE 
+					String k = currentConnection.getKey();
+					JPanel v = representedConnectionEndpoints.get(k);
+					
+					JButton activeButton = ((JButton) representedConnectionEndpoints.get(k).getComponent(4));
+					JLabel labelCeState = ((JLabel) representedConnectionEndpoints.get(k).getComponent(2));
+					ConnectionEndpoint ce = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(k);
+					ConnectionState state;
+					//If the ce is invalid, switch to ERROR state.
+					if(ce == null) {
+						state = ConnectionState.ERROR;
+					}else {
+						state = ce.reportState();
+					}
+					
+					labelCeState.setText(state.name());
+					labelCeState.revalidate();
+					labelCeState.repaint();
+					
+					//Color the Connections
+					if(activeConnection != null && activeConnection.equals(k)) {
+						
+						//v.setBackground(new Color(0, 186, 0));
+						activeButton.setBackground(new Color(0, 186, 0));
+						v.setBorder(new LineBorder(new Color(0, 240, 0)));
+					}else if(prevActiveConnection == null || !k.equals(prevActiveConnection)){
+						
+						activeButton.setBackground(null);
+						//v.setBackground(new Color(240, 240, 240));
+						v.setBorder(new LineBorder(new Color(64, 64, 64)));
+					}
+					v.revalidate();
+					v.repaint();
 				}
 			}
-			
-			/*
-			 * Update which connection is the "selected" one and color it accordingly
-			 * Also updates the displayed state
-			 */
-			
-			representedConnectionEndpoints.forEach((k,v)->{
-				
-				JButton activeButton = ((JButton) representedConnectionEndpoints.get(k).getComponent(4));
-				JLabel labelCeState = ((JLabel) representedConnectionEndpoints.get(k).getComponent(2));
-				ConnectionEndpoint ce = QuantumnetworkControllcenter.conMan.getConnectionEndpoint(k);
-				ConnectionState state;
-				//If the ce is invalid, switch to ERROR state.
-				if(ce == null) {
-					state = ConnectionState.ERROR;
-				}else {
-					state = ce.reportState();
-				}
-				
-				labelCeState.setText(state.name());
-				labelCeState.revalidate();
-				labelCeState.repaint();
-				
-				//Color the Connections
-				if(activeConnection != null && activeConnection.equals(k)) {
-					
-					//v.setBackground(new Color(0, 186, 0));
-					activeButton.setBackground(new Color(0, 186, 0));
-					v.setBorder(new LineBorder(new Color(0, 240, 0)));
-				}else if(prevActiveConnection == null || !k.equals(prevActiveConnection)){
-					
-					activeButton.setBackground(null);
-					//v.setBackground(new Color(240, 240, 240));
-					v.setBorder(new LineBorder(new Color(64, 64, 64)));
-				}
-				v.revalidate();
-				v.repaint();
-				
-			});
 
 			/*
 			 * Sleep between the updates to save resources.

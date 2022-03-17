@@ -21,6 +21,9 @@ import keyStore.KeyStoreDbManager;
  * @author Sasha Petri
  */
 public class DebugKeystoreEditorAddDialog extends JFrame {
+	
+	private static final long serialVersionUID = 1379372399906050072L;
+	
 	private JTextField textFieldID;
 	private JTextField textFieldIndex;
 	private JTextField textFieldInit;

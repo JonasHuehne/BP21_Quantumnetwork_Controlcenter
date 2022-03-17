@@ -1,15 +1,17 @@
 package graphicalUserInterface;
 
 import java.awt.BorderLayout;
+import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.awt.Desktop;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -21,10 +23,6 @@ import javax.swing.border.EmptyBorder;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
-import messengerSystem.SHA256withRSAAuthentication;
-
-import javax.swing.JComboBox;
-import javax.swing.DefaultComboBoxModel;
 
 /**This Dialog contains settings such as the own ServerIP/Port
  * 
@@ -32,7 +30,9 @@ import javax.swing.DefaultComboBoxModel;
  *
  */
 public class SettingsDialog extends JFrame {
-
+	
+	private static final long serialVersionUID = -6780530638038267214L;
+	
 	private final JPanel contentPanel = new JPanel();
 	private JTextField ownNameTextField;
 	private JTextField ownIPTextField;

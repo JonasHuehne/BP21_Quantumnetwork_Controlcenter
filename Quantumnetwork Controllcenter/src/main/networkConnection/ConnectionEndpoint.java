@@ -9,7 +9,6 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.HashMap;
 
@@ -97,6 +96,8 @@ public class ConnectionEndpoint implements Runnable{
 	
 	/** Timeout in ms when trying to connect to a remote server, 0 is an infinite timeout */
 	private final int CONNECTION_TIMEOUT = 3000;
+
+	private boolean readyForRemoval;
 	
 	/**
 	 * Used when creating a ConnectionEndpoint as a response to a ConnectionRequest.
@@ -233,7 +234,8 @@ public class ConnectionEndpoint implements Runnable{
 			return ConnectionState.CONNECTED;
 		}
 		if(!isConnected && !isBuildingConnection && !isListeningForMessages) {
-			return ConnectionState.CLOSED;
+			if (readyForRemoval) return ConnectionState.READY_FOR_REMOVAL;
+			else return ConnectionState.CLOSED;
 		}
 		if(!isConnected && !isBuildingConnection && isListeningForMessages) {
 			return ConnectionState.WAITINGFORMESSAGE;
@@ -427,7 +429,7 @@ public class ConnectionEndpoint implements Runnable{
 				ceLogger.logError("[" + connectionID + "]: Shutdown of remoteClientSocket failed!", e);
 			}
 			remoteClientSocket = null;
-		}		
+		}
 	}
 
 	/**
@@ -678,6 +680,14 @@ public class ConnectionEndpoint implements Runnable{
 	public NetworkPackage removeFromPushQueue(byte[] id) {
 		String stringID = Base64.getEncoder().encodeToString(id);
 		return pushOnceApproved.remove(stringID);
+	}
+	
+	/**
+	 * If this is called, this CE will be in state {@linkplain ConnectionState#READY_FOR_REMOVAL}
+	 * instead of {@linkplain ConnectionState#CLOSED} when it is closed.
+	 */
+	public void removeOnceClosed() {
+		this.readyForRemoval = true;
 	}
 	
 }

@@ -12,15 +12,13 @@ import java.security.Signature;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
+
 import communicationList.Contact;
-import exceptions.NoValidPublicKeyException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
-import graphicalUserInterface.GenericWarningMessage;
+import networkConnection.ConnectionEndpoint;
 import qnccLogger.Log;
 import qnccLogger.LogSensitivity;
-import graphicalUserInterface.CESignatureQueryDialog;
-import networkConnection.ConnectionEndpoint;
 
 /**
  * Class providing the methods necessary for authentication

@@ -598,7 +598,6 @@ public class KeyStoreDbManager {
 	 * 		if no key with that ID is in the database
 	 */
 	public static Map.Entry<byte[], Integer> get_Key(String keyStreamID) throws NoKeyWithThatIDException, SQLException {
-		AbstractMap.SimpleEntry<byte[], Integer> pair;
 
 		if (doesKeyStreamIdExist(keyStreamID)) {
 			KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);

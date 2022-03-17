@@ -32,7 +32,6 @@ import exceptions.CouldNotGetKeyException;
 import exceptions.CouldNotSendMessageException;
 import exceptions.ExternalApiNotInitializedException;
 import exceptions.IpAndPortAlreadyInUseException;
-import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.NoKeyWithThatIDException;
 import exceptions.NotEnoughKeyLeftException;
 import exceptions.PortIsInUseException;

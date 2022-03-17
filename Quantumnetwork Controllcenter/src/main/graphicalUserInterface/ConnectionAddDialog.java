@@ -24,6 +24,10 @@ import net.miginfocom.swing.MigLayout;
  *
  */
 public class ConnectionAddDialog extends JFrame {
+	
+	
+	private static final long serialVersionUID = 4006206198202366256L;
+	
 	private JTextField textFieldContactName;
 	private JTextField textFieldContactIpAddr;
 	private JTextField textFieldContactPort;
@@ -155,20 +159,7 @@ public class ConnectionAddDialog extends JFrame {
 				JButton okButton = new JButton("OK");
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						String newID;
-						int selectedTableRowIndex = -1;
-						
-						//Determine new ID
-						if(useManualInputRadioButton.isSelected()) {
-							newID = textFieldContactName.getText();
-						}else {
-							selectedTableRowIndex = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
-							if(selectedTableRowIndex == -1) {
-								System.out.println("Warning: No Row in Contact-Table is selected!");
-								return;
-							}
-							newID = QuantumnetworkControllcenter.guiWindow.getContactTable().getValueAt(selectedTableRowIndex, QuantumnetworkControllcenter.guiWindow.getContactDBNameIndex()).toString();
-						}
+						int selectedTableRowIndex = -1;		
 
 						if(useManualInputRadioButton.isSelected()) {
 							// Create new CE

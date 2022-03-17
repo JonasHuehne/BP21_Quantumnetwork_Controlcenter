@@ -33,6 +33,8 @@ public enum TransmissionTypeEnum {
 	KEYGEN_SOURCE_SIGNAL,
 	/** Signals the recipient that the sender wants to stop the key-generation process. */
 	KEYGEN_TERMINATION,
+	/** This is used to signal to a CE to destroy itself and delete any record of it in the GUI. This is used by the Photon Source to delete a connection.*/
+	KEYGEN_SOURCE_DESTROY,
 	/** Transmissions of this type are used by party A to indicate to party B, that A wishes to use bytes of their shared key. 
 	 * This allows B to adjust their own key index accordingly. Transmissions of this type are expected to have an argument
 	 * specifying at which key index A wants to start using bytes, and should be signed (to avoid third-party interference). 
@@ -52,6 +54,6 @@ public enum TransmissionTypeEnum {
 	 * The content of messages of this type is expected to be the ID of the {@link #KEY_USE_ALERT} they are rejecting.
 	 * Transmissions of this type are expected to be signed.
 	 */
-	KEY_USE_REJECT;
+	KEY_USE_REJECT,
 	; 
 }

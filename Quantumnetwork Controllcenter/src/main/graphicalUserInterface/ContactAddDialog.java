@@ -22,6 +22,9 @@ import net.miginfocom.swing.MigLayout;
  *
  */
 public class ContactAddDialog extends JFrame {
+	
+	private static final long serialVersionUID = 482654877597814412L;
+	
 	private JTextField nameTextField;
 	private JTextField ipTextField;
 	private JTextField portTextField;

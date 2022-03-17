@@ -21,6 +21,9 @@ import keyStore.KeyStoreObject;
  * @author Sasha Petri
  */
 public class DebugKeystoreEditor extends JFrame {
+	
+	private static final long serialVersionUID = 145434116567160386L;
+	
 	private JTable table;
 	public DebugKeystoreEditor() {
 		getContentPane().setLayout(null);

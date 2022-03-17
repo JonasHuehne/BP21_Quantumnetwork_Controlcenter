@@ -38,6 +38,8 @@ import networkConnection.TransmissionTypeEnum;
  */
 public class MessageGUI extends JFrame {
 
+	private static final long serialVersionUID = 8618837113863970672L;
+
 	private String connectionID;
 	
 	private JPanel contentPane;
@@ -145,7 +147,7 @@ public class MessageGUI extends JFrame {
 				final JFileChooser fc = new JFileChooser();
 				int choice = fc.showOpenDialog(sendFileButton);
 				File f = fc.getSelectedFile();
-				if (choice == fc.APPROVE_OPTION) {
+				if (choice == JFileChooser.APPROVE_OPTION) {
 					// If user has approved of sending this file, send it with the currently selected security setting
 					try {
 						ConnectionType t = QuantumnetworkControllcenter.guiWindow.conType.get(connectionID);

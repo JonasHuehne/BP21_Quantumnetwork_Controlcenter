@@ -26,7 +26,9 @@ import messengerSystem.SigKeyQueryInteractionObject;
  */
 public class DiscardMessageDialog extends JDialog {
 
-    public DiscardMessageDialog(String connectionID, SigKeyQueryInteractionObject sigKeyQuery) {
+	private static final long serialVersionUID = -2813240682818696371L;
+
+	public DiscardMessageDialog(String connectionID, SigKeyQueryInteractionObject sigKeyQuery) {
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         setVisible(true);
 

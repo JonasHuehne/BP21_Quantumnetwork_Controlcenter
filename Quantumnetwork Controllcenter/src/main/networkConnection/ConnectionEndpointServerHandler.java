@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
-import java.time.Duration;
-import java.time.Instant;
 
 import communicationList.CommunicationList;
 import communicationList.Contact;
@@ -50,10 +48,6 @@ public class ConnectionEndpointServerHandler extends Thread{
 	private boolean acceptedRequest = false;
 	/** If a connection request arrives on the input stream of the socket created by the ServerSocket.accept() method, we create a ConnectionEndpoint in response */
 	private ConnectionEndpoint ce = null;
-	/** Will be passed on to the CE created in response to an incoming connection request */
-	private int localPort;
-	/** Will be passed on to the CE created in response to an incoming connection request */
-	private String localIP;
 	/** Will be passed to the CE created in response to an incoming connection request, will be the name the created CE tells its partner in response */
 	private String localName;
 	/** The {@linkplain ConnectionManager} that created this CESH */
