@@ -36,6 +36,7 @@ public class ConnectionAddDialog extends JFrame {
 	 * Create the dialog.
 	 */
 	public ConnectionAddDialog() {
+		setTitle("Add Connection");
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 450, 229);
 		getContentPane().setLayout(new MigLayout("", "[434px]", "[80px][80px]"));

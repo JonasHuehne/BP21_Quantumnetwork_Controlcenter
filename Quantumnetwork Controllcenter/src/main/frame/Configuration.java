@@ -19,11 +19,13 @@ public class Configuration {
 
     /**
      * The path to the folder for the program data, includes a file separator at the end
+     * This is where the communication list, received files, etc. will be stored
      */
     private static String basePath;
 
     /**
      * The local path, where the jar file is located
+     * This is also where config file is expected to be located
      */
     private static final String LOCAL_PATH = System.getProperty("user.dir") + File.separator;
 
@@ -34,16 +36,19 @@ public class Configuration {
 
     /**
      * Name of the base directory at the basePath location
+     * This directory will contain the sub-directories (e.g. SignatureKeys)
      */
-    private static final String BASE_DIR_PATH = "QNCC" + File.separator;
+    private static final String BASE_DIR = "QNCC" + File.separator;
 
     /**
      * Name of the config file
+     * expected to be located in the path {@link #LOCAL_PATH}
      */
     private static final String CONFIG_FILE_NAME = "config.xml";
 
     /**
      * The list of the needed directories for the program
+     * Will be created at the location described by the {@link #BASE_DIR}
      */
     private static final String[] DIRECTORY_LIST =
             {"SignatureKeys", "python", "connections", "externalAPI", "logs"};
@@ -78,14 +83,17 @@ public class Configuration {
     }
 
     /**
-     * Method to get the base path
+     * Gets the path at which the "base directory" is located,
+     * this directory is the parent directory for the communication list,
+     * the key store, the signature keys folder etc.
      * @return the base path as String
      */
     public static String getBaseDirPath() {
         if (basePath == null) {
             basePath = getProperty(PATH_CONFIG_NAME);
+            if (basePath == null) basePath = ""; // if getProperty returns null (happens on first launch)
         }
-        return basePath + BASE_DIR_PATH;
+        return basePath + BASE_DIR;
     }
 
     /**
@@ -120,12 +128,12 @@ public class Configuration {
     public static boolean createFolders () {
         try {
             getBaseDirPath();
-            if (!Files.exists(Path.of(basePath + BASE_DIR_PATH))) {
-                Files.createDirectory(Path.of(basePath + BASE_DIR_PATH));
+            if (!Files.exists(Path.of(basePath + BASE_DIR))) {
+                Files.createDirectory(Path.of(basePath + BASE_DIR));
             }
             for (String dir : DIRECTORY_LIST) {
-                if (!Files.exists(Path.of(basePath + BASE_DIR_PATH + dir))) {
-                    Files.createDirectory(Path.of(basePath + BASE_DIR_PATH + dir));
+                if (!Files.exists(Path.of(basePath + BASE_DIR + dir))) {
+                    Files.createDirectory(Path.of(basePath + BASE_DIR + dir));
                 }
             }
             return true;
@@ -171,7 +179,7 @@ public class Configuration {
             in.close();
             return properties.getProperty(propertyKey);
         } catch (Exception e) {
-            System.err.println("Error while reading or returning a property: " + e.getMessage());
+            System.err.println("Error while reading or returning the property with key \"" + propertyKey + "\" " + e.getMessage());
             return null;
         }
     }
@@ -203,7 +211,7 @@ public class Configuration {
             out.close();
             return true;
         } catch (Exception e) {
-            System.err.println("Error while setting a property: " + e.getMessage());
+            System.err.println("Error while setting the property \"" + propertyKey + "\" to the value \"" + propertyValue + "\" " + e.getMessage());
             return false;
         }
     }

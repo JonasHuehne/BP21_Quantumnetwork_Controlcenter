@@ -34,6 +34,7 @@ public class ContactAddDialog extends JFrame {
 	 * Create the dialog.
 	 */
 	public ContactAddDialog() {
+		setTitle("Add Contact");
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 352, 210);
 		getContentPane().setLayout(new MigLayout("", "[368px]", "[123.00px][]"));
