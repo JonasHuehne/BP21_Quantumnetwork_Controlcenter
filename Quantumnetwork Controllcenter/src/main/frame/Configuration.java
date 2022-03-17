@@ -19,11 +19,13 @@ public class Configuration {
 
     /**
      * The path to the folder for the program data, includes a file separator at the end
+     * This is where the communication list, received files, etc. will be stored
      */
     private static String basePath;
 
     /**
      * The local path, where the jar file is located
+     * This is also where config file is expected to be located
      */
     private static final String LOCAL_PATH = System.getProperty("user.dir") + File.separator;
 
@@ -34,16 +36,19 @@ public class Configuration {
 
     /**
      * Name of the base directory at the basePath location
+     * This directory will contain the sub-directories (e.g. SignatureKeys)
      */
     private static final String BASE_DIR_PATH = "QNCC" + File.separator;
 
     /**
      * Name of the config file
+     * expected to be located in the path {@link #LOCAL_PATH}
      */
     private static final String CONFIG_FILE_NAME = "config.xml";
 
     /**
      * The list of the needed directories for the program
+     * Will be created at the location described by the {@link #BASE_DIR_PATH}
      */
     private static final String[] DIRECTORY_LIST =
             {"SignatureKeys", "python", "connections", "externalAPI", "logs"};
@@ -84,6 +89,7 @@ public class Configuration {
     public static String getBaseDirPath() {
         if (basePath == null) {
             basePath = getProperty(PATH_CONFIG_NAME);
+            if (basePath == null) basePath = ""; // if getProperty returns null (happens on first launch)
         }
         return basePath + BASE_DIR_PATH;
     }
@@ -203,7 +209,7 @@ public class Configuration {
             out.close();
             return true;
         } catch (Exception e) {
-            System.err.println("Error while setting a property: " + e.getMessage());
+            System.err.println("Error while setting the property \"" + propertyKey + "\" to the value \"" + propertyValue + "\" " + e.getMessage());
             return false;
         }
     }
