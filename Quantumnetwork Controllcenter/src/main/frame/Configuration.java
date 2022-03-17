@@ -50,7 +50,7 @@ public class Configuration {
      * Will be created at the location described by the {@link #BASE_DIR}
      */
     private static final String[] DIRECTORY_LIST =
-            {"SignatureKeys", "python", "connections", "externalAPI", "logs"};
+            {"SignatureKeys", "python", "connections", "externalAPI", "logs", "Documentation"};
 
     /**
      * Utility method to check whether the properties file is at the expected place

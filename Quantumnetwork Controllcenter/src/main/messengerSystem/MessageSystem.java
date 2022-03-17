@@ -291,7 +291,7 @@ public class MessageSystem {
 	 * 		the encrypted message to send
 	 * @throws NoKeyWithThatIDException
 	 * 		if there is no mutual key for the connection given by the specified CE <br>
-	 * 		if this method is called correctly, this should not occurr
+	 * 		if this method is called correctly, this should not occur
 	 * @throws SQLException
 	 * 		if an SQL error occured with the keystore
 	 * @throws EndpointIsNotConnectedException
@@ -380,7 +380,7 @@ public class MessageSystem {
 	/**This generates a random MessageID that can be used to identify a message reception confirmation when using sendConfirmedMessage().
 	 * The ID is a 16 alpha-numerical characters long String. (a-z,A-Z,0-9)
 	 * @return the new random MessageID
-	 * @deprecated {@linkplain NetworkPackage}s now generate their own ID on creation.
+	 * @deprecated {@linkplain NetworkPackage}s now generate their own ID on creation. KeyGen also generates its own RandomStrings now.
 	 */
 	public static String generateRandomMessageID() {
 		Random randomGen = new Random();

@@ -12,12 +12,15 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Date;
+import java.util.Random;
 
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.VerificationFailedException;
 import frame.Configuration;
+import graphicalUserInterface.GenericWarningMessage;
 import keyStore.KeyStoreDbManager;
 import messengerSystem.MessageSystem;
 import messengerSystem.SignatureAuthentication;
@@ -105,8 +108,15 @@ public class KeyGenerator implements Runnable{
 		System.out.println("[" + getOwnerID() + "]: Starting KeyGen MessagingService");
 		
 		//Signal the Source
-		// TODO
-		//signalSourceAPI();
+		try {
+			signalSourceAPI();
+		} catch (NumberFormatException e) {
+			e.printStackTrace();
+		} catch (ManagerHasNoSuchEndpointException e) {
+			e.printStackTrace();
+		} catch (EndpointIsNotConnectedException e) {
+			e.printStackTrace();
+		}
 		
 		//Start the process
 		keyGenMessagingService();
@@ -134,21 +144,20 @@ public class KeyGenerator implements Runnable{
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
-	private void signalSourceAPI() throws NumberFormatException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		//TODO: Source does not respond to connection attempts! Commented-out for now, needs to be fixed. Look at CE.parseMessage() for the SourceSignalType and SourceControlApplication for the issue.
+	private void signalSourceAPI() throws NumberFormatException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {		
 		
-		/*
 		//Create connection to Source Server
-		String sourceServerConnectionName = "SourceServer_" + MessageSystem.generateRandomMessageID();
+		String sourceServerConnectionName = "SourceServer_" + generateRandomString();
+		ConnectionEndpoint SourceCE = null;
 		try {
-			MessageSystem.conMan.createNewConnectionEndpoint(sourceServerConnectionName, Configuration.getProperty("SourceIP"), Integer.valueOf(Configuration.getProperty("SourcePort")), Configuration.getProperty("SourceSignature"));
+			SourceCE = MessageSystem.conMan.createNewConnectionEndpoint(sourceServerConnectionName, Configuration.getProperty("SourceIP"), Integer.valueOf(Configuration.getProperty("SourcePort")), Configuration.getProperty("SourceSignature"));
 		} catch (ConnectionAlreadyExistsException | IpAndPortAlreadyInUseException e) {
 			// If a connection to the source already exists, there is no problem
 		}
 
 		//File name will be UserName_Date_RandomString 
 		// (possibly change this to use localName saved in CE? Might be more unit testable)
-		String filename = Configuration.getProperty("UserName") + "_" + new Date().toString() + "_" + MessageSystem.generateRandomMessageID();
+		String filename = Configuration.getProperty("UserName") + "_" + new Date().toString().replace(':', '-') + "_" + generateRandomString();
 		
 		//Message will be OwnServerIP_OwnServerPort_RemoteServerIP_RemoteServerPort
 		String sourceInfo = Configuration.getProperty("UserIP") + "_" 
@@ -159,8 +168,19 @@ public class KeyGenerator implements Runnable{
 		byte[] sourceInfoAsBytes = MessageSystem.stringToByteArray(sourceInfo);
 		MessageArgs sourceSignalArgs = new MessageArgs(filename, -1);
 		NetworkPackage signalToSource = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SOURCE_SIGNAL, sourceSignalArgs, sourceInfoAsBytes, false);
-		signalToSource.sign(authenticator);
-		owner.pushMessage(signalToSource);*/
+		//signalToSource.sign(authenticator);
+		if(SourceCE != null) {
+			SourceCE.pushMessage(signalToSource);
+		}
+	}
+	
+	/**This method generates a random String. This is used to generate a filename for the source signal in signalSourceAPI().
+	 * 
+	 * @return the random String.
+	 */
+	public static String generateRandomString() {
+		Random randomGen = new Random();
+	    return randomGen.ints(48, 123).filter(i -> (i<=57||i>=65) && (i<=90||i>=97)).limit(16).collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append).toString();
 	}
 
 	
@@ -197,15 +217,12 @@ public class KeyGenerator implements Runnable{
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
 	private boolean preGenSync() throws KeyGenRequestTimeoutException, EndpointIsNotConnectedException {
-		System.out.println("[" + getOwnerID() + "]: Sending Sync Request via " + getOwnerID() + " !");
-		//Send Sync Request
-		//MessageSystem.conMan.getConnectionEndpoint(connectionID).pushMessage(TransmissionTypeEnum.KEYGEN_SYNC_REQUEST, "", "");
 		
+		//Send Sync Request		
 		NetworkPackage keyGenSyncRequest = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SYNC_REQUEST, false);
 		keyGenSyncRequest.sign(authenticator);
 		owner.pushMessage(keyGenSyncRequest);
 		
-		System.out.println("[" + getOwnerID() + "]: Starting to wait for response...");
 		Instant startWait = Instant.now();
 		Instant current;
 		//Wait for Answer
@@ -230,6 +247,7 @@ public class KeyGenerator implements Runnable{
 		}
 		
 		System.out.println("SyncRequest Rejected!");
+		new GenericWarningMessage(getOwnerID() +": Key Generation was rejected by communication Partner!");
 		hasBeenAccepted = 0;
 		return false;
 	}
@@ -246,16 +264,12 @@ public class KeyGenerator implements Runnable{
 		// verify the received message
 		boolean verified = msg.verify(authenticator, getOwnerID());
 		if (!verified)  {
-			// TODO exception handling
 			return;
 		}
 		
-		System.out.println("[" + getOwnerID() + "]: Add confirmation-prompt for KeyGen here!");
 		//for now, always accept
 		boolean accept = true;
 		if(accept && preGenChecks()) {
-			// TODO
-			//signalSourceAPI();
 			
 			NetworkPackage acceptResponse = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SYNC_ACCEPT, false);
 			acceptResponse.sign(authenticator);
@@ -265,6 +279,7 @@ public class KeyGenerator implements Runnable{
 			keyGenMessagingService();
 		}else {
 			NetworkPackage rejectResponse = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SYNC_REJECT, false);
+			new GenericWarningMessage(getOwnerID() +"A Key Generation Request for " + owner + "had to be rejected!");
 			rejectResponse.sign(authenticator);
 			owner.pushMessage(rejectResponse);
 		}
@@ -400,13 +415,14 @@ public class KeyGenerator implements Runnable{
 		
 		//End the KeyGen Process and clean up.
 		shutdownKeyGen(false, false);
+		new GenericWarningMessage("Key Generation Successful!\nThe new Key has been added to the Key Database.");
 	}
 	
 	/**This handles the shutdown of the KeyGen. It is called locally and removes all files that may be left behind.
 	 * It is called if the process is aborted/terminated or completed. If relay == true, this also calls the other involved party.
 	 * 
 	 * @param relay if True, this will cause a network Message to be sent.
-	 * @param informPython if True, the shutdown originates from inside this program and not from a key- or shutdownfile. As such, the pythonScript needs to me notified about this via an expectedPythonTerm-file.
+	 * @param informPython if True, the shutdown originates from inside this program and not from a key- or shutdown-file. As such, the pythonScript needs to me notified about this via an expectedPythonTerm-file.
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
@@ -415,21 +431,23 @@ public class KeyGenerator implements Runnable{
 		System.out.println("[" + getOwnerID() + "]: Shutting down the KeyGen of " + getOwnerID());
 		keyGenRunning = false;
 		try {
-			Files.deleteIfExists(connectionPath.resolve(expectedOutgoingFilename));
-			Files.deleteIfExists(connectionPath.resolve(expectedOutgoingFilename + ".lock"));
-			Files.deleteIfExists(connectionPath.resolve(expectedIncomingFilename));
-			Files.deleteIfExists(connectionPath.resolve(expectedIncomingFilename + ".lock"));
-			Files.deleteIfExists(connectionPath.resolve(expectedKeyFilename));
-			Files.deleteIfExists(connectionPath.resolve(expectedKeyFilename + ".lock"));
-			Files.deleteIfExists(connectionPath.resolve(expectedTermination));
-			Files.deleteIfExists(connectionPath.resolve(expectedTermination + ".lock"));
+			if(connectionPath != null) {
+				Files.deleteIfExists(connectionPath.resolve(expectedOutgoingFilename));
+				Files.deleteIfExists(connectionPath.resolve(expectedOutgoingFilename + ".lock"));
+				Files.deleteIfExists(connectionPath.resolve(expectedIncomingFilename));
+				Files.deleteIfExists(connectionPath.resolve(expectedIncomingFilename + ".lock"));
+				Files.deleteIfExists(connectionPath.resolve(expectedKeyFilename));
+				Files.deleteIfExists(connectionPath.resolve(expectedKeyFilename + ".lock"));
+				Files.deleteIfExists(connectionPath.resolve(expectedTermination));
+				Files.deleteIfExists(connectionPath.resolve(expectedTermination + ".lock"));
+			}
 			
 			if(relay) {
 				NetworkPackage keyGenTerminationRequest = new NetworkPackage(TransmissionTypeEnum.KEYGEN_TERMINATION, false);
 				keyGenTerminationRequest.sign(authenticator);
 				owner.pushMessage(keyGenTerminationRequest);
 			}
-			if(informPython) {
+			if(informPython && connectionPath != null) {
 				//Signal the local python script that the other end of the connection has terminated the KeyGen Process
 				Writer pythonTermWriter = new BufferedWriter(
 						new OutputStreamWriter(Files.newOutputStream(connectionPath.resolve(expectedPythonTerm)), Configuration.getProperty("Encoding")));
@@ -443,7 +461,7 @@ public class KeyGenerator implements Runnable{
 	}
 	
 	/**This is the tread that runs in the background and listens for .txt files, reads/writes them and then sends and deletes the files where needed. <br>
-	 * <b> To avoid unstable behaviour </b> if this is called while the owning {@linkplain ConnectionEndpoint} is not in the current
+	 * <b> To avoid unstable behavior </b> if this is called while the owning {@linkplain ConnectionEndpoint} is not in the current
 	 * {@linkplain ConnectionManager} of the {@linkplain MessageSystem}, this method will immediately return. It will also immediately return
 	 * if the owner of this keyGenerator is not connected to their partner CE at the moment.
 	 * 

@@ -23,6 +23,11 @@ import javax.swing.border.EmptyBorder;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
+import messengerSystem.SHA256withRSAAuthentication;
+
+import javax.swing.JComboBox;
+import javax.swing.DefaultComboBoxModel;
+import java.awt.GridLayout;
 
 /**This Dialog contains settings such as the own ServerIP/Port
  * 
@@ -58,24 +63,22 @@ public class SettingsDialog extends JFrame {
 	 */
 	public SettingsDialog() {
 		setTitle("Settings");
-		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setVisible(true);
 		setBounds(100, 100, 350, 390);
 		getContentPane().setLayout(new BorderLayout());
 		contentPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
-		contentPanel.setLayout(null);
+		contentPanel.setLayout(new GridLayout(0, 2, 0, 0));
 		{
 			JLabel ownNameLabel = new JLabel("Local Name:");
 			ownNameLabel.setHorizontalAlignment(SwingConstants.LEFT);
 			ownNameLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
-			ownNameLabel.setBounds(10, 26, 161, 20);
 			contentPanel.add(ownNameLabel);
 			ownNameLabel.setToolTipText("This should be a name that represents you. It will be sent to connecting parties and be used on their end to name the connection.");
 		}
 		{
 			ownNameTextField = new JTextField();
-			ownNameTextField.setBounds(181, 26, 140, 20);
 			contentPanel.add(ownNameTextField);
 			ownNameTextField.setText("Default Name");
 			ownNameTextField.setToolTipText("This should be a name that represents you. It will be sent to connecting parties and be used on their end to name the connection.");
@@ -84,13 +87,11 @@ public class SettingsDialog extends JFrame {
 		{
 			JLabel ownIPLabel = new JLabel("Local IP:");
 			ownIPLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
-			ownIPLabel.setBounds(10, 52, 161, 20);
 			contentPanel.add(ownIPLabel);
 			ownIPLabel.setToolTipText("This should be your public IP. You can choose localhost, your LAN IP or your WAN IP.");
 		}
 		{
 			ownIPTextField = new JTextField();
-			ownIPTextField.setBounds(181, 52, 140, 20);
 			contentPanel.add(ownIPTextField);
 			ownIPTextField.setToolTipText("This should be your public IP. You can choose localhost, your LAN IP or your WAN IP.");
 			ownIPTextField.setEnabled(true);
@@ -101,13 +102,11 @@ public class SettingsDialog extends JFrame {
 		{
 			JLabel ownPortLabel = new JLabel("Server Port:     ");
 			ownPortLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
-			ownPortLabel.setBounds(10, 79, 161, 20);
 			contentPanel.add(ownPortLabel);
 			ownPortLabel.setToolTipText("When hosting across networks via the Internet, this port needs to be accessible to other parties. It needs to be forwarded in your router settings.");
 		}
 		{
 			ownPortTextField = new JTextField();
-			ownPortTextField.setBounds(181, 79, 140, 20);
 			contentPanel.add(ownPortTextField);
 			ownPortTextField.setToolTipText("When hosting across networks via the Internet, this port needs to be accessible to other parties. It needs to be forwarded in your router settings.");
 			ownPortTextField.setText("5000");
@@ -116,13 +115,11 @@ public class SettingsDialog extends JFrame {
 		{
 			JLabel sourceIPLabel = new JLabel("Photon Source IP:    ");
 			sourceIPLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
-			sourceIPLabel.setBounds(10, 110, 161, 20);
 			contentPanel.add(sourceIPLabel);
 			sourceIPLabel.setToolTipText("This needs to be set to the public IP of the Photon Source Server.");
 		}
 		{
 			sourceIPTextField = new JTextField();
-			sourceIPTextField.setBounds(181, 110, 140, 20);
 			contentPanel.add(sourceIPTextField);
 			sourceIPTextField.setToolTipText("This needs to be set to the public IP of the Photon Source Server.");
 			sourceIPTextField.setText("127.0.0.1");
@@ -131,22 +128,29 @@ public class SettingsDialog extends JFrame {
 		{
 			JLabel sourcePortNewLabel = new JLabel("Photon Source Port: ");
 			sourcePortNewLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
-			sourcePortNewLabel.setBounds(10, 141, 161, 20);
 			contentPanel.add(sourcePortNewLabel);
 			sourcePortNewLabel.setToolTipText("This needs to be set to the Portnumber of the Photon Source Server.");
 		}
 		{
 			sourcePortTextField = new JTextField();
-			sourcePortTextField.setBounds(181, 141, 140, 20);
 			contentPanel.add(sourcePortTextField);
 			sourcePortTextField.setToolTipText("This needs to be set to the Portnumber of the Photon Source Server.");
 			sourcePortTextField.setText("2300");
 			sourcePortTextField.setColumns(10);
 		}
 		{
+			JLabel sourceSigLabel = new JLabel("Photon Source Sig:");
+			sourceSigLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
+			contentPanel.add(sourceSigLabel);
+		}
+		
+		sourceSigTextField = new JTextField();
+		sourceSigTextField.setToolTipText("The public Signature Key used by the Photon Source Server.");
+		contentPanel.add(sourceSigTextField);
+		sourceSigTextField.setColumns(10);
+		{
 			JLabel encodingLabel = new JLabel("Preferred Encoding:");
 			encodingLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
-			encodingLabel.setBounds(10, 203, 161, 20);
 			contentPanel.add(encodingLabel);
 			encodingLabel.setToolTipText("The Encoding used when transferring Strings to bytes. If some characters are not correctly transmitted, you can change the encoding to one that supports the characters in question.");
 		}
@@ -154,12 +158,10 @@ public class SettingsDialog extends JFrame {
 		encodingComboBox = new JComboBox<String>();
 		encodingComboBox.setEditable(true);
 		encodingComboBox.setModel(new DefaultComboBoxModel<String>(new String[] {"ISO-8859-1", "UTF-8", "UTF-16"}));
-		encodingComboBox.setBounds(181, 204, 140, 22);
 		contentPanel.add(encodingComboBox);
 		
 		JLabel signatureFilesLabel = new JLabel("Signature Files:");
 		signatureFilesLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
-		signatureFilesLabel.setBounds(10, 234, 161, 18);
 		contentPanel.add(signatureFilesLabel);
 		
 		JButton openSigFileFolderButton = new JButton("Open Signature Folder");
@@ -174,7 +176,6 @@ public class SettingsDialog extends JFrame {
 				}
 			}
 		});
-		openSigFileFolderButton.setBounds(181, 234, 140, 23);
 		contentPanel.add(openSigFileFolderButton);
 		
 		JButton reGenerateSigButton = new JButton("Regenerate Signature");
@@ -184,20 +185,11 @@ public class SettingsDialog extends JFrame {
 				new GenericWarningMessage("New Signature Files have been created.");
 			}
 		});
-		reGenerateSigButton.setBounds(181, 268, 140, 23);
-		contentPanel.add(reGenerateSigButton);
 		{
-			JLabel sourceSigLabel = new JLabel("Photon Source Sig:");
-			sourceSigLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
-			sourceSigLabel.setBounds(10, 172, 140, 20);
-			contentPanel.add(sourceSigLabel);
+			JLabel label = new JLabel("");
+			contentPanel.add(label);
 		}
-		
-		sourceSigTextField = new JTextField();
-		sourceSigTextField.setToolTipText("The public Signature Key used by the Photon Source Server.");
-		sourceSigTextField.setBounds(181, 172, 140, 20);
-		contentPanel.add(sourceSigTextField);
-		sourceSigTextField.setColumns(10);
+		contentPanel.add(reGenerateSigButton);
 		{
 			JPanel buttonPane = new JPanel();
 			buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
