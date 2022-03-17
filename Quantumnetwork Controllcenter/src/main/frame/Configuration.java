@@ -38,7 +38,7 @@ public class Configuration {
      * Name of the base directory at the basePath location
      * This directory will contain the sub-directories (e.g. SignatureKeys)
      */
-    private static final String BASE_DIR_PATH = "QNCC" + File.separator;
+    private static final String BASE_DIR = "QNCC" + File.separator;
 
     /**
      * Name of the config file
@@ -48,7 +48,7 @@ public class Configuration {
 
     /**
      * The list of the needed directories for the program
-     * Will be created at the location described by the {@link #BASE_DIR_PATH}
+     * Will be created at the location described by the {@link #BASE_DIR}
      */
     private static final String[] DIRECTORY_LIST =
             {"SignatureKeys", "python", "connections", "externalAPI", "logs"};
@@ -83,7 +83,9 @@ public class Configuration {
     }
 
     /**
-     * Method to get the base path
+     * Gets the path at which the "base directory" is located,
+     * this directory is the parent directory for the communication list,
+     * the key store, the signature keys folder etc.
      * @return the base path as String
      */
     public static String getBaseDirPath() {
@@ -91,7 +93,7 @@ public class Configuration {
             basePath = getProperty(PATH_CONFIG_NAME);
             if (basePath == null) basePath = ""; // if getProperty returns null (happens on first launch)
         }
-        return basePath + BASE_DIR_PATH;
+        return basePath + BASE_DIR;
     }
 
     /**
@@ -126,12 +128,12 @@ public class Configuration {
     public static boolean createFolders () {
         try {
             getBaseDirPath();
-            if (!Files.exists(Path.of(basePath + BASE_DIR_PATH))) {
-                Files.createDirectory(Path.of(basePath + BASE_DIR_PATH));
+            if (!Files.exists(Path.of(basePath + BASE_DIR))) {
+                Files.createDirectory(Path.of(basePath + BASE_DIR));
             }
             for (String dir : DIRECTORY_LIST) {
-                if (!Files.exists(Path.of(basePath + BASE_DIR_PATH + dir))) {
-                    Files.createDirectory(Path.of(basePath + BASE_DIR_PATH + dir));
+                if (!Files.exists(Path.of(basePath + BASE_DIR + dir))) {
+                    Files.createDirectory(Path.of(basePath + BASE_DIR + dir));
                 }
             }
             return true;
