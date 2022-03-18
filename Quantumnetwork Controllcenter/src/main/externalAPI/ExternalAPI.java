@@ -93,7 +93,7 @@ public class ExternalAPI {
 	 * @throws CouldNotGetKeyException 
 	 * 		if the specified key could not be retrieved
 	 * @see KeyStoreDbManager#getKeyBytesAtIndexN(String, int, int)
-	 */ // <Sasha> not sure where this is useful
+	 */ 
 	public static String exportKeyString(String communicationPartner, int nbytes, int index) throws CouldNotGetKeyException {
 		byte[] keyBytes = exportKeyByteArray(communicationPartner, nbytes, index);
 		StringBuilder keyString = new StringBuilder();

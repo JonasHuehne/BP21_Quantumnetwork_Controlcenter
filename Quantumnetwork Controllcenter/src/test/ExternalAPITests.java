@@ -1,36 +1,25 @@
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Random;
 
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 
-import messengerSystem.Utils;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
-import communicationList.Contact;
 import encryptionDecryption.SymmetricCipher;
 import exceptions.CouldNotDecryptMessageException;
 import exceptions.CouldNotEncryptMessageException;
@@ -39,15 +28,11 @@ import exceptions.ExternalApiNotInitializedException;
 import exceptions.PortIsInUseException;
 import externalAPI.ExternalAPI;
 import frame.Configuration;
-import frame.QuantumnetworkControllcenter;
 import keyStore.KeyStoreDbManager;
-import networkConnection.ConnectionManager;
 
 /**
  * Tests for the External API.
- * @author Lukas Dentler
- * @deprecated These tests were written for an old version of the external API 
- * and have not been updated yet, due to time constraints.
+ * @author Lukas Dentler, Sasha Petri
  */
 public class ExternalAPITests {
 
@@ -72,9 +57,9 @@ public class ExternalAPITests {
 	
 	@Test
 	public void test_not_initialized_exception() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
-		// assert API was initiliazed before
+		// assert API was initialized before
 		assertTrue(ExternalAPI.isInitialized());
-		// Use relection to set initialized to false
+		// Use reflection to set initialized to false
 		Field init = ExternalAPI.class.getDeclaredField("initialized");
 		init.setAccessible(true);
 		init.set(null, false);
