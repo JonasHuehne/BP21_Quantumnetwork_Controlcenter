@@ -103,12 +103,25 @@ public class MessageGUI extends JFrame {
 		JButton sendMessageButton = new JButton("Send Message");
 		sendMessageButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				
+				//Check for removed CE
+				if(MessageSystem.conMan.getConnectionEndpoint(connectionID) == null) {
+					new GenericWarningMessage("Warning: You are trying to send a Message on a Connection that no longer exists!");
+					messageTextArea.setText("");
+					return;
+				}
+				
+				//Check for illegal State
+				if((MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState() != ConnectionState.CONNECTED) && (MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState() != ConnectionState.GENERATING_KEY)) {
+					new GenericWarningMessage("Warning: You can only send a Message if the Connection either has State CONNECTED or GENERATING_KEY! The current State is: " + MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState());
+					messageTextArea.setText("");
+					return;
+				}
+				
+				//Check for empty Text
 				String msg = messageTextArea.getText();
 				if(msg == null||msg.equals("")) {
 					new GenericWarningMessage("Warning: you can not send an empty Message!");
-				}
-				if(MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState() != ConnectionState.CONNECTED) {
-					new GenericWarningMessage("Warning: you can not send Message on a Connection that is not connected!");
 				}
 
 				try {
@@ -145,6 +158,20 @@ public class MessageGUI extends JFrame {
 		JButton sendFileButton = new JButton("Send File");
 		sendFileButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				
+				//Check for removed CE
+				if(MessageSystem.conMan.getConnectionEndpoint(connectionID) == null) {
+					new GenericWarningMessage("Warning: You are trying to send a File on a Connection that no longer exists!");
+					messageTextArea.setText("");
+					return;
+				}
+				
+				//Check for illegal State
+				if((MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState() != ConnectionState.CONNECTED) && (MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState() != ConnectionState.GENERATING_KEY)) {
+					new GenericWarningMessage("Warning: You can only send a File if the Connection either has State CONNECTED or GENERATING_KEY! The current State is: " + MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState());
+					return;
+				}
+				
 				final JFileChooser fc = new JFileChooser();
 				int choice = fc.showOpenDialog(sendFileButton);
 				File f = fc.getSelectedFile();

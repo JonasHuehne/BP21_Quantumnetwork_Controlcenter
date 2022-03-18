@@ -63,8 +63,7 @@ public class NetworkPackageHandler {
 		
 		// if the received message could be verified
 		boolean verified = false;
-		
-		// if it is a signed message, check the signature first 
+		// if it is a signed message, check the signature first && msg.getType() != TransmissionTypeEnum.KEYGEN_SYNC_REQUEST
 		if (msg.getSignature() != null) {
 			if (!msg.verify(MessageSystem.getAuthenticator(), ce.getID())) {
 				Contact c = QuantumnetworkControllcenter.communicationList.query(ce.getID());
@@ -78,7 +77,6 @@ public class NetworkPackageHandler {
 		}
 		
 		TransmissionTypeEnum msgType = msg.getType();
-		
 		switch (msgType) {
 		case CONNECTION_CONFIRMATION:
 			// Handled in ConnectionEndpoint
@@ -101,18 +99,21 @@ public class NetworkPackageHandler {
 			//This is used after the Source has received the needed info. It is sent from the Source to the sender.
 			//Once received, the sender deletes the CE completely, including the message Log and the GUI Entry.
 			QuantumnetworkControllcenter.conMan.destroySourceConnection(ce.getID(), true);
-			
+			break;
 		case KEYGEN_SYNC_ACCEPT:
 			//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
 			//The SyncConfirm is added to the regular messagesStack and read by the KeyGenerator.
+			System.out.println("Received SyncResponse: Accept!");
 			ce.getKeyGen().updateAccRejState(1);
 			break;
 		case KEYGEN_SYNC_REJECT:
 			//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
 			//The SyncReject is added to the regular messagesStack and read by the KeyGenerator.
+			System.out.println("Received SyncResponse: Reject!");
 			ce.getKeyGen().updateAccRejState(-1);
 			break;
 		case KEYGEN_SYNC_REQUEST:
+			System.out.println("Received SyncRequest!");
 			ce.getKeyGen().keyGenSyncResponse(msg);
 			break;
 		case KEYGEN_TERMINATION:
@@ -316,7 +317,7 @@ public class NetworkPackageHandler {
 						byte[] decryptionKey = getKey(ce, msg);
 						SecretKey sk = MessageSystem.getCipher().byteArrayToSecretKey(decryptionKey);
 						// save decrypted file with the same filename, but prefixed with decrypted_
-						Path pathToDecryptedFile = Paths.get(f.getParent().toString(), "decrypted_" + f.getName()); 
+						Path pathToDecryptedFile = Paths.get(f.getParent().toString(), f.getName() + "_decrypted"); 
 						FileCrypter.decryptAndSave(outDirectory.resolve(fileName).toFile(), MessageSystem.getCipher(), sk, pathToDecryptedFile);
 					} catch (BadPaddingException | InvalidKeyException | IOException | CouldNotGetKeyException e) {
 						throw new CouldNotDecryptMessageException("Could not decrypt the text message with ID " + Base64.getEncoder().encodeToString(msg.getID()), e);

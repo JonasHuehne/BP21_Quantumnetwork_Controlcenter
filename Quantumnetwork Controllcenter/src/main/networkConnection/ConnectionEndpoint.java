@@ -15,6 +15,8 @@ import java.util.HashMap;
 import exceptions.CouldNotDecryptMessageException;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.VerificationFailedException;
+import frame.QuantumnetworkControllcenter;
+import graphicalUserInterface.GUIMainWindow;
 import keyGeneration.KeyGenerator;
 import messengerSystem.MessageSystem;
 import qnccLogger.Log;
@@ -141,6 +143,8 @@ public class ConnectionEndpoint implements Runnable{
 		this.isConnected = true;
 		this.keyStoreID = connectionID;
 		
+		checkTableForSig();
+		
 		ceLogger.logInfo("[CE " + connectionName + "] Local values have been set. Now sending a connection confirmation to the partner CE. ");
 		
 		try {
@@ -223,6 +227,41 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public void setSigKey(String sigKey) {
 		publicSignatureKey = sigKey;
+	}
+	
+	/**This method is used by automatically created CEs to check if the connection partner is listed in the Contact Table.
+	 * If the IP:Port match, the SIG value is used as this CEs Signature Key.
+	 * 
+	 */
+	private void checkTableForSig() {
+		System.out.println("Looking for known Sig for IP:Port Pair.");
+		GUIMainWindow gui = QuantumnetworkControllcenter.guiWindow;
+		int row = gui.getContactTable().getRowCount();
+		System.out.println("The table has " + row + " rows!");
+		String ip;
+		int port;
+		String sig;
+		ArrayList<String> matches = new ArrayList<String>();
+		
+		//Check the Table for any matching pairs of IP:Port
+		for(int i = 0; i < row; i++) {
+			ip = (String) gui.getContactTable().getValueAt(i, 1);
+			port = (Integer) gui.getContactTable().getValueAt(i, 2);
+
+			//System.out.println("Row: " + ip + ":" + port + " and the CE: " + remoteIP + ":" + remotePort);
+			if(ip.equals(remoteIP) && port== remotePort) {
+				//System.out.println("Added new match: " + gui.getContactTable().getValueAt(i, 0));
+				sig = (String) gui.getContactTable().getValueAt(i, 3);
+				matches.add(sig);
+			}
+		}
+		
+		//System.out.println("Found " + matches.size() + " possible Signatures in the Contact Table.");
+		//If only one possible match was found, use it.
+		if(matches.size() == 1) {
+			//System.out.println("Copied SigKey from Contact Table!");
+			setSigKey(matches.get(0));
+		}
 	}
 	
 	/**Reports the current State of this Endpoints Connection.
@@ -460,8 +499,8 @@ public class ConnectionEndpoint implements Runnable{
 		ceLogger.logInfo(("[CE " + connectionID + "]: Pushing message with type " + message.getType() + " and ID " + Base64.getEncoder().encodeToString(message.getID())));
 		// NetworkPackages are only send if it's either a connection request, or we are connected
 		TransmissionTypeEnum type = message.getType();
-		if (   !type.equals(TransmissionTypeEnum.CONNECTION_REQUEST)	
-				&& !reportState().equals(ConnectionState.CONNECTED)) {
+		if (   !type.equals(TransmissionTypeEnum.CONNECTION_REQUEST) && !reportState().equals(ConnectionState.CONNECTED) && !(reportState().equals(ConnectionState.GENERATING_KEY))) {
+			System.out.println("CE State is: " + reportState().toString());
 				throw new EndpointIsNotConnectedException(connectionID, " push message of type " + type);
 		}
 

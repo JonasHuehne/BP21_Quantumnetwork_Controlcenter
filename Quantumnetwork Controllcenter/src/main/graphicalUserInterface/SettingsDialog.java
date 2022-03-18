@@ -140,6 +140,7 @@ public class SettingsDialog extends JFrame {
 			sourcePortTextField.setText("2300");
 			sourcePortTextField.setColumns(10);
 		}
+		/*
 		{
 			JLabel sourceSigLabel = new JLabel("Photon Source Sig:");
 			sourceSigLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
@@ -150,6 +151,7 @@ public class SettingsDialog extends JFrame {
 		sourceSigTextField.setToolTipText("The public Signature Key used by the Photon Source Server.");
 		contentPanel.add(sourceSigTextField);
 		sourceSigTextField.setColumns(10);
+		*/
 		{
 			JLabel encodingLabel = new JLabel("Preferred Encoding:");
 			encodingLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
@@ -279,12 +281,13 @@ public class SettingsDialog extends JFrame {
 			Configuration.setProperty("SourcePort", "2400");
 			sourcePort = Configuration.getProperty("SourcePort");
 		}
-		
+		/*
 		sourceSig = Configuration.getProperty("SourceSignature");
 		if(sourceSig == null) {
 			Configuration.setProperty("Not configured!", "SourceSignature");
 			sourceSig = Configuration.getProperty("SourceSignature");
 		}
+		*/
 		
 		enc = Configuration.getProperty("Encoding");
 		if(enc == null) {
@@ -313,7 +316,7 @@ public class SettingsDialog extends JFrame {
 		
 		sourcePortTextField.setText(sourcePort);
 		
-		sourceSigTextField.setText(sourceSig);
+		//sourceSigTextField.setText(sourceSig);
 		
 		encodingComboBox.setSelectedItem(enc);
 		
@@ -331,18 +334,18 @@ public class SettingsDialog extends JFrame {
 		}
 		Configuration.setProperty("UserName", ownNameTextField.getText());
 		if(!Configuration.getProperty("UserIP").equals(ownIPTextField.getText())) {
-			MessageSystem.conMan.destroyAllConnectionEndpoints();
+			QuantumnetworkControllcenter.guiWindow.removeAllCEEntries();
 			MessageSystem.conMan.setLocalAddress(ownNameTextField.getText());
 		}
 		Configuration.setProperty("UserIP", ownIPTextField.getText());
 		if(!Configuration.getProperty("UserPort").equals(ownPortTextField.getText())) {
-			MessageSystem.conMan.destroyAllConnectionEndpoints();
+			QuantumnetworkControllcenter.guiWindow.removeAllCEEntries();
 			MessageSystem.conMan.setLocalPort(Integer.valueOf(ownPortTextField.getText()));
 		}
 		Configuration.setProperty("UserPort", ownPortTextField.getText());
 		Configuration.setProperty("SourceIP", sourceIPTextField.getText());
 		Configuration.setProperty("SourcePort", sourcePortTextField.getText());
-		Configuration.setProperty("SourceSignature", sourceSigTextField.getText());
+		//Configuration.setProperty("SourceSignature", sourceSigTextField.getText());
 		Configuration.setProperty("Encoding", (String) encodingComboBox.getSelectedItem());
 		Configuration.setProperty("PythonName", pythonScriptTextField.getText());
 	}

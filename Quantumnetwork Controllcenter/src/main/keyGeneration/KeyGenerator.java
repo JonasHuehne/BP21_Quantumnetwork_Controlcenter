@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -15,7 +16,9 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Random;
 
+import exceptions.ConnectionAlreadyExistsException;
 import exceptions.EndpointIsNotConnectedException;
+import exceptions.IpAndPortAlreadyInUseException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.VerificationFailedException;
@@ -29,6 +32,7 @@ import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
 import networkConnection.MessageArgs;
 import networkConnection.NetworkPackage;
+import networkConnection.NetworkTimeoutThread;
 import networkConnection.TransmissionTypeEnum;
 
 
@@ -55,6 +59,7 @@ public class KeyGenerator implements Runnable{
 	private String expectedPythonTerm = "pythonTerm.txt";	//Use this to set the filename of the signal for the python script to terminate the KeyGen Process. This is created if the program was told to shutdown from the other side of the connection.
 	private boolean keyGenRunning; //True if KeyGen is running
 	private int hasBeenAccepted = 0; //This controls the waiting period while waiting for the KeyGenPartner to Accept(1) or Reject(-1).
+	private ConnectionEndpoint SourceCE = null; //This is the CE that is connected to the Photon Source. It is a class Var because of the Timed Execution of SendSourceSignal().
 
 	/** Key Generation uses authenticated messages only */
 	SignatureAuthentication authenticator;
@@ -118,17 +123,12 @@ public class KeyGenerator implements Runnable{
 		//Signal the Source
 		try {
 			signalSourceAPI();
-		} catch (NumberFormatException e) {
-			e.printStackTrace();
-		} catch (ManagerHasNoSuchEndpointException e) {
-			e.printStackTrace();
-		} catch (EndpointIsNotConnectedException e) {
-			e.printStackTrace();
+		} catch (NumberFormatException | ManagerHasNoSuchEndpointException | EndpointIsNotConnectedException e) {
+			System.err.println("[" + getOwnerID() + "]: Error while contacting the Photon Source! " + e);
 		}
 		
 		//Start the process
 		keyGenMessagingService();
-		
 	}
 	
 	/**This calls the python script that was set in the Settings.
@@ -140,7 +140,7 @@ public class KeyGenerator implements Runnable{
 			System.out.println("[" + getOwnerID() + "]: Calling python script: " + command);
 			Runtime.getRuntime().exec(command);
 		} catch (IOException e) {
-			e.printStackTrace();
+			System.err.println("[" + getOwnerID() + "]: Error while calling the python script for the key generation! " + e);
 		}
 	}
 	
@@ -155,34 +155,59 @@ public class KeyGenerator implements Runnable{
 	 */
 	private void signalSourceAPI() throws NumberFormatException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
 		System.out.println("[" + getOwnerID() + "]: Calling the Photon Source.");
-		/*
+		
 		//Create connection to Source Server
 		String sourceServerConnectionName = "SourceServer_" + generateRandomString();
-		ConnectionEndpoint SourceCE = null;
+		SourceCE = null;
+		System.out.println("[" + getOwnerID() + "]: Creating Connection to Photon Source.");
 		try {
 			SourceCE = MessageSystem.conMan.createNewConnectionEndpoint(sourceServerConnectionName, Configuration.getProperty("SourceIP"), Integer.valueOf(Configuration.getProperty("SourcePort")), Configuration.getProperty("SourceSignature"));
-		} catch (ConnectionAlreadyExistsException | IpAndPortAlreadyInUseException e) {
-			// If a connection to the source already exists, there is no problem
+		} catch (NumberFormatException | ConnectionAlreadyExistsException | IpAndPortAlreadyInUseException e) {
+			System.err.println("[" + getOwnerID() + "]: Error while creating Connection to Photon Source. " + e);
+			e.printStackTrace();
+		}
+		
+		try {
+			NetworkTimeoutThread NTT = new NetworkTimeoutThread(2000, this, this.getClass().getMethod("sendSourceSignal"));
+			System.out.println("Starting Delayed Source Signal Timer.");
+			NTT.start();
+		} catch (NoSuchMethodException | SecurityException e) {
+			System.err.println("Error while running timed method call for source signal: " + e);
 		}
 
+		
+	}
+	
+	/**This method send the Photon Source a signal.
+	 * It is a separate method to use the timer based call functionality.
+	 * 
+	 * @param SourceCE the CE that should send the message.
+	 */
+	public void sendSourceSignal() {
 		//File name will be UserName_Date_RandomString 
+		System.out.println("Timer is Up, sending actual Source signal now!");
 		// (possibly change this to use localName saved in CE? Might be more unit testable)
 		String filename = Configuration.getProperty("UserName") + "_" + new Date().toString().replace(':', '-') + "_" + generateRandomString();
-		
+		System.out.println("[" + getOwnerID() + "]: Filename: " + filename);
 		//Message will be OwnServerIP_OwnServerPort_RemoteServerIP_RemoteServerPort
 		String sourceInfo = Configuration.getProperty("UserIP") + "_" 
 							+ Configuration.getProperty("UserPort") + "_" 
 							+ owner.getRemoteAddress() 
 							+ "_" + owner.getRemotePort();
-				
+		System.out.println("[" + getOwnerID() + "]: SourceInfo: " + sourceInfo);
 		byte[] sourceInfoAsBytes = MessageSystem.stringToByteArray(sourceInfo);
 		MessageArgs sourceSignalArgs = new MessageArgs(filename, -1);
 		NetworkPackage signalToSource = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SOURCE_SIGNAL, sourceSignalArgs, sourceInfoAsBytes, false);
 		//signalToSource.sign(authenticator);
 		if(SourceCE != null) {
-			SourceCE.pushMessage(signalToSource);
+			System.out.println("[" + getOwnerID() + "]: Sending Message to Source");
+			try {
+				SourceCE.pushMessage(signalToSource);
+			} catch (EndpointIsNotConnectedException e) {
+				System.err.println("[" + getOwnerID() + "]: Error while sending Source Signal: " + e);
+			}
 		}
-		*/
+		System.out.println("[" + getOwnerID() + "]: --------Completed Photon Source Interaction--------");
 	}
 	
 	/**This method generates a random String. This is used to generate a filename for the source signal in signalSourceAPI().
@@ -232,21 +257,31 @@ public class KeyGenerator implements Runnable{
 		//Send Sync Request		
 		NetworkPackage keyGenSyncRequest = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SYNC_REQUEST, false);
 		keyGenSyncRequest.sign(authenticator);
-		owner.pushMessage(keyGenSyncRequest);
+		
+		try {
+			MessageArgs args = new MessageArgs();
+			System.err.println("[" + getOwnerID() + "]: Sending preGenSync-Request!");
+			MessageSystem.sendMessage(owner.getID(), TransmissionTypeEnum.KEYGEN_SYNC_REQUEST, args, MessageSystem.stringToByteArray("KEYGEN_SYNC_REQUEST"), true, false);
+		} catch (EndpointIsNotConnectedException | ManagerHasNoSuchEndpointException e) {
+			System.err.println("Failed to sendMessage() for KeyGenSync. " + e);
+			return false;
+		}
+		//owner.pushMessage(keyGenSyncRequest);
 		
 		Instant startWait = Instant.now();
 		Instant current;
 		//Wait for Answer
-		while(true) {
+		hasBeenAccepted = 0;
+		while(hasBeenAccepted == 0) {
 			//Wait for KeyGenResponse
 			if(hasBeenAccepted != 0) {
 				break;
 			}
 			
-			
 			current = Instant.now();
 			if(Duration.between(startWait, current).toSeconds() >= 10) {
 				hasBeenAccepted = 0;
+				System.out.println("TimeOut while waiting for response!");
 				throw new KeyGenRequestTimeoutException("[" + getOwnerID() + "]: Time-out while waiting for Pre-Key-Generation Sync. Did not receive an Accept- or Reject-Answer in time");
 			}
 		}
@@ -273,26 +308,39 @@ public class KeyGenerator implements Runnable{
 	 */
 	public void keyGenSyncResponse(NetworkPackage msg) throws EndpointIsNotConnectedException {
 		// verify the received message
+		System.out.println("Reacting to SyncRequest!");
 		boolean verified = msg.verify(authenticator, getOwnerID());
 		if (!verified)  {
+			System.out.println("SyncRequest could not be verified!");
 			return;
 		}
-		
+		System.out.println("SyncRequest was verified!");
 		//for now, always accept
 		boolean accept = true;
+		System.out.println("Running preGenChecks...");
 		if(accept && preGenChecks()) {
-			
-			NetworkPackage acceptResponse = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SYNC_ACCEPT, false);
-			acceptResponse.sign(authenticator);
-			owner.pushMessage(acceptResponse);
+			System.out.println("preGenChecks successful.");
+			MessageArgs args = new MessageArgs();
+			try {
+				MessageSystem.sendMessage(owner.getID(), TransmissionTypeEnum.KEYGEN_SYNC_ACCEPT, args, MessageSystem.stringToByteArray("KEYGEN_SYNC_ACCEPT"), true, false);
+			} catch (EndpointIsNotConnectedException | ManagerHasNoSuchEndpointException e) {
+				System.err.println("Failed to respond to react to KeyGenSync-Reqeust. " + e);
+				return;
+			}
+	
 			
 			initiative = 0;
 			keyGenMessagingService();
 		}else {
-			NetworkPackage rejectResponse = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SYNC_REJECT, false);
+			System.out.println("preGenChecks failed.");
 			new GenericWarningMessage(getOwnerID() +"A Key Generation Request for " + owner + "had to be rejected!");
-			rejectResponse.sign(authenticator);
-			owner.pushMessage(rejectResponse);
+			MessageArgs args = new MessageArgs();
+			try {
+				MessageSystem.sendMessage(owner.getID(), TransmissionTypeEnum.KEYGEN_SYNC_REJECT, args, MessageSystem.stringToByteArray("KEYGEN_SYNC_REJECT"), true, false);
+			} catch (EndpointIsNotConnectedException | ManagerHasNoSuchEndpointException e) {
+				System.err.println("Failed to respond to react to KeyGenSync-Reqeust. " + e);
+				return;
+			}
 		}
 		
 	}
@@ -616,6 +664,7 @@ public class KeyGenerator implements Runnable{
 		try
 		(Writer inWriter = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(inFilePath), Configuration.getProperty("Encoding")))) {
 			inWriter.write(MessageSystem.byteArrayToString(inFileContent));
+			inWriter.close();
 		} catch (UnsupportedEncodingException e) {
 
 			e.printStackTrace();
