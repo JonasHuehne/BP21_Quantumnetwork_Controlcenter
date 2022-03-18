@@ -29,7 +29,6 @@ import networkConnection.ConnectionType;
 import networkConnection.MessageArgs;
 import networkConnection.NetworkPackage;
 import networkConnection.TransmissionTypeEnum;
-import javax.swing.ScrollPaneConstants;
 
 /**This GUI contains a chatLog that visualizes the MessageLog of a connectionEndpoint.
  * It allows for sending plain-text Messages and for sending Files.

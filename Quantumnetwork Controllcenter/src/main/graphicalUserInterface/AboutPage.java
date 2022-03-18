@@ -22,6 +22,10 @@ import javax.swing.JTextPane;
  */
 public class AboutPage extends JFrame {
 
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -5479296583071037908L;
 	private final JPanel contentPanel = new JPanel();
 
 

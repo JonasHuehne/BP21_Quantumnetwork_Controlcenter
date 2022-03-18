@@ -2,7 +2,6 @@ package keyGeneration;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
@@ -12,6 +11,7 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Date;
 import java.util.Random;
 
 import exceptions.ConnectionAlreadyExistsException;
@@ -59,13 +59,13 @@ public class KeyGenerator implements Runnable{
 	private String expectedPythonTerm = "pythonTerm.txt";	//Use this to set the filename of the signal for the python script to terminate the KeyGen Process. This is created if the program was told to shutdown from the other side of the connection.
 	private boolean keyGenRunning; //True if KeyGen is running
 	private int hasBeenAccepted = 0; //This controls the waiting period while waiting for the KeyGenPartner to Accept(1) or Reject(-1).
-<<<<<<< loggerForRemainingClasses
+
 	private Log log = new Log(KeyGenerator.class.getName(), LogSensitivity.WARNING);
 	
-=======
+
 	private ConnectionEndpoint SourceCE = null; //This is the CE that is connected to the Photon Source. It is a class Var because of the Timed Execution of SendSourceSignal().
 
->>>>>>> main
+
 	/** Key Generation uses authenticated messages only */
 	SignatureAuthentication authenticator;
 	
@@ -159,13 +159,10 @@ public class KeyGenerator implements Runnable{
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
 	private void signalSourceAPI() throws NumberFormatException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-<<<<<<< loggerForRemainingClasses
+
 		log.logInfo("[" + getOwnerID() + "]: Calling the Photon Source.");
-		/*
-=======
-		System.out.println("[" + getOwnerID() + "]: Calling the Photon Source.");
-		
->>>>>>> main
+				
+
 		//Create connection to Source Server
 		String sourceServerConnectionName = "SourceServer_" + generateRandomString();
 		SourceCE = null;
@@ -655,21 +652,9 @@ public class KeyGenerator implements Runnable{
 		try
 		(Writer inWriter = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(inFilePath), Configuration.getProperty("Encoding")))) {
 			inWriter.write(MessageSystem.byteArrayToString(inFileContent));
-<<<<<<< loggerForRemainingClasses
+
 		} catch (Exception e) {
 			log.logError("Error, could not write to incoming file", e);
-=======
-			inWriter.close();
-		} catch (UnsupportedEncodingException e) {
-
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-
-			e.printStackTrace();
-		} catch (IOException e) {
-
-			e.printStackTrace();
->>>>>>> main
 		}
 		//Remove .lockFile
 		lockFile.delete();

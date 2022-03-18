@@ -22,15 +22,12 @@ import javax.swing.border.EmptyBorder;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
-<<<<<<< loggerForRemainingClasses
-import messengerSystem.SHA256withRSAAuthentication;
+
 import qnccLogger.Log;
 import qnccLogger.LogSensitivity;
 
-import javax.swing.JComboBox;
-import javax.swing.DefaultComboBoxModel;
-=======
->>>>>>> main
+
+
 import java.awt.GridLayout;
 
 /**This Dialog contains settings such as the own ServerIP/Port
