@@ -64,7 +64,7 @@ public class QuantumnetworkControllcenter {
 			//Init ApplicationSettings
 			SettingsDialog.initSettings();
 		} catch (IOException e) {
-			logger.logError("ERROR: Configuration failed", e);
+			System.err.println("ERROR: Configuration failed\n"+ e.toString());
 		}
 		
 		//Logger Init
