@@ -14,9 +14,6 @@ import javax.swing.border.EmptyBorder;
 import java.awt.Font;
 import javax.swing.Box;
 import javax.swing.JSeparator;
-import java.awt.GridLayout;
-import javax.swing.SwingConstants;
-import net.miginfocom.swing.MigLayout;
 import javax.swing.JTextPane;
 
 /**This Menu will contain general information about this application

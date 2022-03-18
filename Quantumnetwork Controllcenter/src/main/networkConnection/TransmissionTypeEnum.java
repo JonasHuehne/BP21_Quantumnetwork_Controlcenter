@@ -31,8 +31,6 @@ public enum TransmissionTypeEnum {
 	KEYGEN_TRANSMISSION,
 	/** This is used for signals intended for the Photon source. The transmissions contents will be written into a .txt at the Source Servers location. */
 	KEYGEN_SOURCE_SIGNAL,
-	// This is used to signal to a CE to destroy itself and delete any record of it in the GUI. This is used by the Photon Source to delete a connection.
-	KEYGEN_SOURCE_DESTROY,
 	/** Signals the recipient that the sender wants to stop the key-generation process. */
 	KEYGEN_TERMINATION,
 	/** This is used to signal to a CE to destroy itself and delete any record of it in the GUI. This is used by the Photon Source to delete a connection.*/
