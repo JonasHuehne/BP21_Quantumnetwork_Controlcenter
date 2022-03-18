@@ -427,7 +427,7 @@ public class KeyGenerator implements Runnable{
 	 * Needs to be adjusted if the DB is not changed to use Byte[].
 	 * @throws EndpointIsNotConnectedException 
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
-	 * @throws SQLException 
+	 * @throws SQLException this is thrown if there is an issue if interacting wiht the KeyStore DB.
 	 */
 	private void transferKeyFileToDB() throws EndpointIsNotConnectedException, SQLException {
 		//Read Key from File
