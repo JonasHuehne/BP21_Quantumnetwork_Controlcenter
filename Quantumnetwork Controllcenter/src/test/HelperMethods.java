@@ -26,6 +26,11 @@ public final class HelperMethods {
 		return output;
 	}
 	
+	/**
+	* Randomly capitalizes a String.
+	* @param input a string (e.g. "hello")
+	* @return a randomly capitalized version of the same string (e.g. "HelLO")
+	*/
 	public static String randomizeCapitalization(String input) {
 		char[] inputArray = input.toCharArray();
 		String output = "";
