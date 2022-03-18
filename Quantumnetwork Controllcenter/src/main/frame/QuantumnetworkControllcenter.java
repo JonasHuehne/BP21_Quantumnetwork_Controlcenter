@@ -2,6 +2,7 @@ package frame;
 
 import java.awt.EventQueue;
 import java.io.IOException;
+import java.sql.SQLException;
 
 import javax.swing.UIManager;
 
@@ -12,6 +13,7 @@ import encryptionDecryption.SymmetricCipher;
 import exceptions.PortIsInUseException;
 import graphicalUserInterface.GUIMainWindow;
 import graphicalUserInterface.SettingsDialog;
+import keyStore.KeyStoreDbManager;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthenticationGUI;
 import messengerSystem.SignatureAuthentication;
@@ -99,6 +101,13 @@ public class QuantumnetworkControllcenter {
 		// Encryption to use
 		SymmetricCipher cipher = new AES256();
 		MessageSystem.setEncryption(cipher);
+		
+		// Create Keystore if it does not exist
+		try {
+			KeyStoreDbManager.createNewKeyStoreAndTable();
+		} catch (SQLException e) {
+			logger.logError("Could not initialize Keystore.", e);
+		}
 		
 		logger.logInfo("QuantumnetworkControllcenter initialized");
 	}
