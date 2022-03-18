@@ -3,9 +3,12 @@ package graphicalUserInterface;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Desktop;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,9 +38,14 @@ import communicationList.Contact;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
+import exceptions.NoKeyWithThatIDException;
+import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import graphicalUserInterface.keyStoreEditor.DebugKeystoreEditor;
 import keyStore.KeyStoreDbManager;
+import keyStore.KeyStoreObject;
+import messengerSystem.SigKeyQueryInteractionObject;
+import messengerSystem.Utils;
 import net.miginfocom.swing.MigLayout;
 import networkConnection.ConnectionEndpoint;
 import networkConnection.ConnectionManager;
@@ -53,7 +61,7 @@ import qnccLogger.LogSensitivity;
  */
 public final class GUIMainWindow implements Runnable{
 	
-	Log guiLogger = new Log(GUIMainWindow.class.getSimpleName(), LogSensitivity.WARNING);
+	Log guiLogger;
 
 
 	private Object[][] contactData = {};
@@ -89,6 +97,7 @@ public final class GUIMainWindow implements Runnable{
 	 * Create the application.
 	 */
 	public GUIMainWindow() {
+		guiLogger = new Log(GUIMainWindow.class.getSimpleName(), LogSensitivity.WARNING);
 		initialize();
 		startUpdateService();
 
@@ -131,14 +140,30 @@ public final class GUIMainWindow implements Runnable{
 		settingsButton.setToolTipText("Opens the Application Settings.");
 		toolBar.add(settingsButton);
 		
-		JButton helpButton = new JButton("?");
+		JButton helpButton = new JButton("Help");
 		helpButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				new HelpMenu();
+				String helpPath  = Configuration.getBaseDirPath() + File.separator + "Documentation" + File.separator;
+				try {
+					Desktop.getDesktop().open(new File(helpPath));
+				} catch (IOException e1) {
+					guiLogger.logWarning("Error while attempting to open the Folder containing the Documentation files. Folder Path: " + helpPath, e1);
+					new GenericWarningMessage("Error while attempting to open the Folder containing the Documentation files. Folder Path: " + helpPath);
+					e1.printStackTrace();
+				}
 			}
 		});
 		helpButton.setToolTipText("Opens the Help Screen.");
 		toolBar.add(helpButton);
+		
+		JButton aboutButton = new JButton("About");
+		aboutButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				new AboutPage();
+			}
+		});
+		aboutButton.setToolTipText("About this Application");
+		toolBar.add(aboutButton);
 
 		JPanel contactsOuterPanel = new JPanel();
 		contactsOuterPanel.setBorder(new TitledBorder(new EtchedBorder(EtchedBorder.LOWERED, new Color(255, 255, 255), new Color(160, 160, 160)), "Contacts", TitledBorder.CENTER, TitledBorder.TOP, null, new Color(0, 0, 0)));
@@ -155,7 +180,7 @@ public final class GUIMainWindow implements Runnable{
 		JPanel contactControlPanel = new JPanel();
 		contactsColumn.add(contactControlPanel);
 		
-		JButton contactsAddButton = new JButton("Add new contact");
+		JButton contactsAddButton = new JButton("Add new Contact");
 		contactsAddButton.setToolTipText("Add a new contact to the \"Contacts\"-Table.");
 		contactsAddButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -170,7 +195,7 @@ public final class GUIMainWindow implements Runnable{
 		});
 		contactControlPanel.add(contactsAddButton);
 		
-		JButton removeContactButton = new JButton("Remove contact");
+		JButton removeContactButton = new JButton("Remove Contact");
 		removeContactButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				
@@ -195,7 +220,7 @@ public final class GUIMainWindow implements Runnable{
 		});
 		contactControlPanel.add(contactRefreshButton);
 
-		JButton saveChangesButton = new JButton("Save Changes to DB");
+		JButton saveChangesButton = new JButton("Save changes to DB");
 		saveChangesButton.setToolTipText("Saves the changes made in the table to the contacts database.");
 		saveChangesButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -272,15 +297,7 @@ public final class GUIMainWindow implements Runnable{
 				if (activeConnection == null) { // Possibly display an error message here?
 					return;
 				}
-				representedConnectionEndpoints.get(activeConnection).setVisible(false);
-				connectionEndpointVerticalBox.remove(representedConnectionEndpoints.get(activeConnection));
-				representedConnectionEndpoints.remove(activeConnection);
-				conType.remove(activeConnection);
-				try {
-					QuantumnetworkControllcenter.conMan.destroyConnectionEndpoint(activeConnection);
-				} catch (ManagerHasNoSuchEndpointException e1) {
-					new GenericWarningMessage("ERROR - Could not remove connection: " + activeConnection + ". No such connection exists.");
-				}
+				removeCEEntry(activeConnection);
 				activeConnection = null;
 				
 			}
@@ -319,6 +336,16 @@ public final class GUIMainWindow implements Runnable{
 		});
 		generateKeyButton.setToolTipText("This will start the key generation with the selected connection.");
 		
+		JButton buttonDebugKeystoreEditor = new JButton("Key-DB Editor");
+		connectionButtonsPanel.add(buttonDebugKeystoreEditor);
+		buttonDebugKeystoreEditor.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				DebugKeystoreEditor dialog = new DebugKeystoreEditor();
+				dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				dialog.setVisible(true);
+			}
+		});
+		
 		JPanel panelForConnectionList = new JPanel();
 		connectionsInnerPanel2.add(panelForConnectionList, BorderLayout.CENTER);
 		panelForConnectionList.setLayout(new BoxLayout(panelForConnectionList, BoxLayout.X_AXIS));
@@ -331,7 +358,9 @@ public final class GUIMainWindow implements Runnable{
 		
 		connectionEndpointVerticalBox = Box.createVerticalBox();
 		scrollPane.setViewportView(connectionEndpointVerticalBox);
-
+		
+		//Debug Buttons Commented out
+		/*
 		JButton connectionDebug = new JButton("Debug Button 1");
 		connectionDebug.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -372,16 +401,7 @@ public final class GUIMainWindow implements Runnable{
 		});
 		debugButton2.setToolTipText("Displays some information about the currently selected CE.");
 		frame.getContentPane().add(debugButton2, "cell 0 0");
-		
-		JButton buttonDebugKeystoreEditor = new JButton("Debug Button 3 (KS Editor)");
-		buttonDebugKeystoreEditor.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				DebugKeystoreEditor dialog = new DebugKeystoreEditor();
-				dialog.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-				dialog.setVisible(true);
-			}
-		});
-		frame.getContentPane().add(buttonDebugKeystoreEditor, "cell 0 0");
+		*/
 	}
 
 	public JFrame getFrame() {
@@ -521,9 +541,14 @@ public final class GUIMainWindow implements Runnable{
 						guiLogger.logError("SQL Exception while trying to get the key for " + connectionName + ". Encrypted communication is not possible.", e1);
 					}
 				}
+				if(connectionTypeCB.getSelectedItem() == ConnectionType.AUTHENTICATED && Utils.getPkIfPossible(connectionName) == null) {
+					SigKeyQueryInteractionObject skq = new SigKeyQueryInteractionObject();
+	                new CESignatureQueryDialog(connectionName, skq, true);
+				}
 			}
 		});
 		connectionTypeCB.setModel(new DefaultComboBoxModel<ConnectionType>(ConnectionType.values()));
+		connectionTypeCB.setToolTipText("This determines what kind of message you can send. It has no influence on what you receive. UNSAFE: plain-text message; AUTH: Signed message, receiver needs to know the sig-key of the sender; ENC: The message is encrypted. This requires a Key to exist and still have at least 256 unused bits left.");
 		ceFrame.add(connectionTypeCB);
 		conType.put(connectionName, (ConnectionType) connectionTypeCB.getSelectedItem());
 		
@@ -559,6 +584,24 @@ public final class GUIMainWindow implements Runnable{
 	 */
 	public void shutdownUpdateService() {
 		ceUpdateThread.interrupt();
+	}
+	
+	/**This methods removes the CE Representation from the GUI and then also destroys the Connection
+	 * 
+	 * @param activeConnection The name of the CE that should be removed.
+	 */
+	public void removeCEEntry(String activeConnection) {
+		if(representedConnectionEndpoints.get(activeConnection)!= null) {
+			representedConnectionEndpoints.get(activeConnection).setVisible(false);
+			connectionEndpointVerticalBox.remove(representedConnectionEndpoints.get(activeConnection));
+			representedConnectionEndpoints.remove(activeConnection);
+		}
+		conType.remove(activeConnection);
+		try {
+			QuantumnetworkControllcenter.conMan.destroyConnectionEndpoint(activeConnection);
+		} catch (ManagerHasNoSuchEndpointException e1) {
+			new GenericWarningMessage("ERROR - Could not remove connection: " + activeConnection + ". No such connection exists.");
+		}
 	}
 
 	/**

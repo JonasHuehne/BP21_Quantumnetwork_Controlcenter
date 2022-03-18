@@ -17,6 +17,7 @@ import exceptions.EndpointIsNotConnectedException;
 import exceptions.IpAndPortAlreadyInUseException;
 import exceptions.ManagerHasNoSuchEndpointException;
 import exceptions.PortIsInUseException;
+import frame.QuantumnetworkControllcenter;
 import qnccLogger.Log;
 import qnccLogger.LogSensitivity;
 
@@ -64,7 +65,7 @@ public class ConnectionManager {
 	
 	/** true <==> no two connections to the same IP:Port pairing are allowed (should also make self-connections impossible) <br>
 	 *  for actual use we recommend setting this to true, however, it may make some manual tests impossible that involve connecting to oneself */
-	private boolean oneConnectionPerIpPortPair = true;
+	private boolean oneConnectionPerIpPortPair = false;
 	
 	/** When answering an incoming connection request, this communication list will be check if it contains
 	 *  an entry for that connection's IP:Port pair. If it does, we can name the connection based on that
@@ -194,7 +195,7 @@ public class ConnectionManager {
 		throws ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException {
 		if(!connections.containsKey(endpointName)) {
 			// no two connections to the same IP / Port pairing
-			if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
+			//if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
 			conManLog.logInfo("[CM " + localName + " (" + localPort + ")] Received local request to create a CE with ID " + endpointName + ". "
 					+ "CE will attempt to connect to " + targetIP + ":" + targetPort);
 			ConnectionEndpoint ce = new ConnectionEndpoint(endpointName, targetIP, targetPort, getLocalAddress(), getLocalPort(), localName, pk);
@@ -237,8 +238,8 @@ public class ConnectionManager {
 			throws ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException {
 			if(!connections.containsKey(endpointName)) {
 				// no two connections to the same IP / Port pairing
-				if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) 
-					throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
+				//if (oneConnectionPerIpPortPair) && !ipAndPortAreFree(targetIP, targetPort)) //Commented out, because now IP and Port can be reused!
+				//	throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
 				conManLog.logInfo("[CM " + localName + " (" + localPort + ")] Received external request (presumably from CESH) to create a CE with ID " + endpointName + ". "
 						+ "CE will attempt to connect to " + targetIP + ":" + targetPort);
 				ConnectionEndpoint ce 
@@ -252,7 +253,7 @@ public class ConnectionManager {
 			}
 		}
 
-	/**
+	/**@deprecated Not necessary anymore, since now many connections can be run via the same IP:Port.
 	 * Utility method. Used to check if an IP/Port pairing is not used by any connection in the manager at the moment.
 	 */
 	private boolean ipAndPortAreFree(String ip, int port) {
@@ -483,6 +484,7 @@ public class ConnectionManager {
 		} else {
 			closeConnection(connectionID);
 			connections.remove(connectionID);
+			
 		}
 	}
 	
@@ -499,5 +501,30 @@ public class ConnectionManager {
 			}
 		});
 		connections.clear();
+	}
+	
+	/**This method is used by the Photon Source to completely remove a connection from a CE that was used to send the Photon Source a Signal.
+	 * 
+	 * @param ceID the local CE that is either sending the signal and then gets deleted(remoteCall == true) or the local CE that should delete itself after receiving the SOURCE_DESTROY Signal.
+	 */
+	public void destroySourceConnection(String ceID, boolean remoteCall){
+		if(remoteCall) {
+			System.out.println("Received CE DestructionRequest from PhotonSource.");
+			QuantumnetworkControllcenter.guiWindow.removeCEEntry(ceID);
+		}else {
+			System.out.println("Starting PhotonSource CE Destruction.");
+			try {
+				//Send Deletion Request to Remote CE
+				NetworkPackage msg = new NetworkPackage(TransmissionTypeEnum.KEYGEN_SOURCE_DESTROY, false); 
+				sendMessage(ceID, msg);
+				
+				//Delete local CE and remove GUI representation
+				QuantumnetworkControllcenter.guiWindow.removeCEEntry(ceID);
+				
+			} catch (EndpointIsNotConnectedException | ManagerHasNoSuchEndpointException e) {
+				e.printStackTrace();
+			}
+		}
+		
 	}
 }

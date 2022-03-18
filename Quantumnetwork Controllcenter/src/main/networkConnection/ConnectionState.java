@@ -15,6 +15,8 @@ public enum ConnectionState {
 	WAITINGFORCONNECTION,	
 	/**This is the state if the CE is not connected to anything but still waiting for a message from the outside.*/
 	WAITINGFORMESSAGE,	
+	/**This is used if the CE is currently generating a Key*/
+	GENERATING_KEY,
 	/**This is a catch-all fallback. It is the active state if no other valid state can be determined or if the state of a non-existing CE was checked.*/
 	ERROR,
 	/** This represents that the CE was closed and is no longer needed. This can be used to (for example) automatically remove the CE from the GUI

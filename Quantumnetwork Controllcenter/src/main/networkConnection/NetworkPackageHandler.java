@@ -23,11 +23,13 @@ import exceptions.NotEnoughKeyLeftException;
 import exceptions.VerificationFailedException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
+import graphicalUserInterface.GenericWarningMessage;
 import keyStore.KeyStoreDbManager;
 import messengerSystem.MessageSystem;
 import messengerSystem.SignatureAuthentication;
 import qnccLogger.Log;
 import qnccLogger.LogSensitivity;
+import sourceControl.SourceControlApplication;
 
 /**
  * Low level handling of {@linkplain NetworkPackage}s received by a {@linkplain ConnectionEndpoint}. <br>
@@ -66,6 +68,7 @@ public class NetworkPackageHandler {
 		if (msg.getSignature() != null) {
 			if (!msg.verify(MessageSystem.getAuthenticator(), ce.getID())) {
 				Contact c = QuantumnetworkControllcenter.communicationList.query(ce.getID());
+				ce.appendMessageToChatLog(false, -1, "[Contents Discarded]");
 				throw new VerificationFailedException("Could not verify the text message with ID " 
 						+ Base64.getEncoder().encodeToString(msg.getID()) + " using the public key of " + ce.getID() + 
 						"(" + (c != null ? c.getSignatureKey() : "???")  + ")");
@@ -92,8 +95,13 @@ public class NetworkPackageHandler {
 			break;
 		case KEYGEN_SOURCE_SIGNAL:
 			//This is only used for signaling the source server to start sending photons. 
-			//TODO: Add source logic. It just needs to drop a file containing the message content as Text in a special folder where the source is waiting for the file.
+			SourceControlApplication.writeSignalFile(msg, ce.getID());
 			break;
+		case KEYGEN_SOURCE_DESTROY:
+			//This is used after the Source has received the needed info. It is sent from the Source to the sender.
+			//Once received, the sender deletes the CE completely, including the message Log and the GUI Entry.
+			QuantumnetworkControllcenter.conMan.destroySourceConnection(ce.getID(), true);
+			
 		case KEYGEN_SYNC_ACCEPT:
 			//This is received as a response to a KEYGEN_SYNC_REQUEST. It signals to this ConnectionEndpoint that the sender is willing to start the KeyGen Process.
 			//The SyncConfirm is added to the regular messagesStack and read by the KeyGenerator.
@@ -110,6 +118,7 @@ public class NetworkPackageHandler {
 		case KEYGEN_TERMINATION:
 			//This is received if the connected ConnectionEndpoint intends to terminate the KeyGen Process. This will cause a local shutdown in response.
 			//Terminating Key Gen
+			new GenericWarningMessage("The Key Generation Process was terminated by the other party!");
 			ce.getKeyGen().shutdownKeyGen(false, true);
 			break;
 		case KEYGEN_TRANSMISSION:
@@ -245,7 +254,6 @@ public class NetworkPackageHandler {
 	 */
 	private static void handleTextMessage(ConnectionEndpoint ce, NetworkPackage msg, boolean verified) throws CouldNotDecryptMessageException, VerificationFailedException {
 		if (msg.getSignature() != null) { // if the message is signed, verify it
-			SignatureAuthentication authenticator = MessageSystem.getAuthenticator(); // the auth currently in use by the message system
 			if (verified) {
 				// If the message is also encrypted, try to decrypt it
 				if (msg.getMessageArgs().keyIndex() != -1) {
@@ -255,7 +263,7 @@ public class NetworkPackageHandler {
 						byte[] decryptedMsg 	= MessageSystem.getCipher().decrypt(msg.getContent(), decryptionKey);
 						String decryptedString	= MessageSystem.byteArrayToString(decryptedMsg);
 						// Log the decrypted text of the message
-						ce.appendMessageToChatLog(false, true, decryptedString);
+						ce.appendMessageToChatLog(false, 1, decryptedString);
 					} catch (InvalidKeyException | BadPaddingException | CouldNotGetKeyException e) {
 						throw new CouldNotDecryptMessageException("[CE " + ce.getID() + "] Could not decrypt the text message with ID " + msg.getStringID(), e);
 					}
@@ -263,13 +271,14 @@ public class NetworkPackageHandler {
 				// If the message is not encrypted
 				else { 
 					// It has already been verified, so we just log it
-					ce.appendMessageToChatLog(false, true, MessageSystem.byteArrayToString(msg.getContent()));
+					ce.appendMessageToChatLog(false, 1, MessageSystem.byteArrayToString(msg.getContent()));
 				}
 			} else {
+				ce.appendMessageToChatLog(false, -1, "[Contents Discarded]");
 				throw new VerificationFailedException("[CE " + ce.getID() + "] Could not verify the message with ID " + msg.getStringID());
 			}
 		} else {
-			ce.appendMessageToChatLog(false, false, MessageSystem.byteArrayToString(msg.getContent()));
+			ce.appendMessageToChatLog(false, 0, MessageSystem.byteArrayToString(msg.getContent()));
 		}
 	}
 	
