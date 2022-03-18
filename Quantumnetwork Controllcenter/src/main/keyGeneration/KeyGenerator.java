@@ -156,7 +156,7 @@ public class KeyGenerator implements Runnable{
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
 	private void signalSourceAPI() throws NumberFormatException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		System.out.println("");
+		System.out.println("[" + getOwnerID() + "]: Calling the Photon Source.");
 		/*
 		//Create connection to Source Server
 		String sourceServerConnectionName = "SourceServer_" + generateRandomString();

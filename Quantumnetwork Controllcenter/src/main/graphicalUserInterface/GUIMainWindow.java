@@ -146,7 +146,8 @@ public final class GUIMainWindow implements Runnable{
 				try {
 					Desktop.getDesktop().open(new File(helpPath));
 				} catch (IOException e1) {
-					System.err.println("Error while attempting to open the Folder containing the Documentation files. Folder Path: " + helpPath);
+					guiLogger.logWarning("Error while attempting to open the Folder containing the Documentation files. Folder Path: " + helpPath, e1);
+					new GenericWarningMessage("Error while attempting to open the Folder containing the Documentation files. Folder Path: " + helpPath);
 					e1.printStackTrace();
 				}
 			}
@@ -582,6 +583,10 @@ public final class GUIMainWindow implements Runnable{
 		ceUpdateThread.interrupt();
 	}
 	
+	/**This methods removes the CE Representation from the GUI and then also destroys the Connection
+	 * 
+	 * @param activeConnection The name of the CE that should be removed.
+	 */
 	public void removeCEEntry(String activeConnection) {
 		if(representedConnectionEndpoints.get(activeConnection)!= null) {
 			representedConnectionEndpoints.get(activeConnection).setVisible(false);

@@ -68,7 +68,7 @@ public class NetworkPackageHandler {
 		if (msg.getSignature() != null) {
 			if (!msg.verify(MessageSystem.getAuthenticator(), ce.getID())) {
 				Contact c = QuantumnetworkControllcenter.communicationList.query(ce.getID());
-				ce.appendMessageToChatLog(false, -1, "");
+				ce.appendMessageToChatLog(false, -1, "[Contents Discarded]");
 				throw new VerificationFailedException("Could not verify the text message with ID " 
 						+ Base64.getEncoder().encodeToString(msg.getID()) + " using the public key of " + ce.getID() + 
 						"(" + (c != null ? c.getSignatureKey() : "???")  + ")");
@@ -274,7 +274,7 @@ public class NetworkPackageHandler {
 					ce.appendMessageToChatLog(false, 1, MessageSystem.byteArrayToString(msg.getContent()));
 				}
 			} else {
-				ce.appendMessageToChatLog(false, -1, "");
+				ce.appendMessageToChatLog(false, -1, "[Contents Discarded]");
 				throw new VerificationFailedException("[CE " + ce.getID() + "] Could not verify the message with ID " + msg.getStringID());
 			}
 		} else {
