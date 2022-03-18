@@ -12,7 +12,6 @@ import java.nio.file.Path;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
 import java.util.Random;
 
 import exceptions.EndpointIsNotConnectedException;
@@ -30,6 +29,8 @@ import networkConnection.ConnectionState;
 import networkConnection.MessageArgs;
 import networkConnection.NetworkPackage;
 import networkConnection.TransmissionTypeEnum;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 
 /**This class contains everything that it needed to generate a secure key.
@@ -55,7 +56,8 @@ public class KeyGenerator implements Runnable{
 	private String expectedPythonTerm = "pythonTerm.txt";	//Use this to set the filename of the signal for the python script to terminate the KeyGen Process. This is created if the program was told to shutdown from the other side of the connection.
 	private boolean keyGenRunning; //True if KeyGen is running
 	private int hasBeenAccepted = 0; //This controls the waiting period while waiting for the KeyGenPartner to Accept(1) or Reject(-1).
-
+	private Log log = new Log(KeyGenerator.class.getName(), LogSensitivity.WARNING);
+	
 	/** Key Generation uses authenticated messages only */
 	SignatureAuthentication authenticator;
 	
@@ -96,24 +98,24 @@ public class KeyGenerator implements Runnable{
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
 	public void generateKey() throws KeyGenRequestTimeoutException, EndpointIsNotConnectedException {
-		System.out.println("[" + getOwnerID() + "]: Starting KeyGenProcess!");
+		log.logInfo("[" + getOwnerID() + "]: Starting KeyGenProcess!");
 		//Check if everything is ready
-		System.out.println("[" + getOwnerID() + "]: Performing preGenChecks!");
+		log.logInfo("[" + getOwnerID() + "]: Performing preGenChecks!");
 		if(!preGenChecks()) {
-			System.err.println("[" + getOwnerID() + "]: Generation of Key did not start, preGenChecks failed!");
+			log.logWarning("[" + getOwnerID() + "]: Generation of Key did not start, preGenChecks failed!");
 			return;
 		}
 		
-		System.out.println("[" + getOwnerID() + "]: Performing preGenSync!");
+		log.logInfo("[" + getOwnerID() + "]: Performing preGenSync!");
 		//Wait for syncConfirm message before continuing.
 		if(!preGenSync()) {
-			System.err.println("[" + getOwnerID() + "]: preGenSync failed!");
+			log.logWarning("[" + getOwnerID() + "]: preGenSync failed!");
 			return;
 		}
-		System.out.println("[" + getOwnerID() + "]: preGenSync successful");
+		log.logInfo("[" + getOwnerID() + "]: preGenSync successful");
 		initiative = 1;
 		
-		System.out.println("[" + getOwnerID() + "]: Starting KeyGen MessagingService");
+		log.logInfo("[" + getOwnerID() + "]: Starting KeyGen MessagingService");
 		
 		//Signal the Source
 		try {
@@ -137,7 +139,7 @@ public class KeyGenerator implements Runnable{
 	private void signalPython() {
 		try {
 			String command = "python " + pythonPath.resolve(Configuration.getProperty("PythonName")) + " " + initiative + " " + connectionPath;
-			System.out.println("[" + getOwnerID() + "]: Calling python script: " + command);
+			log.logInfo("[" + getOwnerID() + "]: Calling python script: " + command);
 			Runtime.getRuntime().exec(command);
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -154,7 +156,7 @@ public class KeyGenerator implements Runnable{
 	 * 		if the {@linkplain ConnectionEndpoint} owning this KeyGenerator is not connected to its partner at the moment
 	 */
 	private void signalSourceAPI() throws NumberFormatException, ManagerHasNoSuchEndpointException, EndpointIsNotConnectedException {
-		System.out.println("[" + getOwnerID() + "]: Calling the Photon Source.");
+		log.logInfo("[" + getOwnerID() + "]: Calling the Photon Source.");
 		/*
 		//Create connection to Source Server
 		String sourceServerConnectionName = "SourceServer_" + generateRandomString();
@@ -252,12 +254,12 @@ public class KeyGenerator implements Runnable{
 		}
 		
 		if(hasBeenAccepted>0) {
-			System.out.println("SyncRequest Accepted!");
+			log.logInfo("SyncRequest Accepted!");
 			hasBeenAccepted = 0;
 			return true;
 		}
 		
-		System.out.println("SyncRequest Rejected!");
+		log.logWarning("SyncRequest Rejected!");
 		new GenericWarningMessage(getOwnerID() +": Key Generation was rejected by communication Partner!");
 		hasBeenAccepted = 0;
 		return false;
@@ -302,7 +304,7 @@ public class KeyGenerator implements Runnable{
 	 */
 	private void keyGenMessagingService() {
 		if(!setUpFolders()) {
-			System.err.println("[" + getOwnerID() + "]: Aborting KeyGenMessagingService, some Folders could not be found!");
+			log.logWarning("[" + getOwnerID() + "]: Aborting KeyGenMessagingService, some Folders could not be found!");
 			return;
 		}
 		
@@ -311,8 +313,7 @@ public class KeyGenerator implements Runnable{
 			try {
 				Files.deleteIfExists(connectionPath.resolve(expectedPythonTerm));
 			} catch (IOException e) {
-				System.err.println("[" + getOwnerID() + "]: Failed while cleaning up pythonterm file from previous generation process. Attempted to delete file " + connectionPath.resolve(expectedPythonTerm).toString());
-				e.printStackTrace();
+				log.logError("[" + getOwnerID() + "]: Failed while cleaning up pythonterm file from previous generation process. Attempted to delete file " + connectionPath.resolve(expectedPythonTerm).toString(), e);
 				return;
 			}
 		}
@@ -330,9 +331,9 @@ public class KeyGenerator implements Runnable{
 	 * 
 	 */
 	private void transferData() {
-		System.out.println("[" + getOwnerID() + "]: Starting KeyGen File Transfer Service.");
+		log.logInfo("[" + getOwnerID() + "]: Starting KeyGen File Transfer Service.");
 		if(keyGenRunning) {
-			System.err.println("Error: Key Gen Thread was already running, could not start a second one!");
+			log.logWarning("Error: Key Gen Thread was already running, could not start a second one!");
 		}
 		transferThread = new Thread(this, getOwnerID() + "_transferThread");
 		keyGenRunning = true;
@@ -354,7 +355,7 @@ public class KeyGenerator implements Runnable{
         Path pythonScriptLocation = localPath.resolve("python");
         //System.out.println(pythonScriptLocation.normalize().toString());
         if(!Files.isDirectory(pythonScriptLocation)) {
-        	System.err.println("[" + getOwnerID() + "]: Error, could not find the Python Script folder, expected: " + pythonScriptLocation.normalize().toString());
+        	log.logWarning("[" + getOwnerID() + "]: Error, could not find the Python Script folder, expected: " + pythonScriptLocation.normalize().toString());
         	return false;
         }
         pythonPath = pythonScriptLocation;
@@ -364,16 +365,15 @@ public class KeyGenerator implements Runnable{
         connectionFolderLocation = connectionFolderLocation.resolve(getOwnerID());
         //System.out.println(connectionFolderLocation.normalize().toString());
         if(!Files.isDirectory(connectionFolderLocation)) {
-        	System.out.println("[" + getOwnerID() + "]: Could not find the Connection folder for "+ getOwnerID() +", expected: " + connectionFolderLocation.normalize().toString() + " Creating folder now!");
+        	log.logWarning("[" + getOwnerID() + "]: Could not find the Connection folder for "+ getOwnerID() +", expected: " + connectionFolderLocation.normalize().toString() + " Creating folder now!");
         	try {
 				Files.createDirectories(connectionFolderLocation);
 			} catch (IOException e) {
-				System.err.println("[" + getOwnerID() + "]: Error: Could not create Connection Folder!");
-				e.printStackTrace();
+				log.logError("[" + getOwnerID() + "]: Error: Could not create Connection Folder!", e);
 				return false;
 			}
         }else {
-        	System.out.println("[" + getOwnerID() + "]: Connection Folder found.");
+        	log.logInfo("[" + getOwnerID() + "]: Connection Folder found.");
         }
         connectionPath = connectionFolderLocation;
         
@@ -403,11 +403,11 @@ public class KeyGenerator implements Runnable{
 					e.printStackTrace();
 				}
 			} catch (IOException e) {
-				System.err.println("[" + getOwnerID() + "]: Error while reading the Key File!");
+				log.logWarning("[" + getOwnerID() + "]: Error while reading the Key File!");
 				e.printStackTrace();
 			}
 		}else {
-			System.err.println("[" + getOwnerID() + "]: Error while trying to read the Key File! Either no " + expectedKeyFilename + " file was found or there was still a .lock file present!");
+			log.logWarning("[" + getOwnerID() + "]: Error while trying to read the Key File! Either no " + expectedKeyFilename + " file was found or there was still a .lock file present!");
 		}
 		
 		//Insert into DB
@@ -440,7 +440,7 @@ public class KeyGenerator implements Runnable{
 	 */
 	public void shutdownKeyGen(boolean relay, boolean informPython) throws EndpointIsNotConnectedException {
 		
-		System.out.println("[" + getOwnerID() + "]: Shutting down the KeyGen of " + getOwnerID());
+		log.logInfo("[" + getOwnerID() + "]: Shutting down the KeyGen of " + getOwnerID());
 		keyGenRunning = false;
 		try {
 			if(connectionPath != null) {
@@ -467,8 +467,7 @@ public class KeyGenerator implements Runnable{
 			}
 			
 		} catch (IOException e) {
-			System.err.println("[" + getOwnerID() + "]: Error while shutting down the KeyGen and deleting any potentially existing Files!");
-			e.printStackTrace();
+			log.logError("[" + getOwnerID() + "]: Error while shutting down the KeyGen and deleting any potentially existing Files!", e);
 		}
 	}
 	
@@ -510,7 +509,7 @@ public class KeyGenerator implements Runnable{
 					try {
 						outFileContent = Files.readAllBytes(outFilePath);
 					} catch (IOException e) {
-						e.printStackTrace();
+						log.logError("Error, could not read outgoing file", e);
 					}
 					
 				    //Send FileContent
@@ -526,14 +525,14 @@ public class KeyGenerator implements Runnable{
 				    try {
 						Files.delete(outFilePath);
 					} catch (IOException e) {
-						e.printStackTrace();
+						log.logError("Error, could not delete outgoing file", e);
 					}
 				}else {
 					//Check for non-transmission Files
 					
 					//Key Result
 					if(Files.exists(connectionPath.resolve(expectedKeyFilename)) && Files.notExists(connectionPath.resolve(expectedKeyFilename + ".lock"))) {
-						System.out.println("[" + getOwnerID() + "]: Adding Key to KeyDB");
+						log.logInfo("[" + getOwnerID() + "]: Adding Key to KeyDB");
 							transferKeyFileToDB();
 						return;
 					}
@@ -541,7 +540,7 @@ public class KeyGenerator implements Runnable{
 					
 					//Abort Signal File
 					if(Files.exists(connectionPath.resolve(expectedTermination)) && Files.notExists(connectionPath.resolve(expectedTermination + ".lock"))) {
-						System.out.println("[" + getOwnerID() + "]: Aborting Key Generation");
+						log.logInfo("[" + getOwnerID() + "]: Aborting Key Generation");
 					
 						Files.delete(connectionPath.resolve(expectedTermination));
 						shutdownKeyGen(true, false);
@@ -550,31 +549,22 @@ public class KeyGenerator implements Runnable{
 				}
 			}
 		} catch (UnsupportedEncodingException e) {
-			System.err.println("ERROR - Key Generation was unsuccessful. The Encoding specified in the Configuration file was not valid.");
-			e.printStackTrace();
+			log.logError("ERROR - Key Generation was unsuccessful. The Encoding specified in the Configuration file was not valid.", e);
 		} catch (EndpointIsNotConnectedException e) {
-			System.err.println("ERROR - Key Generation was unsuccessful. "
+			log.logError("ERROR - Key Generation was unsuccessful. "
 					+ "The endpoint " + getOwnerID() + " is not connected to its partner at the moment. "
-					+ "This resulted in an inability to send a message from that endpoint. See the stacktrace for details on where a message could not be sent. ");
-			e.printStackTrace();
-		} catch (IOException e) {
-			System.err.println("ERROR - Key Generation was unsuccessful. "
-					+ "A " + e.getClass().getCanonicalName() + " occurred, Message: " + e.getMessage());
-			e.printStackTrace();
-		} catch (SQLException e) { // something going wrong with the keystore
-			System.err.println("ERROR - Key Generation was unsuccessful. "
-					+ "A " + e.getClass().getCanonicalName() + " occurred, Message: " + e.getMessage());
-			e.printStackTrace();
+					+ "This resulted in an inability to send a message from that endpoint. See the stacktrace for details on where a message could not be sent. ", e);
+		} catch (IOException | SQLException e) {
+			log.logError("ERROR - Key Generation was unsuccessful. ", e);
 		} finally {
 			if (keyGenRunning) {
 				// Always shut down the key generator if it is still running
 				try {
 					shutdownKeyGen(false, true);
 				} catch (EndpointIsNotConnectedException e) {
-					System.err.println("A " + e.getClass().getCanonicalName() + " occured trying to shut down the key generator. "
-							+ "The keyGenRunning variable has been manually set to false, but the key generator may be in an unstable state.");
+					log.logError("An Error occured trying to shut down the key generator. "
+							+ "The keyGenRunning variable has been manually set to false, but the key generator may be in an unstable state.", e);
 					keyGenRunning = false;
-					e.printStackTrace();
 				}
 			}
 		}
@@ -609,22 +599,14 @@ public class KeyGenerator implements Runnable{
 		try {
 			lockFile.createNewFile();
 		} catch (IOException e1) {
-			System.err.println("[" + getOwnerID() + "]: Error while creating temp lock file for the new in.txt");
-			e1.printStackTrace();
+			log.logError("[" + getOwnerID() + "]: Error while creating temp lock file for the new in.txt", e1);
 		}
 		//Write to file
 		try
 		(Writer inWriter = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(inFilePath), Configuration.getProperty("Encoding")))) {
 			inWriter.write(MessageSystem.byteArrayToString(inFileContent));
-		} catch (UnsupportedEncodingException e) {
-
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-
-			e.printStackTrace();
-		} catch (IOException e) {
-
-			e.printStackTrace();
+		} catch (Exception e) {
+			log.logError("Error, could not write to incoming file", e);
 		}
 		//Remove .lockFile
 		lockFile.delete();

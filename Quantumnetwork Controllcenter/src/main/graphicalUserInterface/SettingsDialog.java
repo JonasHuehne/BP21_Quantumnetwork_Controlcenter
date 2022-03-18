@@ -24,6 +24,8 @@ import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
 import messengerSystem.SHA256withRSAAuthentication;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 import javax.swing.JComboBox;
 import javax.swing.DefaultComboBoxModel;
@@ -56,7 +58,7 @@ public class SettingsDialog extends JFrame {
 	private static String python = null;
 	private JTextField sourceSigTextField;
 	private JTextField pythonScriptTextField;
-	
+	private static Log log = new Log(SettingsDialog.class.getName(), LogSensitivity.WARNING);
 
 
 
@@ -173,8 +175,7 @@ public class SettingsDialog extends JFrame {
 				try {
 					Desktop.getDesktop().open(new File(sigPath));
 				} catch (IOException e1) {
-					System.err.println("Error while attempting to open the Folder containing the SignatureFiles. Folder Path: " + sigPath);
-					e1.printStackTrace();
+					log.logError("Error while attempting to open the Folder containing the SignatureFiles. Folder Path: " + sigPath, e1);
 				}
 			}
 		});

@@ -93,6 +93,7 @@ public final class GUIMainWindow implements Runnable{
 	public HashMap<String,ConnectionType> conType = new HashMap<String,ConnectionType>();
 	protected ArrayList<MessageGUI> openChatWindows = new ArrayList<MessageGUI>();
 
+	
 	/**
 	 * Create the application.
 	 */
@@ -201,7 +202,7 @@ public final class GUIMainWindow implements Runnable{
 				
 				int rowIndex = contactTable.getSelectedRow();
 				String id = (String) contactTable.getValueAt(rowIndex, contactDBNameIndex);
-				System.out.println("Deleting Contact Entry! " + id);
+				guiLogger.logInfo("Deleting Contact Entry! " + id);
 				QuantumnetworkControllcenter.communicationList.delete(id);
 				DefaultTableModel model = (DefaultTableModel)contactTable.getModel();
 				model.removeRow(rowIndex);
@@ -309,7 +310,7 @@ public final class GUIMainWindow implements Runnable{
 		generateKeyButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if(activeConnection == null) {
-					System.out.println("Warning: No Connection selected as active.");
+					guiLogger.logWarning("Warning: No Connection selected as active.");
 					return;
 				}
 
@@ -325,7 +326,7 @@ public final class GUIMainWindow implements Runnable{
 							new GenericWarningMessage("ERROR - Could not generate key! The endpoint with id " + activeConnection + " is not connected!" + e1);
 						}
 					}else {
-						System.out.println("Warning: Active Connection is not connected to anything!");
+						guiLogger.logWarning("Warning: Active Connection is not connected to anything!");
 						return;
 					}
 				} catch (ManagerHasNoSuchEndpointException e1) {
@@ -513,9 +514,9 @@ public final class GUIMainWindow implements Runnable{
 				try {
 					prevActiveConnection = activeConnection;
 					activeConnection = connectionName;
-					System.out.println("Changed Active Connection to: " + activeConnection);
+					guiLogger.logInfo("Changed Active Connection to: " + activeConnection);
 				} catch (Exception e1) {
-					e1.printStackTrace();
+					guiLogger.logError("Error: Unable to change selected Connection", e1);
 				}
 			}
 		});
