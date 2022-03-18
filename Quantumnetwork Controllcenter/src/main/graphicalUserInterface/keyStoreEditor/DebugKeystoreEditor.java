@@ -2,6 +2,7 @@ package graphicalUserInterface.keyStoreEditor;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
@@ -105,7 +106,7 @@ public class DebugKeystoreEditor extends JFrame {
 					key = KeyStoreDbManager.getEntryFromKeyStore(id).getCompleteKeyBuffer(); // complete key of selected row
 					MessageDigest md5 = MessageDigest.getInstance("MD5");
 					md5.update(key);
-					String checksum = new String(md5.digest());
+					String checksum = new String(md5.digest(), StandardCharsets.ISO_8859_1);
 					new GenericWarningMessage(checksum);
 				} catch (NoKeyWithThatIDException e1) {
 					new GenericWarningMessage("Could not generate checksum: " + e1.getMessage());
