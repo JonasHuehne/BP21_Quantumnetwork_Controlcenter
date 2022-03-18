@@ -22,6 +22,15 @@ import javax.swing.border.EmptyBorder;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
+<<<<<<< loggerForRemainingClasses
+import messengerSystem.SHA256withRSAAuthentication;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
+
+import javax.swing.JComboBox;
+import javax.swing.DefaultComboBoxModel;
+=======
+>>>>>>> main
 import java.awt.GridLayout;
 
 /**This Dialog contains settings such as the own ServerIP/Port
@@ -49,7 +58,7 @@ public class SettingsDialog extends JFrame {
 	private static String enc = null;
 	private static String python = null;
 	private JTextField pythonScriptTextField;
-	
+	private static Log log = new Log(SettingsDialog.class.getName(), LogSensitivity.WARNING);
 
 
 
@@ -156,8 +165,7 @@ public class SettingsDialog extends JFrame {
 				try {
 					Desktop.getDesktop().open(new File(sigPath));
 				} catch (IOException e1) {
-					System.err.println("Error while attempting to open the Folder containing the SignatureFiles. Folder Path: " + sigPath);
-					e1.printStackTrace();
+					log.logError("Error while attempting to open the Folder containing the SignatureFiles. Folder Path: " + sigPath, e1);
 				}
 			}
 		});

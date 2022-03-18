@@ -17,6 +17,8 @@ import exceptions.ConnectionAlreadyExistsException;
 import exceptions.IpAndPortAlreadyInUseException;
 import frame.QuantumnetworkControllcenter;
 import net.miginfocom.swing.MigLayout;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 /**This Dialog is used to create a new Connection.
  * 
@@ -34,6 +36,7 @@ public class ConnectionAddDialog extends JFrame {
 	private JTextField textFieldContactPK;
 	private JRadioButton useManualInputRadioButton;
 	private JRadioButton useSelectedInputRadioButton;
+	private static Log log = new Log(ConnectionAddDialog.class.getName(), LogSensitivity.WARNING);
 	
 
 	/**
@@ -169,7 +172,7 @@ public class ConnectionAddDialog extends JFrame {
 							String sig = textFieldContactPK.getText();
 							try {
 								QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(ceName, ceIP, cePort, sig);
-								System.out.println("Created new CE: " + textFieldContactName.getText());
+								log.logInfo("Created new CE: " + textFieldContactName.getText());
 							} catch (ConnectionAlreadyExistsException e1) {
 								new GenericWarningMessage("Could not create connection with that name. Such a connection already exists.");
 							} catch (IpAndPortAlreadyInUseException e1) {
@@ -178,10 +181,10 @@ public class ConnectionAddDialog extends JFrame {
 						}else {
 							selectedTableRowIndex = QuantumnetworkControllcenter.guiWindow.getContactTable().getSelectedRow();
 							if(selectedTableRowIndex == -1) {
-								System.out.println("Warning: No Row in Contact-Table is selected!");
+								log.logWarning("Warning: No Row in Contact-Table is selected!");
 								return;
 							}
-							System.out.println("Selected RowIndex is " + String.valueOf(selectedTableRowIndex));
+							log.logInfo("Selected RowIndex is " + String.valueOf(selectedTableRowIndex));
 							String name = getNameOfSelectedContact();
 							String ip = getIpOfSelectedContact();
 							int port = Integer.valueOf(getPortOfSelectedContact());
@@ -189,7 +192,7 @@ public class ConnectionAddDialog extends JFrame {
 							
 							try {
 								QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint(name, ip, port, sig);
-								System.out.println("Created new CE: " + name);
+								log.logInfo("Created new CE: " + name);
 							} catch (ConnectionAlreadyExistsException e1) {
 								new GenericWarningMessage("Could not create connection with that name. Such a connection already exists.");
 							} catch (IpAndPortAlreadyInUseException e1) {

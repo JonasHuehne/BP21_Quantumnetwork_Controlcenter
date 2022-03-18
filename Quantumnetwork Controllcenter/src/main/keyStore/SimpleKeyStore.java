@@ -11,6 +11,8 @@ import java.util.Arrays;
 import exceptions.NoKeyWithThatIDException;
 import exceptions.NotEnoughKeyLeftException;
 import frame.Configuration;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 /**
  * This class supplies methods for creating, editing, getting and deleting entries from a KeyStore.db which holds all the keys
@@ -32,14 +34,15 @@ public class SimpleKeyStore {
 	/** Name of the table that the keys are stored in */
 	private static final String tableName = "KeyStorage";
 	
+	private static Log log = new Log(SimpleKeyStore.class.getName(), LogSensitivity.WARNING);
+	
 	/** Opens the connection to the Database, if it is not open yet 
 	 * @throws SQLException if an error occurred trying to connect to the database */
 	public static Connection connect() throws SQLException { // make this private after initial testing
 		try {
 			Class.forName("org.sqlite.JDBC");
 		} catch (ClassNotFoundException e) { // only occurs if the class is missing, i.e. compilation error
-			System.err.println("Could not find the class used for database management (org.sqlite.JDBC).");
-			e.printStackTrace();
+			log.logError("Could not find the class used for database management (org.sqlite.JDBC).", e);
 			return null;
 		} 
 		String currentPath = Configuration.getBaseDirPath();

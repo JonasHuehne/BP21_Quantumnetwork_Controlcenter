@@ -278,7 +278,7 @@ public class KeyStoreDbManager {
 			ResultSet result = stmnt.executeQuery(sql);
 
 			while (result.next()) {
-				System.out.println(result.getString("KeyStreamID") + "\t" + result.getInt("KeyBuffer") + "\t"
+				logger.logInfo(result.getString("KeyStreamID") + "\t" + result.getInt("KeyBuffer") + "\t"
 						+ result.getInt("Index_") + "\t" + result.getString("Source_") + "\t"
 						+ result.getString("Destination"));
 			}
@@ -582,7 +582,7 @@ public class KeyStoreDbManager {
 				return 0;
 			return 1;
 		}
-		System.err.println("There is no Entry with this KeyStreamID" + "\n");
+		logger.logWarning("There is no Entry with this KeyStreamID");
 		return -1; // -1 = new Status parameter indicating that the operation failed
 
 	}
@@ -607,7 +607,7 @@ public class KeyStoreDbManager {
 			return new AbstractMap.SimpleEntry<byte[], Integer>(key, index);
 		}
 
-		System.err.println("There is no Entry with this keyStreamID!");
+		logger.logWarning("There is no Entry with this keyStreamID!");
 		return null;
 
 	}

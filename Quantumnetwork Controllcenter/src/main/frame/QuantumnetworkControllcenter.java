@@ -64,12 +64,11 @@ public class QuantumnetworkControllcenter {
 			//Init ApplicationSettings
 			SettingsDialog.initSettings();
 		} catch (IOException e) {
-			System.err.println("ERROR: Configuration failed: " + e);
+			System.err.println("ERROR: Configuration failed\n"+ e.toString());
 		}
 		
 		//Logger Init
-		logger = new Log("QNCC Logger", LogSensitivity.WARNING);
-		logger.loggerShowInfos();
+		logger = new Log("QNCC Logger", LogSensitivity.INFO);
 		logger.logInfo("Run QuantumnetworkControllcenter initialization.");
 		
 		//Network Connection Init
@@ -82,16 +81,14 @@ public class QuantumnetworkControllcenter {
 		String userName = Configuration.getProperty("UserName");
 		String ip = Configuration.getProperty("UserIP");
 		int port = Integer.valueOf(Configuration.getProperty("UserPort"));
-		System.out.println("Initialising IP: " + ip + " and Port " + port);
+		logger.logInfo("Initialising IP: " + ip + " and Port " + port);
 		String localIP = ip;
 		int localPort = port;
 		try {
 			conMan = new ConnectionManager(localIP, localPort, userName, communicationList);
 		} catch (IOException | PortIsInUseException e) {
-			System.err.println("Could not initialize the ConnectionManager - an  Exception occured. ");
-			System.err.println(e.getClass().getCanonicalName() + " - Message: " + e.getMessage());
-			e.printStackTrace();
-			System.err.println("Shutting down.");
+			logger.logError("Could not initialize the ConnectionManager - an  Exception occured.", e);
+			logger.logInfo("Shutting down.");
 			System.exit(0);
 		} 
 		MessageSystem.conMan = conMan;
@@ -103,7 +100,7 @@ public class QuantumnetworkControllcenter {
 		SymmetricCipher cipher = new AES256();
 		MessageSystem.setEncryption(cipher);
 		
-		System.out.println("QuantumnetworkControllcenter initialized");
+		logger.logInfo("QuantumnetworkControllcenter initialized");
 	}
 	 
 	
@@ -122,11 +119,10 @@ public class QuantumnetworkControllcenter {
 		try {
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 		} catch (Exception e) {
-			System.err.println(
+			logger.logWarning(
 					"ERROR - Something went wrong while trying to set the look and feel for the Console UI. "
 					+ "The program may appear visually different, however, functionality should not be affected. "
-					+ "The following error occured " + System.lineSeparator()
-					+ e.getClass().getCanonicalName() + ": " + e.getMessage());
+					+ "The following error occured ", e);
 		}
 		
 		// Launch Console UI
@@ -142,8 +138,7 @@ public class QuantumnetworkControllcenter {
 						guiWindow.getFrame().setVisible(true);
 					}
 				} catch (Exception e) {
-					System.err.println("Something went wrong trying to launch the GUI or Console UI.");
-					e.printStackTrace();
+					logger.logError("Something went wrong trying to launch the GUI or Console UI.", e);
 				}
 			}
 		});
