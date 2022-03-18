@@ -8,8 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Properties;
-import qnccLogger.Log;
-import qnccLogger.LogSensitivity;
 
 /**
  * Class to save configurations and other values
@@ -54,9 +52,6 @@ public class Configuration {
     private static final String[] DIRECTORY_LIST =
             {"SignatureKeys", "python", "connections", "externalAPI", "logs", "Documentation"};
 
-    
-    private static Log log = new Log(Configuration.class.getName(), LogSensitivity.WARNING);
-    
     /**
      * Utility method to check whether the properties file is at the expected place
      * Creates an empty properties file if not existent
@@ -108,10 +103,10 @@ public class Configuration {
      */
     public static boolean changeBasePath (final String absolutePath) {
         if (!Files.exists(Path.of(absolutePath))) {
-            log.logWarning("Error while changing the base path: directory/file does not exist.");
+            System.err.println("Error while changing the base path: directory/file does not exist.");
             return false;
         } else if (!Files.isDirectory(Path.of(absolutePath))) {
-            log.logWarning("Error while changing the base path: path is not a directory.");
+            System.err.println("Error while changing the base path: path is not a directory.");
             return false;
         } else {
             if (absolutePath.endsWith(File.separator)) {
@@ -142,7 +137,7 @@ public class Configuration {
             }
             return true;
         } catch (Exception e) {
-            log.logError("Error while creating the program folders", e);
+            System.err.println("Error while creating the program folders: " + e.getMessage());
             return false;
         }
     }
@@ -162,7 +157,7 @@ public class Configuration {
             out.close();
             return true;
         } catch (Exception e) {
-            log.logError("Error while creating a properties file", e);
+            System.err.println("Error while creating a properties file: " + e.getMessage());
             return false;
         }
     }
@@ -183,7 +178,7 @@ public class Configuration {
             in.close();
             return properties.getProperty(propertyKey);
         } catch (Exception e) {
-            log.logError("Error while reading or returning the property with key \"" + propertyKey + "\" ", e);
+            System.err.println("Error while reading or returning the property with key \"" + propertyKey + "\" " + e.getMessage());
             return null;
         }
     }
@@ -215,7 +210,7 @@ public class Configuration {
             out.close();
             return true;
         } catch (Exception e) {
-            log.logError("Error while setting the property \"" + propertyKey + "\" to the value \"" + propertyValue + "\" ", e);
+            System.err.println("Error while setting the property \"" + propertyKey + "\" to the value \"" + propertyValue + "\" " + e.getMessage());
             return false;
         }
     }
