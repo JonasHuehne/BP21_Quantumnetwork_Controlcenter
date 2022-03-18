@@ -195,7 +195,7 @@ public class ConnectionManager {
 		throws ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException {
 		if(!connections.containsKey(endpointName)) {
 			// no two connections to the same IP / Port pairing
-			if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
+			//if (oneConnectionPerIpPortPair && !ipAndPortAreFree(targetIP, targetPort)) throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
 			conManLog.logInfo("[CM " + localName + " (" + localPort + ")] Received local request to create a CE with ID " + endpointName + ". "
 					+ "CE will attempt to connect to " + targetIP + ":" + targetPort);
 			ConnectionEndpoint ce = new ConnectionEndpoint(endpointName, targetIP, targetPort, getLocalAddress(), getLocalPort(), localName, pk);
@@ -238,8 +238,8 @@ public class ConnectionManager {
 			throws ConnectionAlreadyExistsException, IpAndPortAlreadyInUseException {
 			if(!connections.containsKey(endpointName)) {
 				// no two connections to the same IP / Port pairing
-				if (oneConnectionPerIpPortPair)// && !ipAndPortAreFree(targetIP, targetPort)) //Commented out, because now IP and Port can be reused!
-					throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
+				//if (oneConnectionPerIpPortPair) && !ipAndPortAreFree(targetIP, targetPort)) //Commented out, because now IP and Port can be reused!
+				//	throw new IpAndPortAlreadyInUseException(targetIP, targetPort);
 				conManLog.logInfo("[CM " + localName + " (" + localPort + ")] Received external request (presumably from CESH) to create a CE with ID " + endpointName + ". "
 						+ "CE will attempt to connect to " + targetIP + ":" + targetPort);
 				ConnectionEndpoint ce 
