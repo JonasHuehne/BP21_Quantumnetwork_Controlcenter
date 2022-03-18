@@ -2,6 +2,8 @@ package graphicalUserInterface.keyStoreEditor;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,6 +15,8 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 
+import exceptions.NoKeyWithThatIDException;
+import graphicalUserInterface.GenericWarningMessage;
 import keyStore.KeyStoreDbManager;
 import keyStore.KeyStoreObject;
 
@@ -38,7 +42,7 @@ public class DebugKeystoreEditor extends JFrame {
 			}
 		});
 		
-		btnNewButton.setBounds(10, 11, 89, 23);
+		btnNewButton.setBounds(159, 11, 89, 23);
 		getContentPane().add(btnNewButton);
 		
 		JScrollPane scrollPane = new JScrollPane();
@@ -71,8 +75,64 @@ public class DebugKeystoreEditor extends JFrame {
 				dialog.caller = kse;
 			}
 		});
-		insertButton.setBounds(109, 11, 140, 23);
+		insertButton.setBounds(258, 11, 140, 23);
 		getContentPane().add(insertButton);
+		
+		JButton buttonRemoveSelected = new JButton("Remove Selected");
+		buttonRemoveSelected.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int rowIndex = table.getSelectedRow();
+				String id = (String) table.getValueAt(rowIndex, 0); // id of the key in the selected row
+				try {
+					KeyStoreDbManager.deleteEntryIfExists(id);
+				} catch (SQLException e1) {
+					new GenericWarningMessage("An SQL Exception occurred: " + e1.getMessage());
+				}
+				updateTable();
+			}
+		});
+		buttonRemoveSelected.setToolTipText("Removes the selected entry.");
+		buttonRemoveSelected.setBounds(408, 11, 140, 23);
+		getContentPane().add(buttonRemoveSelected);
+		
+		JButton buttonChecksum = new JButton("Display Checksum");
+		buttonChecksum.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				int rowIndex = table.getSelectedRow();
+				String id = (String) table.getValueAt(rowIndex, 0); // id of the key in the selected row
+				byte[] key;
+				try {
+					key = KeyStoreDbManager.getEntryFromKeyStore(id).getCompleteKeyBuffer(); // complete key of selected row
+					MessageDigest md5 = MessageDigest.getInstance("MD5");
+					md5.update(key);
+					String checksum = new String(md5.digest());
+					new GenericWarningMessage(checksum);
+				} catch (NoKeyWithThatIDException e1) {
+					new GenericWarningMessage("Could not generate checksum: " + e1.getMessage());
+				} catch (SQLException e1) {
+					new GenericWarningMessage("An SQL Exception occurred: " + e1.getMessage());
+				} catch (NoSuchAlgorithmException e1) {
+					// Should not occur
+				}
+			}
+		});
+		buttonChecksum.setToolTipText("Displays the checksum of the selected key - useful for manually checking whether two keys are identical.");
+		buttonChecksum.setBounds(558, 11, 117, 23);
+		getContentPane().add(buttonChecksum);
+		
+		JButton buttonCreateDB = new JButton("Create DB");
+		buttonCreateDB.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					KeyStoreDbManager.createNewKeyStoreAndTable();
+				} catch (SQLException e1) {
+					new GenericWarningMessage("An SQL Exception occurred: " + e1.getMessage());
+				}
+			}
+		});
+		buttonCreateDB.setToolTipText("Creates the Keystore if it does not exist yet.");
+		buttonCreateDB.setBounds(20, 11, 129, 23);
+		getContentPane().add(buttonCreateDB);
 	}
 	
 	
