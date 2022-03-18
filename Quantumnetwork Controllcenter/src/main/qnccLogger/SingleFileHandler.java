@@ -45,7 +45,7 @@ public class SingleFileHandler {
         LocalDateTime now = LocalDateTime.now();
         String currentDateTime = dateTimeFormatter.format(now);
         
-        // get logs directory
+        // get logs directory;
         Path qnccPath = Paths.get(Configuration.getBaseDirPath());
     	Path logsPath = qnccPath.resolve("logs");
     	
@@ -53,7 +53,7 @@ public class SingleFileHandler {
     	if(!logsPath.toFile().isDirectory()) {
     		Configuration.createFolders();
     	}
-    	
+
     	//create log file
     	String fileName = currentDateTime + FILE_NAME;
 		File file = logsPath.resolve(fileName).toFile();
@@ -65,10 +65,19 @@ public class SingleFileHandler {
 			}
 		}
 		
-		//create
+		//Create Properties Folder
+		if(!propertiesDir.toFile().isDirectory()) {
+			try {
+				Files.createDirectory(propertiesDir);
+			} catch (IOException e) {
+				System.err.println("Failed to create Log Property Folder! " + e);
+			}
+    	}
+		
+		//Create Property File
 		Path myLoggingPropertiesPath = propertiesDir.resolve("logger.properties");
 		File myLoggingProperties = myLoggingPropertiesPath.toFile();
-		if(myLoggingProperties.isFile()) {
+		if(!myLoggingProperties.isFile()) {
 			try {
 				Files.createFile(myLoggingPropertiesPath); 
 				String properties = "java.util.logging.FileHandler.formatter=java.util.logging.SimpleFormatter\njava.util.logging.SimpleFormatter.format=[%1$tF %1$tT]   [%4$s]: %n	[at]:				%3$s %n	[Dev Message]:		%5$s %n	[Stacktrace]:%n%6$s%n------------------------------------------------------------%n";
@@ -77,7 +86,7 @@ public class SingleFileHandler {
 				System.err.println(e.toString());
 			}
 		}
-		
+
 		//set logging properties
 		try {
 			LogManager.getLogManager().readConfiguration(new FileInputStream(myLoggingProperties));

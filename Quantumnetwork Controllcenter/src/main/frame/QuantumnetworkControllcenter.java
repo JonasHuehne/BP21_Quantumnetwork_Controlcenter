@@ -46,7 +46,6 @@ public class QuantumnetworkControllcenter {
 	 * 		may be null, in this case the Properties file is not modified
 	 */
 	public static void initialize(String[] args) {
-		
 		//Open GUI or CUI
 		if(args != null && args.length == 3 && args[2].equals("noGUI")) {
 			LAUNCH_GUI = false;
@@ -58,6 +57,7 @@ public class QuantumnetworkControllcenter {
 
 		// Configuration Init
 		try {
+
 			Configuration.findProperties();
 			Configuration.createFolders();
 			
@@ -67,15 +67,18 @@ public class QuantumnetworkControllcenter {
 			System.err.println("ERROR: Configuration failed: " + e);
 		}
 		
+		//Logger Init
+		logger = new Log("QNCC Logger", LogSensitivity.WARNING);
+		logger.loggerShowInfos();
+		logger.logInfo("Run QuantumnetworkControllcenter initialization.");
+		
 		//Network Connection Init
 		if(args != null && args.length == 2) {
 			Configuration.setProperty("UserIP", args[0]);
 			Configuration.setProperty("UserPort", args[1]);
 		}
-
 		// Communication List Init
 		communicationList = new SQLiteCommunicationList();
-		
 		String userName = Configuration.getProperty("UserName");
 		String ip = Configuration.getProperty("UserIP");
 		int port = Integer.valueOf(Configuration.getProperty("UserPort"));
@@ -92,7 +95,6 @@ public class QuantumnetworkControllcenter {
 			System.exit(0);
 		} 
 		MessageSystem.conMan = conMan;
-
 		// Authentication Init
 		authentication = new SHA256withRSAAuthenticationGUI();
 		MessageSystem.setAuthenticationAlgorithm(authentication);
@@ -113,11 +115,6 @@ public class QuantumnetworkControllcenter {
 	 * 		may be null, in this case the Properties file is not modified
 	 */
 	public static void main(String[] args) {
-		
-
-		logger = new Log("QNCC Logger", LogSensitivity.WARNING);
-		logger.loggerShowInfos();
-		logger.logInfo("Run QuantumnetworkControllcenter initialization.");
 		
 		initialize(args);
 		
@@ -151,5 +148,6 @@ public class QuantumnetworkControllcenter {
 			}
 		});
 	}
+
 
 }

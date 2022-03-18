@@ -61,7 +61,7 @@ import qnccLogger.LogSensitivity;
  */
 public final class GUIMainWindow implements Runnable{
 	
-	Log guiLogger = new Log(GUIMainWindow.class.getSimpleName(), LogSensitivity.WARNING);
+	Log guiLogger;
 
 
 	private Object[][] contactData = {};
@@ -97,6 +97,7 @@ public final class GUIMainWindow implements Runnable{
 	 * Create the application.
 	 */
 	public GUIMainWindow() {
+		guiLogger = new Log(GUIMainWindow.class.getSimpleName(), LogSensitivity.WARNING);
 		initialize();
 		startUpdateService();
 
@@ -155,6 +156,11 @@ public final class GUIMainWindow implements Runnable{
 		toolBar.add(helpButton);
 		
 		JButton aboutButton = new JButton("About");
+		aboutButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				new AboutPage();
+			}
+		});
 		aboutButton.setToolTipText("About this Application");
 		toolBar.add(aboutButton);
 
@@ -351,7 +357,9 @@ public final class GUIMainWindow implements Runnable{
 		
 		connectionEndpointVerticalBox = Box.createVerticalBox();
 		scrollPane.setViewportView(connectionEndpointVerticalBox);
-
+		
+		//Debug Buttons Commented out
+		/*
 		JButton connectionDebug = new JButton("Debug Button 1");
 		connectionDebug.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
@@ -392,6 +400,7 @@ public final class GUIMainWindow implements Runnable{
 		});
 		debugButton2.setToolTipText("Displays some information about the currently selected CE.");
 		frame.getContentPane().add(debugButton2, "cell 0 0");
+		*/
 	}
 
 	public JFrame getFrame() {

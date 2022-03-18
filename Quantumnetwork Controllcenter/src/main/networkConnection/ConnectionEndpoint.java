@@ -230,8 +230,11 @@ public class ConnectionEndpoint implements Runnable{
 	 * @return returns the Connection State as a ConnectionStateEnum.
 	 */
 	public ConnectionState reportState() {
-		if(isConnected && !isBuildingConnection) {
+		if(isConnected && !isBuildingConnection && !getKeyGen().isKeyGenRunning()) {
 			return ConnectionState.CONNECTED;
+		}
+		if(isConnected && !isBuildingConnection && getKeyGen().isKeyGenRunning()) {
+			return ConnectionState.GENERATING_KEY;
 		}
 		if(!isConnected && !isBuildingConnection && !isListeningForMessages) {
 			if (readyForRemoval) return ConnectionState.READY_FOR_REMOVAL;

@@ -53,7 +53,9 @@ public class SettingsDialog extends JFrame {
 	private static String sourcePort = null;
 	private static String sourceSig = null;
 	private static String enc = null;
+	private static String python = null;
 	private JTextField sourceSigTextField;
+	private JTextField pythonScriptTextField;
 	
 
 
@@ -71,7 +73,7 @@ public class SettingsDialog extends JFrame {
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
 		contentPanel.setLayout(new GridLayout(0, 2, 0, 0));
 		{
-			JLabel ownNameLabel = new JLabel("Local Name:");
+			JLabel ownNameLabel = new JLabel("User Name:");
 			ownNameLabel.setHorizontalAlignment(SwingConstants.LEFT);
 			ownNameLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
 			contentPanel.add(ownNameLabel);
@@ -85,7 +87,7 @@ public class SettingsDialog extends JFrame {
 			ownNameTextField.setColumns(10);
 		}
 		{
-			JLabel ownIPLabel = new JLabel("Local IP:");
+			JLabel ownIPLabel = new JLabel("Server IP:");
 			ownIPLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
 			contentPanel.add(ownIPLabel);
 			ownIPLabel.setToolTipText("This should be your public IP. You can choose localhost, your LAN IP or your WAN IP.");
@@ -191,6 +193,18 @@ public class SettingsDialog extends JFrame {
 		}
 		contentPanel.add(reGenerateSigButton);
 		{
+			JLabel pythonScriptLabel = new JLabel("Python Script Name:");
+			pythonScriptLabel.setToolTipText("This is the name of the Python Script that is used during the Key Gen. The Script should be located in \"QNCC/python/\".");
+			pythonScriptLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
+			contentPanel.add(pythonScriptLabel);
+		}
+		{
+			pythonScriptTextField = new JTextField();
+			pythonScriptTextField.setToolTipText("This is the name of the Python Script that is used during the Key Gen. The Script should be located in \"QNCC/python/\".");
+			contentPanel.add(pythonScriptTextField);
+			pythonScriptTextField.setColumns(10);
+		}
+		{
 			JPanel buttonPane = new JPanel();
 			buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
 			getContentPane().add(buttonPane, BorderLayout.SOUTH);
@@ -238,13 +252,13 @@ public class SettingsDialog extends JFrame {
 		
 		name = Configuration.getProperty("UserName");	
 		if(name == null) {
-			Configuration.setProperty("UserName", "Default Name");
+			Configuration.setProperty("UserName", "DefaultName");
 			name = Configuration.getProperty("UserName");
 		}
 		
 		ip = Configuration.getProperty("UserIP");	
 		if(ip == null) {
-			Configuration.setProperty("UserIP", "localhost");
+			Configuration.setProperty("UserIP", "127.0.0.1");
 			ip = Configuration.getProperty("UserIP");
 		}
 		
@@ -277,6 +291,12 @@ public class SettingsDialog extends JFrame {
 			Configuration.setProperty("Encoding", "ISO-8859-1");
 			enc = Configuration.getProperty("Encoding");
 		}
+		
+		python = Configuration.getProperty("PythonName");
+		if(python == null) {
+			Configuration.setProperty("PythonName", "examplePythonScript.py");
+			python = Configuration.getProperty("PythonName");
+		}
 	}
 	
 	/**This method reads the config file values and adds them into the textFields.
@@ -296,6 +316,9 @@ public class SettingsDialog extends JFrame {
 		sourceSigTextField.setText(sourceSig);
 		
 		encodingComboBox.setSelectedItem(enc);
+		
+		pythonScriptTextField.setText(python);
+		
 	}
 
 	/**This method reads the text from the textFields and writes them into the config file.
@@ -321,5 +344,6 @@ public class SettingsDialog extends JFrame {
 		Configuration.setProperty("SourcePort", sourcePortTextField.getText());
 		Configuration.setProperty("SourceSignature", sourceSigTextField.getText());
 		Configuration.setProperty("Encoding", (String) encodingComboBox.getSelectedItem());
+		Configuration.setProperty("PythonName", pythonScriptTextField.getText());
 	}
 }

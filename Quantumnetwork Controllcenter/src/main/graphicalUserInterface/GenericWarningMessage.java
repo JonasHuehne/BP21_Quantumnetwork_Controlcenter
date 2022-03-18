@@ -31,7 +31,7 @@ public class GenericWarningMessage extends JFrame {
 	 * @param warningText the content of the warning windows text area.
 	 */
 	public GenericWarningMessage(String warningText) {
-		
+		setTitle("Important Message");
 		setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 		setVisible(true);
 		toFront();
