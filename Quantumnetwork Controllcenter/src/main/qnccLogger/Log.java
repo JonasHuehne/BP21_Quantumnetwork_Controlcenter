@@ -25,6 +25,7 @@ public class Log {
 	 * @param sensitivity sensitivity for logevents to be saved
 	 */
 	public Log(String loggerName, LogSensitivity sensitivity) {
+		
 		logger = Logger.getLogger(loggerName);
 		logger.addHandler(fileHandler);
 		switch(sensitivity) {
@@ -37,6 +38,7 @@ public class Log {
 		default:
 			logger.setLevel(Level.WARNING);
 		}
+		
 	}
 	
 	/**

@@ -23,6 +23,7 @@ import keyStore.KeyStoreObject;
 public class DebugKeystoreEditor extends JFrame {
 	private JTable table;
 	public DebugKeystoreEditor() {
+		setTitle("Key DB Editor");
 		getContentPane().setLayout(null);
 		
 		this.setSize(1024, 720);

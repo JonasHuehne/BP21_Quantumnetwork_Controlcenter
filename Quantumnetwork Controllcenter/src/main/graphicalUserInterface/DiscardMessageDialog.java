@@ -27,6 +27,7 @@ import messengerSystem.SigKeyQueryInteractionObject;
 public class DiscardMessageDialog extends JDialog {
 
     public DiscardMessageDialog(String connectionID, SigKeyQueryInteractionObject sigKeyQuery) {
+    	setTitle("Discard Message?");
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         setVisible(true);
 

@@ -29,9 +29,15 @@ public class CESignatureQueryDialog extends JFrame {
 	JLabel titleNewLabel;
 
 	/**
-	 * Create the dialog.
+	 * Create the dialog that asks for a signature file. This is opened if a message was received and needs to be verified but no signature was found or if
+	 * the Connection Mode is switched to AUTHENTICATED locally.
+	 * @param connectionID the Connection that needs the signature of its communication partner.
+	 * @param sigKeyQuery	the Query Object that is used to signal what actions were taken to the calling method.
+	 * @param preemptiveQuery	if this is false, a message has been received and a sig key is needed immediately.
+	 * 							if this is true, it is a preemptiveQuery that was caused by switching the local Mode to AUTHENTICATED.
 	 */
 	public CESignatureQueryDialog(String connectionID, SigKeyQueryInteractionObject sigKeyQuery, boolean preemptiveQuery) {
+		setTitle("Missing Signature Key");
 		setBounds(100, 100, 550, 150);
 		getContentPane().setLayout(new BorderLayout());
 		setVisible(true);

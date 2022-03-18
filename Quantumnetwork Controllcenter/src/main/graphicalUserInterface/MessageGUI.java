@@ -54,6 +54,7 @@ public class MessageGUI extends JFrame {
 	 */
 	public MessageGUI(String connectionID) {
 		this.connectionID = connectionID;
+		setTitle("Message Log");
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setVisible(true);
 		setBounds(100, 100, 450, 550);
