@@ -94,14 +94,7 @@ public class MessageSystemTests {
 		// (limitation of local testing, could be solved via mock classes, but no time)
 		
 		// Initialize only the relevant part of the QNCC
-		/*
-		 * Potential TODO:
-		 * - Change Authentication from Interface to Abstract Class 
-		 *   (https://www.tutorialspoint.com/when-to-use-an-abstract-class-and-when-to-use-an-interface-in-java)
-		 * - Add settable field for the used CommunicationList
-		 * --> this allows testing of the components without initializing the QNCC
-		 * --> further decouples them
-		 */
+
 		QuantumnetworkControllcenter.communicationList = new SQLiteCommunicationList();
 		CommunicationList commList = QuantumnetworkControllcenter.communicationList;
 		

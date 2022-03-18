@@ -29,6 +29,11 @@ public class DiscardMessageDialog extends JDialog {
 
 	private static final long serialVersionUID = -2813240682818696371L;
 
+    /**
+     * Creating a new dialog
+     * @param connectionID the id of the related connection
+     * @param sigKeyQuery the object for interacting with the verify method
+     */
     public DiscardMessageDialog(String connectionID, SigKeyQueryInteractionObject sigKeyQuery) {
     	setTitle("Discard Message?");
         setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);

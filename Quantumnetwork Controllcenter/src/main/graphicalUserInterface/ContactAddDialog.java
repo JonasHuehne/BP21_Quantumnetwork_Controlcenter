@@ -15,6 +15,8 @@ import javax.swing.JTextField;
 
 import frame.QuantumnetworkControllcenter;
 import net.miginfocom.swing.MigLayout;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 /**This Dialog is used to add a new Contact to the ContactDB.
  * 
@@ -31,6 +33,8 @@ public class ContactAddDialog extends JFrame {
 	private JTextField sigTextField;
 	private JButton okButton;
 	private JButton cancelButton;
+
+	private static Log log = new Log(ConnectionAddDialog.class.getName(), LogSensitivity.WARNING);
 
 
 	/**
@@ -134,7 +138,7 @@ public class ContactAddDialog extends JFrame {
 							int port = Integer.valueOf(portTextField.getText());
 							QuantumnetworkControllcenter.guiWindow.addRowToContactTable(nameTextField.getText(), ipTextField.getText(), port, sigTextField.getText());
 						} catch (NumberFormatException nfe) {
-							// TODO: log
+							log.logWarning("Contact could not be added, because the port is not a number.", nfe);
 							new GenericWarningMessage("Contact could not be added, because the entered port is not a number."
 									+ " Please refer to the log for details.");
 						}

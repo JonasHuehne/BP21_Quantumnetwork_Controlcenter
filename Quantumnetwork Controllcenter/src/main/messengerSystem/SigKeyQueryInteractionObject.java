@@ -2,6 +2,7 @@ package messengerSystem;
 
 /**
  * Object to control the interaction between the verification method and the gui windows
+ * @author Sarah Schumann
  */
 public class SigKeyQueryInteractionObject {
 
