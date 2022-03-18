@@ -15,6 +15,8 @@ import java.util.HashMap;
 import exceptions.CouldNotDecryptMessageException;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.VerificationFailedException;
+import frame.QuantumnetworkControllcenter;
+import graphicalUserInterface.GUIMainWindow;
 import keyGeneration.KeyGenerator;
 import messengerSystem.MessageSystem;
 import qnccLogger.Log;
@@ -141,6 +143,8 @@ public class ConnectionEndpoint implements Runnable{
 		this.isConnected = true;
 		this.keyStoreID = connectionID;
 		
+		checkTableForSig();
+		
 		ceLogger.logInfo("[CE " + connectionName + "] Local values have been set. Now sending a connection confirmation to the partner CE. ");
 		
 		try {
@@ -223,6 +227,36 @@ public class ConnectionEndpoint implements Runnable{
 	 */
 	public void setSigKey(String sigKey) {
 		publicSignatureKey = sigKey;
+	}
+	
+	/**This method is used by automatically created CEs to check if the connection partner is listed in the Contact Table.
+	 * If the IP:Port match, the SIG value is used as this CEs Signature Key.
+	 * 
+	 */
+	private void checkTableForSig() {
+		System.out.println("Checking for known Sig for IP:Port Pair.");
+		GUIMainWindow gui = QuantumnetworkControllcenter.guiWindow;
+		int row = gui.getContactTable().getRowCount();
+		String ip;
+		int port;
+		String sig;
+		ArrayList<String> matches = new ArrayList<String>();
+		
+
+		for(int i = 0; i < row; i++) {
+			ip = (String) gui.getContactTable().getValueAt(i, 1);
+			port = (Integer) gui.getContactTable().getValueAt(i, 2);
+			if(ip.equals(remoteIP) && port== remotePort) {
+				sig = (String) gui.getContactTable().getValueAt(i, 3);
+				matches.add(sig);
+			}
+		}
+		
+
+		//If only one possible match was found, use it.
+		if(matches.size() == 1) {
+			setSigKey(matches.get(0));
+		}
 	}
 	
 	/**Reports the current State of this Endpoints Connection.
@@ -408,7 +442,6 @@ public class ConnectionEndpoint implements Runnable{
 	
 	/**Closes the connection to another ConnectionEndpoint. Does not inform the other endpoint! For that, use {@link #closeWithTerminationRequest()}.
 	 * Can also be used to stop a ConnectionEndpoint from waitingForConnection()
-	 * @throws IOException	This will be thrown if the closing of any of the Sockets fails. Needs to be handled depending on the context of and by the caller.
 	 */
 	public void forceCloseConnection(){
 		ceLogger.logInfo("[CE " + connectionID + "]: Local Shutdown of ConnectionEndpoint " + connectionID);
@@ -460,8 +493,8 @@ public class ConnectionEndpoint implements Runnable{
 		ceLogger.logInfo(("[CE " + connectionID + "]: Pushing message with type " + message.getType() + " and ID " + Base64.getEncoder().encodeToString(message.getID())));
 		// NetworkPackages are only send if it's either a connection request, or we are connected
 		TransmissionTypeEnum type = message.getType();
-		if (   !type.equals(TransmissionTypeEnum.CONNECTION_REQUEST)	
-				&& !reportState().equals(ConnectionState.CONNECTED)) {
+		if (   !type.equals(TransmissionTypeEnum.CONNECTION_REQUEST) && !reportState().equals(ConnectionState.CONNECTED) && !(reportState().equals(ConnectionState.GENERATING_KEY))) {
+			System.out.println("CE State is: " + reportState().toString());
 				throw new EndpointIsNotConnectedException(connectionID, " push message of type " + type);
 		}
 
@@ -469,7 +502,6 @@ public class ConnectionEndpoint implements Runnable{
 		try {
 			clientOut.writeObject(message);
 		} catch (IOException e) {
-			// TODO Think about how to handle this
 			ceLogger.logError("An I/O Exception occurred trying to push a message to the other endpoint.", e);
 		}
 	}
@@ -487,7 +519,6 @@ public class ConnectionEndpoint implements Runnable{
 			return;
 		}
 		isListeningForMessages = true;
-		//System.out.println("[" + connectionID + "]: Waiting for Message has started!");
 		messageThread.start();
 		return;			
 	}
@@ -509,7 +540,7 @@ public class ConnectionEndpoint implements Runnable{
 			isBuildingConnection = false;
 			isConnected = true;
 			ceLogger.logInfo("[CE " + connectionID + "]: Connection Confirmation received! RemoteName = " + remoteName);
-			return;
+
 
 		} else {
 			try {
@@ -686,14 +717,6 @@ public class ConnectionEndpoint implements Runnable{
 	public NetworkPackage removeFromPushQueue(byte[] id) {
 		String stringID = Base64.getEncoder().encodeToString(id);
 		return pushOnceApproved.remove(stringID);
-	}
-	
-	/**
-	 * If this is called, this CE will be in state {@linkplain ConnectionState#READY_FOR_REMOVAL}
-	 * instead of {@linkplain ConnectionState#CLOSED} when it is closed.
-	 */
-	public void removeOnceClosed() {
-		this.readyForRemoval = true;
 	}
 	
 }

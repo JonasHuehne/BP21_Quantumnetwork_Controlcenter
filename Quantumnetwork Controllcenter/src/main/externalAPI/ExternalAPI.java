@@ -280,7 +280,7 @@ public class ExternalAPI {
 		
 		SignatureAuthentication auth = new SHA256withRSAAuthentication();
 		// if there is no (sk, pk) pair create it
-		// TODO (easier once Sarah's PR is done)
+		auth.generateSignatureKeyPair("signature", true, false, false);
 		cipher = new AES256();
 		MessageSystem.setAuthenticationAlgorithm(auth);
 		MessageSystem.setEncryption(cipher);

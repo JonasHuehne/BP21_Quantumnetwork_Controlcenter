@@ -38,17 +38,15 @@ import communicationList.Contact;
 import exceptions.EndpointIsNotConnectedException;
 import exceptions.KeyGenRequestTimeoutException;
 import exceptions.ManagerHasNoSuchEndpointException;
-import exceptions.NoKeyWithThatIDException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import graphicalUserInterface.keyStoreEditor.DebugKeystoreEditor;
 import keyStore.KeyStoreDbManager;
-import keyStore.KeyStoreObject;
+import messengerSystem.MessageSystem;
 import messengerSystem.SigKeyQueryInteractionObject;
 import messengerSystem.Utils;
 import net.miginfocom.swing.MigLayout;
 import networkConnection.ConnectionEndpoint;
-import networkConnection.ConnectionManager;
 import networkConnection.ConnectionState;
 import networkConnection.ConnectionType;
 import qnccLogger.Log;
@@ -86,9 +84,6 @@ public final class GUIMainWindow implements Runnable{
 	private final int contactDBPortIndex = 2;
 	/** column of the contacts table in which the public keys are listed */
 	private final int contactDBPubSigKeyIndex = 3;
-	
-	/** used in updating the list of active connections */
-	private ArrayList<String> namesOfConnections = new ArrayList<String>();
 	
 	public HashMap<String,ConnectionType> conType = new HashMap<String,ConnectionType>();
 	protected ArrayList<MessageGUI> openChatWindows = new ArrayList<MessageGUI>();
@@ -603,6 +598,15 @@ public final class GUIMainWindow implements Runnable{
 		} catch (ManagerHasNoSuchEndpointException e1) {
 			new GenericWarningMessage("ERROR - Could not remove connection: " + activeConnection + ". No such connection exists.");
 		}
+	}
+	
+	/**This has the same effect as removeCEEntry(), but applies to all CEs
+	 * 
+	 */
+	public void removeAllCEEntries() {
+		//System.out.println("Received call to remove all connections!");
+		Map<String,ConnectionEndpoint> connections = MessageSystem.conMan.returnAllConnections();
+		connections.forEach((k,v) -> removeCEEntry(k));
 	}
 
 	/**

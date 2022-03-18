@@ -29,6 +29,7 @@ import networkConnection.ConnectionType;
 import networkConnection.MessageArgs;
 import networkConnection.NetworkPackage;
 import networkConnection.TransmissionTypeEnum;
+import javax.swing.ScrollPaneConstants;
 
 /**This GUI contains a chatLog that visualizes the MessageLog of a connectionEndpoint.
  * It allows for sending plain-text Messages and for sending Files.
@@ -98,17 +99,31 @@ public class MessageGUI extends JFrame {
 		controlSplitPane.setRightComponent(buttonSplitPane);
 		
 		JTextArea messageTextArea = new JTextArea();
+		messageTextArea.setLineWrap(true);
 		controlSplitPane.setLeftComponent(messageTextArea);
 		
 		JButton sendMessageButton = new JButton("Send Message");
 		sendMessageButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				
+				//Check for removed CE
+				if(MessageSystem.conMan.getConnectionEndpoint(connectionID) == null) {
+					new GenericWarningMessage("Warning: You are trying to send a Message on a Connection that no longer exists!");
+					messageTextArea.setText("");
+					return;
+				}
+				
+				//Check for illegal State
+				if((MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState() != ConnectionState.CONNECTED) && (MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState() != ConnectionState.GENERATING_KEY)) {
+					new GenericWarningMessage("Warning: You can only send a Message if the Connection either has State CONNECTED or GENERATING_KEY! The current State is: " + MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState());
+					messageTextArea.setText("");
+					return;
+				}
+				
+				//Check for empty Text
 				String msg = messageTextArea.getText();
 				if(msg == null||msg.equals("")) {
 					new GenericWarningMessage("Warning: you can not send an empty Message!");
-				}
-				if(MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState() != ConnectionState.CONNECTED) {
-					new GenericWarningMessage("Warning: you can not send Message on a Connection that is not connected!");
 				}
 
 				try {
@@ -145,6 +160,20 @@ public class MessageGUI extends JFrame {
 		JButton sendFileButton = new JButton("Send File");
 		sendFileButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				
+				//Check for removed CE
+				if(MessageSystem.conMan.getConnectionEndpoint(connectionID) == null) {
+					new GenericWarningMessage("Warning: You are trying to send a File on a Connection that no longer exists!");
+					messageTextArea.setText("");
+					return;
+				}
+				
+				//Check for illegal State
+				if((MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState() != ConnectionState.CONNECTED) && (MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState() != ConnectionState.GENERATING_KEY)) {
+					new GenericWarningMessage("Warning: You can only send a File if the Connection either has State CONNECTED or GENERATING_KEY! The current State is: " + MessageSystem.conMan.getConnectionEndpoint(connectionID).reportState());
+					return;
+				}
+				
 				final JFileChooser fc = new JFileChooser();
 				int choice = fc.showOpenDialog(sendFileButton);
 				File f = fc.getSelectedFile();

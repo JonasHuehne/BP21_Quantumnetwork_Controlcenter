@@ -8,7 +8,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.sql.SQLException;
-import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -105,7 +104,7 @@ public class MessageSystem {
 	 * @throws ManagerHasNoSuchEndpointException
 	 * 		if no endpoint of the given name exists in the ConnectionManager of this class
 	 */
-	private static void sendMessage(String connectionID, TransmissionTypeEnum type, MessageArgs args, byte[] content, boolean sign, boolean confirm)
+	public static void sendMessage(String connectionID, TransmissionTypeEnum type, MessageArgs args, byte[] content, boolean sign, boolean confirm)
 			throws EndpointIsNotConnectedException, ManagerHasNoSuchEndpointException {
 		NetworkPackage message = new NetworkPackage(type, args, content, confirm);
 		if (sign) message.sign(authenticator);
