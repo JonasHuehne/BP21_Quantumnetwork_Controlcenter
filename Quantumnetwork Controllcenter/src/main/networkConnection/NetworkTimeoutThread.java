@@ -5,6 +5,9 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.time.Instant;
 
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
+
 /**This Utility can be used to easily setup Timeouts.
  * It needs to be supplied the duration until the timeout is happening, 
  * a reference to the object that wants to set up the Timeout,
@@ -25,7 +28,7 @@ public class NetworkTimeoutThread extends Thread{
 	Method methodToCall;	//the message to call after timeout
 	Object caller;	//the object that requested the timer
 	Object[] args;	//dummy arguments for the method call on timeout, not supported
-	
+	private static Log log = new Log(NetworkTimeoutThread.class.getName(), LogSensitivity.WARNING);
 	
 	/**
 	 * 
@@ -103,16 +106,9 @@ public class NetworkTimeoutThread extends Thread{
 		}
 		try {
 			methodToCall.invoke(caller, args);
-		} catch (IllegalAccessException e) {
-			System.err.println("Exception in NetworkTimer!");
-			e.printStackTrace();
-		} catch (IllegalArgumentException e) {
-			System.err.println("Exception in NetworkTimer!");
-			e.printStackTrace();
-		} catch (InvocationTargetException e) {
-			System.err.println("Exception in NetworkTimer!");
-			e.printStackTrace();
-		}
+		} catch (Exception e) {
+			log.logError("Exception in NetworkTimer!", e);
+		} 
 	}
 	
 	/**
@@ -154,7 +150,7 @@ public class NetworkTimeoutThread extends Thread{
 				if(Duration.between(startWait, current).toMillis() >= msDuration) {
 					state = NetworkTimerState.TIMED_OUT;
 					if(!timeoutMessage.equals("")) {
-						System.out.println(timeoutMessage);
+						log.logWarning(timeoutMessage);
 					}
 					onTimeout();
 					

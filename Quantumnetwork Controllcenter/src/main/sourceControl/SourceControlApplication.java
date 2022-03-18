@@ -14,6 +14,8 @@ import frame.QuantumnetworkControllcenter;
 import messengerSystem.SignatureAuthentication;
 import messengerSystem.MessageSystem;
 import networkConnection.NetworkPackage;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 
 /**This is the Photon Source API
@@ -29,35 +31,33 @@ public class SourceControlApplication {
 
 	public static CommunicationList communicationList;
 	public static SignatureAuthentication authentication;
-
+	private static Log log = new Log(SourceControlApplication.class.getName(), LogSensitivity.INFO);
 	
 	public static void writeSignalFile(NetworkPackage transmission, String senderID) {
-		System.out.println("[PhotonSource]: Received Signal, starting to write File!");
+		log.logInfo("[PhotonSource]: Received Signal, starting to write File!");
 		String fileName = transmission.getMessageArgs().fileName();
 		String sourceInfo = MessageSystem.byteArrayToString(transmission.getContent());
 		Writer inWriter;
-		System.out.println("[PhotonSource]: fileName: " + fileName);
-		System.out.println("[PhotonSource]: sourceInfo: " + sourceInfo);
+		log.logInfo("[PhotonSource]: fileName: " + fileName);
+		log.logInfo("[PhotonSource]: sourceInfo: " + sourceInfo);
 		Path basePath = Path.of(System.getProperty("user.dir") + File.separator + "Signals" + File.separator);
 		Path inFilePath = Path.of(System.getProperty("user.dir") + File.separator + "Signals" + File.separator + fileName + ".txt");
 		try {
-			System.out.println("[PhotonSource]: Creating Folders at: " + basePath);
+			log.logInfo("[PhotonSource]: Creating Folders at: " + basePath);
 			Files.createDirectories(basePath);
 		} catch (IOException e1) {
-			System.out.println("[PhotonSource]: Folder-Creation failed!");
-			e1.printStackTrace();
+			log.logError("[PhotonSource]: Folder-Creation failed!", e1);
 		}
 		try {
 			inWriter = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(inFilePath), Configuration.getProperty("Encoding")));
-			System.out.println("Writing content: " + sourceInfo + " in file: " + inFilePath + "!");
+			log.logInfo("Writing content: " + sourceInfo + " in file: " + inFilePath + "!");
 			inWriter.write(sourceInfo);
 			inWriter.close();
-			System.out.println("[PhotonSource]: Writing File!");
+			log.logInfo("[PhotonSource]: Writing File!");
 		} catch (IOException e) {
-			System.out.println("[PhotonSource]: Error while writing File!");
-			e.printStackTrace();
+			log.logError("[PhotonSource]: Error while writing File!", e);
 		}
-		System.out.println("[PhotonSource]: ---Completed Signal-processing, sending destroy order via CE!---");
+		log.logInfo("[PhotonSource]: ---Completed Signal-processing, sending destroy order via CE!---");
 		QuantumnetworkControllcenter.conMan.destroySourceConnection(senderID, false);
 
 	}
