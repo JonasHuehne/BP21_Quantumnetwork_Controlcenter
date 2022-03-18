@@ -9,6 +9,8 @@ import communicationList.Contact;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import networkConnection.ConnectionEndpoint;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 /**
  * Class for utility methods connected to this package
@@ -30,6 +32,8 @@ public class Utils {
      */
     public static final String KEY_PATH = "SignatureKeys" + File.separator;
 
+    private static Log log = new Log(Utils.class.getName(), LogSensitivity.WARNING);
+    
     /**
      * Method to read a key from the specified file in the SignatureKeys folder
      * and return it as a string
@@ -41,7 +45,7 @@ public class Utils {
     public static String readKeyStringFromFile(final String fileName) {
         try {
             if(!Pattern.matches(KEY_FILENAME_SYNTAX, fileName)) {
-                System.err.println("Error while creating a key string from the input file: "
+                log.logWarning("Error while creating a key string from the input file: "
                         + "wrong key file format");
                 return null;
             }
@@ -52,7 +56,7 @@ public class Utils {
                     .replaceAll("-----.{5,50}-----", "")
                     .replace(System.lineSeparator(), "");
         } catch (Exception e) {
-            System.err.println("Error while creating a key string from the input file: " + e.getMessage());
+            log.logError("Error while creating a key string from the input file: ", e);
             return null;
         }
     }
