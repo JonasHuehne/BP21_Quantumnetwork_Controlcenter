@@ -375,7 +375,7 @@ public class KeyStoreDbManager {
 	 * @throws NoKeyWithThatIDException
 	 * 		if no key with the specified ID could be found in the database 
 	 */
-	public static KeyStoreObject getEntryFromKeyStore(String keyStreamID) // TODO? Could potentially return null instead of NoKeyException, would need minor adjustments elsewhere
+	public static KeyStoreObject getEntryFromKeyStore(String keyStreamID) // Could potentially return null instead of NoKeyException, would need minor adjustments elsewhere
 			throws NoKeyWithThatIDException, SQLException {
 		if (!doesKeyStreamIdExist(keyStreamID)) {
 			throw new NoKeyWithThatIDException("There is no key in the keystore with ID " + keyStreamID);
@@ -504,112 +504,6 @@ public class KeyStoreDbManager {
 					+ (obj.getCompleteKeyBuffer().length - index) + " bytes are left.");
 
 		return Arrays.copyOfRange(obj.getCompleteKeyBuffer(), index, index + nbytes);
-	}
-
-	/*
-	 * ------ API Methods ------
-	 */
-
-	/**
-	 * from etsi paper: Reserve an association (Key_stream_ID) for a set of future
-	 * keys at both ends of the QKD link through this distributed QKD key management
-	 * layer and establish a set of parameters that define the expected levels of
-	 * key service. This function shall block until the peers are connected or until
-	 * the Timeout value in the QoS parameter is exceeded.
-	 *
-	 * @param source        identifier for the source application
-	 * @param destination   identifier for the destination application
-	 * @param qosParameters multiple parameters that are delivered as a QoS Object
-	 *                      
-	 * @param keyStreamID   reference ID to locate a key
-	 * @return number of status
-	 * @throws SQLException 
-	 * 		if there was an error with the database
-	 */
-	public static int open_Connect(String source, String destination, QoS qosParameters, String keyStreamID,
-			boolean peerConnected, boolean initiative) throws SQLException {
-
-		// return 5 -----> if KeyStreamID already exists
-		if (!doesKeyStreamIdExist(keyStreamID)) {
-			return 5;
-		}
-
-		insertToKeyStore(keyStreamID, null, source, destination, false, initiative);
-		boolean insertbool = doesKeyStreamIdExist(keyStreamID);
-
-		if (insertbool) {
-			// return 0 -----> if everything was successful
-			if (peerConnected)
-				return 0;
-
-			// return 1 -----> if connection was established but peer is not connected
-			return 1;
-
-		} else {
-			return -1; // indicating that something went wrong
-		}
-
-		// TODO
-
-		// return 6 -----> if the timeout parameter is exceeded -----> when is it
-		// exceeded tho?
-
-		// return 7 -----> if OPEN failed because requested QoS settings could not be
-		// met, counter proposal included in return has occurred
-
-	}
-
-	/**
-	 * from etsi: Terminate the association established for this Key_stream_ID. No
-	 * further keys shall be allocated for this Key_stream_ID after the association
-	 * has been closed. Due to timing differences at the other end of the link this
-	 * peer operation will happen at some other time and any unused keys shall be
-	 * held until that occurs and then discarded or the TTL (Time To Live QoS
-	 * parameter) has expired.
-	 *
-	 * @param keyStreamID reference ID to locate a key
-	 * @return number of status
-	 * @throws SQLException 
-	 * 		if there was an error with the database
-	 */
-	static int close(String keyStreamID, boolean peerConnected) throws SQLException {
-		// delete keyInformation for this ID
-
-		// return 0 -----> if everything was successful
-		if (doesKeyStreamIdExist(keyStreamID)) {
-			deleteEntryIfExists(keyStreamID);
-			if (peerConnected)
-				return 0;
-			return 1;
-		}
-		logger.logWarning("There is no Entry with this KeyStreamID");
-		return -1; // -1 = new Status parameter indicating that the operation failed
-
-	}
-
-	/**
-	 * Etsi paper page 9 latest version for more information
-	 *
-	 * @param keyStreamID reference ID to locate a key
-	 * @return number of status + the key
-	 * @throws SQLException 
-	 * 		if there was an error with the database
-	 * @throws NoKeyWithThatIDException
-	 * 		if no key with that ID is in the database
-	 */
-	public static Map.Entry<byte[], Integer> get_Key(String keyStreamID) throws NoKeyWithThatIDException, SQLException {
-
-		if (doesKeyStreamIdExist(keyStreamID)) {
-			KeyStoreObject obj = getEntryFromKeyStore(keyStreamID);
-			int index = obj.getIndex();
-			byte[] key = obj.getCompleteKeyBuffer();
-
-			return new AbstractMap.SimpleEntry<byte[], Integer>(key, index);
-		}
-
-		logger.logWarning("There is no Entry with this keyStreamID!");
-		return null;
-
 	}
 
 }

@@ -29,6 +29,8 @@ import networkConnection.ConnectionType;
 import networkConnection.MessageArgs;
 import networkConnection.NetworkPackage;
 import networkConnection.TransmissionTypeEnum;
+import qnccLogger.Log;
+import qnccLogger.LogSensitivity;
 
 /**This GUI contains a chatLog that visualizes the MessageLog of a connectionEndpoint.
  * It allows for sending plain-text Messages and for sending Files.
@@ -50,6 +52,8 @@ public class MessageGUI extends JFrame {
 	private int loggedMessagesAmount = 0;
 	/** Used for chat refreshing, specifically, logging received files */
 	private int loggedFilesAmount = 0;
+
+	private static Log log = new Log(MessageGUI.class.getName(), LogSensitivity.WARNING);
 	
 	/**
 	 * Create the frame.
@@ -147,7 +151,8 @@ public class MessageGUI extends JFrame {
 					MessageSystem.conMan.getConnectionEndpoint(connectionID).appendMessageToChatLog(true, 0, msg);
 				} catch (CouldNotSendMessageException e1) {
 					new GenericWarningMessage("ERROR - Could not send message to connection: " + connectionID + ". " + e1.getMessage());
-					// TODO log the error, for some specific errors maybe throw a specific warning message (getCause() and instanceof)
+					log.logWarning("WARNING - Could not send message to connection: " + connectionID + ".", e1);
+					// TODO (potentially): This Exception typically wraps a lower exception. Potentially use getCause() and display different error messages depending on the exact cause
 				} 
 				
 				messageTextArea.setText("");
