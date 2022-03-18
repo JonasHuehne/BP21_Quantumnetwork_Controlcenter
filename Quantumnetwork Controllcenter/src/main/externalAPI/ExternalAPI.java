@@ -50,7 +50,7 @@ import networkConnection.ConnectionManager;
  */
 public class ExternalAPI {
 	
-	private static boolean initialized = true;
+	private static boolean initialized = false;
 	private static ConnectionManager conMan; // connection manager, used when joining the network
 	private static SymmetricCipher cipher; // cipher used for encryption / decryption
 	
@@ -273,7 +273,9 @@ public class ExternalAPI {
 	 * 		if a ConnectionManager is running on this machine already using that port
 	 */
 	public static void initialize(String localName, String localAddress, int localPort) throws IOException, PortIsInUseException {
-		if (initialized) return; // do not initialize twice
+		if (initialized) {// do not initialize twice
+			return; 
+		}
 		
 		CommunicationList commList = new SQLiteCommunicationList();
 		conMan = new ConnectionManager(localAddress, localPort, localName, commList);
@@ -321,27 +323,11 @@ public class ExternalAPI {
 		return initialized;
 	}
 	
-	/*
-	 * uncomment for manual testing
-	 *
-	public static void main(String[] args) {
-		encryptFile("42debugging42", "jpgTest.jpg");
-		decryptFile("42debugging42", "encrypted_jpgTest.jpg");
-		
-		encryptFile("42debugging42", "odsTest.ods");
-		decryptFile("42debugging42", "encrypted_odsTest.ods");
-		
-		encryptFile("42debugging42", "odtTest.odt");
-		decryptFile("42debugging42", "encrypted_odtTest.odt");
-		
-		encryptFile("42debugging42", "pdfTest.pdf");
-		decryptFile("42debugging42", "encrypted_pdfTest.pdf");
-		
-		encryptFile("42debugging42", "txtTest.txt");
-		decryptFile("42debugging42", "encrypted_txtTest.txt");
-		
-		encryptFile("42debugging42", "zipTest.zip");
-		decryptFile("42debugging42", "encrypted_zipTest.zip");
+	/**
+	 * @return the cipher currently in use by the external API, null if not initialized
+	 */
+	public static SymmetricCipher getCipher() {
+		return cipher;
 	}
-	*/
+
 }

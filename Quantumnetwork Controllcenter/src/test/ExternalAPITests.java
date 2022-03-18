@@ -1,19 +1,29 @@
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.InvalidKeyException;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Random;
 
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.SecretKey;
 
 import messengerSystem.Utils;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -21,9 +31,16 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import communicationList.Contact;
+import encryptionDecryption.SymmetricCipher;
+import exceptions.CouldNotDecryptMessageException;
+import exceptions.CouldNotEncryptMessageException;
+import exceptions.CouldNotGetKeyException;
+import exceptions.ExternalApiNotInitializedException;
+import exceptions.PortIsInUseException;
 import externalAPI.ExternalAPI;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
+import keyStore.KeyStoreDbManager;
 import networkConnection.ConnectionManager;
 
 /**
@@ -37,140 +54,108 @@ public class ExternalAPITests {
 	private Path currentWorkingDir = Path.of(Configuration.getBaseDirPath());
 	private Path externalPath = currentWorkingDir.resolve("externalAPI");
 	
-	private final static byte[] key = new byte[] { (byte) 1, (byte) 2, (byte) 3, (byte) 4, (byte) 5, (byte) 6, (byte) 7, (byte) 8, (byte) 9, (byte) 10, (byte) 11, (byte) 12, (byte) 13, (byte) 14, (byte) 15, (byte) 16, (byte) 17, (byte) 18, (byte) 19, (byte) 20, (byte) 21, (byte) 22, (byte) 23, (byte) 24, (byte) 25, (byte) 26, (byte) 27, (byte) 28, (byte) 29, (byte) 30, (byte) 31, (byte) 32};
+	private static byte[] key = new byte[512];
 	
-	/*
-	@Test
-	public void exportKeyByteArrayTest() {
-		byte[] bytes = ExternalAPI.exportKeyByteArray("42debugging42");
-
-		assertArrayEquals(bytes, key);
-	}
-	
-	@Test
-	public void exportKeyStringTest() {
-		String string = ExternalAPI.exportKeyString("42debugging42");
-		String expected = "1234567891011121314151617181920212223242526272829303132";
-		
-		assertEquals(string, expected);
-	}
-	
-	@Test
-	public void exportKeySecretKeyTest() {
-		SecretKey sk = ExternalAPI.exportKeySecretKey("42debugging42");
-		byte[] keyBytes = sk.getEncoded();
-		
-		assertArrayEquals(keyBytes, key);
-	}
-	
-	@ParameterizedTest
-	@ValueSource(strings = {"jpgTest.jpg", "odsTest.ods", "odtTest.odt", "pdfTest.pdf", "txtTest.txt", "zipTest.zip"})
-	public void encryptionDecryptionTest(String fileName) throws IOException{
-		Path inputFile = externalPath.resolve(fileName);
-		byte[] inputBytes = Files.readAllBytes(inputFile);
-		
-		
-		ExternalAPI.encryptFile("42debugging42", fileName);
-		ExternalAPI.decryptFile("42debugging42", "encrypted_" + fileName);
-		
-		Path outputFile = externalPath.resolve("decrypted_encrypted_" + fileName);
-		byte[] outputBytes = Files.readAllBytes(outputFile);
-	
-		
-		assertNotNull(inputBytes);
-		assertNotNull(outputBytes);
-		assertArrayEquals(inputBytes, outputBytes);
+	@BeforeAll
+	public static void init() throws IOException, PortIsInUseException, SQLException {
+		ExternalAPI.initialize("Alice", "127.0.0.1", 60000);
+		KeyStoreDbManager.createNewKeyStoreAndTable();
+		Random r = new Random();
+		r.nextBytes(key);
 	}
 	
 	@BeforeEach
-    void setup () {
-        QuantumnetworkControllcenter.initialize(null);
-    }
-
-    @AfterEach
-    void cleanUp () {
-        ArrayList<Contact> entries = QuantumnetworkControllcenter.communicationList.queryAll();
-        for (Contact e : entries) {
-            QuantumnetworkControllcenter.communicationList.delete(e.getName());
-        }
-
-        QuantumnetworkControllcenter.authentication.deleteSignatureKeys();
-    }
-    
-    @Nested
-    class testEncryptedMessage {
-
-        @Test
-        // only realistically testable if signature key generation, signing and sending of messages work
-        void testLocalSendAuthenticatedMessage() throws IOException {
-            QuantumnetworkControllcenter.authentication.generateSignatureKeyPair();
-            String otherPublicKeyString =
-                    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
-                            "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
-                            "yG6ClQS/YQ6hGQ4BH/FMz8h3HWsA/d9rhL1csmz8xJeqCoK0djEph1qGkso/AyoK" +
-                            "LohV1zXgRM3EMV09ZgJAEktw6xxuzDtoLvDe7LMtYb/ahtdpYQMGSaHmUlEsC5Wk" +
-                            "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
-                            "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
-                            "1QIDAQAB";
-            
-            // Simulates the machine of our communication partner
-            int ourServerPort = QuantumnetworkControllcenter.conMan.getLocalPort();
-            ConnectionManager otherCM = new ConnectionManager("127.0.0.1", ourServerPort + 1);
-            
-            QuantumnetworkControllcenter.communicationList.insert("Alice", "127.0.0.1", 6603, Utils.readKeyStringFromFile("signature.pub"));
-            QuantumnetworkControllcenter.communicationList.insert("42debugging42", "127.0.0.1", 6604, otherPublicKeyString);
-
-            QuantumnetworkControllcenter.initialize(null);
-            QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("Alice", "127.0.0.1", 6603);
-            QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("42debugging42", 6604);
-
-            QuantumnetworkControllcenter.conMan.getConnectionEndpoint("42debugging42").waitForConnection();
-            QuantumnetworkControllcenter.conMan.getConnectionEndpoint("Alice").establishConnection("127.0.0.1", 6604);
-
-            boolean result = ExternalAPI.sendEncryptedTxtFile("42debugging42", "message.txt");
-            assertTrue(result);
-        }
-        
-        @Test
-        // only realistically testable if signature key generation, signing, verifying, sending and receiving of messages work
-        void testLocalReceiveAuthenticatedMessage() throws IOException {
-            QuantumnetworkControllcenter.authentication.generateSignatureKeyPair();
-            String otherPublicKeyString =
-                    "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA5r12pr0ZBtvFj133y9Yz" +
-                            "UCmivnUycRU3T/TBFTiIV7Li7NN11RQ+RdOUzuNOB7A5tQIzkzNPJSOHC2ogxXnE" +
-                            "yG6ClQS/YQ6hGQ4BH/FMz8h3HWsA/d9rhL1csmz8xJeqCoK0djEph1qGkso/AyoK" +
-                            "LohV1zXgRM3EMV09ZgJAEktw6xxuzDtoLvDe7LMtYb/ahtdpYQMGSaHmUlEsC5Wk" +
-                            "hbZkxGgs0LZD1Tjk9zGQ2bHbfU1wR7XhMku0riIxk32pNNJ+E2VSGIK5UJIyjbHM" +
-                            "iX5wyzy+frpgvA4YyonXJJRs4dp6Jngy9BwYnCJjeHgcFdVtIqjYTEIcy3w4FsEX" +
-                            "1QIDAQAB";
-            QuantumnetworkControllcenter.communicationList.insert("41debugging41", "127.0.0.1", 9303, Utils.readKeyStringFromFile("signature.pub"));
-            QuantumnetworkControllcenter.communicationList.insert("42debugging42", "127.0.0.1", 8303, otherPublicKeyString);
-
-            QuantumnetworkControllcenter.initialize();
-            QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("41debugging41", 9303);
-            QuantumnetworkControllcenter.conMan.createNewConnectionEndpoint("42debugging42", 8303);
-
-            QuantumnetworkControllcenter.conMan.getConnectionEndpoint("42debugging42").waitForConnection();
-            QuantumnetworkControllcenter.conMan.getConnectionEndpoint("41debugging41").establishConnection("127.0.0.1", 8303);
-
-            ExternalAPI.sendEncryptedTxtFile("42debugging42", "message.txt");
-            
-            DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu_MM_dd_HH_mm");
-            LocalDateTime now = LocalDateTime.now();
-            String currentDateTime = dateTimeFormatter.format(now);
-    		System.out.println(currentDateTime);
-            
-    		Path received = externalPath.resolve(currentDateTime + "_" + "41debugging41" + ".txt");
-    		
-            ExternalAPI.receiveEncryptedTxtFile("41debugging41");
-            
-            Path sent = externalPath.resolve("message.txt");
-    		
-            byte[] inputBytes = Files.readAllBytes(sent);
-            byte[] outputBytes = Files.readAllBytes(received);
-            
-            assertArrayEquals(inputBytes, outputBytes);
-        }
-    }
-    */
+	public void reset() throws SQLException {
+		KeyStoreDbManager.deleteEntryIfExists("ExtApiTester");
+		KeyStoreDbManager.insertToKeyStore("ExtApiTester", key, "", "", false, true);
+	}
+	
+	@Test
+	public void test_not_initialized_exception() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+		// assert API was initiliazed before
+		assertTrue(ExternalAPI.isInitialized());
+		// Use relection to set initialized to false
+		Field init = ExternalAPI.class.getDeclaredField("initialized");
+		init.setAccessible(true);
+		init.set(null, false);
+		// assert reflection set field correctly
+		assertFalse(ExternalAPI.isInitialized());
+		
+		// assert Exception thrown when it should
+		assertThrows(ExternalApiNotInitializedException.class, () -> ExternalAPI.connectTo("127.0.0.1", 1000, "Bob", ""));
+		assertThrows(ExternalApiNotInitializedException.class, () -> ExternalAPI.sendEncryptedTxtFile("Bob", new File("Blabla.txt")));
+				
+		// Set it to true again
+		init.set(null, true);
+		assertTrue(ExternalAPI.isInitialized());
+	}
+	
+	@Test
+	public void test_export_key() throws CouldNotGetKeyException {
+		SymmetricCipher cipher = ExternalAPI.getCipher();
+		int keyLengthBytes = cipher.getKeyLength() / 8;
+		byte[] firstKeyBytes = ExternalAPI.exportKeyByteArray("ExtApiTester", keyLengthBytes, 0);
+		byte[] someOtherKeyBytes = ExternalAPI.exportKeyByteArray("ExtApiTester", keyLengthBytes, 10);
+		
+		byte[] expectedFirstBytes = new byte[keyLengthBytes];
+		byte[] expectedOtherBytes = new byte[keyLengthBytes];
+		System.arraycopy(key, 0, expectedFirstBytes, 0, keyLengthBytes);
+		System.arraycopy(key, 10, expectedOtherBytes, 0, keyLengthBytes);
+		
+		assertArrayEquals(expectedFirstBytes, firstKeyBytes);
+		assertArrayEquals(expectedOtherBytes, someOtherKeyBytes);
+		
+		SecretKey expectedSkFirstBytes = cipher.byteArrayToSecretKey(expectedFirstBytes);
+		SecretKey expectedSkNextBytes = cipher.byteArrayToSecretKey(expectedOtherBytes);
+		
+		SecretKey receivedFirstSk = ExternalAPI.exportKeySecretKey("ExtApiTester", 0);
+		SecretKey receivedNextSk = ExternalAPI.exportKeySecretKey("ExtApiTester", 10);
+		
+		assertEquals(expectedSkFirstBytes, receivedFirstSk);
+		assertEquals(expectedSkNextBytes, receivedNextSk);
+	}
+	
+	
+	@Test
+	public void encrypt_decrypt_test() throws IOException, CouldNotGetKeyException, CouldNotEncryptMessageException, CouldNotDecryptMessageException, InvalidKeyException, IllegalBlockSizeException {
+		Path testFile = Path.of(System.getProperty("user.dir"), "ExampleContent", "FilesForTransferTests", "TestImage.png");
+		Path encryptedFileLocation = externalPath.resolve("encr_index_0_TestImage.png");
+		Path decryptedFileLocation = externalPath.resolve("decr_encr_index_0_TestImage.png");
+		assertTrue(Files.exists(testFile), "Test file does not exist.");
+		Files.deleteIfExists(encryptedFileLocation);
+		Files.deleteIfExists(decryptedFileLocation);
+		// enc dec files should no longer exist
+		assertFalse(Files.exists(encryptedFileLocation));
+		assertFalse(Files.exists(decryptedFileLocation));
+		
+		// Encrypt file
+		ExternalAPI.encryptFile("ExtApiTester", testFile.toFile());
+		// Should have created file 
+		assertTrue(Files.exists(encryptedFileLocation));
+		
+		// Decrypt File
+		ExternalAPI.decryptFile("ExtApiTester", 0, encryptedFileLocation.toFile());
+		
+		byte[] originalBytes = Files.readAllBytes(testFile);
+		byte[] encrFileBytes = Files.readAllBytes(encryptedFileLocation);
+		byte[] decrFileBytes = Files.readAllBytes(decryptedFileLocation);
+		
+		// decrypted == original
+		assertArrayEquals(originalBytes, decrFileBytes);
+		
+		// Encryption actually uses the cipher, also uses the correct part of the key
+		SymmetricCipher cipher = ExternalAPI.getCipher();
+		byte[] expectedKeyUsed = new byte[cipher.getKeyLength() / 8];
+		System.arraycopy(key, 0, expectedKeyUsed, 0, cipher.getKeyLength() / 8);
+		byte[] expectedEncBytes = cipher.encrypt(originalBytes, expectedKeyUsed);
+		assertArrayEquals(expectedEncBytes, encrFileBytes);
+	}
+	
+	
+	@Test
+	public void testMessaging() {
+		
+		// TODO test the methods for sending and receiving (encrypted) text messages
+		
+	}
 }
