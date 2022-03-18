@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.SQLException;
@@ -181,7 +180,6 @@ public class KeyGenerator implements Runnable{
 	/**This method send the Photon Source a signal.
 	 * It is a separate method to use the timer based call functionality.
 	 * 
-	 * @param SourceCE the CE that should send the message.
 	 */
 	public void sendSourceSignal() {
 		//File name will be UserName_Date_RandomString 
@@ -230,7 +228,7 @@ public class KeyGenerator implements Runnable{
 
 		boolean isConnectedToPartner = owner.reportState().equals(ConnectionState.CONNECTED);
 		
-		//TODO: Add any other Reqs here!
+		//TODO: Add any future Reqs here!
 		
 		return isConnectedToPartner;
 		
@@ -266,7 +264,6 @@ public class KeyGenerator implements Runnable{
 			System.err.println("Failed to sendMessage() for KeyGenSync. " + e);
 			return false;
 		}
-		//owner.pushMessage(keyGenSyncRequest);
 		
 		Instant startWait = Instant.now();
 		Instant current;
@@ -324,7 +321,7 @@ public class KeyGenerator implements Runnable{
 			try {
 				MessageSystem.sendMessage(owner.getID(), TransmissionTypeEnum.KEYGEN_SYNC_ACCEPT, args, MessageSystem.stringToByteArray("KEYGEN_SYNC_ACCEPT"), true, false);
 			} catch (EndpointIsNotConnectedException | ManagerHasNoSuchEndpointException e) {
-				System.err.println("Failed to respond to react to KeyGenSync-Reqeust. " + e);
+				System.err.println("Failed to respond to react to KeyGenSync-Request. " + e);
 				return;
 			}
 	
@@ -338,7 +335,7 @@ public class KeyGenerator implements Runnable{
 			try {
 				MessageSystem.sendMessage(owner.getID(), TransmissionTypeEnum.KEYGEN_SYNC_REJECT, args, MessageSystem.stringToByteArray("KEYGEN_SYNC_REJECT"), true, false);
 			} catch (EndpointIsNotConnectedException | ManagerHasNoSuchEndpointException e) {
-				System.err.println("Failed to respond to react to KeyGenSync-Reqeust. " + e);
+				System.err.println("Failed to respond to react to KeyGenSync-Request. " + e);
 				return;
 			}
 		}
@@ -395,12 +392,10 @@ public class KeyGenerator implements Runnable{
 		
 		//Get own root folder
 		Path currentWorkingDir = Path.of(Configuration.getBaseDirPath());
-        //System.out.println(currentWorkingDir.normalize().toString());
         localPath = currentWorkingDir;
         
         //Get python folder
         Path pythonScriptLocation = localPath.resolve("python");
-        //System.out.println(pythonScriptLocation.normalize().toString());
         if(!Files.isDirectory(pythonScriptLocation)) {
         	System.err.println("[" + getOwnerID() + "]: Error, could not find the Python Script folder, expected: " + pythonScriptLocation.normalize().toString());
         	return false;
@@ -410,7 +405,6 @@ public class KeyGenerator implements Runnable{
         //Prepare Connection Folder
         Path connectionFolderLocation = currentWorkingDir.resolve("connections");
         connectionFolderLocation = connectionFolderLocation.resolve(getOwnerID());
-        //System.out.println(connectionFolderLocation.normalize().toString());
         if(!Files.isDirectory(connectionFolderLocation)) {
         	System.out.println("[" + getOwnerID() + "]: Could not find the Connection folder for "+ getOwnerID() +", expected: " + connectionFolderLocation.normalize().toString() + " Creating folder now!");
         	try {
@@ -544,7 +538,6 @@ public class KeyGenerator implements Runnable{
 		}
 		
 		Path outFilePath = connectionPath.resolve(expectedOutgoingFilename);
-		Path inFilePath = connectionPath.resolve(expectedIncomingFilename);
 
 		try {
 			while(keyGenRunning) {	
@@ -633,7 +626,7 @@ public class KeyGenerator implements Runnable{
 	 * It is used to transmit the vital information needed for the KeyGen Process.
 	 * 
 	 * @param msg the NetworkPackage containing the KeyGen Information.
-	 * @throws VerificationFailedException 
+	 * @throws VerificationFailedException is thrown if the verification of the message fails.
 	 * 		if the message could not be verified
 	 */
 	public void writeKeyGenFile(NetworkPackage msg) throws VerificationFailedException {

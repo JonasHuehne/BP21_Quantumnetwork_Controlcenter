@@ -4,22 +4,15 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import communicationList.CommunicationList;
-import communicationList.SQLiteCommunicationList;
-import exceptions.ManagerHasNoSuchEndpointException;
-import exceptions.PortIsInUseException;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
-import graphicalUserInterface.SettingsDialog;
 import messengerSystem.SignatureAuthentication;
 import messengerSystem.MessageSystem;
-import messengerSystem.SHA256withRSAAuthentication;
-import networkConnection.ConnectionManager;
 import networkConnection.NetworkPackage;
 
 

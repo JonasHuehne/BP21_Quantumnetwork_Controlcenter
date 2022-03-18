@@ -12,7 +12,6 @@ import java.io.IOException;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -23,10 +22,6 @@ import javax.swing.border.EmptyBorder;
 import frame.Configuration;
 import frame.QuantumnetworkControllcenter;
 import messengerSystem.MessageSystem;
-import messengerSystem.SHA256withRSAAuthentication;
-
-import javax.swing.JComboBox;
-import javax.swing.DefaultComboBoxModel;
 import java.awt.GridLayout;
 
 /**This Dialog contains settings such as the own ServerIP/Port
@@ -51,10 +46,8 @@ public class SettingsDialog extends JFrame {
 	private static String port = null;
 	private static String sourceIP = null;
 	private static String sourcePort = null;
-	private static String sourceSig = null;
 	private static String enc = null;
 	private static String python = null;
-	private JTextField sourceSigTextField;
 	private JTextField pythonScriptTextField;
 	
 
@@ -140,18 +133,6 @@ public class SettingsDialog extends JFrame {
 			sourcePortTextField.setText("2300");
 			sourcePortTextField.setColumns(10);
 		}
-		/*
-		{
-			JLabel sourceSigLabel = new JLabel("Photon Source Sig:");
-			sourceSigLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
-			contentPanel.add(sourceSigLabel);
-		}
-		
-		sourceSigTextField = new JTextField();
-		sourceSigTextField.setToolTipText("The public Signature Key used by the Photon Source Server.");
-		contentPanel.add(sourceSigTextField);
-		sourceSigTextField.setColumns(10);
-		*/
 		{
 			JLabel encodingLabel = new JLabel("Preferred Encoding:");
 			encodingLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
@@ -196,13 +177,13 @@ public class SettingsDialog extends JFrame {
 		contentPanel.add(reGenerateSigButton);
 		{
 			JLabel pythonScriptLabel = new JLabel("Python Script Name:");
-			pythonScriptLabel.setToolTipText("This is the name of the Python Script that is used during the Key Gen. The Script should be located in \"QNCC/python/\".");
+			pythonScriptLabel.setToolTipText("This is the name of the Python Script that is used during the Key Gen. The Script should be located in \"QNCC" + File.separator + "python" + File.separator + "\".");
 			pythonScriptLabel.setFont(new Font("Tahoma", Font.PLAIN, 14));
 			contentPanel.add(pythonScriptLabel);
 		}
 		{
 			pythonScriptTextField = new JTextField();
-			pythonScriptTextField.setToolTipText("This is the name of the Python Script that is used during the Key Gen. The Script should be located in \"QNCC/python/\".");
+			pythonScriptTextField.setToolTipText("This is the name of the Python Script that is used during the Key Gen. The Script should be located in \"QNCC" + File.separator + "python" + File.separator + "\".");
 			contentPanel.add(pythonScriptTextField);
 			pythonScriptTextField.setColumns(10);
 		}
@@ -214,7 +195,6 @@ public class SettingsDialog extends JFrame {
 				JButton okButton = new JButton("Apply");
 				okButton.addActionListener(new ActionListener() {
 					public void actionPerformed(ActionEvent e) {
-						// TODO Input validation
 						writeSettings();
 						setVisible(false);
 						dispose();
@@ -281,13 +261,6 @@ public class SettingsDialog extends JFrame {
 			Configuration.setProperty("SourcePort", "2400");
 			sourcePort = Configuration.getProperty("SourcePort");
 		}
-		/*
-		sourceSig = Configuration.getProperty("SourceSignature");
-		if(sourceSig == null) {
-			Configuration.setProperty("Not configured!", "SourceSignature");
-			sourceSig = Configuration.getProperty("SourceSignature");
-		}
-		*/
 		
 		enc = Configuration.getProperty("Encoding");
 		if(enc == null) {
@@ -316,8 +289,6 @@ public class SettingsDialog extends JFrame {
 		
 		sourcePortTextField.setText(sourcePort);
 		
-		//sourceSigTextField.setText(sourceSig);
-		
 		encodingComboBox.setSelectedItem(enc);
 		
 		pythonScriptTextField.setText(python);
@@ -345,7 +316,6 @@ public class SettingsDialog extends JFrame {
 		Configuration.setProperty("UserPort", ownPortTextField.getText());
 		Configuration.setProperty("SourceIP", sourceIPTextField.getText());
 		Configuration.setProperty("SourcePort", sourcePortTextField.getText());
-		//Configuration.setProperty("SourceSignature", sourceSigTextField.getText());
 		Configuration.setProperty("Encoding", (String) encodingComboBox.getSelectedItem());
 		Configuration.setProperty("PythonName", pythonScriptTextField.getText());
 	}
