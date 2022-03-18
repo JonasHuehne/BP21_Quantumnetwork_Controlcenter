@@ -33,6 +33,13 @@ public class SourceControlApplication {
 	public static SignatureAuthentication authentication;
 	private static Log log = new Log(SourceControlApplication.class.getName(), LogSensitivity.INFO);
 	
+	
+	/**This is called when the source receives a signal.
+	 * It writes a .txt file with information about the two parties that want to generate a key
+	 * 
+	 * @param transmission	The received Signal.
+	 * @param senderID	The CE that ID of the CE that received the Signal.
+	 */
 	public static void writeSignalFile(NetworkPackage transmission, String senderID) {
 		log.logInfo("[PhotonSource]: Received Signal, starting to write File!");
 		String fileName = transmission.getMessageArgs().fileName();

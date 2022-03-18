@@ -316,8 +316,9 @@ public class NetworkPackageHandler {
 					try {
 						byte[] decryptionKey = getKey(ce, msg);
 						SecretKey sk = MessageSystem.getCipher().byteArrayToSecretKey(decryptionKey);
-						// save decrypted file with the same filename, but prefixed with decrypted_
-						Path pathToDecryptedFile = Paths.get(f.getParent().toString(), f.getName() + "_decrypted"); 
+						// save decrypted file with the same filename, but suffixed with _decrypted
+						String decryptedFile = f.getName().split("\\.",2)[0] + "_decrypted" + "." + f.getName().split("\\.",2)[1];
+						Path pathToDecryptedFile = Paths.get(f.getParent().toString(), decryptedFile); 
 						FileCrypter.decryptAndSave(outDirectory.resolve(fileName).toFile(), MessageSystem.getCipher(), sk, pathToDecryptedFile);
 					} catch (BadPaddingException | InvalidKeyException | IOException | CouldNotGetKeyException e) {
 						throw new CouldNotDecryptMessageException("Could not decrypt the text message with ID " + Base64.getEncoder().encodeToString(msg.getID()), e);
